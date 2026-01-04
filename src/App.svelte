@@ -30,6 +30,8 @@
   import { drilldownStore } from '@app/stores/drilldown.svelte'
   import { drilldownService } from '@core/engine/drilldown/drilldown-service'
   import AIGenerateDialog from './components/AIGenerateDialog.svelte'
+  import { ReportGeneratorWizard } from './components/ai-report'
+  import type { DataSourceInfo, ReportPlan } from '@core/ai'
 
   // Svelte 5 Runes mode
   let appTitle = $state('Miao Vision')
@@ -60,6 +62,10 @@
 
   // AI generate dialog state
   let showAIGenerateDialog = $state(false)
+
+  // AI Report Generator wizard state
+  let showReportGenerator = $state(false)
+  let availableDataSources = $state<DataSourceInfo[]>([])
 
   onMount(async () => {
     // Initialize database on mount
@@ -566,6 +572,105 @@
     }
   }
 
+  // AI Report Generator handlers
+  async function handleOpenReportGenerator() {
+    console.log('🤖 Opening AI Report Generator')
+
+    // Gather available data sources
+    const sources: DataSourceInfo[] = []
+
+    // 1. Get data from executed SQL blocks in current report
+    const report = reportStore.state.currentReport
+    if (report?.blocks) {
+      for (let i = 0; i < report.blocks.length; i++) {
+        const block = report.blocks[i]
+        const sqlResult = block.sqlResult
+
+        if (block.type === 'sql' && sqlResult) {
+          const rows = sqlResult.data || []
+          const columns = sqlResult.columns || (rows.length > 0 ? Object.keys(rows[0]) : [])
+          const name = block.metadata?.name || `query_${i + 1}`
+
+          if (Array.isArray(rows) && rows.length > 0) {
+            sources.push({
+              name,
+              columns: columns.map((col: string) => ({
+                name: col,
+                type: inferColumnTypeForReport(rows[0]?.[col])
+              })),
+              rowCount: rows.length,
+              sample: rows.slice(0, 5)
+            })
+          }
+        }
+      }
+    }
+
+    // 2. Get tables from DuckDB
+    try {
+      const db = databaseStore.getDuckDB()
+      if (db) {
+        const tablesResult = await db.query('SELECT table_name FROM information_schema.tables WHERE table_schema = \'main\'')
+        const tables = tablesResult.toArray().map((row: { table_name: string }) => row.table_name)
+
+        for (const tableName of tables) {
+          // Skip if already in sources (from SQL blocks)
+          if (sources.some(s => s.name === tableName)) continue
+
+          // Get table info
+          const columnsResult = await db.query(`DESCRIBE "${tableName}"`)
+          const columns = columnsResult.toArray().map((row: { column_name: string; column_type: string }) => ({
+            name: row.column_name,
+            type: row.column_type
+          }))
+
+          const countResult = await db.query(`SELECT COUNT(*) as cnt FROM "${tableName}"`)
+          const rowCount = Number(countResult.toArray()[0]?.cnt || 0)
+
+          const sampleResult = await db.query(`SELECT * FROM "${tableName}" LIMIT 5`)
+          const sample = sampleResult.toArray()
+
+          sources.push({
+            name: tableName,
+            columns,
+            rowCount,
+            sample
+          })
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to get DuckDB tables:', error)
+    }
+
+    availableDataSources = sources
+    showReportGenerator = true
+  }
+
+  function inferColumnTypeForReport(value: unknown): string {
+    if (value === null || value === undefined) return 'unknown'
+    if (typeof value === 'number') return 'number'
+    if (typeof value === 'boolean') return 'boolean'
+    if (typeof value === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}/.test(value)) return 'date'
+      return 'string'
+    }
+    return 'unknown'
+  }
+
+  function handleReportGeneratorComplete(markdown: string, plan: ReportPlan) {
+    console.log('📊 AI Report generated:', plan.title)
+
+    // Create a new report with the generated content
+    const report = reportStore.createReport(plan.title, markdown)
+    handleSelectReport(report)
+    setTab('report')
+    showReportGenerator = false
+  }
+
+  function handleReportGeneratorCancel() {
+    showReportGenerator = false
+  }
+
   function handleSelectReport(report: Report) {
     console.log('Selected report:', report.id)
 
@@ -749,6 +854,17 @@
                 >
                   <span class="menu-icon">📚</span>
                   <span>Multi-Page</span>
+                </button>
+                <div class="sidebar-menu-divider"></div>
+                <button
+                  class="sidebar-menu-item ai-report"
+                  onclick={() => {
+                    showSidebarNewMenu = false
+                    handleOpenReportGenerator()
+                  }}
+                >
+                  <span class="menu-icon">✨</span>
+                  <span>AI Report</span>
                 </button>
               </div>
             {/if}
@@ -990,6 +1106,15 @@
   onInsert={handleAIInsert}
 />
 
+<!-- AI Report Generator Wizard -->
+{#if showReportGenerator}
+  <ReportGeneratorWizard
+    availableSources={availableDataSources}
+    onComplete={handleReportGeneratorComplete}
+    onCancel={handleReportGeneratorCancel}
+  />
+{/if}
+
 <style>
   /* ========================================
    * Main Layout - Sidebar + Content
@@ -1217,6 +1342,20 @@
 
   .sidebar-menu-item .menu-icon {
     font-size: 1rem;
+  }
+
+  .sidebar-menu-divider {
+    height: 1px;
+    background: #374151;
+    margin: 4px 0;
+  }
+
+  .sidebar-menu-item.ai-report {
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+  }
+
+  .sidebar-menu-item.ai-report:hover {
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
   }
 
   .report-list {

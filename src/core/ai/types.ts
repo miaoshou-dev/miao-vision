@@ -148,3 +148,174 @@ export interface ChartGenerationResult {
   /** Error message if failed */
   error?: string
 }
+
+// ============================================================================
+// Report Generation Types
+// ============================================================================
+
+/**
+ * Data source information for report generation
+ */
+export interface DataSourceInfo {
+  /** Table/query name */
+  name: string
+  /** Column definitions */
+  columns: Array<{ name: string; type: string }>
+  /** Total row count */
+  rowCount: number
+  /** Sample data (first few rows) */
+  sample?: Record<string, unknown>[]
+}
+
+/**
+ * Report section types
+ */
+export type ReportSectionType =
+  | 'kpi'        // Key Performance Indicators (BigValue cards)
+  | 'trend'      // Time series analysis (Line/Area chart)
+  | 'ranking'    // Top N analysis (Bar chart)
+  | 'comparison' // Category comparison (Bar/Pie chart)
+  | 'distribution' // Data distribution (Histogram)
+  | 'table'      // Data table
+  | 'insight'    // Text-only analysis and recommendations
+
+/**
+ * KPI section configuration
+ */
+export interface KPISectionConfig {
+  metrics: Array<{
+    name: string
+    column: string
+    aggregation: 'sum' | 'avg' | 'count' | 'max' | 'min'
+    format?: 'number' | 'currency' | 'percent'
+  }>
+}
+
+/**
+ * Trend section configuration
+ */
+export interface TrendSectionConfig {
+  timeColumn: string
+  valueColumn: string
+  granularity: 'day' | 'week' | 'month' | 'quarter' | 'year'
+  chartType?: 'line' | 'area'
+}
+
+/**
+ * Ranking section configuration
+ */
+export interface RankingSectionConfig {
+  dimensionColumn: string
+  valueColumn: string
+  aggregation: 'sum' | 'avg' | 'count'
+  limit: number
+  order: 'asc' | 'desc'
+}
+
+/**
+ * Comparison section configuration
+ */
+export interface ComparisonSectionConfig {
+  dimensionColumn: string
+  valueColumn: string
+  aggregation: 'sum' | 'avg' | 'count'
+  chartType?: 'bar' | 'pie'
+}
+
+/**
+ * Distribution section configuration
+ */
+export interface DistributionSectionConfig {
+  column: string
+  bins?: number
+}
+
+/**
+ * Table section configuration
+ */
+export interface TableSectionConfig {
+  columns?: string[]
+  limit?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+
+/**
+ * Insight section configuration
+ */
+export interface InsightSectionConfig {
+  focus?: string[]  // What aspects to focus on
+}
+
+/**
+ * Report section definition
+ */
+export interface ReportSection {
+  type: ReportSectionType
+  title: string
+  description?: string
+  dataSource: string
+  config:
+    | KPISectionConfig
+    | TrendSectionConfig
+    | RankingSectionConfig
+    | ComparisonSectionConfig
+    | DistributionSectionConfig
+    | TableSectionConfig
+    | InsightSectionConfig
+}
+
+/**
+ * Report plan - output of the planning phase
+ */
+export interface ReportPlan {
+  title: string
+  description?: string
+  sections: ReportSection[]
+}
+
+/**
+ * Report style presets
+ */
+export type ReportStyle =
+  | 'professional'  // Formal, data-driven
+  | 'concise'       // Dashboard-like, minimal text
+  | 'visual'        // Heavy on charts, light on text
+  | 'narrative'     // Story-driven with detailed explanations
+
+/**
+ * Report generation request
+ */
+export interface ReportGenerationRequest {
+  /** Selected data sources */
+  dataSources: DataSourceInfo[]
+  /** User's description of what they want */
+  prompt: string
+  /** Report style preference */
+  style?: ReportStyle
+  /** Language for the report */
+  language?: 'zh' | 'en'
+}
+
+/**
+ * Section generation progress
+ */
+export interface SectionProgress {
+  sectionIndex: number
+  sectionTitle: string
+  markdown: string
+  isComplete: boolean
+}
+
+/**
+ * Report generation result
+ */
+export interface ReportGenerationResult {
+  success: boolean
+  /** Complete markdown content */
+  markdown?: string
+  /** Report plan that was used */
+  plan?: ReportPlan
+  /** Error message if failed */
+  error?: string
+}

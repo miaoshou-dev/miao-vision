@@ -18,7 +18,23 @@ export type {
   ProviderConfig,
   AIContext,
   ChartGenerationRequest,
-  ChartGenerationResult
+  ChartGenerationResult,
+  // Report generation types
+  DataSourceInfo,
+  ReportSectionType,
+  KPISectionConfig,
+  TrendSectionConfig,
+  RankingSectionConfig,
+  ComparisonSectionConfig,
+  DistributionSectionConfig,
+  TableSectionConfig,
+  InsightSectionConfig,
+  ReportSection,
+  ReportPlan,
+  ReportStyle,
+  ReportGenerationRequest,
+  SectionProgress,
+  ReportGenerationResult
 } from './types'
 
 // Providers
@@ -26,3 +42,18 @@ export { DeepSeekProvider, createDeepSeekProvider } from './providers/deepseek'
 
 // Services
 export { ChartGenerator, createChartGenerator } from './chart-generator'
+export { ReportPlanner, createReportPlanner } from './report-planner'
+export type { PlanningResult } from './report-planner'
+export {
+  ReportGenerator,
+  createReportGenerator,
+  generateReport
+} from './report-generator'
+
+// Prompts
+export {
+  buildPlannerSystemPrompt,
+  buildPlannerUserPrompt,
+  parsePlannerResponse,
+  generateSectionMarkdown
+} from './prompts'
