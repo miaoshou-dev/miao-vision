@@ -34,6 +34,16 @@ const AGGREGATION_SQL: Record<string, string> = {
 /**
  * Generate SQL for KPI section
  */
+/**
+ * Quote table name if needed (contains special chars)
+ */
+function quoteTableName(name: string): string {
+  if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+    return name
+  }
+  return `"${name.replace(/"/g, '""')}"`
+}
+
 export function generateKPISQL(
   config: KPISectionConfig,
   dataSource: string
@@ -43,7 +53,7 @@ export function generateKPISQL(
     return `${agg}(${m.column}) as ${m.name.replace(/\s+/g, '_').toLowerCase()}`
   })
 
-  return `SELECT ${selectParts.join(', ')} FROM ${dataSource}`
+  return `SELECT ${selectParts.join(', ')} FROM ${quoteTableName(dataSource)}`
 }
 
 /**
@@ -95,7 +105,7 @@ export function generateTrendSQL(
   return `SELECT
   ${granularityExpr} as period,
   SUM(${config.valueColumn}) as value
-FROM ${dataSource}
+FROM ${quoteTableName(dataSource)}
 GROUP BY period
 ORDER BY period`
 }
@@ -165,7 +175,7 @@ export function generateRankingSQL(
   return `SELECT
   ${config.dimensionColumn} as dimension,
   ${agg}(${config.valueColumn}) as value
-FROM ${dataSource}
+FROM ${quoteTableName(dataSource)}
 GROUP BY ${config.dimensionColumn}
 ORDER BY value ${order}
 LIMIT ${config.limit}`
@@ -211,7 +221,7 @@ export function generateComparisonSQL(
   return `SELECT
   ${config.dimensionColumn} as category,
   ${agg}(${config.valueColumn}) as value
-FROM ${dataSource}
+FROM ${quoteTableName(dataSource)}
 GROUP BY ${config.dimensionColumn}
 ORDER BY value DESC`
 }
@@ -252,7 +262,7 @@ export function generateDistributionSQL(
   config: DistributionSectionConfig,
   dataSource: string
 ): string {
-  return `SELECT ${config.column} as value FROM ${dataSource}`
+  return `SELECT ${config.column} as value FROM ${quoteTableName(dataSource)}`
 }
 
 /**
@@ -293,7 +303,7 @@ export function generateTableSQL(
   dataSource: string
 ): string {
   const columns = config.columns?.join(', ') || '*'
-  let sql = `SELECT ${columns} FROM ${dataSource}`
+  let sql = `SELECT ${columns} FROM ${quoteTableName(dataSource)}`
 
   if (config.sortBy) {
     const order = config.sortOrder === 'asc' ? 'ASC' : 'DESC'
