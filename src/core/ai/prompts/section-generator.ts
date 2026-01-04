@@ -62,7 +62,7 @@ export function generateKPIMarkdown(
 
   // Generate SQL block
   const sql = generateKPISQL(config, section.dataSource)
-  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
 
   // Generate BigValue components for each metric
   for (const metric of config.metrics) {
@@ -138,7 +138,7 @@ export function generateTrendMarkdown(
   }
 
   const sql = generateTrendSQL(config, section.dataSource)
-  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
 
   const chartType = config.chartType || 'line'
   markdown += `\`\`\`chart\n`
@@ -186,7 +186,7 @@ export function generateRankingMarkdown(
   }
 
   const sql = generateRankingSQL(config, section.dataSource)
-  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
 
   markdown += `\`\`\`chart\n`
   markdown += `type: bar\n`
@@ -231,7 +231,7 @@ export function generateComparisonMarkdown(
   }
 
   const sql = generateComparisonSQL(config, section.dataSource)
-  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
 
   const chartType = config.chartType || 'bar'
   markdown += `\`\`\`chart\n`
@@ -270,7 +270,7 @@ export function generateDistributionMarkdown(
   }
 
   const sql = generateDistributionSQL(config, section.dataSource)
-  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
 
   markdown += `\`\`\`chart\n`
   markdown += `type: histogram\n`
@@ -322,7 +322,7 @@ export function generateTableMarkdown(
   }
 
   const sql = generateTableSQL(config, section.dataSource)
-  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
 
   markdown += `\`\`\`datatable\n`
   markdown += `query: ${queryName}\n`
