@@ -5,9 +5,9 @@
     type ReportPlan,
     type SectionProgress,
     ReportPlanner,
-    ReportGenerator,
-    createDeepSeekProvider
+    ReportGenerator
   } from '@core/ai'
+  import { aiConfigStore } from '@app/stores/ai-config.svelte'
   import DataSourceSelector from './DataSourceSelector.svelte'
   import PromptInput from './PromptInput.svelte'
   import GenerationProgress from './GenerationProgress.svelte'
@@ -31,6 +31,10 @@
   let userPrompt = $state('')
   let reportStyle = $state<ReportStyle>('professional')
 
+  // Settings state
+  let showSettings = $state(false)
+  let apiKeyInput = $state(aiConfigStore.state.configs.deepseek.apiKey || '')
+
   // Generation state
   type GenerationPhase = 'planning' | 'generating' | 'complete' | 'error'
   let generationPhase = $state<GenerationPhase>('planning')
@@ -44,20 +48,21 @@
   let planner: ReportPlanner | null = null
   let generator: ReportGenerator | null = null
 
-  function initializeServices() {
-    // Get API key from localStorage or environment
-    const apiKey = localStorage.getItem('deepseek_api_key') || ''
-
-    if (!apiKey) {
-      generationError = 'Please configure DeepSeek API Key in settings first'
-      generationPhase = 'error'
+  function initializeServices(): boolean {
+    if (!aiConfigStore.isConfigured()) {
+      showSettings = true
       return false
     }
 
-    const provider = createDeepSeekProvider({ apiKey })
+    const provider = aiConfigStore.getProvider()
     planner = new ReportPlanner(provider)
     generator = new ReportGenerator(provider)
     return true
+  }
+
+  function handleSaveApiKey() {
+    aiConfigStore.setApiKey(apiKeyInput)
+    showSettings = false
   }
 
   function canProceed(): boolean {
@@ -174,14 +179,51 @@
   <div class="wizard-container">
     <div class="wizard-header">
       <h2>Generate AI Report</h2>
-      <button class="close-btn" onclick={onCancel} aria-label="Close">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
-        </svg>
-      </button>
+      <div class="header-actions">
+        <button
+          class="settings-btn"
+          onclick={() => showSettings = !showSettings}
+          title="API Settings"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+          </svg>
+        </button>
+        <button class="close-btn" onclick={onCancel} aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <div class="wizard-steps">
+    {#if showSettings}
+      <!-- API Key Settings -->
+      <div class="settings-panel">
+        <div class="settings-header">
+          <h3>API Settings</h3>
+          <span class="settings-hint">Configure your DeepSeek API key to use AI features</span>
+        </div>
+        <div class="settings-form">
+          <label class="settings-label" for="api-key-input">DeepSeek API Key</label>
+          <input
+            id="api-key-input"
+            type="password"
+            class="settings-input"
+            placeholder="sk-..."
+            bind:value={apiKeyInput}
+          />
+          <div class="settings-actions">
+            <button class="btn btn-secondary" onclick={() => showSettings = false}>Cancel</button>
+            <button class="btn btn-primary" onclick={handleSaveApiKey} disabled={!apiKeyInput.trim()}>Save</button>
+          </div>
+          <p class="settings-note">
+            Get your API key from <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer">platform.deepseek.com</a>
+          </p>
+        </div>
+      </div>
+    {:else}
+      <div class="wizard-steps">
       <div class="step" class:active={currentStep === 'select-data'} class:complete={getStepNumber(currentStep) > 1}>
         <span class="step-number">1</span>
         <span class="step-label">Select Data</span>
@@ -224,25 +266,26 @@
     </div>
 
     <div class="wizard-footer">
-      <button
-        class="btn btn-secondary"
-        onclick={currentStep === 'select-data' ? onCancel : prevStep}
-      >
-        {currentStep === 'select-data' ? 'Cancel' : 'Back'}
-      </button>
+        <button
+          class="btn btn-secondary"
+          onclick={currentStep === 'select-data' ? onCancel : prevStep}
+        >
+          {currentStep === 'select-data' ? 'Cancel' : 'Back'}
+        </button>
 
-      <button
-        class="btn btn-primary"
-        onclick={nextStep}
-        disabled={!canProceed() || (currentStep === 'generate' && generationPhase !== 'complete' && generationPhase !== 'error')}
-      >
-        {#if currentStep === 'generate'}
-          {generationPhase === 'complete' ? 'Use Report' : generationPhase === 'error' ? 'Retry' : 'Generating...'}
-        {:else}
-          Next
-        {/if}
-      </button>
-    </div>
+        <button
+          class="btn btn-primary"
+          onclick={nextStep}
+          disabled={!canProceed() || (currentStep === 'generate' && generationPhase !== 'complete' && generationPhase !== 'error')}
+        >
+          {#if currentStep === 'generate'}
+            {generationPhase === 'complete' ? 'Use Report' : generationPhase === 'error' ? 'Retry' : 'Generating...'}
+          {:else}
+            Next
+          {/if}
+        </button>
+      </div>
+    {/if}
   </div>
 </div>
 
@@ -300,6 +343,105 @@
   .close-btn:hover {
     color: #e0e0e0;
     background: #333;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .settings-btn {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .settings-btn:hover {
+    color: #60a5fa;
+    background: rgba(96, 165, 250, 0.1);
+  }
+
+  .settings-panel {
+    padding: 24px;
+    flex: 1;
+  }
+
+  .settings-header {
+    margin-bottom: 20px;
+  }
+
+  .settings-header h3 {
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #e0e0e0;
+  }
+
+  .settings-hint {
+    font-size: 13px;
+    color: #9ca3af;
+  }
+
+  .settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .settings-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #e0e0e0;
+  }
+
+  .settings-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 14px;
+    transition: border-color 0.2s;
+  }
+
+  .settings-input:focus {
+    outline: none;
+    border-color: #60a5fa;
+  }
+
+  .settings-input::placeholder {
+    color: #6b7280;
+  }
+
+  .settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .settings-note {
+    margin: 8px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .settings-note a {
+    color: #60a5fa;
+    text-decoration: none;
+  }
+
+  .settings-note a:hover {
+    text-decoration: underline;
   }
 
   .wizard-steps {
