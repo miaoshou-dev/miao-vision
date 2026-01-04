@@ -307,7 +307,8 @@ export function resolveBlockReferences(
   const replacedVariables: string[] = []
   const missingVariables: string[] = []
 
-  const output = sql.replace(
+  // Step 1: Replace ${block_name} template syntax
+  let output = sql.replace(
     new RegExp(PATTERNS.TEMPLATE_VAR.source, 'g'),
     (match, blockRef) => {
       // Skip qualified references (inputs.x, metadata.x)
@@ -325,6 +326,20 @@ export function resolveBlockReferences(
       return match // Keep original if not found
     }
   )
+
+  // Step 2: Replace implicit FROM/JOIN table_name references
+  // Only replace if the table name is a known block (in tableMapping)
+  const tableRefPattern = /(\bFROM|\bJOIN)\s+(["']?)([a-zA-Z_][a-zA-Z0-9_]*)\2(?!\s*\.)/gi
+  output = output.replace(tableRefPattern, (match, keyword, _quote, tableName) => {
+    const fullTableName = tableMapping.get(tableName)
+    if (fullTableName) {
+      if (!replacedVariables.includes(tableName)) {
+        replacedVariables.push(tableName)
+      }
+      return `${keyword} ${fullTableName}`
+    }
+    return match // Keep original if not a known block
+  })
 
   return {
     output,
