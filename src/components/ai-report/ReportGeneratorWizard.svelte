@@ -10,7 +10,9 @@
   import { aiConfigStore } from '@app/stores/ai-config.svelte'
   import DataSourceSelector from './DataSourceSelector.svelte'
   import PromptInput from './PromptInput.svelte'
+  import PlanPreview from './PlanPreview.svelte'
   import GenerationProgress from './GenerationProgress.svelte'
+  import SettingsPanel from './SettingsPanel.svelte'
 
   interface Props {
     availableSources: DataSourceInfo[]
@@ -21,8 +23,12 @@
   let { availableSources, onComplete, onCancel }: Props = $props()
 
   // Wizard state
-  type WizardStep = 'select-data' | 'configure' | 'generate'
+  type WizardStep = 'select-data' | 'configure' | 'preview' | 'generate'
   let currentStep = $state<WizardStep>('select-data')
+
+  // Planning state
+  let isPlanningInProgress = $state(false)
+  let planningError = $state<string | null>(null)
 
   // Data selection
   let selectedSources = $state<DataSourceInfo[]>([])
@@ -33,7 +39,6 @@
 
   // Settings state
   let showSettings = $state(false)
-  let apiKeyInput = $state(aiConfigStore.state.configs.deepseek.apiKey || '')
 
   // Generation state
   type GenerationPhase = 'planning' | 'generating' | 'complete' | 'error'
@@ -60,8 +65,8 @@
     return true
   }
 
-  function handleSaveApiKey() {
-    aiConfigStore.setApiKey(apiKeyInput)
+  function handleSaveApiKey(apiKey: string) {
+    aiConfigStore.setApiKey(apiKey)
     showSettings = false
   }
 
@@ -71,6 +76,8 @@
         return selectedSources.length > 0
       case 'configure':
         return userPrompt.trim().length > 0
+      case 'preview':
+        return currentPlan !== null && !isPlanningInProgress
       case 'generate':
         return generationPhase === 'complete'
     }
@@ -82,6 +89,10 @@
         currentStep = 'configure'
         break
       case 'configure':
+        currentStep = 'preview'
+        startPlanning()
+        break
+      case 'preview':
         currentStep = 'generate'
         startGeneration()
         break
@@ -98,44 +109,80 @@
       case 'configure':
         currentStep = 'select-data'
         break
+      case 'preview':
+        // Reset planning state
+        currentPlan = null
+        planningError = null
+        isPlanningInProgress = false
+        currentStep = 'configure'
+        break
       case 'generate':
         // Reset generation state
         generationPhase = 'planning'
-        currentPlan = null
         currentSection = null
         generationError = null
         previewMarkdown = ''
         finalMarkdown = ''
-        currentStep = 'configure'
+        currentStep = 'preview'
         break
     }
   }
 
-  async function startGeneration() {
-    if (!initializeServices() || !planner || !generator) {
+  async function startPlanning() {
+    if (!initializeServices() || !planner) {
       return
     }
 
-    generationPhase = 'planning'
-    generationError = null
+    isPlanningInProgress = true
+    planningError = null
+    currentPlan = null
 
     try {
-      // Step 1: Plan the report
       const planResult = await planner.plan(selectedSources, userPrompt, {
         style: reportStyle,
         language: 'zh'
       })
 
       if (!planResult.success || !planResult.plan) {
-        generationError = planResult.error || 'Failed to create report plan'
-        generationPhase = 'error'
+        planningError = planResult.error || 'Failed to create report plan'
         return
       }
 
       currentPlan = planResult.plan
-      generationPhase = 'generating'
+    } catch (error) {
+      planningError = error instanceof Error ? error.message : 'Unknown error occurred'
+    } finally {
+      isPlanningInProgress = false
+    }
+  }
 
-      // Step 2: Generate report content with streaming
+  function handleRemoveSection(index: number) {
+    if (currentPlan && currentPlan.sections.length > 1) {
+      currentPlan = {
+        ...currentPlan,
+        sections: currentPlan.sections.filter((_, i) => i !== index)
+      }
+    }
+  }
+
+  function handleReorderSection(fromIndex: number, toIndex: number) {
+    if (!currentPlan) return
+    const sections = [...currentPlan.sections]
+    const [removed] = sections.splice(fromIndex, 1)
+    sections.splice(toIndex, 0, removed)
+    currentPlan = { ...currentPlan, sections }
+  }
+
+  async function startGeneration() {
+    if (!initializeServices() || !generator || !currentPlan) {
+      return
+    }
+
+    generationPhase = 'generating'
+    generationError = null
+
+    try {
+      // Generate report content with streaming
       for await (const progress of generator.generateStream(currentPlan, selectedSources, {
         style: reportStyle,
         language: 'zh'
@@ -169,8 +216,10 @@
         return 1
       case 'configure':
         return 2
-      case 'generate':
+      case 'preview':
         return 3
+      case 'generate':
+        return 4
     }
   }
 </script>
@@ -198,30 +247,11 @@
     </div>
 
     {#if showSettings}
-      <!-- API Key Settings -->
-      <div class="settings-panel">
-        <div class="settings-header">
-          <h3>API Settings</h3>
-          <span class="settings-hint">Configure your DeepSeek API key to use AI features</span>
-        </div>
-        <div class="settings-form">
-          <label class="settings-label" for="api-key-input">DeepSeek API Key</label>
-          <input
-            id="api-key-input"
-            type="password"
-            class="settings-input"
-            placeholder="sk-..."
-            bind:value={apiKeyInput}
-          />
-          <div class="settings-actions">
-            <button class="btn btn-secondary" onclick={() => showSettings = false}>Cancel</button>
-            <button class="btn btn-primary" onclick={handleSaveApiKey} disabled={!apiKeyInput.trim()}>Save</button>
-          </div>
-          <p class="settings-note">
-            Get your API key from <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer">platform.deepseek.com</a>
-          </p>
-        </div>
-      </div>
+      <SettingsPanel
+        apiKey={aiConfigStore.state.configs.deepseek.apiKey || ''}
+        onSave={handleSaveApiKey}
+        onCancel={() => showSettings = false}
+      />
     {:else}
       <div class="wizard-steps">
       <div class="step" class:active={currentStep === 'select-data'} class:complete={getStepNumber(currentStep) > 1}>
@@ -234,8 +264,13 @@
         <span class="step-label">Configure</span>
       </div>
       <div class="step-connector" class:complete={getStepNumber(currentStep) > 2}></div>
-      <div class="step" class:active={currentStep === 'generate'}>
+      <div class="step" class:active={currentStep === 'preview'} class:complete={getStepNumber(currentStep) > 3}>
         <span class="step-number">3</span>
+        <span class="step-label">Preview</span>
+      </div>
+      <div class="step-connector" class:complete={getStepNumber(currentStep) > 3}></div>
+      <div class="step" class:active={currentStep === 'generate'}>
+        <span class="step-number">4</span>
         <span class="step-label">Generate</span>
       </div>
     </div>
@@ -254,6 +289,15 @@
           onPromptChange={(p) => userPrompt = p}
           onStyleChange={(s) => reportStyle = s}
         />
+      {:else if currentStep === 'preview'}
+        <PlanPreview
+          plan={currentPlan}
+          isLoading={isPlanningInProgress}
+          error={planningError}
+          onRemoveSection={handleRemoveSection}
+          onReorderSection={handleReorderSection}
+          onRetry={startPlanning}
+        />
       {:else if currentStep === 'generate'}
         <GenerationProgress
           phase={generationPhase}
@@ -261,6 +305,7 @@
           {currentSection}
           error={generationError}
           {previewMarkdown}
+          onRetry={startGeneration}
         />
       {/if}
     </div>
@@ -269,6 +314,7 @@
         <button
           class="btn btn-secondary"
           onclick={currentStep === 'select-data' ? onCancel : prevStep}
+          disabled={currentStep === 'generate' && generationPhase === 'generating'}
         >
           {currentStep === 'select-data' ? 'Cancel' : 'Back'}
         </button>
@@ -276,9 +322,11 @@
         <button
           class="btn btn-primary"
           onclick={nextStep}
-          disabled={!canProceed() || (currentStep === 'generate' && generationPhase !== 'complete' && generationPhase !== 'error')}
+          disabled={!canProceed() || (currentStep === 'preview' && isPlanningInProgress) || (currentStep === 'generate' && generationPhase !== 'complete' && generationPhase !== 'error')}
         >
-          {#if currentStep === 'generate'}
+          {#if currentStep === 'preview'}
+            {isPlanningInProgress ? 'Creating Plan...' : 'Generate Report'}
+          {:else if currentStep === 'generate'}
             {generationPhase === 'complete' ? 'Use Report' : generationPhase === 'error' ? 'Retry' : 'Generating...'}
           {:else}
             Next
@@ -367,81 +415,6 @@
   .settings-btn:hover {
     color: #60a5fa;
     background: rgba(96, 165, 250, 0.1);
-  }
-
-  .settings-panel {
-    padding: 24px;
-    flex: 1;
-  }
-
-  .settings-header {
-    margin-bottom: 20px;
-  }
-
-  .settings-header h3 {
-    margin: 0 0 4px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #e0e0e0;
-  }
-
-  .settings-hint {
-    font-size: 13px;
-    color: #9ca3af;
-  }
-
-  .settings-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .settings-label {
-    font-size: 13px;
-    font-weight: 500;
-    color: #e0e0e0;
-  }
-
-  .settings-input {
-    width: 100%;
-    padding: 10px 12px;
-    background: #1e1e1e;
-    border: 1px solid #333;
-    border-radius: 6px;
-    color: #e0e0e0;
-    font-size: 14px;
-    transition: border-color 0.2s;
-  }
-
-  .settings-input:focus {
-    outline: none;
-    border-color: #60a5fa;
-  }
-
-  .settings-input::placeholder {
-    color: #6b7280;
-  }
-
-  .settings-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  .settings-note {
-    margin: 8px 0 0;
-    font-size: 12px;
-    color: #6b7280;
-  }
-
-  .settings-note a {
-    color: #60a5fa;
-    text-decoration: none;
-  }
-
-  .settings-note a:hover {
-    text-decoration: underline;
   }
 
   .wizard-steps {

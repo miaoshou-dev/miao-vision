@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ReportPlan, SectionProgress } from '@core/ai'
+  import StreamingMarkdownPreview from './StreamingMarkdownPreview.svelte'
 
   type GenerationPhase = 'planning' | 'generating' | 'complete' | 'error'
 
@@ -9,9 +10,10 @@
     currentSection: SectionProgress | null
     error: string | null
     previewMarkdown: string
+    onRetry?: () => void
   }
 
-  let { phase, plan, currentSection, error, previewMarkdown }: Props = $props()
+  let { phase, plan, currentSection, error, previewMarkdown, onRetry }: Props = $props()
 
   function getPhaseLabel(p: GenerationPhase): string {
     switch (p) {
@@ -53,6 +55,14 @@
   {#if error}
     <div class="error-message">
       <p>{error}</p>
+      {#if onRetry}
+        <button class="retry-btn" onclick={onRetry}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
+          Retry Generation
+        </button>
+      {/if}
     </div>
   {:else if phase === 'planning'}
     <div class="planning-preview">
@@ -103,12 +113,10 @@
   {/if}
 
   {#if previewMarkdown && phase !== 'error'}
-    <div class="preview-section">
-      <h5>Preview</h5>
-      <div class="markdown-preview">
-        <pre>{previewMarkdown.slice(0, 500)}{previewMarkdown.length > 500 ? '...' : ''}</pre>
-      </div>
-    </div>
+    <StreamingMarkdownPreview
+      markdown={previewMarkdown}
+      isStreaming={phase === 'generating'}
+    />
   {/if}
 </div>
 
@@ -181,6 +189,27 @@
     margin: 0;
     color: #ef4444;
     font-size: 14px;
+  }
+
+  .retry-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .retry-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
   }
 
   .planning-preview {
@@ -309,35 +338,5 @@
     background: linear-gradient(90deg, #60a5fa, #a78bfa);
     border-radius: 2px;
     transition: width 0.3s ease;
-  }
-
-  .preview-section {
-    margin-top: 8px;
-  }
-
-  .preview-section h5 {
-    margin: 0 0 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #9ca3af;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .markdown-preview {
-    padding: 12px;
-    background: #1e1e1e;
-    border-radius: 6px;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-
-  .markdown-preview pre {
-    margin: 0;
-    font-size: 12px;
-    color: #9ca3af;
-    white-space: pre-wrap;
-    word-break: break-word;
-    font-family: 'JetBrains Mono', monospace;
   }
 </style>
