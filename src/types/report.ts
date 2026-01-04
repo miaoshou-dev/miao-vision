@@ -69,6 +69,8 @@ export interface ReportMetadata {
   date?: string
   description?: string
   tags?: string[]
+  // Data sources required by this report (for AI-generated reports)
+  dataSources?: string[]
   // Custom variables for template interpolation
   variables?: Record<string, any>
   // Internal: processed content after conditional evaluation

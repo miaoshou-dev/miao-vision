@@ -657,11 +657,21 @@
     return 'unknown'
   }
 
-  function handleReportGeneratorComplete(markdown: string, plan: ReportPlan) {
+  function handleReportGeneratorComplete(markdown: string, plan: ReportPlan, dataSources: DataSourceInfo[]) {
     console.log('📊 AI Report generated:', plan.title)
 
+    // Add data source info to markdown front matter
+    const dataSourceNames = dataSources.map(d => d.name)
+    const frontMatter = `---
+title: ${plan.title}
+dataSources: [${dataSourceNames.join(', ')}]
+---
+
+`
+    const markdownWithMeta = frontMatter + markdown
+
     // Create a new report with the generated content
-    const report = reportStore.createReport(plan.title, markdown)
+    const report = reportStore.createReport(plan.title, markdownWithMeta)
     handleSelectReport(report)
     setTab('report')
     showReportGenerator = false

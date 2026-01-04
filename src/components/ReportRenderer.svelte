@@ -5,6 +5,7 @@
   import { parseMarkdown } from '@core/markdown/parser'
   import { blockRenderer } from '@core/engine/block-renderer'
   import type { InputStore } from '@app/stores/report-inputs'
+  import MissingDataSources from './MissingDataSources.svelte'
 
   interface Props {
     report: Report | null
@@ -21,6 +22,7 @@
   let isRendering = false  // Prevent concurrent rendering
   let parsedCodeBlocks: ParsedCodeBlock[] = []  // Store parsed code blocks for BigValue
   let lastRenderedReportId = $state<string | null>(null)  // Track report ID for change detection
+  let missingDataSources = $state<string[]>([])  // Track missing data sources
 
   // Re-render when report changes or when blocks are updated
   // Wait for contentContainer to be bound before rendering
@@ -86,6 +88,19 @@
       console.log('  ✅ Previous state cleared')
     }
     lastRenderedReportId = report.id
+
+    // Check for missing data sources
+    const requiredSources = report.metadata?.dataSources || []
+    if (requiredSources.length > 0 && tableMapping) {
+      const availableTables = new Set(tableMapping.keys())
+      const missing = requiredSources.filter(src => !availableTables.has(src))
+      missingDataSources = missing
+      if (missing.length > 0) {
+        console.log('⚠️ Missing data sources:', missing)
+      }
+    } else {
+      missingDataSources = []
+    }
 
     isRendering = true
     console.log('📄 renderReport() called for report:', report.id)
@@ -216,6 +231,12 @@
       <p class="hint">Create a new report or select one from the list</p>
     </div>
   {:else}
+    {#if missingDataSources.length > 0}
+      <MissingDataSources
+        missingTables={missingDataSources}
+        onDismiss={() => missingDataSources = []}
+      />
+    {/if}
     <div class="report-content" bind:this={contentContainer}>
       <!-- Render markdown content with embedded placeholders -->
       <!-- Note: HTML is set directly via JavaScript to avoid Svelte sanitization -->

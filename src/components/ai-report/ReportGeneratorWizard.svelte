@@ -16,7 +16,7 @@
 
   interface Props {
     availableSources: DataSourceInfo[]
-    onComplete: (markdown: string, plan: ReportPlan) => void
+    onComplete: (markdown: string, plan: ReportPlan, dataSources: DataSourceInfo[]) => void
     onCancel: () => void
   }
 
@@ -98,7 +98,7 @@
         break
       case 'generate':
         if (finalMarkdown && currentPlan) {
-          onComplete(finalMarkdown, currentPlan)
+          onComplete(finalMarkdown, currentPlan, selectedSources)
         }
         break
     }
