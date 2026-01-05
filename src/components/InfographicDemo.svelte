@@ -765,9 +765,11 @@ Current production status:
     <!-- Item Components -->
     <h2 class="section-title">Item Components (6)</h2>
 
-    <div class="items-showcase">
-      <section class="demo-section item-demo">
-        <h3>BadgeCard</h3>
+    <!-- 1. BadgeCard -->
+    <section class="demo-section">
+      <h3>1. BadgeCard</h3>
+      <p class="component-desc">Card with colored badge header, icon, label, value and description</p>
+      <div class="items-row">
         <Infographic theme={selectedTheme} width={180} height={140} padding={12}>
           <BadgeCard
             label="Revenue"
@@ -789,14 +791,11 @@ Current production status:
             height={116}
           />
         </Infographic>
-      </section>
-
-      <section class="demo-section item-demo">
-        <h3>ValueCard</h3>
-        <Infographic theme={selectedTheme} width={160} height={120} padding={12}>
-          <ValueCard
+        <Infographic theme={selectedTheme} width={180} height={140} padding={12}>
+          <BadgeCard
             label="Users"
             value="158K"
+            desc="Active"
             icon="account-group"
             themeColors={{
               colorPrimary: '#8b5cf6',
@@ -809,19 +808,16 @@ Current production status:
               colorBgElevated: '#2a2a4a',
               isDarkMode: true
             }}
-            width={136}
-            height={96}
+            width={156}
+            height={116}
           />
         </Infographic>
-      </section>
-
-      <section class="demo-section item-demo">
-        <h3>CircularProgress</h3>
-        <Infographic theme={selectedTheme} width={160} height={180} padding={12}>
-          <CircularProgress
-            label="Target"
-            value={85}
-            max={100}
+        <Infographic theme={selectedTheme} width={180} height={140} padding={12}>
+          <BadgeCard
+            label="Growth"
+            value="+45%"
+            desc="YoY"
+            icon="trending-up"
             themeColors={{
               colorPrimary: '#22c55e',
               colorPrimaryBg: '#1a1a2e',
@@ -833,19 +829,63 @@ Current production status:
               colorBgElevated: '#2a2a4a',
               isDarkMode: true
             }}
-            width={136}
-            height={156}
+            width={156}
+            height={116}
           />
         </Infographic>
-      </section>
+      </div>
+    </section>
 
-      <section class="demo-section item-demo">
-        <h3>IconArrowNode</h3>
-        <Infographic theme={selectedTheme} width={160} height={120} padding={12}>
-          <IconArrowNode
-            label="Launch"
-            desc="Go live"
-            icon="rocket"
+    <!-- 2. ValueCard -->
+    <section class="demo-section">
+      <h3>2. ValueCard</h3>
+      <p class="component-desc">Compact card with icon, label, and prominent value display</p>
+      <div class="items-row">
+        <Infographic theme={selectedTheme} width={160} height={100} padding={12}>
+          <ValueCard
+            label="Orders"
+            value="1,234"
+            icon="cart"
+            themeColors={{
+              colorPrimary: '#f59e0b',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={136}
+            height={76}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={160} height={100} padding={12}>
+          <ValueCard
+            label="Sessions"
+            value="89.2K"
+            icon="web"
+            themeColors={{
+              colorPrimary: '#3b82f6',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={136}
+            height={76}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={160} height={100} padding={12}>
+          <ValueCard
+            label="Rating"
+            value="4.8"
+            icon="star"
             themeColors={{
               colorPrimary: '#ec4899',
               colorPrimaryBg: '#1a1a2e',
@@ -858,20 +898,200 @@ Current production status:
               isDarkMode: true
             }}
             width={136}
-            height={96}
+            height={76}
           />
         </Infographic>
-      </section>
+      </div>
+    </section>
 
-      <section class="demo-section item-demo">
-        <h3>ImageCard</h3>
-        <Infographic theme={selectedTheme} width={180} height={160} padding={12}>
-          <ImageCard
-            src="https://via.placeholder.com/150x100/6366f1/ffffff?text=Image"
-            label="Product"
-            desc="Featured item"
+    <!-- 3. CircularProgress -->
+    <section class="demo-section">
+      <h3>3. CircularProgress</h3>
+      <p class="component-desc">Circular progress indicator with percentage and label</p>
+      <div class="items-row">
+        <Infographic theme={selectedTheme} width={140} height={160} padding={12}>
+          <CircularProgress
+            label="CPU"
+            value={65}
+            max={100}
+            themeColors={{
+              colorPrimary: '#22c55e',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={116}
+            height={136}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={140} height={160} padding={12}>
+          <CircularProgress
+            label="Memory"
+            value={82}
+            max={100}
             themeColors={{
               colorPrimary: '#f59e0b',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={116}
+            height={136}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={140} height={160} padding={12}>
+          <CircularProgress
+            label="Disk"
+            value={45}
+            max={100}
+            themeColors={{
+              colorPrimary: '#3b82f6',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={116}
+            height={136}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={140} height={160} padding={12}>
+          <CircularProgress
+            label="Network"
+            value={91}
+            max={100}
+            themeColors={{
+              colorPrimary: '#ef4444',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={116}
+            height={136}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <!-- 4. IconArrowNode -->
+    <section class="demo-section">
+      <h3>4. IconArrowNode</h3>
+      <p class="component-desc">Node with icon and description, ideal for process flows</p>
+      <div class="items-row">
+        <Infographic theme={selectedTheme} width={140} height={100} padding={12}>
+          <IconArrowNode
+            label="Research"
+            desc="Analysis"
+            icon="lightbulb"
+            themeColors={{
+              colorPrimary: '#6366f1',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={116}
+            height={76}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={140} height={100} padding={12}>
+          <IconArrowNode
+            label="Design"
+            desc="Mockups"
+            icon="palette"
+            themeColors={{
+              colorPrimary: '#8b5cf6',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={116}
+            height={76}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={140} height={100} padding={12}>
+          <IconArrowNode
+            label="Develop"
+            desc="Coding"
+            icon="laptop"
+            themeColors={{
+              colorPrimary: '#22c55e',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={116}
+            height={76}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={140} height={100} padding={12}>
+          <IconArrowNode
+            label="Launch"
+            desc="Deploy"
+            icon="rocket"
+            themeColors={{
+              colorPrimary: '#ec4899',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={116}
+            height={76}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <!-- 5. ImageCard -->
+    <section class="demo-section">
+      <h3>5. ImageCard</h3>
+      <p class="component-desc">Card with image, supporting different label positions and overlays</p>
+      <div class="items-row">
+        <Infographic theme={selectedTheme} width={180} height={160} padding={12}>
+          <ImageCard
+            src="https://via.placeholder.com/150x100/6366f1/ffffff?text=Product"
+            label="Product A"
+            desc="Featured"
+            themeColors={{
+              colorPrimary: '#6366f1',
               colorPrimaryBg: '#1a1a2e',
               colorPrimaryText: '#fff',
               colorText: '#fff',
@@ -886,18 +1106,63 @@ Current production status:
             labelPosition="bottom"
           />
         </Infographic>
-      </section>
+        <Infographic theme={selectedTheme} width={180} height={160} padding={12}>
+          <ImageCard
+            src="https://via.placeholder.com/150x100/22c55e/ffffff?text=Gallery"
+            label="Photo"
+            themeColors={{
+              colorPrimary: '#22c55e',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={156}
+            height={136}
+            labelPosition="overlay-bottom"
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={180} height={160} padding={12}>
+          <ImageCard
+            src="https://via.placeholder.com/150x100/ec4899/ffffff?text=Banner"
+            label="Banner"
+            desc="Promo"
+            themeColors={{
+              colorPrimary: '#ec4899',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={156}
+            height={136}
+            labelPosition="top"
+          />
+        </Infographic>
+      </div>
+    </section>
 
-      <section class="demo-section item-demo">
-        <h3>StatCard</h3>
-        <Infographic theme={selectedTheme} width={200} height={120} padding={12}>
+    <!-- 6. StatCard -->
+    <section class="demo-section">
+      <h3>6. StatCard</h3>
+      <p class="component-desc">KPI card with value, trend indicator, and comparison metrics</p>
+      <div class="items-row">
+        <Infographic theme={selectedTheme} width={200} height={110} padding={12}>
           <StatCard
             label="Revenue"
             value="$1.2M"
             trend={12.5}
             trendLabel="vs last month"
             themeColors={{
-              colorPrimary: '#10b981',
+              colorPrimary: '#22c55e',
               colorPrimaryBg: '#1a1a2e',
               colorPrimaryText: '#fff',
               colorText: '#fff',
@@ -908,11 +1173,54 @@ Current production status:
               isDarkMode: true
             }}
             width={176}
-            height={96}
+            height={86}
           />
         </Infographic>
-      </section>
-    </div>
+        <Infographic theme={selectedTheme} width={200} height={110} padding={12}>
+          <StatCard
+            label="Users"
+            value="45.2K"
+            trend={-3.2}
+            trendLabel="this week"
+            themeColors={{
+              colorPrimary: '#ef4444',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={176}
+            height={86}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={200} height={110} padding={12}>
+          <StatCard
+            label="Conversion"
+            value="3.8%"
+            trend={0.5}
+            trendLabel="vs average"
+            icon="chart-line"
+            themeColors={{
+              colorPrimary: '#3b82f6',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={176}
+            height={86}
+          />
+        </Infographic>
+      </div>
+    </section>
 
   {:else}
     <!-- ============================================== -->
@@ -1213,6 +1521,18 @@ Current production status:
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     overflow-x: auto;
+  }
+
+  /* Items Row - horizontal display of multiple item variations */
+  .items-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(26, 26, 46, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    align-items: flex-start;
   }
 
   /* Items Showcase */
