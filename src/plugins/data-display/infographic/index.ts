@@ -48,6 +48,7 @@ export { default as Infographic } from './Infographic.svelte'
 // Structures
 export {
   ListRowHorizontal,
+  ListRowVertical,
   ListZigzag,
   ListGrid,
   ListPyramid,
@@ -55,7 +56,10 @@ export {
   HierarchyTree,
   CompareSwot,
   ListSector,
-  SequenceSnake
+  SequenceSnake,
+  CycleRadial,
+  CompareQuadrant,
+  FlowLinear
 } from './structures'
 
 // Structure types
@@ -63,6 +67,9 @@ export type { TreeNode, TreeLayout, NodeLayout } from './structures/hierarchy-tr
 export type { SwotData, SwotItem, SwotQuadrant } from './structures/compare-swot'
 export type { SectorItem, SectorLayout } from './structures/list-sector'
 export type { SnakeItem, SnakeItemLayout } from './structures/sequence-snake'
+export type { CycleItem, CycleRadialProps } from './structures/cycle-radial'
+export type { QuadrantData, QuadrantItem, CompareQuadrantProps } from './structures/compare-quadrant'
+export type { FlowStep, FlowLinearProps } from './structures/flow-linear'
 
 // Items
 export {

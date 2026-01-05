@@ -8,6 +8,7 @@
   import {
     Infographic,
     ListRowHorizontal,
+    ListRowVertical,
     ListGrid,
     ListPyramid,
     SequenceTimeline,
@@ -15,6 +16,9 @@
     CompareSwot,
     ListSector,
     SequenceSnake,
+    CycleRadial,
+    CompareQuadrant,
+    FlowLinear,
     IconArrowNode,
     BadgeCard,
     ValueCard,
@@ -26,7 +30,15 @@
     PALETTES,
     getPaletteNames
   } from '@plugins/data-display/infographic'
-  import type { TreeNode, SwotData, SectorItem, SnakeItem } from '@plugins/data-display/infographic'
+  import type {
+    TreeNode,
+    SwotData,
+    SectorItem,
+    SnakeItem,
+    CycleItem,
+    QuadrantData,
+    FlowStep
+  } from '@plugins/data-display/infographic'
 
   // =====================================================
   // Sample Data: Article → Infographic Conversion Example
@@ -227,6 +239,43 @@ Current production status:
     { id: '4', label: 'Test', desc: 'QA process' },
     { id: '5', label: 'Deploy', desc: 'Release' },
     { id: '6', label: 'Monitor', desc: 'Observe' }
+  ]
+
+  // CycleRadial - PDCA cycle
+  const pdcaCycle: CycleItem[] = [
+    { id: 'plan', label: 'Plan', desc: 'Define goals' },
+    { id: 'do', label: 'Do', desc: 'Execute' },
+    { id: 'check', label: 'Check', desc: 'Evaluate' },
+    { id: 'act', label: 'Act', desc: 'Improve' }
+  ]
+
+  // CompareQuadrant - Eisenhower matrix
+  const eisenhowerMatrix: QuadrantData = {
+    topLeft: [
+      { id: 'u1', label: 'Crisis handling' },
+      { id: 'u2', label: 'Deadlines' }
+    ],
+    topRight: [
+      { id: 'i1', label: 'Planning' },
+      { id: 'i2', label: 'Learning' },
+      { id: 'i3', label: 'Relationships' }
+    ],
+    bottomLeft: [
+      { id: 'd1', label: 'Interruptions' },
+      { id: 'd2', label: 'Some meetings' }
+    ],
+    bottomRight: [
+      { id: 'e1', label: 'Time wasters' },
+      { id: 'e2', label: 'Busy work' }
+    ]
+  }
+
+  // FlowLinear - Simple workflow
+  const approvalFlow: FlowStep[] = [
+    { id: 's1', label: 'Submit', desc: 'Create request' },
+    { id: 's2', label: 'Review', desc: 'Manager review' },
+    { id: 's3', label: 'Approve', desc: 'Final decision' },
+    { id: 's4', label: 'Complete', desc: 'Process done' }
   ]
 
   let selectedTheme = $state('dark-vibrant')
@@ -549,7 +598,7 @@ Current production status:
     <!-- ============================================== -->
 
     <!-- Structures -->
-    <h2 class="section-title">Structure Components (9)</h2>
+    <h2 class="section-title">Structure Components (13)</h2>
 
     <section class="demo-section">
       <h3>1. ListRowHorizontal</h3>
@@ -737,6 +786,95 @@ Current production status:
             itemsPerRow={3}
             showConnections={true}
             showNumbers={true}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>10. CycleRadial</h3>
+      <p class="component-desc">Circular cycle diagram for PDCA, life cycles, and process loops</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={350} height={350} padding={16}>
+          <CycleRadial
+            items={pdcaCycle}
+            width={318}
+            height={318}
+            showArrows={true}
+            showCenter={true}
+            centerLabel="PDCA"
+            centerDesc="Cycle"
+            nodeSize={70}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>11. CompareQuadrant</h3>
+      <p class="component-desc">2x2 matrix for Eisenhower, BCG, or risk matrices</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={500} height={400} padding={16}>
+          <CompareQuadrant
+            data={eisenhowerMatrix}
+            width={468}
+            height={368}
+            showAxes={true}
+            showQuadrantColors={true}
+            axisLabels={{
+              xLeft: 'Not Urgent',
+              xRight: 'Urgent',
+              yTop: 'Important',
+              yBottom: 'Not Important'
+            }}
+            quadrantLabels={{
+              topLeft: 'Do First',
+              topRight: 'Schedule',
+              bottomLeft: 'Delegate',
+              bottomRight: 'Eliminate'
+            }}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>12. FlowLinear</h3>
+      <p class="component-desc">Linear process flow with numbered steps and arrows</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={800} height={120} padding={16}>
+          <FlowLinear
+            steps={approvalFlow}
+            width={768}
+            height={88}
+            direction="horizontal"
+            showNumbers={true}
+            showArrows={true}
+            arrowStyle="chevron"
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>13. ListRowVertical</h3>
+      <p class="component-desc">Vertical stack layout with optional arrows</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={200} height={350} padding={16}>
+          <ListRowVertical
+            items={[
+              { label: 'Step 1', value: 'Initialize' },
+              { label: 'Step 2', value: 'Process' },
+              { label: 'Step 3', value: 'Validate' },
+              { label: 'Step 4', value: 'Complete' }
+            ]}
+            width={168}
+            height={318}
+            showArrows={true}
+            arrowDirection="down"
             palette={selectedPalette}
           />
         </Infographic>
