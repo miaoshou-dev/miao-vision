@@ -89,26 +89,26 @@
   const iconSize = 20
 
   // Trend calculations
-  const trendDirection = $derived<TrendDirection>(() => {
+  const trendDirection = $derived.by<TrendDirection>(() => {
     if (trend === undefined || trend === 0) return 'neutral'
     return trend > 0 ? 'up' : 'down'
   })
 
-  const trendColor = $derived(() => {
-    const dir = trendDirection()
+  const trendColor = $derived.by(() => {
+    const dir = trendDirection
     if (dir === 'neutral') return themeColors.colorTextSecondary
     const isPositive = invertTrend ? dir === 'down' : dir === 'up'
     return isPositive ? '#22c55e' : '#ef4444' // Green / Red
   })
 
-  const trendIcon = $derived(() => {
-    const dir = trendDirection()
+  const trendIconPath = $derived.by(() => {
+    const dir = trendDirection
     if (dir === 'up') return getIconPath('trending-up')
     if (dir === 'down') return getIconPath('trending-down')
     return getIconPath('minus')
   })
 
-  const formattedTrend = $derived(() => {
+  const formattedTrend = $derived.by(() => {
     if (trend === undefined) return ''
     const absValue = Math.abs(trend)
     const sign = trend >= 0 ? '+' : ''
@@ -207,25 +207,25 @@
   {#if trend !== undefined}
     <g transform="translate({contentX}, {trendY - 10})">
       <!-- Trend icon -->
-      {#if trendIcon}
+      {#if trendIconPath}
         <svg viewBox="0 0 24 24" width="14" height="14">
-          <path d={trendIcon} fill={trendColor()} />
+          <path d={trendIconPath} fill={trendColor} />
         </svg>
       {/if}
       <!-- Trend value -->
       <text
         x="18"
         y="11"
-        fill={trendColor()}
+        fill={trendColor}
         font-size="12"
         font-weight="600"
       >
-        {formattedTrend()}
+        {formattedTrend}
       </text>
       <!-- Trend label -->
       {#if trendLabel}
         <text
-          x={18 + formattedTrend().length * 7}
+          x={18 + formattedTrend.length * 7}
           y="11"
           fill={themeColors.colorTextSecondary}
           font-size="10"

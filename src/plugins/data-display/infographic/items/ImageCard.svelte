@@ -94,7 +94,7 @@
   )
 
   // Label area position
-  const labelAreaY = $derived(() => {
+  const labelAreaY = $derived.by(() => {
     switch (labelPosition) {
       case 'top':
         return 0
@@ -109,7 +109,7 @@
   })
 
   // Image preserveAspectRatio based on fit
-  const aspectRatio = $derived(() => {
+  const aspectRatio = $derived.by(() => {
     switch (fit) {
       case 'contain':
         return 'xMidYMid meet'
@@ -166,7 +166,7 @@
     y={imageY}
     {width}
     height={imageHeight}
-    preserveAspectRatio={aspectRatio()}
+    preserveAspectRatio={aspectRatio}
     clip-path="url(#{clipId})"
   >
     <title>{alt || label || 'Image'}</title>
@@ -176,7 +176,7 @@
   {#if (label || desc) && !isOverlay}
     <rect
       x="0"
-      y={labelAreaY()}
+      y={labelAreaY}
       {width}
       height={labelHeight}
       fill={themeColors.colorBgElevated}
@@ -184,7 +184,7 @@
     {#if label}
       <text
         x={width / 2}
-        y={labelAreaY() + (desc ? 14 : labelHeight / 2)}
+        y={labelAreaY + (desc ? 14 : labelHeight / 2)}
         text-anchor="middle"
         dominant-baseline="middle"
         fill={themeColors.colorText}
@@ -197,7 +197,7 @@
     {#if desc}
       <text
         x={width / 2}
-        y={labelAreaY() + (label ? 28 : labelHeight / 2)}
+        y={labelAreaY + (label ? 28 : labelHeight / 2)}
         text-anchor="middle"
         dominant-baseline="middle"
         fill={themeColors.colorTextSecondary}
@@ -212,7 +212,7 @@
   {#if (label || desc) && isOverlay}
     <rect
       x="0"
-      y={labelAreaY()}
+      y={labelAreaY}
       {width}
       height={labelHeight}
       fill={themeColors.colorBg}
@@ -221,7 +221,7 @@
     {#if label}
       <text
         x={width / 2}
-        y={labelAreaY() + (desc ? 14 : labelHeight / 2)}
+        y={labelAreaY + (desc ? 14 : labelHeight / 2)}
         text-anchor="middle"
         dominant-baseline="middle"
         fill={themeColors.colorWhite}
@@ -234,7 +234,7 @@
     {#if desc}
       <text
         x={width / 2}
-        y={labelAreaY() + (label ? 28 : labelHeight / 2)}
+        y={labelAreaY + (label ? 28 : labelHeight / 2)}
         text-anchor="middle"
         dominant-baseline="middle"
         fill={themeColors.colorTextSecondary}

@@ -47,6 +47,7 @@
 
   const iconPath = $derived(getIconPath(icon || 'circle'))
   const badgeFill = $derived(gradientId ? gradientUrl(gradientId) : themeColors.colorPrimary)
+  const clipId = $derived(`badge-clip-${Math.random().toString(36).slice(2, 8)}`)
 
   // Layout calculations
   const badgeHeight = $derived(height * badgeRatio)
@@ -73,7 +74,7 @@
   />
 
   <!-- Badge header -->
-  <clipPath id="badge-clip-{gradientId || label}">
+  <clipPath id={clipId}>
     <rect
       x="0"
       y="0"
@@ -95,7 +96,7 @@
     {width}
     height={badgeHeight}
     fill={badgeFill}
-    clip-path="url(#badge-clip-{gradientId || label})"
+    clip-path="url(#{clipId})"
   />
 
   <!-- Icon in badge -->

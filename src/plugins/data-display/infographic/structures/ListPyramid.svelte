@@ -2,8 +2,8 @@
   /**
    * ListPyramid Structure
    *
-   * Renders items in a pyramid/triangle formation.
-   * First row has 1 item, second has 2, third has 3, etc.
+   * Renders items in a true pyramid/triangle shape with trapezoid layers.
+   * Each layer is a trapezoid that forms a visually cohesive pyramid.
    * Great for hierarchy, ranking, or funnel visualizations.
    */
   import { getContext } from 'svelte'
@@ -39,35 +39,24 @@
     width?: number
     /** Available height */
     height?: number
-    /** Gap between items */
+    /** Gap between layers */
     gap?: number
-    /** Row gap */
-    rowGap?: number
-    /** Direction: 'up' (1 at top) or 'down' (1 at bottom) */
+    /** Direction: 'up' (narrow at top) or 'down' (narrow at bottom) */
     direction?: 'up' | 'down'
     /** Palette override */
     palette?: Palette
-    /** Item component snippet */
-    item?: import('svelte').Snippet<[{
-      data: ItemData
-      index: number
-      themeColors: ThemeColors
-      width: number
-      height: number
-      gradientId?: string
-      rank: number
-    }]>
+    /** Top width ratio (0-1, how narrow the top is relative to bottom) */
+    topWidthRatio?: number
   }
 
   let {
     items,
-    width = 752,
+    width = 600,
     height = 300,
-    gap = 12,
-    rowGap = 16,
+    gap = 4,
     direction = 'up',
     palette,
-    item: itemSnippet
+    topWidthRatio = 0.2
   }: Props = $props()
 
   const ctx = getContext<InfographicContext>('infographic-theme')
@@ -75,43 +64,15 @@
   // Generate a unique ID for this component instance
   const instanceId = Math.random().toString(36).slice(2, 8)
 
-  // Calculate pyramid structure
-  // For N items: row 1 = 1, row 2 = 2, row 3 = 3, etc.
-  // Total items = 1+2+3+...+n = n*(n+1)/2
-  // So n = (-1 + sqrt(1 + 8*total)) / 2
-  const rowStructure = $derived.by(() => {
-    const itemCount = items.length
-    const rows: number[][] = []
-    let itemIndex = 0
-
-    // Calculate how many complete rows we can have
-    let row = 1
-    while (itemIndex < itemCount) {
-      const itemsInRow = Math.min(row, itemCount - itemIndex)
-      const indices: number[] = []
-      for (let i = 0; i < itemsInRow; i++) {
-        indices.push(itemIndex++)
-      }
-      rows.push(indices)
-      row++
-    }
-
-    // Reverse for 'down' direction (wide at top, narrow at bottom)
-    if (direction === 'down') {
-      rows.reverse()
-    }
-
-    return rows
-  })
-
-  const numRows = $derived(rowStructure.length)
-  const maxRowItems = $derived(Math.max(...rowStructure.map(r => r.length)))
-  const itemHeight = $derived(Math.floor((height - (numRows - 1) * rowGap) / numRows))
+  // Order items based on direction
+  const orderedItems = $derived(direction === 'up' ? items : [...items].reverse())
+  const numLayers = $derived(orderedItems.length)
+  const layerHeight = $derived(numLayers > 0 ? (height - (numLayers - 1) * gap) / numLayers : 0)
 
   // Generate theme colors and gradients for each item
   const itemConfigs = $derived.by(() => {
-    return items.map((itemData, index) => {
-      const color = itemData.color || getPaletteColor(palette || ctx?.config?.palette, index, items.length)
+    return orderedItems.map((itemData, index) => {
+      const color = itemData.color || getPaletteColor(palette || ctx?.config?.palette, index, orderedItems.length)
       const themeColors = generateItemThemeColors(color, ctx?.colors || {
         colorPrimary: color,
         colorPrimaryBg: '#1a1a2e',
@@ -127,6 +88,9 @@
       const gradientId = ctx?.gradientsEnabled ? `grad-${instanceId}-${index}` : undefined
       const gradientDef = gradientId ? createGradientDef(gradientId, color, ctx?.gradientConfig) : undefined
 
+      // Rank based on original order (direction='up': first item is rank 1 at top)
+      const rank = direction === 'up' ? index + 1 : numLayers - index
+
       return {
         data: itemData,
         index,
@@ -134,26 +98,55 @@
         color,
         gradientId,
         gradientDef,
-        rank: itemData.rank || index + 1
+        rank
       }
     })
   })
 
-  // Calculate position for an item in the pyramid
-  function getItemPosition(rowIndex: number, colIndex: number, itemsInRow: number) {
-    // Calculate item width for this row
-    const totalGapWidth = (itemsInRow - 1) * gap
-    const maxItemWidth = (width - totalGapWidth) / maxRowItems
-    const rowItemWidth = maxItemWidth
+  /**
+   * Calculate trapezoid points for a pyramid layer
+   * Returns SVG path points for a trapezoid shape
+   */
+  function getTrapezoidPath(layerIndex: number): string {
+    const totalLayers = numLayers
+    const centerX = width / 2
 
-    // Center the row
-    const rowWidth = itemsInRow * rowItemWidth + totalGapWidth
-    const startX = (width - rowWidth) / 2
+    // Calculate widths based on layer position
+    // Top layer is narrowest, bottom is widest
+    const topRatio = topWidthRatio + (1 - topWidthRatio) * (layerIndex / totalLayers)
+    const bottomRatio = topWidthRatio + (1 - topWidthRatio) * ((layerIndex + 1) / totalLayers)
 
-    const x = startX + colIndex * (rowItemWidth + gap)
-    const y = rowIndex * (itemHeight + rowGap)
+    const topWidth = width * topRatio
+    const bottomWidth = width * bottomRatio
 
-    return { x, y, itemWidth: rowItemWidth }
+    const y1 = layerIndex * (layerHeight + gap)
+    const y2 = y1 + layerHeight
+
+    // Trapezoid corners
+    const topLeft = centerX - topWidth / 2
+    const topRight = centerX + topWidth / 2
+    const bottomLeft = centerX - bottomWidth / 2
+    const bottomRight = centerX + bottomWidth / 2
+
+    return `M ${topLeft} ${y1} L ${topRight} ${y1} L ${bottomRight} ${y2} L ${bottomLeft} ${y2} Z`
+  }
+
+  /**
+   * Get center position for text in a trapezoid layer
+   */
+  function getLayerCenter(layerIndex: number) {
+    const y = layerIndex * (layerHeight + gap) + layerHeight / 2
+    return { x: width / 2, y }
+  }
+
+  /**
+   * Get the average width of a layer (for text sizing)
+   */
+  function getLayerWidth(layerIndex: number): number {
+    const totalLayers = numLayers
+    const topRatio = topWidthRatio + (1 - topWidthRatio) * (layerIndex / totalLayers)
+    const bottomRatio = topWidthRatio + (1 - topWidthRatio) * ((layerIndex + 1) / totalLayers)
+    return width * (topRatio + bottomRatio) / 2
   }
 </script>
 
@@ -167,78 +160,60 @@
     {/each}
   </defs>
 
-  {#each rowStructure as rowIndices, rowIndex}
-    {#each rowIndices as itemIndex, colIndex}
-      {@const config = itemConfigs[itemIndex]}
-      {@const pos = getItemPosition(rowIndex, colIndex, rowIndices.length)}
-      <g transform="translate({pos.x}, {pos.y})">
-        {#if itemSnippet}
-          {@render itemSnippet({
-            data: config.data,
-            index: config.index,
-            themeColors: config.themeColors,
-            width: pos.itemWidth,
-            height: itemHeight,
-            gradientId: config.gradientId,
-            rank: config.rank
-          })}
-        {:else}
-          <!-- Default item rendering with rank badge -->
-          <rect
-            x="0"
-            y="0"
-            width={pos.itemWidth}
-            height={itemHeight}
-            rx="8"
-            fill={config.gradientId ? `url(#${config.gradientId})` : config.color}
-          />
-          <!-- Rank badge -->
-          <circle
-            cx="20"
-            cy="20"
-            r="14"
-            fill={config.themeColors.colorPrimaryBg}
-            stroke={config.themeColors.colorWhite}
-            stroke-width="2"
-          />
-          <text
-            x="20"
-            y="20"
-            text-anchor="middle"
-            dominant-baseline="middle"
-            fill={config.themeColors.colorWhite}
-            font-size="12"
-            font-weight="700"
-          >
-            {config.rank}
-          </text>
-          <!-- Label -->
-          <text
-            x={pos.itemWidth / 2}
-            y={itemHeight / 2}
-            text-anchor="middle"
-            dominant-baseline="middle"
-            fill={config.themeColors.colorWhite}
-            font-size="14"
-            font-weight="500"
-          >
-            {config.data.label}
-          </text>
-          {#if config.data.value !== undefined}
-            <text
-              x={pos.itemWidth / 2}
-              y={itemHeight / 2 + 18}
-              text-anchor="middle"
-              dominant-baseline="middle"
-              fill={config.themeColors.colorTextSecondary}
-              font-size="18"
-              font-weight="600"
-            >
-              {config.data.value}
-            </text>
-          {/if}
-        {/if}
-      </g>
-    {/each}
+  <!-- Render each layer as a trapezoid -->
+  {#each itemConfigs as config, layerIndex}
+    {@const center = getLayerCenter(layerIndex)}
+    {@const layerW = getLayerWidth(layerIndex)}
+
+    <!-- Trapezoid shape -->
+    <path
+      d={getTrapezoidPath(layerIndex)}
+      fill={config.gradientId ? `url(#${config.gradientId})` : config.color}
+      stroke={config.themeColors.colorBgElevated}
+      stroke-width="1"
+    />
+
+    <!-- Label -->
+    <text
+      x={center.x}
+      y={center.y - (config.data.value !== undefined ? 8 : 0)}
+      text-anchor="middle"
+      dominant-baseline="middle"
+      fill={config.themeColors.colorWhite}
+      font-size={Math.min(16, layerW / 10)}
+      font-weight="600"
+    >
+      {config.data.label}
+    </text>
+
+    <!-- Value (if provided) -->
+    {#if config.data.value !== undefined}
+      <text
+        x={center.x}
+        y={center.y + 12}
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill={config.themeColors.colorTextSecondary}
+        font-size={Math.min(14, layerW / 12)}
+        font-weight="500"
+      >
+        {config.data.value}
+      </text>
+    {/if}
+
+    <!-- Description (if provided, and layer is wide enough) -->
+    {#if config.data.desc && layerW > 150}
+      <text
+        x={center.x}
+        y={center.y + (config.data.value !== undefined ? 28 : 16)}
+        text-anchor="middle"
+        dominant-baseline="middle"
+        fill={config.themeColors.colorTextSecondary}
+        font-size={Math.min(11, layerW / 15)}
+        opacity="0.7"
+      >
+        {config.data.desc}
+      </text>
+    {/if}
   {/each}
 </g>

@@ -387,26 +387,14 @@ Current production status:
         <section class="demo-section">
           <h4>GC Algorithm Ranking</h4>
           <div class="infographic-wrapper">
-            <Infographic theme={selectedTheme} width={600} height={220} padding={16}>
+            <Infographic theme={selectedTheme} width={500} height={220} padding={16}>
               <ListPyramid
                 items={gcComparison}
-                width={568}
+                width={468}
                 height={188}
                 direction="up"
                 palette={selectedPalette}
-              >
-                {#snippet item({ data, themeColors, width, height, gradientId, rank })}
-                  <BadgeCard
-                    label={data.label}
-                    value={String(data.value ?? '')}
-                    desc={data.desc}
-                    {themeColors}
-                    {width}
-                    {height}
-                    {gradientId}
-                  />
-                {/snippet}
-              </ListPyramid>
+              />
             </Infographic>
           </div>
         </section>
@@ -538,28 +526,16 @@ Current production status:
 
         <!-- Revenue Pyramid -->
         <section class="demo-section">
-          <h4>Revenue by Tier (ListPyramid + BadgeCard)</h4>
+          <h4>Revenue by Tier (ListPyramid)</h4>
           <div class="infographic-wrapper">
-            <Infographic theme={selectedTheme} width={700} height={280} padding={16}>
+            <Infographic theme={selectedTheme} width={500} height={280} padding={16}>
               <ListPyramid
                 items={rankingItems}
-                width={668}
+                width={468}
                 height={248}
                 direction="up"
                 palette={selectedPalette}
-              >
-                {#snippet item({ data, themeColors, width, height, gradientId, rank })}
-                  <BadgeCard
-                    label={data.label}
-                    value={String(data.value ?? '')}
-                    desc={`Rank #${rank}`}
-                    {themeColors}
-                    {width}
-                    {height}
-                    {gradientId}
-                  />
-                {/snippet}
-              </ListPyramid>
+              />
             </Infographic>
           </div>
         </section>
@@ -634,13 +610,13 @@ Current production status:
 
     <section class="demo-section">
       <h3>3. ListPyramid</h3>
-      <p class="component-desc">Pyramid/triangle formation for hierarchy and ranking</p>
+      <p class="component-desc">True pyramid shape with trapezoid layers for hierarchy and ranking</p>
       <div class="infographic-wrapper">
-        <Infographic theme={selectedTheme} width={600} height={250} padding={16}>
+        <Infographic theme={selectedTheme} width={450} height={280} padding={16}>
           <ListPyramid
-            items={rankingItems.slice(0, 3)}
-            width={568}
-            height={218}
+            items={rankingItems}
+            width={418}
+            height={248}
             direction="up"
             palette={selectedPalette}
           />
