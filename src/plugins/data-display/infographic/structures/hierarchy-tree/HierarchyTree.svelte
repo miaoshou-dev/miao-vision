@@ -111,14 +111,19 @@
       )
   })
 
-  // Calculate view box to fit all nodes with padding
-  const viewBox = $derived.by(() => {
-    const padding = 20
+  // Calculate bounds and centering transform
+  const treeBounds = $derived.by(() => {
+    const padding = 10
     const minX = Math.min(...treeLayout.nodes.map((n) => n.x - n.width / 2)) - padding
     const minY = Math.min(...treeLayout.nodes.map((n) => n.y - n.height / 2)) - padding
     const maxX = Math.max(...treeLayout.nodes.map((n) => n.x + n.width / 2)) + padding
     const maxY = Math.max(...treeLayout.nodes.map((n) => n.y + n.height / 2)) + padding
-    return `${minX} ${minY} ${maxX - minX} ${maxY - minY}`
+    const contentWidth = maxX - minX
+    const contentHeight = maxY - minY
+    // Center the tree within the given width/height
+    const translateX = (width - contentWidth) / 2 - minX
+    const translateY = (height - contentHeight) / 2 - minY
+    return { minX, minY, maxX, maxY, contentWidth, contentHeight, translateX, translateY }
   })
 
   // Check if node is a leaf
@@ -127,7 +132,7 @@
   }
 </script>
 
-<g class="hierarchy-tree">
+<g class="hierarchy-tree" transform="translate({treeBounds.translateX}, {treeBounds.translateY})">
   <!-- Gradient definitions -->
   <defs>
     {#each gradientDefs as gradDef}
@@ -168,6 +173,15 @@
           })}
         {:else}
           <!-- Default node rendering -->
+          {@const hasDesc = nodeLayout.node.desc && nodeLayout.height >= 50}
+          {@const labelY = hasDesc ? nodeLayout.height / 2 - 8 : nodeLayout.height / 2}
+          {@const maxChars = Math.floor(nodeLayout.width / 8)}
+          {@const truncatedLabel = nodeLayout.node.label.length > maxChars
+            ? nodeLayout.node.label.slice(0, maxChars - 1) + '…'
+            : nodeLayout.node.label}
+          {@const truncatedDesc = nodeLayout.node.desc && nodeLayout.node.desc.length > maxChars
+            ? nodeLayout.node.desc.slice(0, maxChars - 1) + '…'
+            : nodeLayout.node.desc}
           <rect
             x="0"
             y="0"
@@ -180,25 +194,25 @@
           />
           <text
             x={nodeLayout.width / 2}
-            y={nodeLayout.height / 2 - 6}
+            y={labelY}
             text-anchor="middle"
             dominant-baseline="middle"
             fill={nodeLayout.themeColors.colorWhite}
-            font-size="12"
+            font-size={Math.min(14, nodeLayout.width / 8)}
             font-weight="600"
           >
-            {nodeLayout.node.label}
+            {truncatedLabel}
           </text>
-          {#if nodeLayout.node.desc}
+          {#if hasDesc}
             <text
               x={nodeLayout.width / 2}
               y={nodeLayout.height / 2 + 10}
               text-anchor="middle"
               dominant-baseline="middle"
               fill={nodeLayout.themeColors.colorTextSecondary}
-              font-size="10"
+              font-size={Math.min(11, nodeLayout.width / 10)}
             >
-              {nodeLayout.node.desc}
+              {truncatedDesc}
             </text>
           {/if}
         {/if}

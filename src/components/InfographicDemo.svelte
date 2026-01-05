@@ -148,9 +148,10 @@ Current production status:
 
   // GC comparison
   const gcComparison = [
-    { label: 'G1GC', value: '12ms', rank: 2, desc: '98.5% throughput' },
     { label: 'ZGC', value: '2ms', rank: 1, desc: '97.8% throughput' },
-    { label: 'Shenandoah', value: '3ms', rank: 3, desc: '97.2% throughput' }
+    { label: 'G1GC', value: '12ms', rank: 2, desc: '98.5% throughput' },
+    { label: 'Shenandoah', value: '3ms', rank: 3, desc: '97.2% throughput' },
+    { label: 'ParallelGC', value: '85ms', rank: 4, desc: '99.1% throughput' }
   ]
 
   // =====================================================
@@ -387,11 +388,11 @@ Current production status:
         <section class="demo-section">
           <h4>GC Algorithm Ranking</h4>
           <div class="infographic-wrapper">
-            <Infographic theme={selectedTheme} width={500} height={220} padding={16}>
+            <Infographic theme={selectedTheme} width={500} height={320} padding={16}>
               <ListPyramid
                 items={gcComparison}
                 width={468}
-                height={188}
+                height={288}
                 direction="up"
                 palette={selectedPalette}
               />
@@ -528,11 +529,11 @@ Current production status:
         <section class="demo-section">
           <h4>Revenue by Tier (ListPyramid)</h4>
           <div class="infographic-wrapper">
-            <Infographic theme={selectedTheme} width={500} height={280} padding={16}>
+            <Infographic theme={selectedTheme} width={500} height={320} padding={16}>
               <ListPyramid
                 items={rankingItems}
                 width={468}
-                height={248}
+                height={288}
                 direction="up"
                 palette={selectedPalette}
               />
@@ -612,11 +613,11 @@ Current production status:
       <h3>3. ListPyramid</h3>
       <p class="component-desc">True pyramid shape with trapezoid layers for hierarchy and ranking</p>
       <div class="infographic-wrapper">
-        <Infographic theme={selectedTheme} width={450} height={280} padding={16}>
+        <Infographic theme={selectedTheme} width={500} height={320} padding={16}>
           <ListPyramid
             items={rankingItems}
-            width={418}
-            height={248}
+            width={468}
+            height={288}
             direction="up"
             palette={selectedPalette}
           />
@@ -672,12 +673,16 @@ Current production status:
       <h3>6. HierarchyTree</h3>
       <p class="component-desc">Tree/organization chart with vertical or horizontal orientation</p>
       <div class="infographic-wrapper">
-        <Infographic theme={selectedTheme} width={700} height={300} padding={16}>
+        <Infographic theme={selectedTheme} width={700} height={380} padding={16}>
           <HierarchyTree
             root={orgChart}
             width={668}
-            height={268}
+            height={348}
             orientation="vertical"
+            nodeWidth={100}
+            nodeHeight={50}
+            levelGap={50}
+            siblingGap={15}
             palette={selectedPalette}
           />
         </Infographic>

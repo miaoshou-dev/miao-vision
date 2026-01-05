@@ -41,12 +41,10 @@
     height?: number
     /** Gap between layers */
     gap?: number
-    /** Direction: 'up' (narrow at top) or 'down' (narrow at bottom) */
+    /** Direction: 'up' (pointed at top) or 'down' (pointed at bottom) */
     direction?: 'up' | 'down'
     /** Palette override */
     palette?: Palette
-    /** Top width ratio (0-1, how narrow the top is relative to bottom) */
-    topWidthRatio?: number
   }
 
   let {
@@ -55,8 +53,7 @@
     height = 300,
     gap = 4,
     direction = 'up',
-    palette,
-    topWidthRatio = 0.2
+    palette
   }: Props = $props()
 
   const ctx = getContext<InfographicContext>('infographic-theme')
@@ -104,25 +101,33 @@
   })
 
   /**
-   * Calculate trapezoid points for a pyramid layer
-   * Returns SVG path points for a trapezoid shape
+   * Calculate trapezoid/triangle points for a pyramid layer
+   * Top layer is a triangle (pointed), others are trapezoids
    */
   function getTrapezoidPath(layerIndex: number): string {
     const totalLayers = numLayers
     const centerX = width / 2
 
-    // Calculate widths based on layer position
-    // Top layer is narrowest, bottom is widest
-    const topRatio = topWidthRatio + (1 - topWidthRatio) * (layerIndex / totalLayers)
-    const bottomRatio = topWidthRatio + (1 - topWidthRatio) * ((layerIndex + 1) / totalLayers)
+    const y1 = layerIndex * (layerHeight + gap)
+    const y2 = y1 + layerHeight
+
+    // First layer (top) is a triangle with pointed top
+    if (layerIndex === 0) {
+      const bottomRatio = (layerIndex + 1) / totalLayers
+      const bottomWidth = width * bottomRatio
+      const bottomLeft = centerX - bottomWidth / 2
+      const bottomRight = centerX + bottomWidth / 2
+      // Triangle: point at top center, flat bottom
+      return `M ${centerX} ${y1} L ${bottomRight} ${y2} L ${bottomLeft} ${y2} Z`
+    }
+
+    // Other layers are trapezoids
+    const topRatio = layerIndex / totalLayers
+    const bottomRatio = (layerIndex + 1) / totalLayers
 
     const topWidth = width * topRatio
     const bottomWidth = width * bottomRatio
 
-    const y1 = layerIndex * (layerHeight + gap)
-    const y2 = y1 + layerHeight
-
-    // Trapezoid corners
     const topLeft = centerX - topWidth / 2
     const topRight = centerX + topWidth / 2
     const bottomLeft = centerX - bottomWidth / 2
@@ -132,11 +137,12 @@
   }
 
   /**
-   * Get center position for text in a trapezoid layer
+   * Get the Y bounds of a layer
    */
-  function getLayerCenter(layerIndex: number) {
-    const y = layerIndex * (layerHeight + gap) + layerHeight / 2
-    return { x: width / 2, y }
+  function getLayerBounds(layerIndex: number) {
+    const y1 = layerIndex * (layerHeight + gap)
+    const y2 = y1 + layerHeight
+    return { top: y1, bottom: y2, center: (y1 + y2) / 2 }
   }
 
   /**
@@ -144,9 +150,23 @@
    */
   function getLayerWidth(layerIndex: number): number {
     const totalLayers = numLayers
-    const topRatio = topWidthRatio + (1 - topWidthRatio) * (layerIndex / totalLayers)
-    const bottomRatio = topWidthRatio + (1 - topWidthRatio) * ((layerIndex + 1) / totalLayers)
+    if (layerIndex === 0) {
+      // Triangle: average width is roughly 1/2 of bottom width
+      const bottomRatio = 1 / totalLayers
+      return width * bottomRatio * 0.6
+    }
+    const topRatio = layerIndex / totalLayers
+    const bottomRatio = (layerIndex + 1) / totalLayers
     return width * (topRatio + bottomRatio) / 2
+  }
+
+  /**
+   * Check if there's enough space for description
+   */
+  function canShowDesc(layerIndex: number, hasValue: boolean): boolean {
+    // Need at least 60px height to show desc with value, 50px without
+    const minHeight = hasValue ? 60 : 50
+    return layerHeight >= minHeight && getLayerWidth(layerIndex) > 120
   }
 </script>
 
@@ -162,8 +182,13 @@
 
   <!-- Render each layer as a trapezoid -->
   {#each itemConfigs as config, layerIndex}
-    {@const center = getLayerCenter(layerIndex)}
+    {@const bounds = getLayerBounds(layerIndex)}
     {@const layerW = getLayerWidth(layerIndex)}
+    {@const hasValue = config.data.value !== undefined}
+    {@const hasDesc = config.data.desc && canShowDesc(layerIndex, hasValue)}
+    {@const lineCount = 1 + (hasValue ? 1 : 0) + (hasDesc ? 1 : 0)}
+    {@const lineSpacing = Math.min(18, layerHeight / (lineCount + 1))}
+    {@const startY = bounds.center - ((lineCount - 1) * lineSpacing) / 2}
 
     <!-- Trapezoid shape -->
     <path
@@ -175,8 +200,8 @@
 
     <!-- Label -->
     <text
-      x={center.x}
-      y={center.y - (config.data.value !== undefined ? 8 : 0)}
+      x={width / 2}
+      y={startY}
       text-anchor="middle"
       dominant-baseline="middle"
       fill={config.themeColors.colorWhite}
@@ -187,10 +212,10 @@
     </text>
 
     <!-- Value (if provided) -->
-    {#if config.data.value !== undefined}
+    {#if hasValue}
       <text
-        x={center.x}
-        y={center.y + 12}
+        x={width / 2}
+        y={startY + lineSpacing}
         text-anchor="middle"
         dominant-baseline="middle"
         fill={config.themeColors.colorTextSecondary}
@@ -201,11 +226,11 @@
       </text>
     {/if}
 
-    <!-- Description (if provided, and layer is wide enough) -->
-    {#if config.data.desc && layerW > 150}
+    <!-- Description (if fits) -->
+    {#if hasDesc}
       <text
-        x={center.x}
-        y={center.y + (config.data.value !== undefined ? 28 : 16)}
+        x={width / 2}
+        y={startY + lineSpacing * (hasValue ? 2 : 1)}
         text-anchor="middle"
         dominant-baseline="middle"
         fill={config.themeColors.colorTextSecondary}
