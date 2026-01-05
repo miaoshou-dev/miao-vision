@@ -17,6 +17,8 @@ export type TemplateCategory =
   | 'hierarchy'
   | 'comparison'
   | 'distribution'
+  | 'relation'
+  | 'statistical'
 
 /**
  * Structure-Item combination definition
@@ -124,6 +126,17 @@ export const INFOGRAPHIC_TEMPLATES: Record<TemplateCategory, TemplateDefinition[
   // Flow/Process - best for sequential data
   flow: [
     {
+      id: 'list-row-horizontal-icon-arrow',
+      name: 'Horizontal Icon Arrow Flow',
+      category: 'flow',
+      structure: 'ListRowHorizontal',
+      item: 'IconArrowNode',
+      optimalRows: [3, 6],
+      requiredFields: ['label'],
+      optionalFields: ['icon', 'description', 'color'],
+      description: 'Horizontal process flow with icon nodes and arrows'
+    },
+    {
       id: 'sequence-timeline-badge-card',
       name: 'Timeline Flow',
       category: 'flow',
@@ -144,6 +157,72 @@ export const INFOGRAPHIC_TEMPLATES: Record<TemplateCategory, TemplateDefinition[
       requiredFields: ['label', 'step'],
       optionalFields: ['description', 'icon'],
       description: 'Zigzag path showing process steps'
+    },
+    {
+      id: 'flow-linear-numbered',
+      name: 'Linear Numbered Flow',
+      category: 'flow',
+      structure: 'FlowLinear',
+      item: 'default',
+      optimalRows: [3, 6],
+      requiredFields: ['label'],
+      optionalFields: ['description', 'icon'],
+      description: 'Linear process flow with numbered steps'
+    },
+    {
+      id: 'cycle-radial-process',
+      name: 'Circular Cycle Process',
+      category: 'flow',
+      structure: 'CycleRadial',
+      item: 'default',
+      optimalRows: [3, 6],
+      requiredFields: ['label'],
+      optionalFields: ['description', 'icon'],
+      description: 'Circular cycle diagram for PDCA or repeating processes'
+    },
+    {
+      id: 'sequence-snake-flow',
+      name: 'Snake Pattern Flow',
+      category: 'flow',
+      structure: 'SequenceSnake',
+      item: 'default',
+      optimalRows: [4, 10],
+      requiredFields: ['label'],
+      optionalFields: ['description', 'icon'],
+      description: 'Snake/serpentine layout for longer process flows'
+    },
+    {
+      id: 'sequence-roadmap-horizontal',
+      name: 'Project Roadmap',
+      category: 'flow',
+      structure: 'SequenceRoadmap',
+      item: 'default',
+      optimalRows: [3, 8],
+      requiredFields: ['label'],
+      optionalFields: ['description', 'icon', 'status', 'date'],
+      description: 'Horizontal roadmap with milestone markers for project planning'
+    },
+    {
+      id: 'sequence-stairs-progression',
+      name: 'Stair-Step Progression',
+      category: 'flow',
+      structure: 'SequenceStairs',
+      item: 'default',
+      optimalRows: [3, 6],
+      requiredFields: ['label'],
+      optionalFields: ['description', 'icon', 'value'],
+      description: 'Ascending stair steps showing progression or growth stages'
+    },
+    {
+      id: 'sequence-ascending-bars',
+      name: 'Ascending Bar Flow',
+      category: 'flow',
+      structure: 'SequenceAscending',
+      item: 'default',
+      optimalRows: [3, 7],
+      requiredFields: ['label'],
+      optionalFields: ['description', 'icon', 'value'],
+      description: 'Ascending bars with arrows showing growth or escalation'
     }
   ],
 
@@ -159,6 +238,28 @@ export const INFOGRAPHIC_TEMPLATES: Record<TemplateCategory, TemplateDefinition[
       requiredFields: ['label', 'level'],
       optionalFields: ['value', 'description'],
       description: 'Pyramid showing organizational hierarchy'
+    },
+    {
+      id: 'hierarchy-tree-org',
+      name: 'Organization Tree',
+      category: 'hierarchy',
+      structure: 'HierarchyTree',
+      item: 'default',
+      optimalRows: [3, 15],
+      requiredFields: ['id', 'label'],
+      optionalFields: ['children', 'desc', 'icon'],
+      description: 'Tree structure for organization charts'
+    },
+    {
+      id: 'mind-map-radial',
+      name: 'Radial Mind Map',
+      category: 'hierarchy',
+      structure: 'MindMap',
+      item: 'MindMapNode',
+      optimalRows: [3, 20],
+      requiredFields: ['id', 'label'],
+      optionalFields: ['children', 'desc', 'icon'],
+      description: 'Radial mind map for brainstorming and idea organization'
     }
   ],
 
@@ -174,6 +275,39 @@ export const INFOGRAPHIC_TEMPLATES: Record<TemplateCategory, TemplateDefinition[
       requiredFields: ['label', 'value'],
       optionalFields: ['description', 'highlight'],
       description: 'Horizontal comparison of options'
+    },
+    {
+      id: 'compare-binary-vs',
+      name: 'VS Comparison',
+      category: 'comparison',
+      structure: 'CompareBinary',
+      item: 'default',
+      optimalRows: [2, 2],
+      requiredFields: ['title', 'items'],
+      optionalFields: ['subtitle', 'icon', 'color'],
+      description: 'Left vs Right binary comparison with item lists'
+    },
+    {
+      id: 'compare-quadrant-matrix',
+      name: 'Quadrant Matrix',
+      category: 'comparison',
+      structure: 'CompareQuadrant',
+      item: 'default',
+      optimalRows: [4, 12],
+      requiredFields: ['label'],
+      optionalFields: ['color'],
+      description: '2x2 matrix for Eisenhower, BCG, or risk analysis'
+    },
+    {
+      id: 'compare-swot-analysis',
+      name: 'SWOT Analysis',
+      category: 'comparison',
+      structure: 'CompareSwot',
+      item: 'default',
+      optimalRows: [4, 16],
+      requiredFields: ['id', 'label'],
+      optionalFields: ['color'],
+      description: 'SWOT analysis with strengths, weaknesses, opportunities, threats'
     }
   ],
 
@@ -189,6 +323,124 @@ export const INFOGRAPHIC_TEMPLATES: Record<TemplateCategory, TemplateDefinition[
       requiredFields: ['label', 'percentage'],
       optionalFields: ['value', 'color'],
       description: 'Pyramid showing distribution proportions'
+    },
+    {
+      id: 'list-sector-pie',
+      name: 'Sector/Pie Chart',
+      category: 'distribution',
+      structure: 'ListSector',
+      item: 'default',
+      optimalRows: [2, 8],
+      requiredFields: ['label', 'value'],
+      optionalFields: ['color'],
+      description: 'Pie/donut chart for proportional data'
+    }
+  ],
+
+  // Relation - for networks and connections
+  relation: [
+    {
+      id: 'relation-network-circular',
+      name: 'Network Graph',
+      category: 'relation',
+      structure: 'RelationNetwork',
+      item: 'NetworkNode',
+      optimalRows: [3, 12],
+      requiredFields: ['id', 'label'],
+      optionalFields: ['icon', 'group', 'color'],
+      description: 'Network graph showing node relationships'
+    },
+    {
+      id: 'relation-venn-diagram',
+      name: 'Venn Diagram',
+      category: 'relation',
+      structure: 'RelationVenn',
+      item: 'default',
+      optimalRows: [2, 3],
+      requiredFields: ['id', 'label'],
+      optionalFields: ['desc', 'items', 'color'],
+      description: 'Venn diagram showing set relationships and overlaps'
+    },
+    {
+      id: 'relation-circle-connections',
+      name: 'Circle Connections',
+      category: 'relation',
+      structure: 'RelationCircle',
+      item: 'default',
+      optimalRows: [4, 10],
+      requiredFields: ['id', 'label'],
+      optionalFields: ['desc', 'icon', 'color'],
+      description: 'Nodes arranged in circle with connections'
+    }
+  ],
+
+  // Statistical charts - for data visualization
+  statistical: [
+    {
+      id: 'chart-bar-horizontal',
+      name: 'Horizontal Bar Chart',
+      category: 'statistical',
+      structure: 'ChartBar',
+      item: 'default',
+      optimalRows: [3, 12],
+      requiredFields: ['label', 'value'],
+      optionalFields: ['desc', 'icon', 'color'],
+      description: 'Horizontal bar chart for comparing values across categories'
+    },
+    {
+      id: 'chart-bar-vertical',
+      name: 'Vertical Bar Chart',
+      category: 'statistical',
+      structure: 'ChartBar',
+      item: 'default',
+      optimalRows: [3, 10],
+      requiredFields: ['label', 'value'],
+      optionalFields: ['desc', 'color'],
+      description: 'Vertical bar chart for value comparison'
+    },
+    {
+      id: 'chart-line-trend',
+      name: 'Trend Line Chart',
+      category: 'statistical',
+      structure: 'ChartLine',
+      item: 'default',
+      optimalRows: [5, 30],
+      requiredFields: ['label', 'value'],
+      optionalFields: ['series'],
+      description: 'Line chart for showing trends over time'
+    },
+    {
+      id: 'chart-line-multi-series',
+      name: 'Multi-Series Line Chart',
+      category: 'statistical',
+      structure: 'ChartLine',
+      item: 'default',
+      optimalRows: [5, 30],
+      requiredFields: ['label', 'value', 'series'],
+      optionalFields: ['color'],
+      description: 'Multiple line series for comparing trends'
+    },
+    {
+      id: 'chart-funnel-conversion',
+      name: 'Conversion Funnel',
+      category: 'statistical',
+      structure: 'ChartFunnel',
+      item: 'default',
+      optimalRows: [3, 8],
+      requiredFields: ['label', 'value'],
+      optionalFields: ['desc', 'color'],
+      description: 'Funnel chart for conversion/pipeline visualization'
+    },
+    {
+      id: 'compare-table-features',
+      name: 'Feature Comparison Table',
+      category: 'comparison',
+      structure: 'CompareTable',
+      item: 'default',
+      optimalRows: [5, 20],
+      requiredFields: ['label', 'columns'],
+      optionalFields: ['icon'],
+      description: 'Table format for detailed feature comparison'
     }
   ]
 }
@@ -360,10 +612,50 @@ export const TEMPLATE_QUICK_REFERENCE = {
   progress: 'list-grid-circular-progress',
   // For ranking data
   ranking: 'list-pyramid-badge-card',
+  // For sequential processes with icons
+  processWithIcons: 'list-row-horizontal-icon-arrow',
   // For sequential processes
   process: 'list-zigzag-badge-card',
+  // For linear numbered flows
+  linearFlow: 'flow-linear-numbered',
+  // For circular/cycle processes
+  cycle: 'cycle-radial-process',
+  // For longer snake-pattern flows
+  snakeFlow: 'sequence-snake-flow',
   // For timeline events
   timeline: 'sequence-timeline-badge-card',
   // For comparison
-  compare: 'list-row-horizontal-comparison'
+  compare: 'list-row-horizontal-comparison',
+  // For VS comparison
+  vsCompare: 'compare-binary-vs',
+  // For quadrant/matrix analysis
+  quadrant: 'compare-quadrant-matrix',
+  // For SWOT analysis
+  swot: 'compare-swot-analysis',
+  // For project roadmaps
+  roadmap: 'sequence-roadmap-horizontal',
+  // For stair-step progression
+  stairs: 'sequence-stairs-progression',
+  // For ascending growth
+  ascending: 'sequence-ascending-bars',
+  // For mind maps
+  mindMap: 'mind-map-radial',
+  // For network graphs
+  network: 'relation-network-circular',
+  // For pie/sector charts
+  pie: 'list-sector-pie',
+  // For Venn diagrams
+  venn: 'relation-venn-diagram',
+  // For circular relationships
+  circleRelations: 'relation-circle-connections',
+  // For bar charts
+  barChart: 'chart-bar-horizontal',
+  barChartVertical: 'chart-bar-vertical',
+  // For line charts
+  lineChart: 'chart-line-trend',
+  multiLineChart: 'chart-line-multi-series',
+  // For funnel charts
+  funnel: 'chart-funnel-conversion',
+  // For comparison tables
+  comparisonTable: 'compare-table-features'
 }

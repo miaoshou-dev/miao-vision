@@ -2,6 +2,7 @@
   import {
     type DataSourceInfo,
     type ReportStyle,
+    type ChartPalette,
     type ReportPlan,
     type SectionProgress,
     ReportPlanner,
@@ -18,9 +19,11 @@
     availableSources: DataSourceInfo[]
     onComplete: (markdown: string, plan: ReportPlan, dataSources: DataSourceInfo[]) => void
     onCancel: () => void
+    onImportData?: () => void
+    onLoadSampleData?: () => void
   }
 
-  let { availableSources, onComplete, onCancel }: Props = $props()
+  let { availableSources, onComplete, onCancel, onImportData, onLoadSampleData }: Props = $props()
 
   // Wizard state
   type WizardStep = 'select-data' | 'configure' | 'preview' | 'generate'
@@ -36,6 +39,7 @@
   // Configuration
   let userPrompt = $state('')
   let reportStyle = $state<ReportStyle>('professional')
+  let chartPalette = $state<ChartPalette>('categorical')
 
   // Settings state
   let showSettings = $state(false)
@@ -185,7 +189,8 @@
       // Generate report content with streaming
       for await (const progress of generator.generateStream(currentPlan, selectedSources, {
         style: reportStyle,
-        language: 'zh'
+        language: 'zh',
+        palette: chartPalette
       })) {
         currentSection = progress
         previewMarkdown = progress.markdown
@@ -194,7 +199,8 @@
       // Get final result
       const result = await generator.generate(currentPlan, selectedSources, {
         style: reportStyle,
-        language: 'zh'
+        language: 'zh',
+        palette: chartPalette
       })
 
       if (result.success && result.markdown) {
@@ -281,13 +287,17 @@
           {availableSources}
           {selectedSources}
           onSelectionChange={(sources) => selectedSources = sources}
+          {onImportData}
+          {onLoadSampleData}
         />
       {:else if currentStep === 'configure'}
         <PromptInput
           prompt={userPrompt}
           style={reportStyle}
+          palette={chartPalette}
           onPromptChange={(p) => userPrompt = p}
           onStyleChange={(s) => reportStyle = s}
+          onPaletteChange={(p) => chartPalette = p}
         />
       {:else if currentStep === 'preview'}
         <PlanPreview

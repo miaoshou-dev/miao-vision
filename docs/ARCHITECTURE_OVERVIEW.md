@@ -19,7 +19,7 @@
 **Miao Vision** 是一个完全运行在浏览器端的数据分析框架，无需任何后端服务器。它结合了：
 
 - **DuckDB-WASM** - 浏览器端 SQL 分析引擎
-- **Mosaic vgplot** - 声明式数据可视化
+- **Svelte 5 + SVG** - 27 种图表组件（纯前端渲染）
 - **Markdown 报告系统** - Evidence.dev 风格的文档驱动分析
 - **插件架构** - 43+ 可扩展组件
 
@@ -37,13 +37,16 @@
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
-| **Svelte 5** | ^5.15 | UI 框架（Runes 模式） |
+| **Svelte 5** | ^5.15 | UI 框架（Runes 模式）+ 图表渲染 |
 | **TypeScript** | ^5.7 | 类型系统，严格模式 |
 | **DuckDB-WASM** | ^1.29 | 浏览器端 SQL 引擎 |
-| **Mosaic vgplot** | latest | 数据可视化 |
 | **Monaco Editor** | ^0.52 | SQL/Markdown 编辑器 |
 | **Unified/Remark** | ^11.0 | Markdown 解析管道 |
 | **Vite** | ^6.0 | 构建工具 |
+
+**图表渲染方式:**
+- 27 种图表组件使用 **纯 Svelte + SVG** 渲染（无第三方图表库依赖）
+- SQL Workspace 可选使用 Mosaic vgplot（用于大数据集和高级交互功能）
 
 ### 关键依赖
 
@@ -79,8 +82,8 @@
 │  ┌─────────────────────────────────────────────────────────────┐│
 │  │ bootstrap/  - Wires all dependencies                        ││
 │  │   ├── init-services.ts  (DI adapters)                       ││
-│  │   ├── init-charts.ts    (vgplot registration)               ││
-│  │   └── init-plugins.ts   (plugin registration)               ││
+│  │   ├── init-charts.ts    (chart registration for workspace)  ││
+│  │   └── init-plugins.ts   (43+ plugin components)             ││
 │  └─────────────────────────────────────────────────────────────┘│
 │                              │                                   │
 │              ┌───────────────┼───────────────┐                  │
@@ -140,7 +143,7 @@ $ grep -r "from '@plugins" src/core/
 **文件：**
 - `index.ts` - 主入口，导出 `initializeApp()`
 - `init-services.ts` - 注册 DI 服务适配器
-- `init-charts.ts` - 注册 vgplot 图表组件
+- `init-charts.ts` - 注册 SQL Workspace 图表组件
 - `init-plugins.ts` - 注册所有插件组件
 
 **初始化流程：**
@@ -399,12 +402,15 @@ layout/
 └── grid/              # 网格布局
 ```
 
-**可视化工具**
+**可视化工具 (SQL Workspace)**
 ```
 viz/
 ├── chart-builder.ts   # 图表配置构建
-└── data-adapter.ts    # vgplot 数据适配
+└── data-adapter.ts    # 数据适配 (SQL Workspace)
 ```
+
+> 注：所有 BI Report 图表使用 `plugins/data-display/` 中的 27 种 Svelte + SVG 组件。
+> `viz/` 目录用于 SQL Workspace 的快速图表功能。
 
 #### 插件定义示例
 
@@ -544,13 +550,13 @@ DuckDB-WASM.query()
 Apache Arrow → JSON
      │
      ▼
-chartBuilder.buildFromBlock()
+BlockRenderer
      │
      ▼
-Mosaic Coordinator
+ComponentRegistry.mount()
      │
      ▼
-vgplot → DOM
+Svelte + SVG Component → DOM
 ```
 
 ### 3. Markdown 报告渲染
@@ -730,18 +736,26 @@ core/shared/pure/
 - **sql.js** - SQLite，不支持列式存储，性能不如 DuckDB
 - **Lovefield** - 已停止维护
 
-### 2. 为什么选择 Mosaic vgplot？
+### 2. 为什么选择 Svelte + SVG 作为主要图表渲染方式？
 
-**优势：**
+**当前架构：**
+- 27 种图表组件 (`plugins/data-display/`) 全部使用 **纯 Svelte + SVG** 渲染
+- SQL Workspace 可选使用 Mosaic vgplot（用于大数据集场景）
+
+**Svelte + SVG 优势：**
+- ✅ 无第三方依赖，完全控制渲染逻辑
+- ✅ 与 Svelte 5 Runes 模式完美集成
+- ✅ 类型安全，Zod 配置验证
+- ✅ 更小的打包体积
+
+**SQL Workspace 为何可选 vgplot：**
+- ✅ 大数据集场景（100K+ 行）性能更优
 - ✅ 直接与 DuckDB 集成，避免数据复制
-- ✅ 声明式语法，易于使用
-- ✅ 支持大数据集（百万行）
-- ✅ 响应式联动
+- ✅ 支持 M4 算法自动降采样
 
 **替代方案对比：**
-- **ECharts** - 需要将数据加载到内存，大数据集性能差
+- **ECharts** - 体积大，需要将数据加载到内存
 - **D3.js** - 灵活但复杂，需要大量代码
-- **Observable Plot** - 类似，但 vgplot 与 DuckDB 集成更好
 
 ### 3. 为什么选择 Svelte 5？
 

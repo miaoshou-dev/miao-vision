@@ -30,6 +30,8 @@ export interface BarChartConfig {
   color?: string
   /** Color palette for grouped bars */
   colors?: string[]
+  /** Named color palette preset */
+  palette?: string
   /** Horizontal bar chart */
   horizontal?: boolean
   /** Show value labels on bars */

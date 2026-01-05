@@ -34,9 +34,10 @@ import { areaChartRegistration } from './area-chart'
 import { scatterChartRegistration } from './scatter-chart'
 import { imageRegistration } from './image'
 import { bubbleChartRegistration } from './bubble-chart'
+import { infographicRegistration } from './infographic/definition'
 
 // Re-export registrations for direct import
-export { bigValueRegistration, dataTableRegistration, valueRegistration, deltaRegistration, sparklineRegistration, kpiGridRegistration, progressRegistration, funnelRegistration, calendarHeatmapRegistration, sankeyRegistration, treemapRegistration, histogramRegistration, boxPlotRegistration, gaugeRegistration, bulletChartRegistration, waterfallRegistration, radarRegistration, heatmapRegistration, barChartRegistration, pieChartRegistration, lineChartRegistration, areaChartRegistration, scatterChartRegistration, imageRegistration, bubbleChartRegistration }
+export { bigValueRegistration, dataTableRegistration, valueRegistration, deltaRegistration, sparklineRegistration, kpiGridRegistration, progressRegistration, funnelRegistration, calendarHeatmapRegistration, sankeyRegistration, treemapRegistration, histogramRegistration, boxPlotRegistration, gaugeRegistration, bulletChartRegistration, waterfallRegistration, radarRegistration, heatmapRegistration, barChartRegistration, pieChartRegistration, lineChartRegistration, areaChartRegistration, scatterChartRegistration, imageRegistration, bubbleChartRegistration, infographicRegistration }
 
 // Re-export components
 export { default as BigValue } from './bigvalue/BigValue.svelte'
@@ -64,6 +65,8 @@ export { default as AreaChart } from './area-chart/AreaChart.svelte'
 export { default as ScatterChart } from './scatter-chart/ScatterChart.svelte'
 export { default as Image } from './image/Image.svelte'
 export { default as BubbleChart } from './bubble-chart/BubbleChart.svelte'
+export { default as Infographic } from './infographic/Infographic.svelte'
+export { default as InfographicRenderer } from './infographic/InfographicRenderer.svelte'
 
 // Re-export types
 export type { BigValueConfig, BigValueData } from './bigvalue/types'
@@ -91,6 +94,7 @@ export type { AreaChartConfig, AreaChartData, AreaSeries, AreaPoint } from './ar
 export type { ScatterChartConfig, ScatterChartData, ScatterPoint } from './scatter-chart/types'
 export type { ImageConfig } from './image/types'
 export type { BubbleChartConfig, BubbleChartData, BubbleItem } from './bubble-chart/types'
+export type { InfographicConfig, InfographicItem, InfographicProps } from './infographic/definition'
 
 // Re-export shared utilities
 export { formatValue, formatNumber, formatCurrency, formatPercent } from './shared/formatter'
@@ -126,8 +130,9 @@ export function registerDataDisplayPlugins(registry: ComponentRegistry): void {
   registry.register(scatterChartRegistration)
   registry.register(imageRegistration)
   registry.register(bubbleChartRegistration)
+  registry.register(infographicRegistration)
 
-  console.log('✅ Data display plugins registered: bigvalue, datatable, value, delta, sparkline, kpigrid, progress, funnel, calendar-heatmap, sankey, treemap, histogram, boxplot, gauge, bullet, waterfall, radar, heatmap, bar, pie, line, area, scatter, image, bubble')
+  console.log('✅ Data display plugins registered: bigvalue, datatable, value, delta, sparkline, kpigrid, progress, funnel, calendar-heatmap, sankey, treemap, histogram, boxplot, gauge, bullet, waterfall, radar, heatmap, bar, pie, line, area, scatter, image, bubble, infographic')
 }
 
 /**
@@ -158,5 +163,6 @@ export const dataDisplayPlugins = [
   areaChartRegistration,
   scatterChartRegistration,
   imageRegistration,
-  bubbleChartRegistration
+  bubbleChartRegistration,
+  infographicRegistration
 ]

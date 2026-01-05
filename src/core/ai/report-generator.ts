@@ -15,7 +15,8 @@ import type {
   ReportSection,
   ReportStyle,
   ReportGenerationResult,
-  SectionProgress
+  SectionProgress,
+  ChartPalette
 } from './types'
 import {
   generateSectionMarkdown,
@@ -52,6 +53,7 @@ export class ReportGenerator {
     options: {
       style?: ReportStyle
       language?: 'zh' | 'en'
+      palette?: ChartPalette
     } = {}
   ): Promise<ReportGenerationResult> {
     try {
@@ -65,7 +67,7 @@ export class ReportGenerator {
           // Insight sections need LLM generation
           const previousSections = plan.sections
             .slice(0, i)
-            .map((s) => generateSectionMarkdown(s, plan.sections.indexOf(s)))
+            .map((s) => generateSectionMarkdown(s, plan.sections.indexOf(s), options.palette))
 
           const insightContent = await this.generateInsightContent(
             section,
@@ -77,7 +79,7 @@ export class ReportGenerator {
           markdown += generateInsightMarkdown(section, insightContent)
         } else {
           // Other sections use template generation
-          markdown += generateSectionMarkdown(section, i)
+          markdown += generateSectionMarkdown(section, i, options.palette)
         }
       }
 
@@ -105,6 +107,7 @@ export class ReportGenerator {
     options: {
       style?: ReportStyle
       language?: 'zh' | 'en'
+      palette?: ChartPalette
     } = {}
   ): AsyncGenerator<SectionProgress, ReportGenerationResult, unknown> {
     try {
@@ -156,7 +159,7 @@ export class ReportGenerator {
           previousSections.push(sectionMarkdown)
         } else {
           // Template-based generation (instant)
-          const sectionMarkdown = generateSectionMarkdown(section, i)
+          const sectionMarkdown = generateSectionMarkdown(section, i, options.palette)
           fullMarkdown += sectionMarkdown
           previousSections.push(sectionMarkdown)
 
@@ -299,6 +302,7 @@ export async function generateReport(
   options: {
     style?: ReportStyle
     language?: 'zh' | 'en'
+    palette?: ChartPalette
   } = {}
 ): Promise<ReportGenerationResult> {
   // Step 1: Plan the report

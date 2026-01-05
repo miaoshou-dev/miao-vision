@@ -96,7 +96,9 @@ export const BigValueSchema: ConfigSchema = {
       default: 'number'
     },
     { name: 'comparison', type: 'string' },
-    { name: 'comparisonLabel', type: 'string' }
+    { name: 'comparisonLabel', type: 'string' },
+    { name: 'color', type: 'string' },
+    { name: 'palette', type: 'string' }
   ]
 }
 

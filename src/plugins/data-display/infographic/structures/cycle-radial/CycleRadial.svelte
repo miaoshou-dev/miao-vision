@@ -115,35 +115,28 @@
       .map(p => createGradientDef(p.gradientId!, p.themeColors.colorPrimary, ctx?.gradientConfig))
   })
 
-  // Generate arrow path between two nodes
+  // Generate arrow path between two nodes - follows circular arc
   function getArrowPath(from: NodePosition, to: NodePosition): string {
-    const fromAngleRad = (from.angle * Math.PI) / 180
-    const toAngleRad = (to.angle * Math.PI) / 180
+    // Start point: on the circle, offset clockwise from the from node
+    const startAngle = from.angle + 30
+    const startAngleRad = (startAngle * Math.PI) / 180
+    const startX = centerX + radius * Math.cos(startAngleRad)
+    const startY = centerY + radius * Math.sin(startAngleRad)
 
-    // Start from edge of from node
-    const startX = from.x + (nodeSize / 2 + 5) * Math.cos(fromAngleRad + Math.PI / 6)
-    const startY = from.y + (nodeSize / 2 + 5) * Math.sin(fromAngleRad + Math.PI / 6)
-
-    // End at edge of to node
-    const endX = to.x - (nodeSize / 2 + 5) * Math.cos(toAngleRad - Math.PI / 6)
-    const endY = to.y - (nodeSize / 2 + 5) * Math.sin(toAngleRad - Math.PI / 6)
+    // End point: on the circle, offset counter-clockwise from the to node
+    const endAngle = to.angle - 30
+    const endAngleRad = (endAngle * Math.PI) / 180
+    const endX = centerX + radius * Math.cos(endAngleRad)
+    const endY = centerY + radius * Math.sin(endAngleRad)
 
     if (arrowStyle === 'straight') {
       return `M ${startX} ${startY} L ${endX} ${endY}`
     }
 
-    // Curved path along the circle
-    const midAngle = (from.angle + to.angle) / 2
-    // Handle wraparound
-    const adjustedMidAngle = to.angle < from.angle
-      ? (from.angle + to.angle + 360) / 2
-      : midAngle
-    const midAngleRad = (adjustedMidAngle * Math.PI) / 180
-    const controlRadius = radius * 0.85
-    const controlX = centerX + controlRadius * Math.cos(midAngleRad)
-    const controlY = centerY + controlRadius * Math.sin(midAngleRad)
-
-    return `M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`
+    // Use SVG arc command to draw along the circle
+    // A rx ry x-axis-rotation large-arc-flag sweep-flag x y
+    // sweep-flag = 1 means clockwise
+    return `M ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY}`
   }
 
   // Arrow marker ID

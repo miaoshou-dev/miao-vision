@@ -61,7 +61,8 @@ export function generateKPISQL(
  */
 export function generateKPIMarkdown(
   section: ReportSection,
-  queryName: string
+  queryName: string,
+  palette?: string
 ): string {
   const config = section.config as KPISectionConfig
   let markdown = `## ${section.title}\n\n`
@@ -72,7 +73,7 @@ export function generateKPIMarkdown(
 
   // Generate SQL block
   const sql = generateKPISQL(config, section.dataSource)
-  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
 
   // Generate BigValue components for each metric
   for (const metric of config.metrics) {
@@ -83,6 +84,9 @@ export function generateKPIMarkdown(
     markdown += `title: ${metric.name}\n`
     if (metric.format) {
       markdown += `format: ${metric.format}\n`
+    }
+    if (palette) {
+      markdown += `palette: ${palette}\n`
     }
     markdown += `\`\`\`\n\n`
   }
@@ -138,7 +142,8 @@ function getGranularityExpression(
  */
 export function generateTrendMarkdown(
   section: ReportSection,
-  queryName: string
+  queryName: string,
+  palette?: string
 ): string {
   const config = section.config as TrendSectionConfig
   let markdown = `## ${section.title}\n\n`
@@ -148,15 +153,17 @@ export function generateTrendMarkdown(
   }
 
   const sql = generateTrendSQL(config, section.dataSource)
-  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
 
   const chartType = config.chartType || 'line'
-  markdown += `\`\`\`chart\n`
-  markdown += `type: ${chartType}\n`
+  markdown += `\`\`\`${chartType}\n`
   markdown += `data: ${queryName}\n`
   markdown += `x: period\n`
   markdown += `y: value\n`
   markdown += `title: ${section.title}\n`
+  if (palette) {
+    markdown += `palette: ${palette}\n`
+  }
   markdown += `\`\`\`\n\n`
 
   return markdown
@@ -186,7 +193,8 @@ LIMIT ${config.limit}`
  */
 export function generateRankingMarkdown(
   section: ReportSection,
-  queryName: string
+  queryName: string,
+  palette?: string
 ): string {
   const config = section.config as RankingSectionConfig
   let markdown = `## ${section.title}\n\n`
@@ -196,14 +204,16 @@ export function generateRankingMarkdown(
   }
 
   const sql = generateRankingSQL(config, section.dataSource)
-  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
 
-  markdown += `\`\`\`chart\n`
-  markdown += `type: bar\n`
+  markdown += `\`\`\`bar\n`
   markdown += `data: ${queryName}\n`
   markdown += `x: dimension\n`
   markdown += `y: value\n`
   markdown += `title: ${section.title}\n`
+  if (palette) {
+    markdown += `palette: ${palette}\n`
+  }
   markdown += `\`\`\`\n\n`
 
   return markdown
@@ -231,7 +241,8 @@ ORDER BY value DESC`
  */
 export function generateComparisonMarkdown(
   section: ReportSection,
-  queryName: string
+  queryName: string,
+  palette?: string
 ): string {
   const config = section.config as ComparisonSectionConfig
   let markdown = `## ${section.title}\n\n`
@@ -241,15 +252,17 @@ export function generateComparisonMarkdown(
   }
 
   const sql = generateComparisonSQL(config, section.dataSource)
-  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
 
   const chartType = config.chartType || 'bar'
-  markdown += `\`\`\`chart\n`
-  markdown += `type: ${chartType}\n`
+  markdown += `\`\`\`${chartType}\n`
   markdown += `data: ${queryName}\n`
   markdown += `x: category\n`
   markdown += `y: value\n`
   markdown += `title: ${section.title}\n`
+  if (palette) {
+    markdown += `palette: ${palette}\n`
+  }
   markdown += `\`\`\`\n\n`
 
   return markdown
@@ -270,7 +283,8 @@ export function generateDistributionSQL(
  */
 export function generateDistributionMarkdown(
   section: ReportSection,
-  queryName: string
+  queryName: string,
+  palette?: string
 ): string {
   const config = section.config as DistributionSectionConfig
   let markdown = `## ${section.title}\n\n`
@@ -280,19 +294,38 @@ export function generateDistributionMarkdown(
   }
 
   const sql = generateDistributionSQL(config, section.dataSource)
-  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
 
-  markdown += `\`\`\`chart\n`
-  markdown += `type: histogram\n`
+  markdown += `\`\`\`histogram\n`
   markdown += `data: ${queryName}\n`
-  markdown += `x: value\n`
+  markdown += `valueColumn: value\n`
   if (config.bins) {
     markdown += `bins: ${config.bins}\n`
   }
   markdown += `title: ${section.title}\n`
+  if (palette) {
+    markdown += `color: ${getPaletteFirstColor(palette)}\n`
+  }
   markdown += `\`\`\`\n\n`
 
   return markdown
+}
+
+/**
+ * Get first color from palette for single-color charts
+ */
+function getPaletteFirstColor(palette: string): string {
+  const PALETTE_COLORS: Record<string, string> = {
+    vibrant: '#6366f1',
+    business: '#3b82f6',
+    ocean: '#0ea5e9',
+    sunset: '#f43f5e',
+    forest: '#22c55e',
+    categorical: '#3b82f6',
+    pastel: '#c4b5fd',
+    darkMode: '#818cf8'
+  }
+  return PALETTE_COLORS[palette] || '#3B82F6'
 }
 
 /**
@@ -332,7 +365,7 @@ export function generateTableMarkdown(
   }
 
   const sql = generateTableSQL(config, section.dataSource)
-  markdown += `\`\`\`sql name=${queryName}\n${sql}\n\`\`\`\n\n`
+  markdown += `\`\`\`sql ${queryName}\n${sql}\n\`\`\`\n\n`
 
   markdown += `\`\`\`datatable\n`
   markdown += `query: ${queryName}\n`
@@ -445,24 +478,28 @@ export function generateInsightMarkdown(
 
 /**
  * Generate section markdown based on type
+ * @param section - Report section definition
+ * @param sectionIndex - Section index for naming
+ * @param palette - Color palette for charts (optional)
  */
 export function generateSectionMarkdown(
   section: ReportSection,
-  sectionIndex: number
+  sectionIndex: number,
+  palette?: string
 ): string {
   const queryName = `section_${sectionIndex}_data`
 
   switch (section.type) {
     case 'kpi':
-      return generateKPIMarkdown(section, queryName)
+      return generateKPIMarkdown(section, queryName, palette)
     case 'trend':
-      return generateTrendMarkdown(section, queryName)
+      return generateTrendMarkdown(section, queryName, palette)
     case 'ranking':
-      return generateRankingMarkdown(section, queryName)
+      return generateRankingMarkdown(section, queryName, palette)
     case 'comparison':
-      return generateComparisonMarkdown(section, queryName)
+      return generateComparisonMarkdown(section, queryName, palette)
     case 'distribution':
-      return generateDistributionMarkdown(section, queryName)
+      return generateDistributionMarkdown(section, queryName, palette)
     case 'table':
       return generateTableMarkdown(section, queryName)
     case 'insight':

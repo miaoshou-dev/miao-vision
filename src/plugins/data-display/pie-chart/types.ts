@@ -38,6 +38,8 @@ export interface PieChartConfig {
   cornerRadius?: number
   /** Color palette */
   colors?: string[]
+  /** Named color palette preset */
+  palette?: string
   /** Value format: 'number', 'currency', 'percent' */
   valueFormat?: 'number' | 'currency' | 'percent'
   /** Currency symbol for currency format */

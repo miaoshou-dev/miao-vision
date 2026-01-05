@@ -32,6 +32,7 @@ export type {
   ReportSection,
   ReportPlan,
   ReportStyle,
+  ChartPalette,
   ReportGenerationRequest,
   SectionProgress,
   ReportGenerationResult

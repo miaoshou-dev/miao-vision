@@ -59,7 +59,19 @@ export {
   SequenceSnake,
   CycleRadial,
   CompareQuadrant,
-  FlowLinear
+  FlowLinear,
+  MindMap,
+  RelationNetwork,
+  CompareBinary,
+  SequenceRoadmap,
+  SequenceStairs,
+  SequenceAscending,
+  RelationVenn,
+  RelationCircle,
+  ChartBar,
+  ChartLine,
+  ChartFunnel,
+  CompareTable
 } from './structures'
 
 // Structure types
@@ -70,6 +82,18 @@ export type { SnakeItem, SnakeItemLayout } from './structures/sequence-snake'
 export type { CycleItem, CycleRadialProps } from './structures/cycle-radial'
 export type { QuadrantData, QuadrantItem, CompareQuadrantProps } from './structures/compare-quadrant'
 export type { FlowStep, FlowLinearProps } from './structures/flow-linear'
+export type { MindMapNodeData, MindMapNodeLayout, MindMapProps } from './structures/mind-map'
+export type { NetworkNodeData, NetworkEdgeData, NetworkNodeLayout, RelationNetworkProps } from './structures/relation-network'
+export type { CompareSideData, CompareItem, CompareBinaryProps } from './structures/compare-binary'
+export type { MilestoneData, MilestoneLayout, SequenceRoadmapProps } from './structures/sequence-roadmap'
+export type { StairStepData, StairStepLayout, SequenceStairsProps } from './structures/sequence-stairs'
+export type { AscendingStepData, AscendingStepLayout, SequenceAscendingProps } from './structures/sequence-ascending'
+export type { VennSetData, VennOverlapData, VennCircleLayout, RelationVennProps } from './structures/relation-venn'
+export type { CircleNodeData, CircleConnectionData, CircleNodeLayout, RelationCircleProps } from './structures/relation-circle'
+export type { BarDataItem, BarLayout, ChartBarProps } from './structures/chart-bar'
+export type { LineDataPoint, LineSeriesData, PointLayout, ChartLineProps } from './structures/chart-line'
+export type { FunnelStageData, FunnelStageLayout, ChartFunnelProps } from './structures/chart-funnel'
+export type { TableColumn, TableRow, CellLayout, CompareTableProps } from './structures/compare-table'
 
 // Items
 export {
@@ -78,7 +102,10 @@ export {
   ValueCard,
   CircularProgress,
   ImageCard,
-  StatCard
+  StatCard,
+  MindMapNode,
+  NetworkNode,
+  NumberBadge
 } from './items'
 
 // Icons
@@ -89,3 +116,9 @@ export * from './theme'
 
 // Templates
 export * from './templates'
+
+// AI Module (text-to-infographic conversion)
+export * from './ai'
+
+// Utils (SVG export, etc.)
+export * from './utils'

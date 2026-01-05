@@ -20,9 +20,26 @@
   let maxCount = $derived(data.maxCount)
   let totalCount = $derived(data.totalCount)
 
+  // Palette color mapping
+  const PALETTE_COLORS: Record<string, string> = {
+    vibrant: '#6366f1',
+    business: '#3b82f6',
+    ocean: '#0ea5e9',
+    sunset: '#f43f5e',
+    forest: '#22c55e',
+    categorical: '#3b82f6',
+    pastel: '#c4b5fd',
+    darkMode: '#818cf8'
+  }
+
+  function getColorFromPalette(palette?: string): string {
+    if (!palette) return '#3B82F6'
+    return PALETTE_COLORS[palette] || '#3B82F6'
+  }
+
   // Configuration with defaults
   let height = $derived(config.height || 300)
-  let color = $derived(config.color || '#3B82F6')
+  let color = $derived(config.color || getColorFromPalette(config.palette))
   let showXAxis = $derived(config.showXAxis !== false)
   let showYAxis = $derived(config.showYAxis !== false)
   let showLabels = $derived(config.showLabels !== false)

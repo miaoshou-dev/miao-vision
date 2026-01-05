@@ -11,6 +11,29 @@ import { formatValue, calculateComparison } from './formatter'
 import type { BigValueConfig, BigValueData, ComparisonData } from './types'
 
 /**
+ * Palette color mapping - first color of each palette
+ */
+const PALETTE_COLORS: Record<string, string> = {
+  vibrant: '#6366f1',
+  business: '#3b82f6',
+  ocean: '#0ea5e9',
+  sunset: '#f43f5e',
+  forest: '#22c55e',
+  categorical: '#3b82f6',
+  pastel: '#c4b5fd',
+  darkMode: '#818cf8'
+}
+
+/**
+ * Get color from palette name or return direct color
+ */
+function resolveColor(color?: string, palette?: string): string | undefined {
+  if (color) return color
+  if (palette && PALETTE_COLORS[palette]) return PALETTE_COLORS[palette]
+  return undefined
+}
+
+/**
  * Props passed to BigValue.svelte
  */
 interface BigValueProps {
@@ -90,12 +113,16 @@ export const bigValueRegistration = defineComponent<BigValueConfig, BigValueProp
       }
     }
 
+    // Resolve accent color from color or palette
+    const accentColor = resolveColor(config.color, config.palette)
+
     return {
       data: {
         value,
         title,
         formatted,
-        comparison
+        comparison,
+        color: accentColor
       }
     }
   }

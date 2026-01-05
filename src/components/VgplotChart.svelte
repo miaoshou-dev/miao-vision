@@ -5,6 +5,15 @@
   import { coordinator } from '@core/database'
   import type { ChartConfig } from '@/types/chart'
 
+  /**
+   * Quote a table name for SQL, handling fully qualified names
+   * - Simple names: "table_name"
+   * - Qualified names: catalog.schema.table (no quotes needed)
+   */
+  function quoteTableForSQL(tableName: string): string {
+    return tableName.includes('.') ? tableName : `"${tableName}"`
+  }
+
   interface Props {
     config: ChartConfig
   }
@@ -62,7 +71,9 @@
       }
 
       // Query data from the table
-      const query = `SELECT "${config.data.x}" as label, "${config.data.y}" as value FROM "${config.data.table}"`
+      // Don't quote fully qualified table names (catalog.schema.table)
+      const tableName = config.data.table.includes('.') ? config.data.table : `"${config.data.table}"`
+      const query = `SELECT "${config.data.x}" as label, "${config.data.y}" as value FROM ${tableName}`
       console.log('Pie chart query:', query)
 
       const result = await coord.query(query)
@@ -259,7 +270,7 @@
         SELECT
           "${config.data.x}" as category,
           "${config.data.y}" as value
-        FROM "${config.data.table}"
+        FROM ${quoteTableForSQL(config.data.table)}
       `
       console.log('BoxPlot query:', query)
 
@@ -503,7 +514,7 @@
         SELECT
           "${config.data.x}" as stage,
           "${config.data.y}" as value
-        FROM "${config.data.table}"
+        FROM ${quoteTableForSQL(config.data.table)}
       `
       console.log('Funnel chart query:', query)
 

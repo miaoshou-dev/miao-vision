@@ -5,9 +5,11 @@
     availableSources: DataSourceInfo[]
     selectedSources: DataSourceInfo[]
     onSelectionChange: (sources: DataSourceInfo[]) => void
+    onImportData?: () => void
+    onLoadSampleData?: () => void
   }
 
-  let { availableSources, selectedSources, onSelectionChange }: Props = $props()
+  let { availableSources, selectedSources, onSelectionChange, onImportData, onLoadSampleData }: Props = $props()
 
   function toggleSource(source: DataSourceInfo) {
     const isSelected = selectedSources.some((s) => s.name === source.name)
@@ -62,15 +64,49 @@
   {#if availableSources.length === 0}
     <div class="empty-state">
       <div class="empty-icon">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M4 7v10c0 1.1.9 2 2 2h12a2 2 0 002-2V7"/>
           <path d="M4 7l8-4 8 4"/>
           <path d="M4 7l8 4 8-4"/>
           <circle cx="12" cy="11" r="1"/>
         </svg>
       </div>
-      <p>No data sources available</p>
-      <span class="empty-hint">Load data files or run SQL queries first</span>
+      <h4 class="empty-title">No Data Sources Yet</h4>
+      <p class="empty-desc">Import your data to generate AI-powered reports with insights and visualizations.</p>
+
+      <div class="empty-actions">
+        {#if onImportData}
+          <button class="btn-primary" onclick={onImportData}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Import Data
+          </button>
+        {/if}
+        {#if onLoadSampleData}
+          <button class="btn-secondary" onclick={onLoadSampleData}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            Try Sample Data
+          </button>
+        {/if}
+      </div>
+
+      <div class="empty-tips">
+        <span class="tip-label">Supported formats:</span>
+        <div class="tip-formats">
+          <span class="format-badge">CSV</span>
+          <span class="format-badge">Parquet</span>
+          <span class="format-badge">JSON</span>
+          <span class="format-badge">Excel</span>
+        </div>
+      </div>
     </div>
   {:else}
     <div class="source-list">
@@ -166,25 +202,108 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 48px 24px;
+    padding: 40px 24px;
     color: #9ca3af;
     text-align: center;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05));
+    border: 1px dashed rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
   }
 
   .empty-icon {
-    color: #4b5563;
+    color: #6366f1;
     margin-bottom: 16px;
+    opacity: 0.7;
   }
 
-  .empty-state p {
+  .empty-title {
     margin: 0 0 8px;
-    font-size: 14px;
+    font-size: 16px;
+    font-weight: 600;
     color: #e0e0e0;
   }
 
-  .empty-hint {
-    font-size: 12px;
+  .empty-desc {
+    margin: 0 0 24px;
+    font-size: 13px;
+    color: #9ca3af;
+    max-width: 320px;
+    line-height: 1.5;
+  }
+
+  .empty-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: transparent;
+    color: #a0a0b0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+  }
+
+  .empty-tips {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tip-label {
+    font-size: 11px;
     color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .tip-formats {
+    display: flex;
+    gap: 6px;
+  }
+
+  .format-badge {
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    font-size: 11px;
+    color: #9ca3af;
+    font-family: 'JetBrains Mono', monospace;
   }
 
   .source-list {

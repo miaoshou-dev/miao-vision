@@ -14,6 +14,9 @@ export interface BigValueConfig {
   // New: Sparkline support
   sparkline?: string  // Optional: query name for sparkline data
   sparklineField?: string // Optional: field name for sparkline values
+  // Theme/color
+  color?: string      // Accent color for the value
+  palette?: string    // Named palette (uses first color as accent)
 }
 
 export interface BigValueData {
@@ -21,6 +24,7 @@ export interface BigValueData {
   title: string
   formatted: string
   comparison?: ComparisonData
+  color?: string  // Accent color for value display
 }
 
 export interface ComparisonData {

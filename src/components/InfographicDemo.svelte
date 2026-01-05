@@ -19,17 +19,41 @@
     CycleRadial,
     CompareQuadrant,
     FlowLinear,
+    MindMap,
+    RelationNetwork,
+    CompareBinary,
+    SequenceRoadmap,
+    SequenceStairs,
+    SequenceAscending,
+    RelationVenn,
+    RelationCircle,
+    ChartBar,
+    ChartLine,
+    ChartFunnel,
+    CompareTable,
     IconArrowNode,
     BadgeCard,
     ValueCard,
     CircularProgress,
     ImageCard,
     StatCard,
+    MindMapNode,
+    NetworkNode,
+    NumberBadge,
     getDarkPresetNames,
     getLightPresetNames,
     PALETTES,
-    getPaletteNames
+    getPaletteNames,
+    createPatternDef,
+    patternDefToSVG
   } from '@plugins/data-display/infographic'
+  import {
+    createDivider,
+    createBadge,
+    createFrame,
+    createCallout,
+    createHighlight
+  } from '@plugins/data-display/infographic/utils'
   import type {
     TreeNode,
     SwotData,
@@ -37,7 +61,23 @@
     SnakeItem,
     CycleItem,
     QuadrantData,
-    FlowStep
+    FlowStep,
+    MindMapNodeData,
+    NetworkNodeData,
+    NetworkEdgeData,
+    CompareSideData,
+    MilestoneData,
+    StairStepData,
+    AscendingStepData,
+    VennSetData,
+    VennOverlapData,
+    CircleNodeData,
+    CircleConnectionData,
+    BarDataItem,
+    LineSeriesData,
+    FunnelStageData,
+    TableColumn,
+    TableRow
   } from '@plugins/data-display/infographic'
 
   // =====================================================
@@ -278,10 +318,217 @@ Current production status:
     { id: 's4', label: 'Complete', desc: 'Process done' }
   ]
 
+  // MindMap - Radial mind map data
+  const mindMapData: MindMapNodeData = {
+    id: 'root',
+    label: 'Product Strategy',
+    children: [
+      {
+        id: 'market',
+        label: 'Market',
+        children: [
+          { id: 'b2b', label: 'B2B' },
+          { id: 'b2c', label: 'B2C' },
+          { id: 'saas', label: 'SaaS' }
+        ]
+      },
+      {
+        id: 'tech',
+        label: 'Technology',
+        children: [
+          { id: 'ai', label: 'AI/ML' },
+          { id: 'cloud', label: 'Cloud' }
+        ]
+      },
+      {
+        id: 'growth',
+        label: 'Growth',
+        children: [
+          { id: 'organic', label: 'Organic' },
+          { id: 'paid', label: 'Paid Ads' }
+        ]
+      },
+      {
+        id: 'team',
+        label: 'Team',
+        children: [
+          { id: 'eng', label: 'Engineering' },
+          { id: 'design', label: 'Design' }
+        ]
+      }
+    ]
+  }
+
+  // RelationNetwork - Network graph data
+  const networkNodes: NetworkNodeData[] = [
+    { id: 'api', label: 'API Gateway', group: 'core' },
+    { id: 'auth', label: 'Auth Service', group: 'core' },
+    { id: 'user', label: 'User Service', group: 'service' },
+    { id: 'order', label: 'Order Service', group: 'service' },
+    { id: 'db', label: 'Database', group: 'data' },
+    { id: 'cache', label: 'Redis Cache', group: 'data' }
+  ]
+
+  const networkEdges: NetworkEdgeData[] = [
+    { source: 'api', target: 'auth' },
+    { source: 'api', target: 'user' },
+    { source: 'api', target: 'order' },
+    { source: 'user', target: 'db' },
+    { source: 'order', target: 'db' },
+    { source: 'user', target: 'cache' },
+    { source: 'order', target: 'cache' }
+  ]
+
+  // CompareBinary - VS comparison data
+  const compareLeft: CompareSideData = {
+    title: 'React',
+    subtitle: 'Library',
+    icon: 'react',
+    items: [
+      { text: 'Virtual DOM diffing' },
+      { text: 'JSX syntax' },
+      { text: 'Large ecosystem' },
+      { text: 'One-way data flow' }
+    ]
+  }
+
+  const compareRight: CompareSideData = {
+    title: 'Svelte',
+    subtitle: 'Compiler',
+    icon: 'language-html5',
+    items: [
+      { text: 'No virtual DOM' },
+      { text: 'Reactive by default' },
+      { text: 'Smaller bundle size' },
+      { text: 'Less boilerplate' }
+    ]
+  }
+
+  // SequenceRoadmap - Project milestones
+  const roadmapMilestones: MilestoneData[] = [
+    { id: 'm1', title: 'MVP', desc: 'Core features', status: 'completed' },
+    { id: 'm2', title: 'Beta', desc: 'User testing', status: 'completed' },
+    { id: 'm3', title: 'Launch', desc: 'Public release', status: 'current' },
+    { id: 'm4', title: 'Scale', desc: 'Growth phase', status: 'upcoming' },
+    { id: 'm5', title: 'Expand', desc: 'New markets', status: 'upcoming' }
+  ]
+
+  // SequenceStairs - Growth stages
+  const stairsSteps: StairStepData[] = [
+    { id: 'st1', label: 'Seed', value: '$100K' },
+    { id: 'st2', label: 'Series A', value: '$2M' },
+    { id: 'st3', label: 'Series B', value: '$15M' },
+    { id: 'st4', label: 'Series C', value: '$50M' },
+    { id: 'st5', label: 'IPO', value: '$500M' }
+  ]
+
+  // SequenceAscending - Escalation levels
+  const ascendingSteps: AscendingStepData[] = [
+    { id: 'a1', label: 'Basic', desc: 'Entry tier' },
+    { id: 'a2', label: 'Standard', desc: 'Most popular' },
+    { id: 'a3', label: 'Premium', desc: 'Advanced features' },
+    { id: 'a4', label: 'Enterprise', desc: 'Full access' }
+  ]
+
+  // RelationVenn - Venn diagram data
+  const vennSets: VennSetData[] = [
+    { id: 'design', label: 'Design', items: ['Figma', 'Sketch', 'Adobe XD'] },
+    { id: 'dev', label: 'Development', items: ['React', 'Vue', 'Svelte'] },
+    { id: 'data', label: 'Data', items: ['SQL', 'Python', 'R'] }
+  ]
+
+  const vennOverlaps: VennOverlapData[] = [
+    { sets: ['design', 'dev'], label: 'UI/UX', items: ['CSS', 'HTML'] },
+    { sets: ['dev', 'data'], label: 'Backend', items: ['APIs', 'DB'] },
+    { sets: ['design', 'data'], label: 'DataViz', items: ['Charts'] },
+    { sets: ['design', 'dev', 'data'], label: 'Full Stack' }
+  ]
+
+  // RelationCircle - Circular relationship data
+  const circleNodes: CircleNodeData[] = [
+    { id: 'pm', label: 'PM', desc: 'Product', icon: 'account' },
+    { id: 'design', label: 'Design', desc: 'UX/UI', icon: 'palette' },
+    { id: 'frontend', label: 'Frontend', desc: 'React', icon: 'react' },
+    { id: 'backend', label: 'Backend', desc: 'Node.js', icon: 'nodejs' },
+    { id: 'qa', label: 'QA', desc: 'Testing', icon: 'test-tube' },
+    { id: 'devops', label: 'DevOps', desc: 'CI/CD', icon: 'cloud' }
+  ]
+
+  const circleConnections: CircleConnectionData[] = [
+    { from: 'pm', to: 'design' },
+    { from: 'design', to: 'frontend' },
+    { from: 'frontend', to: 'backend' },
+    { from: 'backend', to: 'devops' },
+    { from: 'devops', to: 'qa' },
+    { from: 'qa', to: 'pm' }
+  ]
+
+  // =====================================================
+  // Phase 4: Chart Components Demo Data
+  // =====================================================
+
+  // ChartBar data
+  const barChartData: BarDataItem[] = [
+    { label: 'January', value: 4500 },
+    { label: 'February', value: 5200 },
+    { label: 'March', value: 4800 },
+    { label: 'April', value: 6100 },
+    { label: 'May', value: 5800 }
+  ]
+
+  // ChartLine data
+  const lineSeriesData: LineSeriesData[] = [
+    {
+      name: 'Revenue',
+      points: [
+        { label: 'Q1', value: 12500 },
+        { label: 'Q2', value: 15800 },
+        { label: 'Q3', value: 14200 },
+        { label: 'Q4', value: 18500 }
+      ],
+      showArea: true
+    },
+    {
+      name: 'Expenses',
+      points: [
+        { label: 'Q1', value: 8500 },
+        { label: 'Q2', value: 9200 },
+        { label: 'Q3', value: 10100 },
+        { label: 'Q4', value: 11000 }
+      ],
+      color: '#ef4444',
+      lineStyle: 'dashed'
+    }
+  ]
+
+  // ChartFunnel data
+  const funnelData: FunnelStageData[] = [
+    { label: 'Visitors', value: 10000 },
+    { label: 'Leads', value: 5500 },
+    { label: 'Qualified', value: 2800 },
+    { label: 'Proposals', value: 1200 },
+    { label: 'Customers', value: 450 }
+  ]
+
+  // CompareTable data
+  const tableColumns: TableColumn[] = [
+    { id: 'basic', header: 'Basic', icon: 'account' },
+    { id: 'pro', header: 'Pro', color: '#6366f1' },
+    { id: 'enterprise', header: 'Enterprise', color: '#22c55e' }
+  ]
+
+  const tableRows: TableRow[] = [
+    { label: 'Users', values: { basic: '1', pro: '10', enterprise: 'Unlimited' } },
+    { label: 'Storage', values: { basic: '5GB', pro: '100GB', enterprise: '1TB' } },
+    { label: 'API Access', values: { basic: false, pro: true, enterprise: true } },
+    { label: 'Support', values: { basic: 'Email', pro: '24/7', enterprise: 'Dedicated' } },
+    { label: 'Analytics', values: { basic: false, pro: true, enterprise: true }, highlight: true }
+  ]
+
   let selectedTheme = $state('dark-vibrant')
   let selectedPalette = $state('vibrant')
   let showArrows = $state(true)
-  let activeDemo = $state<'jvm' | 'article' | 'components' | 'themes'>('jvm')
+  let activeDemo = $state<'jvm' | 'article' | 'components' | 'charts' | 'themes'>('jvm')
 
   const darkPresets = getDarkPresetNames()
   const lightPresets = getLightPresetNames()
@@ -304,6 +551,9 @@ Current production status:
     </button>
     <button class:active={activeDemo === 'components'} onclick={() => activeDemo = 'components'}>
       Components
+    </button>
+    <button class:active={activeDemo === 'charts'} onclick={() => activeDemo = 'charts'}>
+      Charts & Utils
     </button>
     <button class:active={activeDemo === 'themes'} onclick={() => activeDemo = 'themes'}>
       Themes
@@ -598,7 +848,7 @@ Current production status:
     <!-- ============================================== -->
 
     <!-- Structures -->
-    <h2 class="section-title">Structure Components (13)</h2>
+    <h2 class="section-title">Structure Components (21)</h2>
 
     <section class="demo-section">
       <h3>1. ListRowHorizontal</h3>
@@ -881,8 +1131,149 @@ Current production status:
       </div>
     </section>
 
+    <section class="demo-section">
+      <h3>14. MindMap</h3>
+      <p class="component-desc">Radial mind map for brainstorming and idea organization</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={600} height={450} padding={16}>
+          <MindMap
+            root={mindMapData}
+            width={568}
+            height={418}
+            direction="radial"
+            nodeSize={60}
+            levelGap={100}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>15. RelationNetwork</h3>
+      <p class="component-desc">Network graph showing node relationships and connections</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={500} height={400} padding={16}>
+          <RelationNetwork
+            nodes={networkNodes}
+            edges={networkEdges}
+            width={468}
+            height={368}
+            layout="circular"
+            nodeSize={50}
+            showEdgeLabels={false}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>16. CompareBinary</h3>
+      <p class="component-desc">Left vs Right binary comparison with item lists</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={700} height={320} padding={16}>
+          <CompareBinary
+            left={compareLeft}
+            right={compareRight}
+            width={668}
+            height={288}
+            showVsDivider={true}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>17. SequenceRoadmap</h3>
+      <p class="component-desc">Horizontal roadmap with milestone markers for project planning</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={800} height={180} padding={16}>
+          <SequenceRoadmap
+            milestones={roadmapMilestones}
+            width={768}
+            height={148}
+            showLine={true}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>18. SequenceStairs</h3>
+      <p class="component-desc">Ascending stair steps showing progression or growth stages</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={700} height={300} padding={16}>
+          <SequenceStairs
+            steps={stairsSteps}
+            width={668}
+            height={268}
+            direction="up"
+            showNumbers={true}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>19. SequenceAscending</h3>
+      <p class="component-desc">Ascending bars with arrows showing growth or escalation</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={700} height={280} padding={16}>
+          <SequenceAscending
+            steps={ascendingSteps}
+            width={668}
+            height={248}
+            showArrows={true}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>20. RelationVenn</h3>
+      <p class="component-desc">Venn diagram showing set relationships and overlaps</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={500} height={400} padding={16}>
+          <RelationVenn
+            sets={vennSets}
+            overlaps={vennOverlaps}
+            width={468}
+            height={368}
+            opacity={0.5}
+            showLabels={true}
+            showItems={true}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h3>21. RelationCircle</h3>
+      <p class="component-desc">Nodes arranged in circle with connections</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={500} height={450} padding={16}>
+          <RelationCircle
+            nodes={circleNodes}
+            connections={circleConnections}
+            width={468}
+            height={418}
+            nodeSize={45}
+            showCenter={true}
+            centerLabel="Team"
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
     <!-- Item Components -->
-    <h2 class="section-title">Item Components (6)</h2>
+    <h2 class="section-title">Item Components (9)</h2>
 
     <!-- 1. BadgeCard -->
     <section class="demo-section">
@@ -1338,6 +1729,426 @@ Current production status:
             height={86}
           />
         </Infographic>
+      </div>
+    </section>
+
+    <!-- 7. MindMapNode -->
+    <section class="demo-section">
+      <h3>7. MindMapNode</h3>
+      <p class="component-desc">Node for mind map structures with icon, label, and description</p>
+      <div class="items-row">
+        <Infographic theme={selectedTheme} width={120} height={90} padding={12}>
+          <MindMapNode
+            label="Root"
+            isRoot={true}
+            themeColors={{
+              colorPrimary: '#6366f1',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={96}
+            height={66}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={100} height={80} padding={12}>
+          <MindMapNode
+            label="Branch A"
+            icon="lightbulb"
+            themeColors={{
+              colorPrimary: '#22c55e',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={76}
+            height={56}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={100} height={80} padding={12}>
+          <MindMapNode
+            label="Branch B"
+            icon="cog"
+            themeColors={{
+              colorPrimary: '#f59e0b',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={76}
+            height={56}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <!-- 8. NetworkNode -->
+    <section class="demo-section">
+      <h3>8. NetworkNode</h3>
+      <p class="component-desc">Circular node for network graphs with icon and label</p>
+      <div class="items-row">
+        <Infographic theme={selectedTheme} width={100} height={100} padding={12}>
+          <NetworkNode
+            label="API"
+            icon="cloud"
+            themeColors={{
+              colorPrimary: '#3b82f6',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={76}
+            height={76}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={100} height={100} padding={12}>
+          <NetworkNode
+            label="DB"
+            icon="database"
+            themeColors={{
+              colorPrimary: '#22c55e',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={76}
+            height={76}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={100} height={100} padding={12}>
+          <NetworkNode
+            label="Cache"
+            icon="memory"
+            themeColors={{
+              colorPrimary: '#ec4899',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+            width={76}
+            height={76}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <!-- 9. NumberBadge -->
+    <section class="demo-section">
+      <h3>9. NumberBadge</h3>
+      <p class="component-desc">Circular or rounded badge displaying a number (step, rank, count)</p>
+      <div class="items-row">
+        <Infographic theme={selectedTheme} width={60} height={70} padding={12}>
+          <NumberBadge
+            number={1}
+            size={36}
+            variant="filled"
+            shape="circle"
+            themeColors={{
+              colorPrimary: '#6366f1',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={60} height={70} padding={12}>
+          <NumberBadge
+            number={2}
+            size={36}
+            variant="outline"
+            shape="circle"
+            themeColors={{
+              colorPrimary: '#22c55e',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={60} height={70} padding={12}>
+          <NumberBadge
+            number={3}
+            size={36}
+            variant="subtle"
+            shape="rounded"
+            themeColors={{
+              colorPrimary: '#f59e0b',
+              colorPrimaryBg: 'rgba(245, 158, 11, 0.2)',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+          />
+        </Infographic>
+        <Infographic theme={selectedTheme} width={60} height={70} padding={12}>
+          <NumberBadge
+            number={99}
+            size={36}
+            variant="filled"
+            shape="square"
+            themeColors={{
+              colorPrimary: '#ec4899',
+              colorPrimaryBg: '#1a1a2e',
+              colorPrimaryText: '#fff',
+              colorText: '#fff',
+              colorTextSecondary: '#a0a0b0',
+              colorWhite: '#fff',
+              colorBg: '#1a1a2e',
+              colorBgElevated: '#2a2a4a',
+              isDarkMode: true
+            }}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+  {:else if activeDemo === 'charts'}
+    <!-- ============================================== -->
+    <!-- Charts & Utilities (Phase 4 & 5) -->
+    <!-- ============================================== -->
+
+    <h2 class="section-title">Chart Components (Phase 4)</h2>
+
+    <!-- ChartBar -->
+    <section class="demo-section">
+      <h3>22. ChartBar</h3>
+      <p class="component-desc">Bar chart with horizontal or vertical orientation, grid lines, and value labels</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={600} height={350} padding={16}>
+          <ChartBar
+            items={barChartData}
+            width={568}
+            height={318}
+            orientation="horizontal"
+            showValues={true}
+            showGrid={true}
+            cornerRadius={4}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h4>ChartBar (Vertical)</h4>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={600} height={350} padding={16}>
+          <ChartBar
+            items={barChartData}
+            width={568}
+            height={318}
+            orientation="vertical"
+            showValues={true}
+            showGrid={true}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <!-- ChartLine -->
+    <section class="demo-section">
+      <h3>23. ChartLine</h3>
+      <p class="component-desc">Line chart with multiple series, smooth curves, area fills, and legends</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={650} height={400} padding={16}>
+          <ChartLine
+            series={lineSeriesData}
+            width={618}
+            height={368}
+            showPoints={true}
+            showGrid={true}
+            curveType="smooth"
+            lineWidth={2}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <!-- ChartFunnel -->
+    <section class="demo-section">
+      <h3>24. ChartFunnel</h3>
+      <p class="component-desc">Funnel chart for conversion visualization with tapered or stepped shapes</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={550} height={400} padding={16}>
+          <ChartFunnel
+            stages={funnelData}
+            width={518}
+            height={368}
+            shape="tapered"
+            showValues={true}
+            showPercentages={true}
+            showConversionRates={true}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <section class="demo-section">
+      <h4>ChartFunnel (Stepped)</h4>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={550} height={400} padding={16}>
+          <ChartFunnel
+            stages={funnelData}
+            width={518}
+            height={368}
+            shape="stepped"
+            showValues={true}
+            showPercentages={true}
+            palette={selectedPalette}
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <!-- CompareTable -->
+    <section class="demo-section">
+      <h3>25. CompareTable</h3>
+      <p class="component-desc">Comparison table with checkmarks, values, and striped rows for pricing/feature comparisons</p>
+      <div class="infographic-wrapper">
+        <Infographic theme={selectedTheme} width={700} height={320} padding={16}>
+          <CompareTable
+            columns={tableColumns}
+            rows={tableRows}
+            width={668}
+            striped={true}
+            showBorders={true}
+            headerStyle="filled"
+          />
+        </Infographic>
+      </div>
+    </section>
+
+    <!-- Pattern Fill Demo (Phase 5) -->
+    <h2 class="section-title">Pattern Fill System (Phase 5)</h2>
+
+    <section class="demo-section">
+      <h3>SVG Pattern Fills</h3>
+      <p class="component-desc">Various pattern textures for decorative fills</p>
+      <div class="infographic-wrapper">
+        <svg width="700" height="200" viewBox="0 0 700 200">
+          <defs>
+            {@html patternDefToSVG(createPatternDef('diagonalLines', '#6366f1', { spacing: 8 }))}
+            {@html patternDefToSVG(createPatternDef('dots', '#22c55e', { spacing: 10 }, 'dots-pattern'))}
+            {@html patternDefToSVG(createPatternDef('crosshatch', '#f59e0b', { spacing: 10 }, 'cross-pattern'))}
+            {@html patternDefToSVG(createPatternDef('waves', '#ec4899', { spacing: 12 }, 'waves-pattern'))}
+            {@html patternDefToSVG(createPatternDef('grid', '#3b82f6', { spacing: 12, strokeWidth: 0.5 }, 'grid-pattern'))}
+            {@html patternDefToSVG(createPatternDef('hexagons', '#8b5cf6', { spacing: 16 }, 'hex-pattern'))}
+          </defs>
+
+          <g>
+            <rect x="20" y="20" width="100" height="80" rx="8" fill="url(#diagonalLines-pattern)" />
+            <text x="70" y="120" text-anchor="middle" fill="#a0a0b0" font-size="11">Diagonal</text>
+
+            <rect x="130" y="20" width="100" height="80" rx="8" fill="url(#dots-pattern)" />
+            <text x="180" y="120" text-anchor="middle" fill="#a0a0b0" font-size="11">Dots</text>
+
+            <rect x="240" y="20" width="100" height="80" rx="8" fill="url(#cross-pattern)" />
+            <text x="290" y="120" text-anchor="middle" fill="#a0a0b0" font-size="11">Crosshatch</text>
+
+            <rect x="350" y="20" width="100" height="80" rx="8" fill="url(#waves-pattern)" />
+            <text x="400" y="120" text-anchor="middle" fill="#a0a0b0" font-size="11">Waves</text>
+
+            <rect x="460" y="20" width="100" height="80" rx="8" fill="url(#grid-pattern)" />
+            <text x="510" y="120" text-anchor="middle" fill="#a0a0b0" font-size="11">Grid</text>
+
+            <rect x="570" y="20" width="100" height="80" rx="8" fill="url(#hex-pattern)" />
+            <text x="620" y="120" text-anchor="middle" fill="#a0a0b0" font-size="11">Hexagons</text>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Decorative Elements Demo -->
+    <h2 class="section-title">Decorative Elements (Phase 5)</h2>
+
+    <section class="demo-section">
+      <h3>Dividers, Badges, & Annotations</h3>
+      <p class="component-desc">Various decorative elements for enhancing infographics</p>
+      <div class="infographic-wrapper">
+        <svg width="700" height="280" viewBox="0 0 700 280">
+          <!-- Dividers -->
+          <text x="20" y="25" fill="#a0a0b0" font-size="12" font-weight="600">Dividers</text>
+          {@html createDivider(20, 45, { style: 'solid', color: '#6366f1', length: 120 })}
+          <text x="150" y="50" fill="#666" font-size="10">solid</text>
+
+          {@html createDivider(180, 45, { style: 'dashed', color: '#22c55e', length: 120 })}
+          <text x="310" y="50" fill="#666" font-size="10">dashed</text>
+
+          {@html createDivider(340, 45, { style: 'gradient', color: '#f59e0b', length: 120 })}
+          <text x="470" y="50" fill="#666" font-size="10">gradient</text>
+
+          {@html createDivider(500, 45, { style: 'ornament', color: '#ec4899', length: 120, strokeWidth: 2 })}
+          <text x="630" y="50" fill="#666" font-size="10">ornament</text>
+
+          <!-- Badges -->
+          <text x="20" y="95" fill="#a0a0b0" font-size="12" font-weight="600">Badges</text>
+          {@html createBadge(70, 130, '1', { shape: 'circle', color: '#6366f1', size: 32 })}
+          {@html createBadge(130, 130, 'A', { shape: 'hexagon', color: '#22c55e', size: 32 })}
+          {@html createBadge(190, 130, '!', { shape: 'diamond', color: '#f59e0b', size: 32 })}
+          {@html createBadge(260, 130, 'Pro', { shape: 'pill', color: '#ec4899', size: 28 })}
+          {@html createBadge(350, 130, 'NEW', { shape: 'ribbon', color: '#3b82f6', size: 28 })}
+          {@html createBadge(450, 130, '*', { shape: 'star', color: '#8b5cf6', size: 34 })}
+
+          <!-- Frames & Callouts -->
+          <text x="20" y="185" fill="#a0a0b0" font-size="12" font-weight="600">Frames & Callouts</text>
+          {@html createFrame(20, 200, 150, 60, { color: '#6366f1', strokeWidth: 2, cornerRadius: 8, style: 'solid' })}
+          {@html createFrame(190, 200, 150, 60, { color: '#22c55e', strokeWidth: 1, style: 'dashed' })}
+          {@html createCallout(360, 200, 130, 50, 'bottom', { color: '#1a1a2e', borderColor: '#f59e0b', borderWidth: 2, cornerRadius: 8 })}
+          <text x="425" y="230" text-anchor="middle" fill="#f59e0b" font-size="11">Callout</text>
+
+          <!-- Highlights -->
+          {@html createHighlight(510, 205, 80, 20, { color: '#fef08a', opacity: 0.4, style: 'fill' })}
+          <text x="550" y="220" text-anchor="middle" fill="#888" font-size="11">highlight</text>
+          {@html createHighlight(600, 205, 80, 20, { color: '#6366f1', opacity: 0.6, style: 'underline' })}
+          <text x="640" y="220" text-anchor="middle" fill="#888" font-size="11">underline</text>
+        </svg>
       </div>
     </section>
 

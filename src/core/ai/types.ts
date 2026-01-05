@@ -284,6 +284,19 @@ export type ReportStyle =
   | 'narrative'     // Story-driven with detailed explanations
 
 /**
+ * Color palette presets for charts
+ */
+export type ChartPalette =
+  | 'vibrant'     // Modern vibrant colors
+  | 'business'    // Professional business colors
+  | 'ocean'       // Blue/cyan tones
+  | 'sunset'      // Warm red/orange/yellow
+  | 'forest'      // Green tones
+  | 'categorical' // Distinct category colors
+  | 'pastel'      // Soft pastel colors
+  | 'darkMode'    // Optimized for dark backgrounds
+
+/**
  * Report generation request
  */
 export interface ReportGenerationRequest {
@@ -293,6 +306,8 @@ export interface ReportGenerationRequest {
   prompt: string
   /** Report style preference */
   style?: ReportStyle
+  /** Color palette for charts */
+  palette?: ChartPalette
   /** Language for the report */
   language?: 'zh' | 'en'
 }

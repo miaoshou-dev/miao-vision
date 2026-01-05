@@ -22,6 +22,8 @@ export interface HistogramConfig {
   height?: number
   /** Bar color */
   color?: string
+  /** Named color palette preset (uses first color) */
+  palette?: string
   /** Show X-axis */
   showXAxis?: boolean
   /** Show Y-axis */

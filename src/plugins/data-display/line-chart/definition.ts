@@ -17,12 +17,31 @@ interface LineChartProps {
 }
 
 /**
+ * Color palettes for charts
+ */
+const PALETTES: Record<string, string[]> = {
+  vibrant: ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#06b6d4'],
+  business: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+  ocean: ['#0ea5e9', '#06b6d4', '#14b8a6', '#22c55e', '#3b82f6', '#6366f1'],
+  sunset: ['#f43f5e', '#f97316', '#eab308', '#f59e0b', '#ec4899', '#8b5cf6'],
+  forest: ['#22c55e', '#10b981', '#14b8a6', '#84cc16', '#059669', '#0d9488'],
+  categorical: ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'],
+  pastel: ['#c4b5fd', '#fbcfe8', '#fde68a', '#a7f3d0', '#bae6fd', '#fecaca'],
+  darkMode: ['#818cf8', '#a78bfa', '#f472b6', '#fb7185', '#fb923c', '#facc15', '#4ade80', '#22d3ee']
+}
+
+/**
  * Default color palette for multiple series
  */
-const DEFAULT_COLORS = [
-  '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-  '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
-]
+const DEFAULT_COLORS = PALETTES.categorical
+
+/**
+ * Get colors from palette name or use default
+ */
+function getColorsFromPalette(palette?: string): string[] {
+  if (!palette) return DEFAULT_COLORS
+  return PALETTES[palette] || DEFAULT_COLORS
+}
 
 /**
  * Format a value based on format type
@@ -106,6 +125,7 @@ const LineChartSchema = {
     { name: 'width', type: 'number' as const, required: false, default: 680 },
     { name: 'height', type: 'number' as const, required: false, default: 400 },
     { name: 'color', type: 'string' as const, required: false, default: '#3B82F6' },
+    { name: 'palette', type: 'string' as const, required: false },
     { name: 'showLabels', type: 'boolean' as const, required: false, default: true },
     { name: 'showLegend', type: 'boolean' as const, required: false, default: true },
     { name: 'showGrid', type: 'boolean' as const, required: false, default: true },
@@ -184,7 +204,7 @@ export const lineChartRegistration = defineComponent<LineChartConfig, LineChartP
     const groupCol = config.group
     const valueFormat = config.valueFormat || 'number'
     const currencySymbol = config.currencySymbol || '$'
-    const colors = config.colors || DEFAULT_COLORS
+    const colors = config.colors || getColorsFromPalette(config.palette)
     const defaultColor = config.color || '#3B82F6'
     const curve = config.curve as 'linear' | 'monotone' | 'step' | 'basis' || 'linear'
 

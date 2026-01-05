@@ -16,7 +16,7 @@
   {/if}
 
   <!-- Main Value -->
-  <div class="bigvalue-value">{data.formatted}</div>
+  <div class="bigvalue-value" style={data.color ? `color: ${data.color}` : ''}>{data.formatted}</div>
 
   <!-- Comparison (if available) -->
   {#if data.comparison}

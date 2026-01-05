@@ -174,6 +174,17 @@ export function createDatabaseStore() {
     }
   }
 
+  /**
+   * Get the underlying DuckDB connection for direct queries
+   * Used by AI Report to discover available tables
+   */
+  function getDuckDB() {
+    if (!state.initialized) {
+      return null
+    }
+    return duckDBManager.getConnection()
+  }
+
   return {
     get state() {
       return state
@@ -189,7 +200,8 @@ export function createDatabaseStore() {
     removeDataSource,
     switchConnection,
     getCurrentConnectionId,
-    cleanupReportTables
+    cleanupReportTables,
+    getDuckDB
   }
 }
 

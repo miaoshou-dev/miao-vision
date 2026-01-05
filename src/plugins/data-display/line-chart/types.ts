@@ -15,6 +15,7 @@ export interface LineChartConfig {
   height?: number
   color?: string
   colors?: string[]
+  palette?: string
   showLabels?: boolean
   showLegend?: boolean
   showGrid?: boolean

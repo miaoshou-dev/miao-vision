@@ -101,3 +101,17 @@ export {
   createPreset,
   createBrandPreset
 } from './presets'
+
+// Patterns
+export type { PatternType, PatternConfig, PatternDef } from './patterns'
+export {
+  createPatternDef,
+  patternDefToSVG,
+  patternUrl,
+  createPatternPalette,
+  PATTERN_NAMES,
+  getPatternTypes,
+  hasPatternType,
+  PATTERN_PRESETS,
+  createPresetPattern
+} from './patterns'

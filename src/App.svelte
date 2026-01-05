@@ -27,6 +27,7 @@
   import CrossFilterDemo from './components/CrossFilterDemo.svelte'
   import DrilldownModal from './components/DrilldownModal.svelte'
   import DrilldownDemo from './components/DrilldownDemo.svelte'
+  import InfographicDemo from './components/InfographicDemo.svelte'
   import { drilldownStore } from '@app/stores/drilldown.svelte'
   import { drilldownService } from '@core/engine/drilldown/drilldown-service'
   import AIGenerateDialog from './components/AIGenerateDialog.svelte'
@@ -36,7 +37,7 @@
   // Svelte 5 Runes mode
   let appTitle = $state('Miao Vision')
   let subtitle = $state('Local-First Analytics')
-  let activeTab = $state<'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown'>('workspace')
+  let activeTab = $state<'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown' | 'infographic'>('workspace')
 
   // Report tab state
   let markdownEditor = $state<MarkdownEditor | null>(null)
@@ -121,7 +122,7 @@
     }
   })
 
-  function setTab(tab: 'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown') {
+  function setTab(tab: 'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown' | 'infographic') {
     activeTab = tab
   }
 
@@ -625,10 +626,12 @@
           }))
 
           const countResult = await db.query(`SELECT COUNT(*) as cnt FROM "${tableName}"`)
-          const rowCount = Number(countResult.toArray()[0]?.cnt || 0)
+          const rawCount = countResult.toArray()[0]?.cnt
+          const rowCount = typeof rawCount === 'bigint' ? Number(rawCount) : Number(rawCount || 0)
 
           const sampleResult = await db.query(`SELECT * FROM "${tableName}" LIMIT 5`)
-          const sample = sampleResult.toArray()
+          // Convert BigInt values to numbers for JSON serialization
+          const sample = convertBigIntToNumber(sampleResult.toArray()) as Record<string, unknown>[]
 
           sources.push({
             name: tableName,
@@ -648,13 +651,31 @@
 
   function inferColumnTypeForReport(value: unknown): string {
     if (value === null || value === undefined) return 'unknown'
-    if (typeof value === 'number') return 'number'
+    if (typeof value === 'number' || typeof value === 'bigint') return 'number'
     if (typeof value === 'boolean') return 'boolean'
     if (typeof value === 'string') {
       if (/^\d{4}-\d{2}-\d{2}/.test(value)) return 'date'
       return 'string'
     }
     return 'unknown'
+  }
+
+  /**
+   * Convert BigInt values to numbers for JSON serialization
+   * DuckDB returns BigInt for integer columns which can't be serialized
+   */
+  function convertBigIntToNumber(obj: unknown): unknown {
+    if (obj === null || obj === undefined) return obj
+    if (typeof obj === 'bigint') return Number(obj)
+    if (Array.isArray(obj)) return obj.map(convertBigIntToNumber)
+    if (typeof obj === 'object') {
+      const result: Record<string, unknown> = {}
+      for (const [key, value] of Object.entries(obj)) {
+        result[key] = convertBigIntToNumber(value)
+      }
+      return result
+    }
+    return obj
   }
 
   function handleReportGeneratorComplete(markdown: string, plan: ReportPlan, dataSources: DataSourceInfo[]) {
@@ -679,6 +700,49 @@ dataSources: [${dataSourceNames.join(', ')}]
 
   function handleReportGeneratorCancel() {
     showReportGenerator = false
+  }
+
+  function handleReportImportData() {
+    // Close wizard and switch to workspace tab for data import
+    showReportGenerator = false
+    setTab('workspace')
+  }
+
+  async function handleReportLoadSampleData() {
+    // Load sample data, then refresh available sources
+    try {
+      const sampleSQL = `
+        CREATE OR REPLACE TABLE sample_sales AS
+        SELECT * FROM (VALUES
+          ('2024-01', 'North', 'Electronics', 15000),
+          ('2024-01', 'South', 'Electronics', 12000),
+          ('2024-01', 'North', 'Clothing', 8000),
+          ('2024-01', 'South', 'Clothing', 9500),
+          ('2024-02', 'North', 'Electronics', 18000),
+          ('2024-02', 'South', 'Electronics', 14000),
+          ('2024-02', 'North', 'Clothing', 9200),
+          ('2024-02', 'South', 'Clothing', 10500),
+          ('2024-03', 'North', 'Electronics', 22000),
+          ('2024-03', 'South', 'Electronics', 16000),
+          ('2024-03', 'North', 'Clothing', 11000),
+          ('2024-03', 'South', 'Clothing', 12000)
+        ) AS t(month, region, category, revenue);
+
+        CREATE OR REPLACE TABLE sample_customers AS
+        SELECT * FROM (VALUES
+          (1, 'Alice Wang', 'alice@example.com', 'Premium', 12500),
+          (2, 'Bob Chen', 'bob@example.com', 'Standard', 4200),
+          (3, 'Carol Liu', 'carol@example.com', 'Premium', 18900),
+          (4, 'David Zhang', 'david@example.com', 'Standard', 3100),
+          (5, 'Eva Li', 'eva@example.com', 'Premium', 15600)
+        ) AS t(id, name, email, tier, total_spend);
+      `
+      await databaseStore.executeQuery(sampleSQL)
+      // Re-trigger handleGenerateReport to refresh available sources
+      await handleGenerateReport()
+    } catch (error) {
+      console.error('Failed to load sample data:', error)
+    }
   }
 
   function handleSelectReport(report: Report) {
@@ -837,6 +901,14 @@ dataSources: [${dataSourceNames.join(', ')}]
         <span class="nav-label">🔍 Drilldown</span>
       </button>
 
+      <button
+        class="nav-item"
+        class:active={activeTab === 'infographic'}
+        onclick={() => setTab('infographic')}
+      >
+        <span class="nav-label">📊 Infographic</span>
+      </button>
+
       <div class="nav-section">
         <div class="nav-section-header">
           <span class="nav-section-title">Reports</span>
@@ -976,6 +1048,10 @@ dataSources: [${dataSourceNames.join(', ')}]
       {:else if activeTab === 'drilldown'}
         <div class="page-container drilldown-page">
           <DrilldownDemo />
+        </div>
+      {:else if activeTab === 'infographic'}
+        <div class="page-container infographic-page">
+          <InfographicDemo />
         </div>
       {:else if activeTab === 'report'}
         <div class="page-container report-layout">
@@ -1122,6 +1198,8 @@ dataSources: [${dataSourceNames.join(', ')}]
     availableSources={availableDataSources}
     onComplete={handleReportGeneratorComplete}
     onCancel={handleReportGeneratorCancel}
+    onImportData={handleReportImportData}
+    onLoadSampleData={handleReportLoadSampleData}
   />
 {/if}
 

@@ -16,6 +16,7 @@ export const HistogramSchema: ConfigSchema = {
     { name: 'subtitle', type: 'string' },
     { name: 'height', type: 'number', default: 300 },
     { name: 'color', type: 'string', default: '#3B82F6' },
+    { name: 'palette', type: 'string' },
     { name: 'showXAxis', type: 'boolean', default: true },
     { name: 'showYAxis', type: 'boolean', default: true },
     { name: 'xAxisLabel', type: 'string' },

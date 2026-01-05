@@ -434,6 +434,14 @@ export class DuckDBManager {
   }
 
   /**
+   * Get the underlying connection for direct queries
+   * Used by AI Report to discover available tables
+   */
+  getConnection(): duckdb.AsyncDuckDBConnection | null {
+    return this.conn
+  }
+
+  /**
    * Execute a statement without returning results (CREATE, DROP, INSERT, etc.)
    */
   async exec(sql: string): Promise<void> {
