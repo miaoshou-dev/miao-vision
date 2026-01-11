@@ -27,10 +27,18 @@ export default defineConfig({
         '**/*.svelte'
       ],
       thresholds: {
+        // Global thresholds
         lines: 25,
         functions: 25,
         branches: 20,
-        statements: 25
+        statements: 25,
+        // Higher thresholds for pure function modules
+        'src/core/shared/pure/**/*.ts': {
+          lines: 70,
+          functions: 70,
+          branches: 60,
+          statements: 70
+        }
       }
     }
   },

@@ -39,7 +39,8 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
-    "create-plugin": "npx ts-node scripts/create-plugin.ts"
+    "create-plugin": "npx ts-node scripts/create-plugin.ts",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
@@ -52,6 +53,7 @@
     "@types/diff-match-patch": "^1.0.36",
     "@vitest/coverage-v8": "^4.0.15",
     "autoprefixer": "^10.4.22",
+    "husky": "^9.1.7",
     "jsdom": "^27.0.1",
     "postcss": "^8.5.6",
     "svelte": "^5.15.1",

@@ -1,0 +1,138 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check file sizes
+        run: |
+          echo "Checking for files over 500 lines..."
+          failed=0
+
+          # Check TypeScript files
+          for f in $(find src -name "*.ts" -not -path "*/node_modules/*" -not -name "*.test.ts" -not -name "*.spec.ts"); do
+            lines=$(wc -l < "$f")
+            if [ $lines -gt 500 ]; then
+              echo "::error file=$f::File has $lines lines (max 500)"
+              failed=1
+            fi
+          done
+
+          # Check Svelte files
+          for f in $(find src -name "*.svelte" -not -path "*/node_modules/*"); do
+            lines=$(wc -l < "$f")
+            if [ $lines -gt 500 ]; then
+              echo "::error file=$f::File has $lines lines (max 500)"
+              failed=1
+            fi
+          done
+
+          if [ $failed -eq 1 ]; then
+            echo "::error::Some files exceed the 500 line limit. Please split them into smaller modules."
+            exit 1
+          fi
+
+          echo "All files are within size limits."
+
+      - name: Type check
+        run: npm run check
+
+      - name: Run tests
+        run: npm run test:run
+
+      - name: Check test coverage
+        run: |
+          npm run test:coverage
+
+          # Extract coverage from output
+          echo "Coverage report generated. Check artifacts for details."
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for console.log statements
+        run: |
+          echo "Checking for console.log statements in source..."
+          # Exclude test files and specific allowed files
+          if grep -r "console\.log" src --include="*.ts" --include="*.svelte" \
+             --exclude-dir=node_modules \
+             --exclude="*.test.ts" \
+             --exclude="*.spec.ts" | grep -v "// eslint-disable" | head -20; then
+            echo "::warning::Found console.log statements. Consider removing for production."
+          fi
+
+      - name: Check for TODO comments
+        run: |
+          echo "Checking for TODO comments..."
+          todos=$(grep -r "TODO" src --include="*.ts" --include="*.svelte" --exclude-dir=node_modules | wc -l)
+          echo "Found $todos TODO comments"
+          if [ $todos -gt 50 ]; then
+            echo "::warning::High number of TODO comments ($todos). Consider addressing some."
+          fi
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [quality, lint]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7

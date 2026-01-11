@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# Pre-commit hook: Check code quality before committing
+
+echo "Running pre-commit checks..."
+
+# Check for staged files over 500 lines
+echo "Checking file sizes..."
+for file in $(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|svelte)$' | grep -v '\.test\.ts$' | grep -v '\.spec\.ts$'); do
+  if [ -f "$file" ]; then
+    lines=$(wc -l < "$file")
+    if [ $lines -gt 500 ]; then
+      echo "Error: $file has $lines lines (max 500)"
+      echo "Please split into smaller files before committing."
+      exit 1
+    fi
+  fi
+done
+echo "File sizes OK"
+
+# Run tests (type check is done in CI, not pre-commit to save time)
+echo "Running tests..."
+npm run test:run
+if [ $? -ne 0 ]; then
+  echo "Tests failed. Please fix failing tests before committing."
+  exit 1
+fi
+
+echo "All pre-commit checks passed!"
