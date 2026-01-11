@@ -304,10 +304,10 @@
 
   .main-wrapper {
     flex: 1;
-    margin-left: 240px;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
+    min-width: 0; /* Prevent flex item from overflowing */
   }
 
   .top-header {
@@ -361,8 +361,6 @@
   }
 
   @media (max-width: 1024px) {
-    .main-wrapper {
-      margin-left: 0;
-    }
+    /* Responsive adjustments for smaller screens */
   }
 </style>
