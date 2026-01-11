@@ -145,3 +145,126 @@ export {
   // Extraction
   extractAllVariables
 } from './contracts'
+
+// ============================================================================
+// Array Utilities
+// ============================================================================
+
+export {
+  // Types
+  type SortDirection,
+  type SortConfig,
+  type FilterOperator,
+  type FilterCondition,
+  type GroupedData,
+
+  // Sorting
+  sortBy,
+  sortByMultiple,
+  compareValues,
+
+  // Filtering
+  filterBy,
+  filterByAll,
+  filterByAny,
+  matchesCondition,
+  searchText,
+
+  // Grouping
+  groupBy,
+  groupAndAggregate,
+
+  // Aggregation
+  sum,
+  average,
+  min,
+  max,
+  countDistinct,
+
+  // Utilities
+  unique,
+  paginate,
+  chunk,
+  flatten,
+  pick,
+  omit
+} from './array'
+
+// ============================================================================
+// Table Utilities
+// ============================================================================
+
+export {
+  // Types
+  type PaginationState,
+  type PaginationInfo,
+  type ColumnAlignment,
+  type ColumnConfig,
+  type ExportOptions,
+  type SelectionMode,
+  type SelectionState,
+
+  // Pagination
+  getPaginationInfo,
+  paginateData,
+  getPageNumbers,
+
+  // Column Formatting
+  inferAlignment,
+  formatCellValue,
+  inferColumns,
+  formatColumnLabel,
+
+  // Export
+  toCSV,
+  toJSON,
+  toTSV,
+  downloadFile,
+  exportCSV,
+  exportJSON,
+
+  // Selection
+  createSelectionState,
+  toggleSelection,
+  selectRange,
+  selectAll,
+  clearSelection,
+  isSelected,
+  getSelectedItems
+} from './table'
+
+// ============================================================================
+// Chart Utilities
+// ============================================================================
+
+export {
+  // Colors
+  CHART_COLORS,
+  getChartColor,
+  generateColorScale,
+  hexToRgb,
+  rgbToHex,
+  adjustBrightness,
+  getContrastColor,
+
+  // Scales
+  type ScaleLinear,
+  createLinearScale,
+  niceExtent,
+  niceStep,
+  generateTicks,
+
+  // Data Preparation
+  type ChartDataPoint,
+  type PreparedChartData,
+  prepareChartData,
+  calculatePercentages,
+
+  // SVG Utilities
+  linePath,
+  areaPath,
+  arcPath,
+  sectorPath,
+  polarToCartesian,
+  calculatePieAngles
+} from './chart'
