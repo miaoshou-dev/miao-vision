@@ -148,3 +148,9 @@ export interface DataTableData {
   sortState: SortState | null
   searchQuery: string
 }
+
+// Type aliases for consistency with logic files
+export type ColumnDef = ColumnConfig
+export type ConditionalFormatRule = ConditionalFormat
+export type ColorScaleConfig = ColorScale
+export type IconSetConfig = IconSet
