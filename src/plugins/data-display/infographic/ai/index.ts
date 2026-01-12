@@ -61,3 +61,13 @@ export {
   type PipelineConfig,
   type PipelineResult
 } from './pipeline'
+
+// LLM-Enhanced Pipeline
+export {
+  LLMInfographicPipeline,
+  createLLMPipeline,
+  llmConvert,
+  llmConvertMultiSection,
+  type LLMPipelineConfig,
+  type LLMPipelineResult
+} from './llm-pipeline'

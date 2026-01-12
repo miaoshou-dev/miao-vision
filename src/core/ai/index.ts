@@ -58,3 +58,30 @@ export {
   parsePlannerResponse,
   generateSectionMarkdown
 } from './prompts'
+
+// Infographic AI Module
+export {
+  // Types
+  type SemanticAnalysisResult,
+  type ExtractedEntity,
+  type VisualizationSuggestion,
+  type InfographicSection,
+  type InfographicPlan,
+  type InfographicPlanRequest,
+  type InfographicPlanResult,
+  type InfographicProgress,
+  type GeneratedInfographic,
+  // SemanticAnalyzer
+  SemanticAnalyzer,
+  createSemanticAnalyzer,
+  type SemanticAnalyzerOptions,
+  // InfographicPlanner
+  InfographicPlanner,
+  createInfographicPlanner,
+  type InfographicPlannerOptions,
+  // InfographicGenerator
+  InfographicGenerator,
+  createInfographicGenerator,
+  generateInfographicMarkdown,
+  type InfographicGeneratorOptions
+} from './infographic'
