@@ -51,3 +51,36 @@ export {
   buildDataExtractionPrompt,
   CATEGORY_DETECTION_PROMPT
 } from './prompts'
+
+// Phase 2: Article Analysis & Multi-Chart Planning
+
+// ArticleAnalyzer
+export {
+  ArticleAnalyzer,
+  createArticleAnalyzer,
+  type ArticleSection,
+  type DataPoint,
+  type ArticleAnalysisResult,
+  type ReportStructure
+} from './article-analyzer'
+
+// MultiChartPlanner
+export {
+  MultiChartPlanner,
+  createMultiChartPlanner,
+  planMultiChart,
+  type LayoutConfig,
+  type PlannedChart,
+  type MultiChartPlan
+} from './multi-chart-planner'
+
+// ArticleToReport Pipeline
+export {
+  ArticleToReportPipeline,
+  createArticleToReportPipeline,
+  articleToReport,
+  streamArticleToReport,
+  type ArticleToReportOptions,
+  type PipelineProgress,
+  type ArticleToReportResult
+} from './article-to-report'

@@ -59,7 +59,7 @@ export {
   generateSectionMarkdown
 } from './prompts'
 
-// Infographic AI Module
+// Infographic AI Module (Phase 1)
 export {
   // Types
   type SemanticAnalysisResult,
@@ -83,5 +83,25 @@ export {
   InfographicGenerator,
   createInfographicGenerator,
   generateInfographicMarkdown,
-  type InfographicGeneratorOptions
+  type InfographicGeneratorOptions,
+  // Phase 2: Article-to-Report Pipeline
+  ArticleAnalyzer,
+  createArticleAnalyzer,
+  type ArticleSection,
+  type DataPoint,
+  type ArticleAnalysisResult,
+  type ReportStructure,
+  MultiChartPlanner,
+  createMultiChartPlanner,
+  planMultiChart,
+  type LayoutConfig,
+  type PlannedChart,
+  type MultiChartPlan,
+  ArticleToReportPipeline,
+  createArticleToReportPipeline,
+  articleToReport,
+  streamArticleToReport,
+  type ArticleToReportOptions,
+  type PipelineProgress,
+  type ArticleToReportResult
 } from './infographic'

@@ -17,6 +17,7 @@
   import CrossFilterDemo from './components/CrossFilterDemo.svelte'
   import DrilldownDemo from './components/DrilldownDemo.svelte'
   import InfographicDemo from './components/InfographicDemo.svelte'
+  import ArticleToInfographicDemo from './components/ArticleToInfographicDemo.svelte'
 
   // Modals
   import DrilldownModal from './components/DrilldownModal.svelte'
@@ -39,7 +40,7 @@
   import { gatherDataSources } from './components/app/logic/ai-report-sources'
 
   // Types
-  type TabType = 'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown' | 'infographic'
+  type TabType = 'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown' | 'infographic' | 'article-ai'
 
   // App state
   let appTitle = $state('Miao Vision')
@@ -220,6 +221,7 @@
         {:else if activeTab === 'crossfilter'}CrossFilter Demo
         {:else if activeTab === 'drilldown'}Drilldown Demo
         {:else if activeTab === 'infographic'}Infographic Demo
+        {:else if activeTab === 'article-ai'}Article → Infographic AI
         {/if}
       </h2>
     </header>
@@ -247,6 +249,8 @@
         <div class="page-container"><DrilldownDemo /></div>
       {:else if activeTab === 'infographic'}
         <div class="page-container"><InfographicDemo /></div>
+      {:else if activeTab === 'article-ai'}
+        <div class="page-container"><ArticleToInfographicDemo /></div>
       {:else if activeTab === 'report'}
         <div class="page-container report-layout">
           <ReportPage
