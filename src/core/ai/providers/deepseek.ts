@@ -17,7 +17,12 @@ import type {
   ProviderConfig
 } from '../types'
 
-const DEFAULT_BASE_URL = 'https://api.deepseek.com'
+// Use proxy to bypass CORS
+// - Development: Vite dev server proxy
+// - Production: Vercel API route
+const DEFAULT_BASE_URL = import.meta.env.DEV
+  ? '/api/deepseek'  // Vite dev server proxy
+  : '/api/llm'       // Vercel API route proxy
 const DEFAULT_MODEL = 'deepseek-chat'
 
 /**

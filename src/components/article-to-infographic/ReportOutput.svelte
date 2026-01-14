@@ -2,7 +2,7 @@
   /**
    * ReportOutput - Output panel for generated infographic report
    */
-  import { Infographic } from '@plugins/data-display/infographic'
+  import MarkdownInfographicPreview from './MarkdownInfographicPreview.svelte'
   import type { PipelineProgress, ArticleToReportResult } from '@core/ai/infographic'
 
   interface Props {
@@ -38,10 +38,7 @@
     <div class="result-preview">
       <h3>Preview</h3>
       <div class="infographic-preview">
-        <Infographic
-          content={result.markdown}
-          theme="dark-vibrant"
-        />
+        <MarkdownInfographicPreview markdown={result.markdown} />
       </div>
 
       <details class="markdown-output">

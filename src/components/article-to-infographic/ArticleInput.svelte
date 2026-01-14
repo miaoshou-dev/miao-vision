@@ -76,14 +76,17 @@
 
   <div class="api-key-section">
     <label>
-      API Key (optional for demo):
+      DeepSeek API Key:
       <input
         type="password"
         value={apiKey}
         oninput={(e) => onApiKeyChange(e.currentTarget.value)}
-        placeholder="Enter DeepSeek/OpenAI API key"
+        placeholder="Enter API key for AI analysis"
       />
     </label>
+    <p class="api-hint">
+      {apiKey ? '✓ AI mode enabled' : 'Without API key: uses pattern matching demo'}
+    </p>
   </div>
 
   <button
@@ -191,6 +194,12 @@
     border: 1px solid #374151;
     border-radius: 6px;
     color: #f3f4f6;
+  }
+
+  .api-hint {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
   }
 
   .process-btn {

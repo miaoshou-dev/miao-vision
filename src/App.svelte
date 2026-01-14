@@ -18,6 +18,7 @@
   import DrilldownDemo from './components/DrilldownDemo.svelte'
   import InfographicDemo from './components/InfographicDemo.svelte'
   import ArticleToInfographicDemo from './components/ArticleToInfographicDemo.svelte'
+  import LandingPage from './components/LandingPage.svelte'
 
   // Modals
   import DrilldownModal from './components/DrilldownModal.svelte'
@@ -40,12 +41,12 @@
   import { gatherDataSources } from './components/app/logic/ai-report-sources'
 
   // Types
-  type TabType = 'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown' | 'infographic' | 'article-ai'
+  type TabType = 'landing' | 'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown' | 'infographic' | 'article-ai'
 
   // App state
   let appTitle = $state('Miao Vision')
   let subtitle = $state('Local-First Analytics')
-  let activeTab = $state<TabType>('workspace')
+  let activeTab = $state<TabType>('landing')
 
   // Report state
   let isExecutingReport = $state(false)
@@ -198,6 +199,7 @@
 </script>
 
 <main>
+  {#if activeTab !== 'landing'}
   <AppSidebar
     {appTitle}
     {subtitle}
@@ -208,32 +210,19 @@
     onDeleteReport={(id) => reportStore.deleteReport(id)}
     onOpenReportGenerator={handleOpenReportGenerator}
   />
+  {/if}
 
   <div class="main-wrapper">
-    <header class="top-header">
-      <h2 class="page-title">
-        {#if activeTab === 'workspace'}Data Workspace
-        {:else if activeTab === 'connections'}Connections
-        {:else if activeTab === 'report'}Markdown Reports
-        {:else if activeTab === 'streaming'}Streaming Demo
-        {:else if activeTab === 'gnode'}Hybrid GNode
-        {:else if activeTab === 'weather'}Weather Demo
-        {:else if activeTab === 'crossfilter'}CrossFilter Demo
-        {:else if activeTab === 'drilldown'}Drilldown Demo
-        {:else if activeTab === 'infographic'}Infographic Demo
-        {:else if activeTab === 'article-ai'}Article → Infographic AI
-        {/if}
-      </h2>
-    </header>
-
-    <div class="content" class:content-report={activeTab === 'report'}>
+    <div class="content" class:content-report={activeTab === 'report'} class:content-full={activeTab !== 'landing'}>
       {#if databaseStore.state.error}
         <div class="error-banner">
           <strong>Error:</strong> {databaseStore.state.error}
         </div>
       {/if}
 
-      {#if activeTab === 'workspace'}
+      {#if activeTab === 'landing'}
+        <div class="page-container landing-page"><LandingPage onNavigate={setTab} /></div>
+      {:else if activeTab === 'workspace'}
         <div class="page-container workspace-page"><SQLWorkspace /></div>
       {:else if activeTab === 'connections'}
         <div class="page-container"><ConnectionsPage /></div>
@@ -314,19 +303,6 @@
     min-width: 0; /* Prevent flex item from overflowing */
   }
 
-  .top-header {
-    padding: 1.5rem 2rem 1rem;
-    background-color: #030712;
-    border-bottom: 1px solid #1F2937;
-  }
-
-  .page-title {
-    margin: 0;
-    font-size: 1.625rem;
-    font-weight: 600;
-    color: #F3F4F6;
-  }
-
   .content {
     flex: 1;
     overflow-y: auto;
@@ -337,22 +313,34 @@
     overflow: hidden;
   }
 
+  .content-full {
+    height: 100vh;
+  }
+
   .page-container {
     max-width: 80rem;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1.5rem;
+    height: 100%;
   }
 
   .page-container.workspace-page {
     max-width: none;
     padding: 0;
-    height: calc(100vh - 80px);
+    height: 100vh;
   }
 
   .page-container.report-layout {
     max-width: none;
     padding: 0;
-    height: calc(100vh - 80px);
+    height: 100vh;
+  }
+
+  .page-container.landing-page {
+    max-width: none;
+    padding: 0;
+    height: 100vh;
+    overflow-y: auto;
   }
 
   .error-banner {
