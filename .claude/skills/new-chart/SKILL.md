@@ -1,36 +1,40 @@
-# Skill: 创建新图表组件
+---
+name: new-chart
+description: Create new pure SVG chart components following project specifications. Use when adding new visualization types like bar chart, line chart, pie chart, radar, heatmap to data-display plugins. Includes types, definition, registration, and tests.
+---
 
-创建符合项目规范的纯 SVG 图表组件。
+# Create New Chart Component
 
-## 前置信息收集
+Create compliant pure SVG chart components for the project.
 
-需要确认以下信息：
-1. 图表英文名称 (kebab-case，如 `radar-chart`)
-2. 图表中文名称
-3. 图表类型描述
+## Prerequisites
 
-## 目录结构
+Confirm the following:
+1. Chart name in English (kebab-case, e.g., `radar-chart`)
+2. Chart name in Chinese
+3. Chart type description
 
-在 `src/plugins/data-display/` 下创建：
+## Directory Structure
+
+Create in `src/plugins/data-display/`:
 
 ```
 {chart-name}/
-├── index.ts              # 导出入口
-├── {ChartName}.svelte    # 主组件 (PascalCase)
-├── definition.ts         # 组件注册定义
-├── types.ts              # 类型定义
-└── {chart-name}.test.ts  # 测试文件
+├── index.ts              # Export entry
+├── {ChartName}.svelte    # Main component (PascalCase)
+├── definition.ts         # Component registration
+├── types.ts              # Type definitions
+└── {chart-name}.test.ts  # Test file
 ```
 
-## Step 1: 类型定义 (types.ts)
+## Step 1: Type Definitions (types.ts)
 
 ```typescript
 /**
- * {ChartName} 图表类型定义
+ * {ChartName} Chart Type Definitions
  */
 
 export interface {ChartName}DataPoint {
-  // 根据图表特性定义数据点结构
   label: string
   value: number
 }
@@ -41,26 +45,24 @@ export interface {ChartName}Data {
 }
 
 export interface {ChartName}Config {
-  /** 数据列名 */
+  /** Data column names */
   x?: string
   y?: string
-  /** 图表尺寸 */
+  /** Chart dimensions */
   width?: number
   height?: number
-  /** 显示选项 */
+  /** Display options */
   showLabels?: boolean
   showGrid?: boolean
 }
 ```
 
-## Step 2: 主组件 ({ChartName}.svelte)
+## Step 2: Main Component ({ChartName}.svelte)
 
 ```svelte
 <script lang="ts">
   /**
-   * {ChartName} - {中文名称}
-   *
-   * @description {图表描述}
+   * {ChartName} - {Chinese Name}
    */
   import type { {ChartName}Data, {ChartName}Config } from './types'
 
@@ -71,63 +73,61 @@ export interface {ChartName}Config {
 
   let { data, config = {} }: Props = $props()
 
-  // 默认配置
+  // Default config
   const width = config.width ?? 600
   const height = config.height ?? 400
   const padding = { top: 20, right: 20, bottom: 40, left: 50 }
 
-  // 计算绘图区域
+  // Calculate plot area
   const plotWidth = width - padding.left - padding.right
   const plotHeight = height - padding.top - padding.bottom
 
-  // 使用 $derived 处理数据
+  // Use $derived for data processing
   let processedData = $derived.by(() => {
     if (!data?.data || data.data.length === 0) return []
-    // 数据处理逻辑
     return data.data
   })
 
-  // 比例尺计算
+  // Scale calculations
   let scales = $derived.by(() => {
-    // 计算 x/y 比例尺
     return { x: null, y: null }
   })
 </script>
 
 {#if processedData.length === 0}
   <div class="chart-empty">
-    <p>暂无数据</p>
+    <p>No data available</p>
   </div>
 {:else}
   <svg {width} {height} class="chart-{chart-name}">
     <g transform="translate({padding.left}, {padding.top})">
-      <!-- 网格线 -->
+      <!-- Grid lines -->
       {#if config.showGrid !== false}
         <g class="grid">
-          <!-- 横向网格线 -->
+          <!-- Horizontal grid lines -->
         </g>
       {/if}
 
-      <!-- 数据绑定渲染 -->
+      <!-- Data elements -->
       <g class="data-elements">
         {#each processedData as item, i}
-          <!-- 渲染图表元素 -->
+          <!-- Render chart elements -->
         {/each}
       </g>
 
-      <!-- 坐标轴 -->
+      <!-- Axes -->
       <g class="axis axis-x" transform="translate(0, {plotHeight})">
-        <!-- X 轴 -->
+        <!-- X axis -->
       </g>
       <g class="axis axis-y">
-        <!-- Y 轴 -->
+        <!-- Y axis -->
       </g>
 
-      <!-- 标签 -->
+      <!-- Labels -->
       {#if config.showLabels !== false}
         <g class="labels">
           {#each processedData as item, i}
-            <!-- 数据标签 -->
+            <!-- Data labels -->
           {/each}
         </g>
       {/if}
@@ -165,11 +165,11 @@ export interface {ChartName}Config {
 </style>
 ```
 
-## Step 3: 组件定义 (definition.ts)
+## Step 3: Component Definition (definition.ts)
 
 ```typescript
 /**
- * {ChartName} 组件注册定义
+ * {ChartName} Component Registration
  */
 import { defineComponent } from '@core/registry'
 import type { ConfigSchema } from '@core/registry'
@@ -179,15 +179,15 @@ import type { {ChartName}Data, {ChartName}Config } from './types'
 export const {ChartName}Metadata = {
   type: 'data-viz' as const,
   language: '{chart-name}',
-  displayName: '{中文名称}',
-  description: '{图表描述}',
+  displayName: '{Chinese Name}',
+  description: '{Chart description}',
   category: 'chart',
   icon: 'chart-line',
   props: [
-    { name: 'x', type: 'string', description: 'X 轴数据列' },
-    { name: 'y', type: 'string', description: 'Y 轴数据列' },
-    { name: 'width', type: 'number', description: '图表宽度' },
-    { name: 'height', type: 'number', description: '图表高度' }
+    { name: 'x', type: 'string', description: 'X axis column' },
+    { name: 'y', type: 'string', description: 'Y axis column' },
+    { name: 'width', type: 'number', description: 'Chart width' },
+    { name: 'height', type: 'number', description: 'Chart height' }
   ]
 }
 
@@ -228,7 +228,7 @@ export const {chartName}Registration = defineComponent<{ChartName}Config, { data
 })
 ```
 
-## Step 4: 导出入口 (index.ts)
+## Step 4: Export Entry (index.ts)
 
 ```typescript
 export { default as {ChartName} } from './{ChartName}.svelte'
@@ -236,50 +236,47 @@ export * from './types'
 export { {chartName}Registration } from './definition'
 ```
 
-## Step 5: 注册到 Bootstrap
+## Step 5: Register in Bootstrap
 
-文件: `src/bootstrap/init-plugins.ts`
+File: `src/bootstrap/init-plugins.ts`
 
 ```typescript
-// 添加导入
+// Add import
 import { {chartName}Registration } from '@plugins/data-display/{chart-name}'
 
-// 在 registerDataDisplayPlugins() 中添加
+// Add to registerDataDisplayPlugins()
 registry.register({chartName}Registration)
 ```
 
-## Step 6: 基础测试 ({chart-name}.test.ts)
+## Step 6: Basic Tests ({chart-name}.test.ts)
 
 ```typescript
 import { describe, it, expect } from 'vitest'
-// 添加基础测试用例
 
 describe('{ChartName}', () => {
   describe('data validation', () => {
     it('should handle empty data', () => {
-      // 测试空数据处理
+      // Test empty data handling
     })
 
     it('should process valid data', () => {
-      // 测试正常数据处理
+      // Test normal data processing
     })
   })
 })
 ```
 
-## 验证清单
+## Verification Checklist
 
-执行以下检查：
+- [ ] `npm run check` - No TypeScript errors
+- [ ] `npm run dev` - Component renders correctly
+- [ ] All files < 500 lines
+- [ ] Works in BI Report code blocks
+- [ ] Basic tests pass
 
-- [ ] `npm run check` TypeScript 无错误
-- [ ] `npm run dev` 组件正常渲染
-- [ ] 文件行数均 < 500 行
-- [ ] 在 BI Report 中可通过代码块使用
-- [ ] 基础测试通过
+## Reference Implementations
 
-## 参考现有实现
-
-- 柱状图: `src/plugins/data-display/bar-chart/`
-- 折线图: `src/plugins/data-display/line-chart/`
-- 饼图: `src/plugins/data-display/pie-chart/`
-- 雷达图: `src/plugins/data-display/radar/`
+- Bar chart: `src/plugins/data-display/bar-chart/`
+- Line chart: `src/plugins/data-display/line-chart/`
+- Pie chart: `src/plugins/data-display/pie-chart/`
+- Radar chart: `src/plugins/data-display/radar/`
