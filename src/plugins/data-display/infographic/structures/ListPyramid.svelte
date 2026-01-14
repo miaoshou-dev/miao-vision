@@ -5,6 +5,11 @@
    * Renders items in a true pyramid/triangle shape with trapezoid layers.
    * Each layer is a trapezoid that forms a visually cohesive pyramid.
    * Great for hierarchy, ranking, or funnel visualizations.
+   *
+   * Label positioning strategy (inspired by AntV G2):
+   * - 'inside': Labels inside the shape
+   * - 'outside': Labels outside with connector lines
+   * - 'auto': Automatically choose based on available space
    */
   import { getContext } from 'svelte'
   import type { ThemeColors, ThemeConfig, Palette, GradientConfig } from '../theme'
@@ -32,6 +37,14 @@
     rank?: number
   }
 
+  interface ConnectorStyle {
+    stroke?: string
+    width?: number
+    dash?: number[]
+    distance?: number
+    opacity?: number
+  }
+
   interface Props {
     /** Array of items to render */
     items: ItemData[]
@@ -45,6 +58,14 @@
     direction?: 'up' | 'down'
     /** Palette override */
     palette?: Palette
+    /** Label position: 'inside', 'outside', or 'auto' (default) */
+    labelPosition?: 'inside' | 'outside' | 'auto'
+    /** Show connector lines for outside labels */
+    showConnector?: boolean
+    /** Connector line style */
+    connectorStyle?: ConnectorStyle
+    /** Padding for outside labels */
+    labelPadding?: number
   }
 
   let {
@@ -53,13 +74,39 @@
     height = 300,
     gap = 4,
     direction = 'up',
-    palette
+    palette,
+    labelPosition = 'auto',
+    showConnector = true,
+    connectorStyle = {},
+    labelPadding = 120
   }: Props = $props()
 
   const ctx = getContext<InfographicContext>('infographic-theme')
 
+  // Fixed font sizes for consistency
+  const FONT_SIZES = {
+    label: 14,
+    value: 13,
+    desc: 11,
+    minLabel: 11
+  }
+
+  // Connector defaults
+  const defaultConnector: Required<ConnectorStyle> = {
+    stroke: '#888',
+    width: 1,
+    dash: [],
+    distance: 8,
+    opacity: 0.6
+  }
+
+  const connector = $derived({ ...defaultConnector, ...connectorStyle })
+
   // Generate a unique ID for this component instance
   const instanceId = Math.random().toString(36).slice(2, 8)
+
+  // Calculate pyramid width (excluding label area)
+  const pyramidWidth = $derived(labelPosition === 'inside' ? width : width - labelPadding)
 
   // Order items based on direction
   const orderedItems = $derived(direction === 'up' ? items : [...items].reverse())
@@ -101,12 +148,50 @@
   })
 
   /**
+   * Get the average width of a layer (for space detection)
+   */
+  function getLayerWidth(layerIndex: number): number {
+    const totalLayers = numLayers
+    if (layerIndex === 0) {
+      // Triangle: average width is roughly 1/2 of bottom width
+      const bottomRatio = 1 / totalLayers
+      return pyramidWidth * bottomRatio * 0.6
+    }
+    const topRatio = layerIndex / totalLayers
+    const bottomRatio = (layerIndex + 1) / totalLayers
+    return pyramidWidth * (topRatio + bottomRatio) / 2
+  }
+
+  /**
+   * Estimate text width (approximate)
+   */
+  function estimateTextWidth(text: string, fontSize: number): number {
+    return text.length * fontSize * 0.6
+  }
+
+  /**
+   * Determine if label should be outside for a layer
+   */
+  function shouldLabelBeOutside(layerIndex: number, data: ItemData): boolean {
+    if (labelPosition === 'inside') return false
+    if (labelPosition === 'outside') return true
+
+    // Auto mode: check available space
+    const layerW = getLayerWidth(layerIndex)
+    const labelWidth = estimateTextWidth(data.label, FONT_SIZES.label)
+    const valueWidth = data.value !== undefined ? estimateTextWidth(String(data.value), FONT_SIZES.value) : 0
+    const maxTextWidth = Math.max(labelWidth, valueWidth)
+
+    // If text needs more than 80% of layer width, put it outside
+    return maxTextWidth > layerW * 0.8
+  }
+
+  /**
    * Calculate trapezoid/triangle points for a pyramid layer
-   * Top layer is a triangle (pointed), others are trapezoids
    */
   function getTrapezoidPath(layerIndex: number): string {
     const totalLayers = numLayers
-    const centerX = width / 2
+    const centerX = pyramidWidth / 2
 
     const y1 = layerIndex * (layerHeight + gap)
     const y2 = y1 + layerHeight
@@ -114,10 +199,9 @@
     // First layer (top) is a triangle with pointed top
     if (layerIndex === 0) {
       const bottomRatio = (layerIndex + 1) / totalLayers
-      const bottomWidth = width * bottomRatio
+      const bottomWidth = pyramidWidth * bottomRatio
       const bottomLeft = centerX - bottomWidth / 2
       const bottomRight = centerX + bottomWidth / 2
-      // Triangle: point at top center, flat bottom
       return `M ${centerX} ${y1} L ${bottomRight} ${y2} L ${bottomLeft} ${y2} Z`
     }
 
@@ -125,8 +209,8 @@
     const topRatio = layerIndex / totalLayers
     const bottomRatio = (layerIndex + 1) / totalLayers
 
-    const topWidth = width * topRatio
-    const bottomWidth = width * bottomRatio
+    const topWidth = pyramidWidth * topRatio
+    const bottomWidth = pyramidWidth * bottomRatio
 
     const topLeft = centerX - topWidth / 2
     const topRight = centerX + topWidth / 2
@@ -146,27 +230,93 @@
   }
 
   /**
-   * Get the average width of a layer (for text sizing)
+   * Get the right edge X position for a layer at its center Y
    */
-  function getLayerWidth(layerIndex: number): number {
+  function getLayerRightEdge(layerIndex: number): number {
     const totalLayers = numLayers
+    const centerX = pyramidWidth / 2
+    const bounds = getLayerBounds(layerIndex)
+
     if (layerIndex === 0) {
-      // Triangle: average width is roughly 1/2 of bottom width
+      // Triangle: interpolate between point and bottom edge
       const bottomRatio = 1 / totalLayers
-      return width * bottomRatio * 0.6
+      const bottomHalfWidth = (pyramidWidth * bottomRatio) / 2
+      // At center Y, width is roughly half of bottom width
+      return centerX + bottomHalfWidth * 0.5
     }
+
+    // Trapezoid: interpolate between top and bottom widths
     const topRatio = layerIndex / totalLayers
     const bottomRatio = (layerIndex + 1) / totalLayers
-    return width * (topRatio + bottomRatio) / 2
+    const avgRatio = (topRatio + bottomRatio) / 2
+    return centerX + (pyramidWidth * avgRatio) / 2
   }
 
   /**
-   * Check if there's enough space for description
+   * Calculate outside label positions with overlap dodge
    */
-  function canShowDesc(layerIndex: number, hasValue: boolean): boolean {
-    // Need at least 60px height to show desc with value, 50px without
+  const outsideLabels = $derived.by(() => {
+    const labels: Array<{
+      layerIndex: number
+      y: number
+      originalY: number
+      rightEdgeX: number
+    }> = []
+
+    itemConfigs.forEach((config, layerIndex) => {
+      if (shouldLabelBeOutside(layerIndex, config.data)) {
+        const bounds = getLayerBounds(layerIndex)
+        labels.push({
+          layerIndex,
+          y: bounds.center,
+          originalY: bounds.center,
+          rightEdgeX: getLayerRightEdge(layerIndex)
+        })
+      }
+    })
+
+    // Apply overlapDodgeY - adjust positions to avoid overlap
+    const minGap = 24 // Minimum gap between labels
+    for (let i = 1; i < labels.length; i++) {
+      const prev = labels[i - 1]
+      const curr = labels[i]
+      if (curr.y - prev.y < minGap) {
+        curr.y = prev.y + minGap
+      }
+    }
+
+    // Boundary check - ensure labels don't exceed height
+    for (let i = labels.length - 1; i >= 0; i--) {
+      const label = labels[i]
+      const maxY = height - 10
+      if (label.y > maxY) {
+        label.y = maxY
+        // Push previous labels up if needed
+        for (let j = i - 1; j >= 0; j--) {
+          if (labels[j].y > labels[j + 1].y - minGap) {
+            labels[j].y = labels[j + 1].y - minGap
+          }
+        }
+      }
+    }
+
+    return labels
+  })
+
+  /**
+   * Get outside label position for a layer
+   */
+  function getOutsideLabelPosition(layerIndex: number): { y: number; rightEdgeX: number } | null {
+    const label = outsideLabels.find(l => l.layerIndex === layerIndex)
+    return label ? { y: label.y, rightEdgeX: label.rightEdgeX } : null
+  }
+
+  /**
+   * Check if there's enough space for description inside
+   */
+  function canShowDescInside(layerIndex: number, hasValue: boolean): boolean {
     const minHeight = hasValue ? 60 : 50
-    return layerHeight >= minHeight && getLayerWidth(layerIndex) > 120
+    return layerHeight >= minHeight && getLayerWidth(layerIndex) > 100
   }
 </script>
 
@@ -183,12 +333,10 @@
   <!-- Render each layer as a trapezoid -->
   {#each itemConfigs as config, layerIndex}
     {@const bounds = getLayerBounds(layerIndex)}
-    {@const layerW = getLayerWidth(layerIndex)}
+    {@const isOutside = shouldLabelBeOutside(layerIndex, config.data)}
+    {@const outsidePos = isOutside ? getOutsideLabelPosition(layerIndex) : null}
     {@const hasValue = config.data.value !== undefined}
-    {@const hasDesc = config.data.desc && canShowDesc(layerIndex, hasValue)}
-    {@const lineCount = 1 + (hasValue ? 1 : 0) + (hasDesc ? 1 : 0)}
-    {@const lineSpacing = Math.min(18, layerHeight / (lineCount + 1))}
-    {@const startY = bounds.center - ((lineCount - 1) * lineSpacing) / 2}
+    {@const hasDesc = config.data.desc}
 
     <!-- Trapezoid shape -->
     <path
@@ -198,47 +346,119 @@
       stroke-width="1"
     />
 
-    <!-- Label -->
-    <text
-      x={width / 2}
-      y={startY}
-      text-anchor="middle"
-      dominant-baseline="middle"
-      fill={config.themeColors.colorWhite}
-      font-size={Math.min(16, layerW / 10)}
-      font-weight="600"
-    >
-      {config.data.label}
-    </text>
+    {#if isOutside && outsidePos}
+      <!-- Outside label with connector -->
+      {@const connectorStartX = outsidePos.rightEdgeX + 4}
+      {@const connectorMidX = pyramidWidth + 20}
+      {@const connectorEndX = pyramidWidth + connector.distance + 20}
+      {@const labelX = connectorEndX + 4}
 
-    <!-- Value (if provided) -->
-    {#if hasValue}
+      <!-- Connector line -->
+      {#if showConnector}
+        <path
+          d={`M ${connectorStartX} ${bounds.center} L ${connectorMidX} ${bounds.center} L ${connectorMidX + 10} ${outsidePos.y}`}
+          fill="none"
+          stroke={connectorStyle.stroke || config.color}
+          stroke-width={connector.width}
+          stroke-dasharray={connector.dash.length > 0 ? connector.dash.join(' ') : 'none'}
+          opacity={connector.opacity}
+        />
+        <!-- Connector dot -->
+        <circle
+          cx={connectorStartX}
+          cy={bounds.center}
+          r="2"
+          fill={config.color}
+        />
+      {/if}
+
+      <!-- Outside label text -->
       <text
-        x={width / 2}
-        y={startY + lineSpacing}
+        x={labelX}
+        y={outsidePos.y - (hasValue ? 8 : 0)}
+        text-anchor="start"
+        dominant-baseline="middle"
+        fill={ctx?.colors?.colorText || '#ffffff'}
+        font-size={FONT_SIZES.label}
+        font-weight="600"
+      >
+        {config.data.label}
+      </text>
+
+      {#if hasValue}
+        <text
+          x={labelX}
+          y={outsidePos.y + 10}
+          text-anchor="start"
+          dominant-baseline="middle"
+          fill={ctx?.colors?.colorTextSecondary || '#a0a0b0'}
+          font-size={FONT_SIZES.value}
+          font-weight="500"
+        >
+          {config.data.value}
+        </text>
+      {/if}
+
+      {#if hasDesc}
+        <text
+          x={labelX}
+          y={outsidePos.y + (hasValue ? 26 : 10)}
+          text-anchor="start"
+          dominant-baseline="middle"
+          fill={ctx?.colors?.colorTextSecondary || '#a0a0b0'}
+          font-size={FONT_SIZES.desc}
+          opacity="0.7"
+        >
+          {config.data.desc}
+        </text>
+      {/if}
+    {:else}
+      <!-- Inside label -->
+      {@const showDescInside = hasDesc && canShowDescInside(layerIndex, hasValue)}
+      {@const lineCount = 1 + (hasValue ? 1 : 0) + (showDescInside ? 1 : 0)}
+      {@const lineSpacing = Math.min(18, layerHeight / (lineCount + 1))}
+      {@const startY = bounds.center - ((lineCount - 1) * lineSpacing) / 2}
+
+      <text
+        x={pyramidWidth / 2}
+        y={startY}
         text-anchor="middle"
         dominant-baseline="middle"
-        fill={config.themeColors.colorTextSecondary}
-        font-size={Math.min(14, layerW / 12)}
-        font-weight="500"
+        fill={config.themeColors.colorWhite}
+        font-size={FONT_SIZES.label}
+        font-weight="600"
       >
-        {config.data.value}
+        {config.data.label}
       </text>
-    {/if}
 
-    <!-- Description (if fits) -->
-    {#if hasDesc}
-      <text
-        x={width / 2}
-        y={startY + lineSpacing * (hasValue ? 2 : 1)}
-        text-anchor="middle"
-        dominant-baseline="middle"
-        fill={config.themeColors.colorTextSecondary}
-        font-size={Math.min(11, layerW / 15)}
-        opacity="0.7"
-      >
-        {config.data.desc}
-      </text>
+      {#if hasValue}
+        <text
+          x={pyramidWidth / 2}
+          y={startY + lineSpacing}
+          text-anchor="middle"
+          dominant-baseline="middle"
+          fill={config.themeColors.colorWhite}
+          font-size={FONT_SIZES.value}
+          font-weight="500"
+          opacity="0.9"
+        >
+          {config.data.value}
+        </text>
+      {/if}
+
+      {#if showDescInside}
+        <text
+          x={pyramidWidth / 2}
+          y={startY + lineSpacing * (hasValue ? 2 : 1)}
+          text-anchor="middle"
+          dominant-baseline="middle"
+          fill={config.themeColors.colorWhite}
+          font-size={FONT_SIZES.desc}
+          opacity="0.7"
+        >
+          {config.data.desc}
+        </text>
+      {/if}
     {/if}
   {/each}
 </g>
