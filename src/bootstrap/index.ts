@@ -17,6 +17,8 @@ import { componentRegistry } from "@core/registry";
 import { registerServices } from "./init-services";
 import { registerVgplotCharts } from "./init-charts";
 import { registerPlugins } from "./init-plugins";
+import { initializeVizLayer } from "@/core/viz/init";
+import { initializeCatalog } from "./init-catalog";
 
 /**
  * Initialize the application
@@ -34,6 +36,13 @@ export function initializeApp(): void {
 
   // 3. Register all plugin components
   registerPlugins();
+
+  // 4. Initialize Viz Provider Layer (Generative UI)
+  // @deprecated - Use Catalog system instead. Will be removed in future version.
+  initializeVizLayer();
+
+  // 5. Initialize Catalog system (new unified component catalog)
+  initializeCatalog();
 
   console.log(`\n✅ Bootstrap complete: ${componentRegistry.getAllLanguages().length} components registered`)
   console.log('   Languages:', componentRegistry.getAllLanguages().join(', '))
@@ -69,3 +78,4 @@ export function getComponentDocumentation() {
 export { registerServices } from "./init-services";
 export { registerVgplotCharts } from "./init-charts";
 export { registerPlugins } from "./init-plugins";
+export { initializeCatalog, getCatalog, isCatalogInitialized } from "./init-catalog";
