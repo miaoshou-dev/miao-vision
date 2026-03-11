@@ -55,6 +55,7 @@ export async function exportPng(el: HTMLElement, filename = 'infographic.png'): 
   await inlineExternalImages(clone)
   await inlineSvgImages(clone)
   await inlineBackgroundImages(clone)
+  stripExternalFontRefs(clone)   // must run last — removes web font refs that taint canvas
   clone.style.cssText = [
     `width:${width}px`,
     `height:${height}px`,
@@ -205,6 +206,35 @@ async function convertCssUrlsToDataUrls(cssValue: string): Promise<string> {
     })
   )
   return result
+}
+
+/**
+ * Replace external web font references with a safe system font stack.
+ * Fonts loaded from CDNs (e.g. Google Fonts at fonts.gstatic.com) cause
+ * the canvas to be "tainted" when the SVG is drawn, blocking toBlob().
+ * System fonts are always available without network requests.
+ */
+function stripExternalFontRefs(root: HTMLElement): void {
+  const systemFont = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+  const all = [root, ...Array.from(root.querySelectorAll<HTMLElement>('*'))]
+  for (const el of all) {
+    if (el.style.fontFamily) {
+      el.style.fontFamily = systemFont
+    }
+    // Also strip any remaining external url() from other properties
+    // (mask-image, cursor, list-style-image, etc.) that we may have missed
+    for (const prop of [...el.style]) {
+      const val = el.style.getPropertyValue(prop)
+      if (
+        val.includes('url(') &&
+        !val.includes('url("data:') &&
+        !val.includes("url('data:") &&
+        !val.includes('url(data:')
+      ) {
+        el.style.removeProperty(prop)
+      }
+    }
+  }
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {

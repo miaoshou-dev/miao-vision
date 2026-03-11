@@ -119,6 +119,7 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    line-height: 1.4;
     padding-bottom: 0.3em;
   }
 

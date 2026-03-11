@@ -135,6 +135,9 @@
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    /* line-height enlarges the line box so descenders (p, g, y) stay within
+       the background-clip region even in browsers that clip at the line box. */
+    line-height: 1.4;
     padding-bottom: 0.3em;
   }
 
