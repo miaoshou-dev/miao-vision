@@ -9,7 +9,7 @@
 
 // CSS properties to inline for accurate off-screen rendering
 const INLINE_PROPS = [
-  'color', 'background-color', 'font-size', 'font-weight', 'font-family',
+  'color', 'background-color', 'background-image', 'font-size', 'font-weight', 'font-family',
   'display', 'flex-direction', 'flex-wrap', 'align-items', 'justify-content',
   'gap', 'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
   'margin', 'margin-top', 'margin-bottom',
@@ -53,6 +53,8 @@ export async function exportPng(el: HTMLElement, filename = 'infographic.png'): 
   const clone = el.cloneNode(true) as HTMLElement
   inlineComputedStyles(el, clone)
   await inlineExternalImages(clone)
+  await inlineSvgImages(clone)
+  await inlineBackgroundImages(clone)
   clone.style.cssText = [
     `width:${width}px`,
     `height:${height}px`,
@@ -129,6 +131,7 @@ async function inlineExternalImages(root: HTMLElement): Promise<void> {
     Array.from(imgs).map(async (img) => {
       const src = img.getAttribute('src') ?? ''
       if (!src || src.startsWith('data:') || src.startsWith('blob:')) return
+      img.removeAttribute('srcset') // srcset could still load cross-origin resources
       try {
         const resp = await fetch(src, { mode: 'cors', credentials: 'omit' })
         const blob = await resp.blob()
@@ -139,6 +142,69 @@ async function inlineExternalImages(root: HTMLElement): Promise<void> {
       }
     })
   )
+}
+
+/**
+ * Convert cross-origin SVG <image> href / xlink:href to base64 data URLs.
+ * SVG <image> elements are the most common source of canvas tainting in
+ * infographic exports because they are not covered by the <img> pass above.
+ */
+async function inlineSvgImages(root: HTMLElement): Promise<void> {
+  const svgImgs = root.querySelectorAll<SVGImageElement>('image')
+  await Promise.all(
+    Array.from(svgImgs).map(async (img) => {
+      const href = img.getAttribute('href') ?? img.getAttribute('xlink:href') ?? ''
+      if (!href || href.startsWith('data:') || href.startsWith('blob:')) return
+      try {
+        const resp = await fetch(href, { mode: 'cors', credentials: 'omit' })
+        const blob = await resp.blob()
+        const dataUrl = await blobToDataUrl(blob)
+        img.setAttribute('href', dataUrl)
+        img.removeAttribute('xlink:href')
+      } catch {
+        img.removeAttribute('href')
+        img.removeAttribute('xlink:href')
+      }
+    })
+  )
+}
+
+/**
+ * Convert external URL references in inline background-image styles to base64.
+ * Handles `url('...')` patterns set as inline styles (e.g. from inlineComputedStyles).
+ */
+async function inlineBackgroundImages(root: HTMLElement): Promise<void> {
+  const all: HTMLElement[] = [root, ...Array.from(root.querySelectorAll<HTMLElement>('*'))]
+  await Promise.all(
+    all.map(async (el) => {
+      const bg = el.style.backgroundImage
+      if (!bg || bg === 'none') return
+      const converted = await convertCssUrlsToDataUrls(bg)
+      if (converted !== bg) el.style.backgroundImage = converted
+    })
+  )
+}
+
+async function convertCssUrlsToDataUrls(cssValue: string): Promise<string> {
+  const urlRe = /url\(['"]?([^'")\s]+)['"]?\)/g
+  const matches = [...cssValue.matchAll(urlRe)]
+  if (matches.length === 0) return cssValue
+
+  let result = cssValue
+  await Promise.all(
+    matches.map(async ([fullMatch, url]) => {
+      if (url.startsWith('data:') || url.startsWith('blob:')) return
+      try {
+        const resp = await fetch(url, { mode: 'cors', credentials: 'omit' })
+        const blob = await resp.blob()
+        const dataUrl = await blobToDataUrl(blob)
+        result = result.replace(fullMatch, `url('${dataUrl}')`)
+      } catch {
+        result = result.replace(fullMatch, 'none')
+      }
+    })
+  )
+  return result
 }
 
 function blobToDataUrl(blob: Blob): Promise<string> {
