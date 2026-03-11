@@ -9,9 +9,9 @@
 
 import type { LLMProvider, ChatMessage } from '../types'
 import type { SemanticAnalysisResult, ExtractedEntity, VisualizationSuggestion } from './types'
-import type { TemplateCategory } from '@plugins/data-display/infographic/templates'
+import type { TemplateCategory } from '@/types/infographic-template'
 import { SEMANTIC_ANALYZER_SYSTEM_PROMPT, buildSemanticAnalyzerPrompt } from './prompts'
-import { analyzeText as regexAnalyze } from '@plugins/data-display/infographic/ai/text-analyzer'
+import { analyzeText as regexAnalyze } from './text-analyzer'
 
 /**
  * SemanticAnalyzer options

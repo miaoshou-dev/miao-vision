@@ -6,7 +6,7 @@
  * @module core/ai/infographic/planner-types
  */
 
-import type { TemplateCategory } from '@plugins/data-display/infographic/templates'
+import type { TemplateCategory } from '@/types/infographic-template'
 
 /**
  * Layout configuration

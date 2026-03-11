@@ -1,0 +1,274 @@
+# Expected output from new Infographic Agent
+# Source: JVM Performance Tuning Guide
+
+# ============================================================================
+# Phase 1: ArticleOutliner Output
+# ============================================================================
+outline:
+  theme: "JVM optimization achieved 81% response time improvement through systematic memory tuning"
+  type: informational  # Facts + data + results
+  structure:
+    - id: p1
+      point: "Achieved significant performance improvements after 3 months"
+      support:
+        - "Response time: 450ms → 85ms (81% improvement)"
+        - "GC pause: 120ms → 8ms (93% reduction)"
+        - "Memory: 8GB → 4.5GB (44% reduction)"
+        - "Throughput increased by 156%"
+      importance: 9
+      relationToNext: leads_to
+
+    - id: p2
+      point: "Memory optimization went through 4 phases"
+      support:
+        - "January: Initial 8GB heap, 45% utilization"
+        - "February: Analysis and leak identification"
+        - "March: Reduced to 6GB"
+        - "April: Achieved optimal 4.5GB"
+      importance: 8
+      relationToNext: parallels
+
+    - id: p3
+      point: "Compared 4 garbage collectors"
+      support:
+        - "G1GC: 12ms pause, 98.5% throughput"
+        - "ZGC: 2ms pause, 97.8% throughput"
+        - "Shenandoah: 3ms pause, 97.2% throughput"
+        - "ParallelGC: 85ms pause, 99.1% throughput"
+      importance: 8
+      relationToNext: leads_to
+
+    - id: p4
+      point: "Current production metrics are healthy"
+      support:
+        - "CPU: 65% average"
+        - "Memory: 72% utilized"
+        - "GC Overhead: 2.1%"
+        - "JIT: 95% hot methods compiled"
+      importance: 7
+
+  dataPoints:
+    - label: "Response Time Improvement"
+      value: "81%"
+      sourceQuote: "Response time reduced from 450ms to 85ms (81% improvement)"
+    - label: "GC Pause Reduction"
+      value: "93%"
+      sourceQuote: "GC pause time reduced from 120ms to 8ms"
+    - label: "Memory Reduction"
+      value: "44%"
+      sourceQuote: "Memory usage optimized from 8GB to 4.5GB"
+    - label: "Throughput Increase"
+      value: "156%"
+      sourceQuote: "Throughput increased by 156%"
+
+# ============================================================================
+# Phase 2: NarrativePlanner Output
+# ============================================================================
+narrativePlan:
+  title: "JVM Performance Tuning Results"
+  subtitle: "3-Month Optimization Journey"
+  visualMetaphor: journey  # Shows progression of optimization
+  flowDirection: top_to_bottom
+  palette: business
+  theme: dark-vibrant
+
+  sections:
+    - id: s1
+      role: hook
+      title: "Optimization Results"
+      message: "81% faster response, 93% less GC pause, 156% more throughput"
+      visualType: kpi-cards
+      visualPurpose: "Lead with impressive metrics to establish value"
+      elements:
+        - label: "Response Time"
+          value: "-81%"
+          description: "450ms → 85ms"
+        - label: "GC Pause"
+          value: "-93%"
+          description: "120ms → 8ms"
+        - label: "Memory"
+          value: "-44%"
+          description: "8GB → 4.5GB"
+        - label: "Throughput"
+          value: "+156%"
+      sourcePointIds: [p1]
+
+    - id: s2
+      role: main_point
+      title: "Memory Tuning Journey"
+      message: "4-phase approach from 8GB to 4.5GB over 4 months"
+      visualType: flow-linear
+      visualPurpose: "Show the timeline progression of optimization"
+      elements:
+        - label: "Initial State"
+          value: "8GB"
+          description: "Jan: 45% utilization"
+        - label: "Analysis"
+          description: "Feb: Identified leaks"
+        - label: "Optimization"
+          value: "6GB"
+          description: "Mar: First reduction"
+        - label: "Fine-tuning"
+          value: "4.5GB"
+          description: "Apr: Optimal state"
+      sourcePointIds: [p2]
+
+    - id: s3
+      role: evidence
+      title: "GC Algorithm Comparison"
+      message: "ZGC offers best pause time, ParallelGC highest throughput"
+      visualType: compare-table
+      visualPurpose: "Enable direct comparison of 4 GC options"
+      elements:
+        - label: "G1GC"
+          value: "12ms / 98.5%"
+          description: "Balanced choice"
+        - label: "ZGC"
+          value: "2ms / 97.8%"
+          description: "Best for latency"
+        - label: "Shenandoah"
+          value: "3ms / 97.2%"
+          description: "Low pause alternative"
+        - label: "ParallelGC"
+          value: "85ms / 99.1%"
+          description: "Best throughput"
+      sourcePointIds: [p3]
+
+    - id: s4
+      role: conclusion
+      title: "Current Production Status"
+      message: "Healthy metrics across all dimensions"
+      visualType: kpi-cards
+      visualPurpose: "Show current operational health"
+      elements:
+        - label: "CPU Usage"
+          value: "65%"
+        - label: "Memory"
+          value: "72%"
+        - label: "GC Overhead"
+          value: "2.1%"
+        - label: "JIT Coverage"
+          value: "95%"
+      sourcePointIds: [p4]
+
+# ============================================================================
+# Phase 3: InfographicGenerator Output
+# ============================================================================
+infographic:
+  title: "JVM Performance Tuning Results"
+  theme: dark-vibrant
+  palette: business
+  layout:
+    direction: top_to_bottom
+    maxWidth: 1200
+    gap: 24
+
+  sections:
+    - id: sec1
+      templateId: list-row-badge-card
+      heading:
+        title: "Optimization Results"
+        subtitle: "3-Month Achievement Summary"
+      insight:
+        text: "Systematic tuning delivered 81% faster response times and 156% throughput increase"
+        highlight: "81% faster"
+      items:
+        - label: "Response Time"
+          value: "-81%"
+          desc: "450ms → 85ms"
+          icon: "speedometer"
+          trend: down
+        - label: "GC Pause"
+          value: "-93%"
+          desc: "120ms → 8ms"
+          icon: "timer-off"
+          trend: down
+        - label: "Memory"
+          value: "-44%"
+          desc: "8GB → 4.5GB"
+          icon: "memory"
+          trend: down
+        - label: "Throughput"
+          value: "+156%"
+          icon: "chart-line"
+          trend: up
+      layout:
+        position: full
+
+    - id: sec2
+      templateId: flow-linear-numbered
+      heading:
+        title: "Memory Tuning Journey"
+      insight:
+        text: "Four-phase approach reduced heap from 8GB to 4.5GB"
+      items:
+        - label: "Initial State"
+          value: "8GB"
+          desc: "Jan: 45% utilization"
+        - label: "Analysis"
+          desc: "Feb: Leak identification"
+        - label: "Optimization"
+          value: "6GB"
+          desc: "Mar: First reduction"
+        - label: "Fine-tuning"
+          value: "4.5GB"
+          desc: "Apr: Optimal achieved"
+      layout:
+        position: full
+
+    - id: sec3
+      templateId: compare-table-features
+      heading:
+        title: "GC Algorithm Comparison"
+      insight:
+        text: "ZGC offers lowest pause (2ms) with 97.8% throughput"
+        highlight: "ZGC"
+      items:
+        - label: "G1GC"
+          columns:
+            pause: "12ms"
+            throughput: "98.5%"
+            notes: "Balanced"
+        - label: "ZGC"
+          columns:
+            pause: "2ms"
+            throughput: "97.8%"
+            notes: "Best latency"
+        - label: "Shenandoah"
+          columns:
+            pause: "3ms"
+            throughput: "97.2%"
+            notes: "Alternative"
+        - label: "ParallelGC"
+          columns:
+            pause: "85ms"
+            throughput: "99.1%"
+            notes: "Best throughput"
+      layout:
+        position: full
+
+    - id: sec4
+      templateId: list-row-badge-card
+      heading:
+        title: "Current Production Status"
+      items:
+        - label: "CPU Usage"
+          value: "65%"
+          icon: "cpu"
+        - label: "Memory"
+          value: "72%"
+          icon: "memory"
+        - label: "GC Overhead"
+          value: "2.1%"
+          icon: "recycle"
+        - label: "JIT Coverage"
+          value: "95%"
+          icon: "flash"
+      layout:
+        position: full
+
+  sourceSummary: "JVM optimization achieving 81% response time improvement through memory tuning"
+  metadata:
+    generatedAt: "2026-01-20T12:00:00Z"
+    sectionCount: 4
+    language: en

@@ -9,8 +9,7 @@
 
 import type { ArticleSection, ArticleAnalysisResult, DataPoint } from './article-analyzer'
 import type { InfographicSection, InfographicPlan } from './types'
-import type { TemplateCategory } from '@plugins/data-display/infographic/templates'
-import { getTemplateById } from '@plugins/data-display/infographic/templates'
+import type { TemplateCategory, TemplateRepository } from '@/types/infographic-template'
 import {
   type LayoutConfig,
   type PlannedChart,
@@ -28,9 +27,11 @@ export type { LayoutConfig, PlannedChart, MultiChartPlan }
  */
 export class MultiChartPlanner {
   private config: LayoutConfig
+  private templateRepo?: TemplateRepository
 
-  constructor(config: Partial<LayoutConfig> = {}) {
+  constructor(config: Partial<LayoutConfig> = {}, templateRepo?: TemplateRepository) {
     this.config = { ...DEFAULT_LAYOUT, ...config }
+    this.templateRepo = templateRepo
   }
 
   /**
@@ -139,7 +140,7 @@ export class MultiChartPlanner {
   private selectTemplate(vizType: TemplateCategory, dataCount: number, section: ArticleSection): string {
     if (section.suggestedTemplates.length > 0) {
       const suggested = section.suggestedTemplates[0]
-      if (getTemplateById(suggested)) return suggested
+      if (!this.templateRepo || this.templateRepo.getTemplateById(suggested)) return suggested
     }
 
     const rules = TEMPLATE_RULES[vizType]
@@ -151,8 +152,7 @@ export class MultiChartPlanner {
   }
 
   private formatData(section: ArticleSection, templateId: string): Record<string, unknown>[] {
-    const template = getTemplateById(templateId)
-    if (!template) return []
+    if (this.templateRepo && !this.templateRepo.getTemplateById(templateId)) return []
 
     return section.dataPoints.map((dp, index) => {
       const item: Record<string, unknown> = { id: `item-${index + 1}`, label: dp.label }
@@ -215,7 +215,7 @@ export class MultiChartPlanner {
   private extractHero(charts: PlannedChart[]): PlannedChart | undefined {
     const heroTypes: TemplateCategory[] = ['kpi', 'statistical', 'flow']
     for (const chart of charts) {
-      const template = getTemplateById(chart.templateId)
+      const template = this.templateRepo?.getTemplateById(chart.templateId)
       if (template && heroTypes.includes(template.category)) {
         return { ...chart, layout: { ...chart.layout, width: 'full', row: 0, column: 0 } }
       }
@@ -253,7 +253,7 @@ export class MultiChartPlanner {
   }
 
   private chartToSection(chart: PlannedChart, order: number): InfographicSection {
-    const template = getTemplateById(chart.templateId)
+    const template = this.templateRepo?.getTemplateById(chart.templateId)
     return {
       id: chart.sectionId,
       title: chart.title,
@@ -273,8 +273,11 @@ export class MultiChartPlanner {
 /**
  * Create multi-chart planner
  */
-export function createMultiChartPlanner(config?: Partial<LayoutConfig>): MultiChartPlanner {
-  return new MultiChartPlanner(config)
+export function createMultiChartPlanner(
+  config?: Partial<LayoutConfig>,
+  templateRepo?: TemplateRepository
+): MultiChartPlanner {
+  return new MultiChartPlanner(config, templateRepo)
 }
 
 /**
@@ -282,8 +285,9 @@ export function createMultiChartPlanner(config?: Partial<LayoutConfig>): MultiCh
  */
 export function planMultiChart(
   analysis: ArticleAnalysisResult,
-  config?: Partial<LayoutConfig>
+  config?: Partial<LayoutConfig>,
+  templateRepo?: TemplateRepository
 ): MultiChartPlan {
-  const planner = new MultiChartPlanner(config)
+  const planner = new MultiChartPlanner(config, templateRepo)
   return planner.plan(analysis)
 }

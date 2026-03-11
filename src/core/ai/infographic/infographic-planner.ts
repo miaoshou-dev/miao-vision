@@ -8,6 +8,7 @@
  */
 
 import type { LLMProvider, ChatMessage, StreamChunk } from '../types'
+import type { TemplateRepository } from '@/types/infographic-template'
 import type {
   InfographicPlan,
   InfographicPlanRequest,
@@ -17,7 +18,6 @@ import type {
 } from './types'
 import { getInfographicPlannerSystemPrompt, buildInfographicPlannerPrompt } from './prompts'
 import { SemanticAnalyzer } from './semantic-analyzer'
-import { getAllTemplates, getTemplateById } from '@plugins/data-display/infographic/templates'
 
 /**
  * InfographicPlanner options
@@ -29,6 +29,8 @@ export interface InfographicPlannerOptions {
   temperature?: number
   /** Enable verbose logging */
   verbose?: boolean
+  /** Template repository — injected from plugins/ to avoid layer violation */
+  templateRepo?: TemplateRepository
 }
 
 /**
@@ -41,11 +43,13 @@ export class InfographicPlanner {
   private temperature: number
   private verbose: boolean
   private analyzer: SemanticAnalyzer
+  private templateRepo?: TemplateRepository
 
   constructor(options: InfographicPlannerOptions) {
     this.provider = options.provider
     this.temperature = options.temperature ?? 0.4
     this.verbose = options.verbose ?? false
+    this.templateRepo = options.templateRepo
     this.analyzer = new SemanticAnalyzer({
       provider: options.provider,
       fallbackToRegex: true
@@ -81,7 +85,7 @@ export class InfographicPlanner {
 
       // Build messages for planning
       const messages: ChatMessage[] = [
-        { role: 'system', content: getInfographicPlannerSystemPrompt() },
+        { role: 'system', content: getInfographicPlannerSystemPrompt(this.templateRepo) },
         { role: 'user', content: buildInfographicPlannerPrompt(text, { intent, style, maxSections, language }) }
       ]
 
@@ -134,7 +138,7 @@ export class InfographicPlanner {
       yield { type: 'planning', progress: 40 }
 
       const messages: ChatMessage[] = [
-        { role: 'system', content: getInfographicPlannerSystemPrompt() },
+        { role: 'system', content: getInfographicPlannerSystemPrompt(this.templateRepo) },
         { role: 'user', content: buildInfographicPlannerPrompt(text, { intent, style, maxSections, language }) }
       ]
 
@@ -233,22 +237,24 @@ export class InfographicPlanner {
   }
 
   /**
-   * Validate plan against available templates
+   * Validate plan against available templates.
+   * Skips template validation when no repository is injected.
    */
   private validatePlan(plan: InfographicPlan): InfographicPlan {
-    const allTemplates = getAllTemplates()
-    const validTemplateIds = new Set(allTemplates.map(t => t.id))
+    if (!this.templateRepo) return plan
+
+    const validTemplateIds = new Set(this.templateRepo.getAllTemplates().map(t => t.id))
 
     // Validate each section's template
     const validatedSections = plan.sections.map(section => {
       if (!validTemplateIds.has(section.templateId)) {
         // Find a suitable replacement
-        const template = this.findSuitableTemplate(section)
-        return { ...section, templateId: template }
+        const replacement = this.findSuitableTemplate(section)
+        return { ...section, templateId: replacement }
       }
 
       // Validate data fields
-      const template = getTemplateById(section.templateId)
+      const template = this.templateRepo!.getTemplateById(section.templateId)
       if (template) {
         const validatedData = this.validateSectionData(section.data, template.requiredFields)
         return { ...section, data: validatedData }

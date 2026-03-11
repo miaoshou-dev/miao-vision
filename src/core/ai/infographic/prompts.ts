@@ -6,14 +6,14 @@
  * @module core/ai/infographic/prompts
  */
 
-import type { TemplateCategory } from '@plugins/data-display/infographic/templates'
-import { getAllTemplates } from '@plugins/data-display/infographic/templates'
+import type { TemplateCategory, TemplateRepository } from '@/types/infographic-template'
 
 /**
- * Get template reference for prompts
+ * Get template reference for prompts.
+ * Returns empty string when no repository is available.
  */
-function getTemplateReference(): string {
-  const templates = getAllTemplates()
+function getTemplateReference(templateRepo: TemplateRepository): string {
+  const templates = templateRepo.getAllTemplates()
   const byCategory = templates.reduce((acc, t) => {
     if (!acc[t.category]) acc[t.category] = []
     acc[t.category].push(`- ${t.id}: ${t.description} (${t.optimalRows[0]}-${t.optimalRows[1]} items)`)
@@ -99,8 +99,8 @@ Identify the structure, extract key information, and suggest the best visualizat
 /**
  * System prompt for infographic planning
  */
-export function getInfographicPlannerSystemPrompt(): string {
-  const templateRef = getTemplateReference()
+export function getInfographicPlannerSystemPrompt(templateRepo?: TemplateRepository): string {
+  const templateRef = templateRepo ? getTemplateReference(templateRepo) : ''
 
   return `You are an expert infographic designer that creates multi-section visual reports from text content.
 

@@ -8,7 +8,7 @@
  */
 
 import type { LLMProvider, ChatMessage } from '../types'
-import type { TemplateCategory } from '@plugins/data-display/infographic/templates'
+import type { TemplateCategory } from '@/types/infographic-template'
 
 /**
  * Article section identified for visualization
