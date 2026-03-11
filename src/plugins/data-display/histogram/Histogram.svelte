@@ -97,7 +97,7 @@
           >
             <div class="bar-column">
               {#if showLabels && bin.count > 0}
-                <div class="bar-label">{bin.count}</div>
+                <div class="bar-tooltip">{bin.count}</div>
               {/if}
               <div
                 class="bar"
@@ -162,13 +162,13 @@
     margin: 0 0 0.25rem 0;
     font-size: 1.125rem;
     font-weight: 600;
-    color: var(--text-primary, #111827);
+    color: #111827;
   }
 
   .histogram-subtitle {
     margin: 0 0 1rem 0;
     font-size: 0.875rem;
-    color: var(--text-secondary, #6b7280);
+    color: #6b7280;
   }
 
   .histogram-chart {
@@ -178,7 +178,7 @@
 
   .y-axis {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     width: 60px;
     flex-shrink: 0;
   }
@@ -186,13 +186,12 @@
   .y-axis-label {
     font-size: 0.75rem;
     font-weight: 500;
-    color: var(--text-secondary, #6b7280);
-    text-align: center;
-    padding-bottom: 0.5rem;
+    color: #6b7280;
     writing-mode: vertical-rl;
     text-orientation: mixed;
     transform: rotate(180deg);
-    height: 100%;
+    width: 14px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -254,6 +253,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
+    position: relative;
   }
 
   .bar {
@@ -267,10 +267,26 @@
     opacity: 0.8;
   }
 
-  .bar-label {
-    font-size: 0.625rem;
-    color: var(--text-secondary, #6b7280);
-    padding-bottom: 2px;
+  .bar-tooltip {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 15, 20, 0.88);
+    color: #f3f4f6;
+    font-size: 0.7rem;
+    font-weight: 500;
+    white-space: nowrap;
+    padding: 2px 7px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.12s;
+    z-index: 10;
+  }
+
+  .bar-wrapper:hover .bar-tooltip {
+    opacity: 1;
   }
 
   .x-axis {
@@ -313,11 +329,11 @@
   }
 
   .summary-label {
-    color: var(--text-secondary, #6b7280);
+    color: #6b7280;
   }
 
   .summary-value {
     font-weight: 500;
-    color: var(--text-primary, #111827);
+    color: #111827;
   }
 </style>

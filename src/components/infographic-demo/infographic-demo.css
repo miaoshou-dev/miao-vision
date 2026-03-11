@@ -1,0 +1,370 @@
+.demo-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #0f0f1a;
+  min-height: 100vh;
+}
+
+.demo-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.demo-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  padding-bottom: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.demo-header p {
+  color: #888;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+/* Tab Navigation */
+.demo-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  width: fit-content;
+}
+
+.demo-tabs button {
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.demo-tabs button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.demo-tabs button.active {
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+.controls {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-label {
+  font-weight: 500;
+  font-size: 0.8rem;
+  color: #a0a0b0;
+}
+
+.control-group select {
+  padding: 0.4rem 0.6rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #fff;
+  cursor: pointer;
+}
+
+.control-group select:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.control-group select option {
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.checkbox-group {
+  gap: 0.5rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+/* Article Demo Section */
+.article-demo {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.article-source {
+  flex: 0 0 280px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.article-source h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.article-content {
+  font-size: 0.75rem;
+  color: #a0a0b0;
+  line-height: 1.6;
+}
+
+.article-content p {
+  margin-bottom: 0.5rem;
+}
+
+.article-content strong {
+  color: #d0d0d0;
+}
+
+.article-text pre {
+  font-size: 0.7rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  color: #b0b0c0;
+  margin: 0;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.arrow-indicator {
+  font-size: 2rem;
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  padding-top: 100px;
+}
+
+.infographic-result {
+  flex: 1;
+}
+
+.infographic-result h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.demo-section {
+  margin-bottom: 1.5rem;
+}
+
+.demo-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  color: #e0e0e0;
+}
+
+.demo-section h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #d0d0d0;
+}
+
+.demo-section h4 {
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  color: #b0b0b0;
+}
+
+.component-desc {
+  font-size: 0.8rem;
+  color: #888;
+  margin-bottom: 0.75rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.infographic-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(26, 26, 46, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow-x: auto;
+}
+
+/* Items Row */
+.items-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem;
+  background: rgba(26, 26, 46, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  align-items: flex-start;
+}
+
+/* Items Showcase */
+.items-showcase {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.item-demo {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.item-demo h3 {
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Theme Grid */
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+
+.theme-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-preview:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.theme-preview.active {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.theme-name {
+  font-size: 0.7rem;
+  color: #888;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Palette Grid */
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+.palette-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.palette-preview:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.palette-preview.active {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.palette-colors {
+  display: flex;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.palette-swatch {
+  width: 24px;
+  height: 24px;
+}
+
+.palette-name {
+  font-size: 0.7rem;
+  color: #888;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .article-demo {
+    flex-direction: column;
+  }
+
+  .article-source {
+    flex: none;
+    width: 100%;
+    position: static;
+  }
+
+  .arrow-indicator {
+    display: none;
+  }
+}
