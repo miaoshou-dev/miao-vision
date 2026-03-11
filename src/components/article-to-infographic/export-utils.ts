@@ -52,6 +52,7 @@ export async function exportPng(el: HTMLElement, filename = 'infographic.png'): 
   // Clone and inline computed styles so CSS variables are resolved
   const clone = el.cloneNode(true) as HTMLElement
   inlineComputedStyles(el, clone)
+  await inlineExternalImages(clone)
   clone.style.cssText = [
     `width:${width}px`,
     `height:${height}px`,
@@ -115,6 +116,39 @@ export async function exportPng(el: HTMLElement, filename = 'infographic.png'): 
 }
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Convert all external <img> src attributes to base64 data URLs so the canvas
+ * does not become tainted when the SVG foreignObject is drawn.
+ * Blob URLs and data URLs are skipped (already safe).
+ * If a fetch fails (e.g. CORS), the img is blanked to prevent tainting.
+ */
+async function inlineExternalImages(root: HTMLElement): Promise<void> {
+  const imgs = root.querySelectorAll<HTMLImageElement>('img[src]')
+  await Promise.all(
+    Array.from(imgs).map(async (img) => {
+      const src = img.getAttribute('src') ?? ''
+      if (!src || src.startsWith('data:') || src.startsWith('blob:')) return
+      try {
+        const resp = await fetch(src, { mode: 'cors', credentials: 'omit' })
+        const blob = await resp.blob()
+        img.src = await blobToDataUrl(blob)
+      } catch {
+        // Remove the src so it can't taint the canvas
+        img.removeAttribute('src')
+      }
+    })
+  )
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
+}
 
 function inlineComputedStyles(source: Element, dest: Element): void {
   if (source instanceof HTMLElement && dest instanceof HTMLElement) {
