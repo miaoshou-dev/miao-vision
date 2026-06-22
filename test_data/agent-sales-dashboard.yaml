@@ -1,0 +1,38 @@
+title: Sales Dashboard
+charts:
+  - type: bar
+    title: Sales by Region
+    data:
+      transform:
+        - type: aggregate
+          groupBy: [region]
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+    encoding:
+      x:
+        field: region
+      y:
+        field: total_sales
+  - type: line
+    title: Monthly Sales
+    data:
+      transform:
+        - type: derive-month
+          field: order_date
+          as: order_month
+        - type: aggregate
+          groupBy: [order_month]
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+        - type: sort
+          field: order_month
+          order: asc
+    encoding:
+      x:
+        field: order_month
+      y:
+        field: total_sales

@@ -1,0 +1,6 @@
+[
+  { "order_date": "2025-01-01", "region": "East", "category": "A", "sales": 100, "orders": 4 },
+  { "order_date": "2025-01-02", "region": "West", "category": "B", "sales": 120, "orders": 5 },
+  { "order_date": "2025-02-01", "region": "East", "category": "A", "sales": 140, "orders": 6 },
+  { "order_date": "2025-02-02", "region": "North", "category": "C", "sales": 90, "orders": 3 }
+]

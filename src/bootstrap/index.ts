@@ -14,11 +14,7 @@
  */
 
 import { componentRegistry } from "@core/registry";
-import { registerServices } from "./init-services";
-import { registerVgplotCharts } from "./init-charts";
-import { registerPlugins } from "./init-plugins";
-import { initializeCatalog } from "./init-catalog";
-import { initializeVizCatalog } from "@/core/catalog";
+import { initializeMiaoRuntime } from "./init-runtime";
 
 /**
  * Initialize the application
@@ -28,20 +24,7 @@ import { initializeVizCatalog } from "@/core/catalog";
 export function initializeApp(): void {
   console.log("🚀 Bootstrapping application...");
 
-  // 1. Register core services first (DI for chart builder, input initializer)
-  registerServices();
-
-  // 2. Register vgplot charts (chart, line, area, scatter)
-  registerVgplotCharts();
-
-  // 3. Register all plugin components
-  registerPlugins();
-
-  // 4. Initialize Catalog system (unified component catalog)
-  initializeCatalog();
-
-  // 5. Initialize VizCatalog for AI visualization generation
-  initializeVizCatalog();
+  initializeMiaoRuntime();
 
   console.log(`\n✅ Bootstrap complete: ${componentRegistry.getAllLanguages().length} components registered`)
   console.log('   Languages:', componentRegistry.getAllLanguages().join(', '))
@@ -78,3 +61,4 @@ export { registerServices } from "./init-services";
 export { registerVgplotCharts } from "./init-charts";
 export { registerPlugins } from "./init-plugins";
 export { initializeCatalog, getCatalog, isCatalogInitialized } from "./init-catalog";
+export { initializeMiaoRuntime, isMiaoRuntimeInitialized } from "./init-runtime";

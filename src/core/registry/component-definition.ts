@@ -196,7 +196,8 @@ export function createRegistration<TConfig = unknown, TProps = unknown>(
     metadata,
     parser,
     renderer,
-    component: component as any
+    component: component as any,
+    buildProps: buildProps as RegisteredComponent<TProps>['buildProps']
   }
 }
 

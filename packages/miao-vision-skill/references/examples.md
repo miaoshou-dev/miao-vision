@@ -1,0 +1,73 @@
+# Miao Vision Examples
+
+## Monthly Sales Trend
+
+```yaml
+title: Monthly Sales Trend
+charts:
+  - type: line
+    title: Monthly Sales
+    data:
+      transform:
+        - type: derive-month
+          field: order_date
+          as: order_month
+        - type: aggregate
+          groupBy: [order_month]
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+        - type: sort
+          field: order_month
+          order: asc
+    encoding:
+      x:
+        field: order_month
+      y:
+        field: total_sales
+```
+
+## Sales by Region
+
+```yaml
+title: Sales by Region
+charts:
+  - type: bar
+    title: Sales by Region
+    data:
+      transform:
+        - type: aggregate
+          groupBy: [region]
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+        - type: sort
+          field: total_sales
+          order: desc
+    encoding:
+      x:
+        field: region
+      y:
+        field: total_sales
+```
+
+## KPI
+
+```yaml
+title: Revenue KPI
+charts:
+  - type: bigvalue
+    title: Total Sales
+    data:
+      transform:
+        - type: aggregate
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+    encoding:
+      value:
+        field: total_sales
+```

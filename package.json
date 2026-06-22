@@ -39,6 +39,9 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:report": "playwright show-report",
+    "miao-viz": "node scripts/miao-viz.mjs",
+    "build:cli": "node packages/miao-viz-cli/scripts/build.mjs",
+    "pack:skill": "node scripts/pack-miao-vision-skill.mjs",
     "create-plugin": "npx ts-node scripts/create-plugin.ts",
     "prepare": "husky"
   },
@@ -85,6 +88,7 @@
     "unified": "^11.0.5",
     "unist-util-visit": "^5.0.0",
     "xlsx": "^0.18.5",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.2",
+    "zod": "^4.4.3"
   }
 }

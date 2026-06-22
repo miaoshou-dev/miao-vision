@@ -1,0 +1,29 @@
+{
+  "name": "@miao-vision/cli",
+  "version": "0.1.0",
+  "description": "Miao Vision local data visualization CLI for agent workflows",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "miao-viz": "./dist/cli.cjs"
+  },
+  "files": [
+    "dist",
+    "examples",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "smoke": "node dist/cli.cjs profile examples/sales.csv"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.2",
+    "xlsx": "^0.18.5",
+    "yaml": "^2.8.2",
+    "zod": "^4.4.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

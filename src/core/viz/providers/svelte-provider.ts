@@ -1,6 +1,7 @@
 import { componentRegistry } from '@/core/registry'
 import { componentMount } from '@/core/registry/component-mount'
 import type { IVizProvider, VizSpec, VizInstance, VizType } from '../types'
+import { getRegistryKeyForVizType } from '../type-mapping'
 
 export class SvelteProvider implements IVizProvider {
   readonly supportedTypes: VizType[] = [
@@ -88,20 +89,7 @@ export class SvelteProvider implements IVizProvider {
   }
 
   private mapTypeToRegistryKey(type: VizType): string {
-      const map: Record<string, string> = {
-          // Charts that use their short name as language key
-          'bar': 'bar',
-          'line': 'line',
-          'pie': 'pie',
-          'area': 'area',
-          'scatter': 'scatter',
-          'bubble': 'bubble',
-
-          // Charts that use different keys
-          'table': 'datatable',
-          'calendar': 'calendar-heatmap',
-      }
-      return map[type as string] || type
+      return getRegistryKeyForVizType(type)
   }
 
   private transformSpecToConfig(spec: VizSpec): Record<string, any> {

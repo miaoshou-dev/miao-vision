@@ -76,3 +76,6 @@ export {
   resolveAllDynamicValues,
   hasDynamicValues
 } from './dynamic-value'
+
+// Visualization catalog
+export { getVizCatalog, initializeVizCatalog, resetVizCatalog } from './viz-catalog'

@@ -126,6 +126,12 @@ export interface RegisteredComponent<T = any> {
   validator?: ComponentValidator<T>
   /** Svelte component class (optional, for direct instantiation) */
   component?: typeof SvelteComponent
+  /** Optional direct props builder used by visualization providers */
+  buildProps?: (
+    config: Record<string, any>,
+    data: unknown,
+    context: RenderContext
+  ) => T | null
 }
 
 /**

@@ -15,6 +15,11 @@ import type { Catalog, CatalogEntry } from './types'
 import { createCatalog } from './catalog'
 import { componentMount } from '@core/registry/component-mount'
 import type { VizSpec, VizInstance } from '@/core/viz/types'
+import {
+  DIRECT_REGISTRY_VIZ_TYPES,
+  INFOGRAPHIC_VIZ_TYPES,
+  getRegistryKeyForVizType
+} from '@/core/viz/type-mapping'
 
 /**
  * VizSpec schema entry for AI generation
@@ -59,14 +64,7 @@ export class VizCatalog {
    */
   private initializeDefaultMappings(): void {
     // Direct mappings (VizType matches registry key)
-    const directTypes = [
-      'bar', 'line', 'pie', 'area', 'scatter', 'bubble',
-      'histogram', 'boxplot', 'radar', 'heatmap',
-      'sankey', 'treemap', 'funnel', 'waterfall',
-      'gauge', 'progress', 'sparkline', 'delta', 'bigvalue'
-    ]
-
-    for (const type of directTypes) {
+    for (const type of DIRECT_REGISTRY_VIZ_TYPES) {
       this.typeToRegistryKey.set(type, type)
     }
 
@@ -75,11 +73,7 @@ export class VizCatalog {
     this.typeToRegistryKey.set('calendar', 'calendar-heatmap')
 
     // Infographic types all map to 'infographic'
-    const infographicTypes = [
-      'infographic-list', 'infographic-flow', 'infographic-hierarchy',
-      'infographic-comparison', 'infographic-kpi'
-    ]
-    for (const type of infographicTypes) {
+    for (const type of INFOGRAPHIC_VIZ_TYPES) {
       this.typeToRegistryKey.set(type, 'infographic')
     }
   }
@@ -125,7 +119,7 @@ export class VizCatalog {
    * Get the registry key for a VizType
    */
   getRegistryKey(vizType: string): string {
-    return this.typeToRegistryKey.get(vizType) ?? vizType
+    return this.typeToRegistryKey.get(vizType) ?? getRegistryKeyForVizType(vizType)
   }
 
   /**

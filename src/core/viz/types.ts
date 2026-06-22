@@ -16,7 +16,7 @@ export type VizType =
   | 'infographic-list' | 'infographic-flow' | 'infographic-hierarchy'
   | 'infographic-comparison' | 'infographic-kpi'
   // Tables
-  | 'table' | 'pivot'
+  | 'table' | 'pivot' | 'calendar'
 
 /**
  * Field Encoding Config

@@ -1,0 +1,5 @@
+order_date	region	category	sales	orders
+2025-01-01	East	A	100	4
+2025-01-02	West	B	120	5
+2025-02-01	East	A	140	6
+2025-02-02	North	C	90	3
