@@ -388,6 +388,214 @@ export const myChartRegistration = defineComponent({
 })
 ```
 
+## CLI Package (`@miao-vision/cli`)
+
+The CLI lives in `packages/miao-viz-cli/` and is published to npm as `@miao-vision/cli`.
+
+### Package Structure
+
+```
+packages/miao-viz-cli/
+├── scripts/build.mjs   # esbuild bundler (entry: src/agent/cli.ts → dist/cli.cjs)
+├── examples/           # Sample CSV/YAML files for smoke test
+├── dist/               # Built output (not committed)
+└── package.json
+```
+
+### Build & Publish Commands
+
+```bash
+npm run build:cli       # Build only (from repo root)
+npm run publish:cli     # Build + publish manually (requires npm login)
+```
+
+```bash
+# Inside packages/miao-viz-cli/
+npm run build           # esbuild bundle
+npm run smoke           # Quick sanity check: profile examples/sales.csv
+```
+
+### Automated Publishing via GitHub Actions
+
+Workflow: `.github/workflows/publish-cli.yml`
+
+Trigger: push a tag in the format `cli-v<semver>`:
+
+```bash
+git tag cli-v0.1.1
+git push origin cli-v0.1.1
+```
+
+```yaml
+# .github/workflows/publish-cli.yml
+name: Publish CLI to npm
+
+on:
+  push:
+    tags:
+      - 'cli-v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write  # for npm provenance
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Build CLI
+        run: npm run build:cli
+
+      - name: Smoke test
+        run: cd packages/miao-viz-cli && npm run smoke
+
+      - name: Sync version from tag
+        run: |
+          TAG="${GITHUB_REF_NAME#cli-v}"
+          cd packages/miao-viz-cli
+          npm version "$TAG" --no-git-tag-version
+
+      - name: Publish to npm
+        run: cd packages/miao-viz-cli && npm publish --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
+
+### Prerequisites for Publishing
+
+- GitHub secret `NPM_TOKEN` must be set (Settings → Secrets → `NPM_TOKEN`)
+- Token type: **Automation** (generated at npmjs.com → Account → Access Tokens)
+- First publish must be done manually (`npm login` + `npm run publish:cli`)
+- The `prepublishOnly` hook runs the build automatically before every `npm publish`
+
+## Skill Package (`miao-vision-skill`)
+
+The skill lives in `packages/miao-vision-skill/` and is distributed as a **ZIP via GitHub Releases** — it is not an npm package.
+
+### Package Structure
+
+```
+packages/miao-vision-skill/
+├── SKILL.md                  # Agent instructions (entry point)
+├── references/
+│   ├── vizspec.md            # Chart spec reference
+│   └── examples.md           # Example specs
+├── scripts/
+│   └── check-miao-viz.mjs    # Verify miao-viz is on PATH
+└── install/
+    ├── README.md             # Install overview
+    ├── claude.md             # Claude Code install steps
+    └── codex.md              # Codex install steps
+```
+
+### Build & Pack
+
+```bash
+npm run pack:skill    # Produces dist/skills/miao-vision-skill.zip
+```
+
+### Automated Publishing via GitHub Actions
+
+Workflow: `.github/workflows/publish-skill.yml`
+
+Trigger: push a tag in the format `skill-v<semver>`:
+
+```bash
+git tag skill-v0.1.1
+git push origin skill-v0.1.1
+```
+
+```yaml
+# .github/workflows/publish-skill.yml
+name: Publish Skill to GitHub Release
+
+on:
+  push:
+    tags:
+      - 'skill-v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required for creating releases and uploading assets
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Pack skill ZIP
+        run: npm run pack:skill
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#skill-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Miao Vision Skill v${{ steps.version.outputs.version }}"
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## Install
+
+            **Step 1 — Install the CLI**
+            ```bash
+            npm install -g @miao-vision/cli
+            ```
+
+            **Step 2 — Install the skill**
+
+            For Claude Code:
+            ```bash
+            mkdir -p ~/.claude/skills
+            unzip miao-vision-skill.zip -d ~/.claude/skills/
+            ```
+
+            For Codex:
+            ```bash
+            mkdir -p ~/.codex/skills
+            unzip miao-vision-skill.zip -d ~/.codex/skills/
+            ```
+          files: dist/skills/miao-vision-skill.zip
+          draft: false
+          prerelease: false
+```
+
+No `NPM_TOKEN` needed — only the default `GITHUB_TOKEN` (already available in Actions).
+
+### User Install (from a Release)
+
+```bash
+# Claude Code
+mkdir -p ~/.claude/skills
+unzip miao-vision-skill.zip -d ~/.claude/skills/
+
+# Codex
+mkdir -p ~/.codex/skills
+unzip miao-vision-skill.zip -d ~/.codex/skills/
+```
+
 ## Code Quality
 
 ### File Size Limits
@@ -451,5 +659,5 @@ data = { ...data, items: [...data.items, newItem] }
 
 ---
 
-**Last Updated:** 2025-01-04
+**Last Updated:** 2026-06-22
 **Architecture Version:** v1.1 (Pure Svelte + SVG Charts)

@@ -1,0 +1,63 @@
+name: Publish Skill to GitHub Release
+
+on:
+  push:
+    tags:
+      - 'skill-v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required for creating releases and uploading assets
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Pack skill ZIP
+        run: npm run pack:skill
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#skill-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Miao Vision Skill v${{ steps.version.outputs.version }}"
+          tag_name: ${{ github.ref_name }}
+          body: |
+            ## Install
+
+            **Step 1 — Install the CLI**
+            ```bash
+            npm install -g @miao-vision/cli
+            ```
+
+            **Step 2 — Install the skill**
+
+            For Claude Code:
+            ```bash
+            mkdir -p ~/.claude/skills
+            unzip miao-vision-skill.zip -d ~/.claude/skills/
+            ```
+
+            For Codex:
+            ```bash
+            mkdir -p ~/.codex/skills
+            unzip miao-vision-skill.zip -d ~/.codex/skills/
+            ```
+
+            See `install/claude.md` and `install/codex.md` inside the ZIP for full instructions.
+          files: dist/skills/miao-vision-skill.zip
+          draft: false
+          prerelease: false
