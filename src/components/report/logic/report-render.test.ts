@@ -239,9 +239,9 @@ describe('calculateRenderStats', () => {
   it('calculates stats for report with blocks', () => {
     const report = createReport({
       blocks: [
-        { id: 'block1', type: 'sql', content: 'SELECT 1', sqlResult: { data: [], columns: [], rowCount: 0 } },
-        { id: 'block2', type: 'sql', content: 'SELECT 2', sqlResult: { data: [], columns: [], rowCount: 0 }, chartConfig: { data: { table: 'sales' } } },
-        { id: 'block3', type: 'markdown', content: '# Header' }
+        { id: 'block1', type: 'sql', content: 'SELECT 1', status: 'success', sqlResult: { data: [], columns: [], rowCount: 0, executionTime: 0 } },
+        { id: 'block2', type: 'sql', content: 'SELECT 2', status: 'success', sqlResult: { data: [], columns: [], rowCount: 0, executionTime: 0 } },
+        { id: 'block3', type: 'markdown', content: '# Header', status: 'pending' }
       ]
     })
 
@@ -249,8 +249,6 @@ describe('calculateRenderStats', () => {
 
     expect(stats.blocksCount).toBe(3)
     expect(stats.blocksWithResults).toBe(2)
-    expect(stats.blocksWithChartConfig).toBe(1)
-    expect(stats.chartConfigsHash).toContain('block2')
   })
 
   it('handles report with no blocks', () => {
@@ -262,8 +260,6 @@ describe('calculateRenderStats', () => {
 
     expect(stats.blocksCount).toBe(0)
     expect(stats.blocksWithResults).toBe(0)
-    expect(stats.blocksWithChartConfig).toBe(0)
-    expect(stats.chartConfigsHash).toBe('')
   })
 
   it('handles report with undefined blocks', () => {
@@ -274,20 +270,6 @@ describe('calculateRenderStats', () => {
 
     expect(stats.blocksCount).toBe(0)
     expect(stats.blocksWithResults).toBe(0)
-    expect(stats.blocksWithChartConfig).toBe(0)
-  })
-
-  it('generates correct chart configs hash', () => {
-    const report = createReport({
-      blocks: [
-        { id: 'a', type: 'chart', content: '', chartConfig: { data: { table: 'table1' } } },
-        { id: 'b', type: 'chart', content: '', chartConfig: { data: { table: 'table2' } } }
-      ]
-    })
-
-    const stats = calculateRenderStats(report)
-
-    expect(stats.chartConfigsHash).toBe('a:table1,b:table2')
   })
 })
 
@@ -303,9 +285,7 @@ describe('logRenderDebug', () => {
   it('logs render information', () => {
     const stats = {
       blocksCount: 5,
-      blocksWithResults: 3,
-      blocksWithChartConfig: 2,
-      chartConfigsHash: 'a:t1,b:t2'
+      blocksWithResults: 3
     }
 
     logRenderDebug('Test', stats, 10)

@@ -61,29 +61,6 @@ export interface ColumnConfig {
   frozen?: 'left' | 'right' | false  // Freeze column position (default: false)
 }
 
-/**
- * Drill-down value mapping for extracting values from clicked row
- */
-export interface DrilldownMapping {
-  column: string             // Source column name in the data
-  inputName: string          // Target input name to set
-  transform?: 'string' | 'number' | 'date'  // Optional transformation
-}
-
-/**
- * Drill-down configuration for table rows
- */
-export interface DrilldownConfig {
-  enabled: boolean           // Enable drill-down on row click
-  action?: 'setInput' | 'modal'  // Action type (default: setInput if mappings provided, modal otherwise)
-  mappings?: DrilldownMapping[]  // Map columns to input variables (for setInput action)
-  displayColumns?: string[]  // Columns to display in modal (for modal action, default: all)
-  titleTemplate?: string     // Title template for modal, e.g. "Order #{order_id}" (for modal action)
-  cursor?: 'pointer' | 'zoom-in'  // Cursor style on hover (default: pointer)
-  highlight?: boolean        // Highlight row on hover (default: true)
-  tooltip?: string           // Tooltip text for drill-down hint
-}
-
 export interface DataTableConfig {
   query: string              // SQL result name to use as data source
   columns?: ColumnConfig[]   // Column configurations (optional, auto-detect if not provided)
@@ -96,7 +73,6 @@ export interface DataTableConfig {
   selectable?: boolean       // Enable row selection (default: false)
   rowHeight?: number         // Row height for virtual scrolling (default: 36)
   maxHeight?: number         // Max table height in pixels (default: 600)
-  drilldown?: DrilldownConfig  // Drill-down configuration for row clicks
 
   // NEW: Advanced table features
   resizableColumns?: boolean // Enable column width resizing (default: false)

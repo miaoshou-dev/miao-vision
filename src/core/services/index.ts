@@ -7,35 +7,21 @@
  */
 
 import type {
-  IChartBuilder,
   IInputInitializer,
-  ISQLTemplateContext,
   IDatabaseStore
 } from '@/types/interfaces'
-import type { ParsedCodeBlock } from '@/types/report'
-import type { ChartConfig } from '@/types/chart'
 
 /**
  * Service registry state
  */
 interface ServiceRegistry {
-  chartBuilder: IChartBuilder | null
   inputInitializer: IInputInitializer | null
   databaseStore: IDatabaseStore | null
 }
 
 const registry: ServiceRegistry = {
-  chartBuilder: null,
   inputInitializer: null,
   databaseStore: null
-}
-
-/**
- * Register the chart builder service
- */
-export function registerChartBuilder(builder: IChartBuilder): void {
-  registry.chartBuilder = builder
-  console.log('✅ ChartBuilder service registered')
 }
 
 /**
@@ -52,17 +38,6 @@ export function registerInputInitializer(initializer: IInputInitializer): void {
 export function registerDatabaseStore(store: IDatabaseStore): void {
   registry.databaseStore = store
   console.log('✅ DatabaseStore service registered')
-}
-
-/**
- * Get the chart builder service
- * @throws Error if not registered
- */
-export function getChartBuilder(): IChartBuilder {
-  if (!registry.chartBuilder) {
-    throw new Error('ChartBuilder service not registered. Call registerChartBuilder() during bootstrap.')
-  }
-  return registry.chartBuilder
 }
 
 /**
@@ -92,30 +67,7 @@ export function getDatabaseStore(): IDatabaseStore {
  */
 export function isServicesReady(): boolean {
   return (
-    registry.chartBuilder !== null &&
     registry.inputInitializer !== null &&
     registry.databaseStore !== null
   )
-}
-
-/**
- * Convenience function: Build chart from block using registered service
- */
-export function buildChartFromBlock(
-  block: ParsedCodeBlock,
-  tableMapping: Map<string, string>,
-  context?: ISQLTemplateContext
-): ChartConfig | null {
-  return getChartBuilder().buildFromBlock(block, tableMapping, context)
-}
-
-/**
- * Convenience function: Build charts from blocks using registered service
- */
-export function buildChartsFromBlocks(
-  blocks: ParsedCodeBlock[],
-  tableMapping: Map<string, string>,
-  context?: ISQLTemplateContext
-): Map<string, ChartConfig> {
-  return getChartBuilder().buildFromBlocks(blocks, tableMapping, context)
 }

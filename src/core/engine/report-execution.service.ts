@@ -26,8 +26,8 @@ import {
   reExecuteAffectedBlocks,
   getChangedInputs
 } from '@core/engine/reactive-executor'
-import { getInputInitializer, buildChartFromBlock } from '@core/services'
-import { coordinator, duckDBManager, type DuckDBManager } from '@core/database'
+import { getInputInitializer } from '@core/services'
+import { duckDBManager } from '@core/database'
 import type { DependencyAnalysis } from '@core/engine/dependency-graph'
 
 /**
@@ -288,7 +288,7 @@ export class ReportExecutionService {
     newInputs: Record<string, any>,
     onBlockUpdate: BlockUpdateCallback
   ) {
-    console.log('🧹 Clearing Mosaic coordinator and affected chart tables...')
+    console.log('🧹 Clearing affected SQL result tables...')
     console.log(`  Affected blocks: ${affectedBlocks.map(b => b.id).join(', ')}`)
 
     try {
@@ -330,14 +330,6 @@ export class ReportExecutionService {
         schemaName  // Pass schema name
       )
 
-      // Rebuild chart configs for affected charts
-      await this.rebuildAffectedCharts(
-        report,
-        state,
-        affectedBlocks,
-        templateContext
-      )
-
       // Trigger reactivity
       console.log('🔄 Triggering block update callback')
       onBlockUpdate({ ...report })
@@ -358,9 +350,6 @@ export class ReportExecutionService {
     tableMapping: Map<string, string>
   ) {
     try {
-      const coord = coordinator()
-      if (!coord) return
-
       // Build list of tables to drop (only for affected blocks)
       const affectedBlockIds = new Set(affectedBlocks.map(b => b.id))
       const tablesToDrop: string[] = []
@@ -379,7 +368,7 @@ export class ReportExecutionService {
         console.log(`  Dropping ${tablesToDrop.length} affected tables...`)
         for (const tableName of tablesToDrop) {
           console.log(`    Dropping table: ${tableName}`)
-          // Drop from unified DuckDB (used by both SQL queries and Mosaic)
+          // Drop from unified DuckDB used by report SQL queries.
           try {
             if (duckDBManager.isInitialized()) {
               await duckDBManager.query(`DROP TABLE IF EXISTS "${tableName}"`)
@@ -389,109 +378,11 @@ export class ReportExecutionService {
           }
         }
         console.log('  ✅ Affected tables dropped')
-
-        // Clear Mosaic's query cache to prevent stale data
-        console.log('  🧹 Clearing Mosaic query cache to prevent stale data...')
-        const cache = coord.manager.cache()
-        if (cache) {
-          cache.clear()
-          console.log('  ✅ Query cache cleared - charts will fetch fresh data')
-        }
       } else {
-        console.log('  No chart tables to drop')
+        console.log('  No result tables to drop')
       }
     } catch (err) {
       console.warn('  Failed to drop tables:', err)
-    }
-  }
-
-  /**
-   * Rebuild chart configs for charts that depend on affected SQL blocks
-   */
-  private async rebuildAffectedCharts(
-    report: Report,
-    state: ReportExecutionState,
-    affectedBlocks: ReportBlock[],
-    templateContext: SQLTemplateContext
-  ) {
-    console.log('🎨 Rebuilding chart configurations for blocks that depend on affected SQL blocks...')
-
-    // Get affected SQL block IDs
-    const affectedSQLBlockIds = new Set(affectedBlocks.map(b => b.id))
-    console.log('  Affected SQL block IDs:', Array.from(affectedSQLBlockIds))
-
-    // Build a mapping of data source names (logical names) that are affected
-    const affectedDataSources = new Set<string>()
-
-    console.log('  Current tableMapping:', Object.fromEntries(state.tableMapping))
-
-    // Find logical names that map to tables created by affected blocks
-    for (const [logicalName, physicalTableName] of state.tableMapping.entries()) {
-      for (const affectedBlockId of affectedSQLBlockIds) {
-        if (physicalTableName.includes(affectedBlockId)) {
-          affectedDataSources.add(logicalName)
-          console.log(`  Found affected data source: "${logicalName}" (from ${affectedBlockId} -> ${physicalTableName})`)
-        }
-      }
-    }
-
-    console.log('  Affected data sources (logical names):', Array.from(affectedDataSources))
-
-    // Find all chart blocks
-    const allChartBlocks = state.parsedBlocks.filter(pb =>
-      pb.language === 'chart' || pb.language === 'histogram'
-    )
-    console.log('  Total chart blocks in report:', allChartBlocks.length)
-
-    // Find chart blocks that reference the affected SQL blocks
-    const affectedChartBlocks = allChartBlocks.filter(chartBlock => {
-      // Try to get data source from metadata first
-      let dataSource = (chartBlock.metadata as Record<string, unknown> | undefined)?.data as string | undefined
-
-      // If not in metadata, parse from content
-      if (!dataSource) {
-        const lines = chartBlock.content.split('\n')
-        for (const line of lines) {
-          const trimmed = line.trim()
-          if (trimmed.startsWith('data:')) {
-            dataSource = trimmed.substring(5).trim()
-            break
-          }
-        }
-      }
-
-      if (!dataSource) return false
-
-      // Check if the data source is in the affected data sources
-      return affectedDataSources.has(dataSource)
-    })
-
-    console.log(`  Found ${affectedChartBlocks.length} chart blocks that depend on affected SQL blocks`)
-
-    // Rebuild chart configs
-    for (const parsedBlock of affectedChartBlocks) {
-      console.log(`  Building chart config for ${parsedBlock.id}...`)
-
-      const chartConfig = buildChartFromBlock(
-        parsedBlock,
-        state.tableMapping,
-        templateContext
-      )
-
-      if (chartConfig) {
-        const blockIndex = report.blocks.findIndex(b => b.id === parsedBlock.id)
-
-        if (blockIndex !== -1) {
-          report.blocks[blockIndex] = {
-            ...report.blocks[blockIndex],
-            chartConfig,
-            status: 'success'
-          }
-          console.log(`  ✅ Updated chart config for ${parsedBlock.id}`)
-        }
-      } else {
-        console.error(`  ❌ Failed to build chart config for ${parsedBlock.id}`)
-      }
     }
   }
 

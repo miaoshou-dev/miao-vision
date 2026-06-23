@@ -1,0 +1,128 @@
+title: Sales Review
+theme: editorial
+slides:
+  - layout: cover
+    title: "Sales Review"
+    claim: "Regional performance and trend analysis"
+    eyebrow: "2025 · Miao Vision"
+
+  - layout: metrics-chart
+    eyebrow: "01 · KEY METRICS"
+    title: "Quarter at a Glance"
+    metrics:
+      - label: Total Revenue
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: sales
+                  op: sum
+                  as: v
+      - label: Total Orders
+        format: ",.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: orders
+                  op: sum
+                  as: v
+      - label: Avg Order Value
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: sales
+                  op: avg
+                  as: v
+    charts:
+      - type: line
+        title: Monthly Revenue Trend
+        data:
+          transform:
+            - type: derive-month
+              field: order_date
+              as: month
+            - type: aggregate
+              groupBy: [month]
+              measures:
+                - field: sales
+                  op: sum
+                  as: total
+            - type: sort
+              field: month
+              order: asc
+        encoding:
+          x: { field: month }
+          y: { field: total }
+
+  - layout: text-chart
+    eyebrow: "02 · REGIONAL"
+    title: "Sales by Region"
+    annotation: "East region leads in total revenue across all categories."
+    bullets:
+      - "East: highest absolute revenue"
+      - "West: strong order volume"
+      - "North: growth opportunity"
+    charts:
+      - type: bar
+        title: Revenue by Region
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [region]
+              measures:
+                - field: sales
+                  op: sum
+                  as: total
+            - type: sort
+              field: total
+              order: desc
+        encoding:
+          x: { field: region }
+          y: { field: total }
+
+  - layout: chart-full
+    eyebrow: "03 · CATEGORY"
+    title: "Revenue by Category"
+    charts:
+      - type: bar
+        title: Category Breakdown
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [category]
+              measures:
+                - field: sales
+                  op: sum
+                  as: total
+            - type: sort
+              field: total
+              order: desc
+        encoding:
+          x: { field: category }
+          y: { field: total }
+          color: { field: category }
+
+  - layout: table-full
+    eyebrow: "04 · DETAIL"
+    title: "Top Transactions"
+    charts:
+      - type: table
+        title: Top Transactions
+        data:
+          transform:
+            - type: sort
+              field: sales
+              order: desc
+            - type: limit
+              value: 12
+        encoding:
+          x: { field: order_date }
+          y: { field: sales }
+
+  - layout: ending
+    title: "Thank you"
+    claim: "Miao Vision · Data-driven presentations"

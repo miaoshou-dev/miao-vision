@@ -1,266 +1,61 @@
-# E2E Tests Documentation
+# E2E Tests
 
-End-to-end tests for Miaoshou Vision components using Playwright.
+End-to-end tests now follow the `miao-viz` product path:
 
-## ✅ Phase 2 Status
-
-**Completed:**
-- ✅ Playwright configuration and setup
-- ✅ Test utilities and helper functions
-- ✅ Smoke tests (passing - validates setup)
-- ✅ BubbleChart test structure created
-
-**Smoke Test Results:**
-```
-✅ Playwright Setup Verification › should load the application homepage
-✅ Playwright Setup Verification › should load a test data markdown file
+```text
+local data file -> profile -> VizSpec -> render/export -> static artifact checks
 ```
 
-**Notes on BubbleChart Tests:**
-The BubbleChart component tests require complex app workflow simulation (creating reports, switching views, triggering execution). These tests demonstrate the testing approach but require additional refinement to work with the app's state management system.
+The E2E suite intentionally does not exercise the retired SQL Workspace, HybridGNode demos, Monaco editor, or dashboard-style chart builders.
 
-## 📁 Structure
+## Structure
 
-```
+```text
 tests/
-├── e2e/                    # E2E test files
-│   ├── smoke.spec.ts       # Smoke tests (verify setup)
-│   └── bubble-chart.spec.ts # BubbleChart component tests
-├── helpers/                # Test utilities
-│   └── test-utils.ts       # Helper functions
-└── README.md              # This file
+├── e2e/
+│   └── miao-viz-static-report.spec.ts
+├── helpers/
+│   └── test-utils.ts
+└── README.md
 ```
 
-## 🚀 Running Tests
-
-### Interactive UI Mode (Recommended)
-
-```bash
-npm run test:e2e:ui
-```
-
-Features:
-- 👁️ Watch tests run in real-time
-- 🎬 See step-by-step execution with screenshots
-- 🐛 Time-travel debugging
-- 📊 Detailed test reports
-
-### Headless Mode (CI/Local)
+## Run
 
 ```bash
 npm run test:e2e
 ```
 
-### Debug Mode
-
-```bash
-npm run test:e2e:debug
-```
-
-### View Test Reports
-
-```bash
-npm run test:e2e:report
-```
-
-## 🧪 Test Structure
-
-### Smoke Tests (`smoke.spec.ts`)
-
-Basic tests to verify the Playwright setup is working:
-- Application loads correctly
-- Can navigate to pages
-- Basic DOM elements are present
-
-### BubbleChart Tests (`bubble-chart.spec.ts`)
-
-Comprehensive tests for the BubbleChart component:
-
-1. **Rendering Tests**
-   - Chart container renders
-   - Title displays correctly
-   - Bubbles appear with correct count
-
-2. **Interaction Tests**
-   - Tooltip shows on hover
-   - Bubbles respond to mouse events
-
-3. **Visual Tests**
-   - Axes and labels display
-   - Legend appears for grouped data
-   - Grid lines render when enabled
-   - Bubble labels show correctly
-
-4. **Visual Regression**
-   - Screenshot comparison to detect visual changes
-
-## 📝 Writing New Tests
-
-### Basic Test Template
-
-```typescript
-import { test, expect } from '@playwright/test'
-import { waitForChart } from '../helpers/test-utils'
-
-test.describe('Component Name', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/')
-    await page.waitForSelector('#app', { state: 'visible' })
-  })
-
-  test('should render component', async ({ page }) => {
-    // Upload demo file
-    const fileInput = page.locator('input[type="file"]').first()
-    await fileInput.setInputFiles('test_data/your_demo.md')
-
-    // Wait for component
-    await waitForChart(page, '.your-component', 10000)
-
-    // Assertions
-    await expect(page.locator('.your-component')).toBeVisible()
-  })
-})
-```
-
-### Using Test Helpers
-
-Import helpers from `../helpers/test-utils`:
-
-```typescript
-import {
-  waitForChart,      // Wait for chart to render
-  hoverAndWait,      // Hover and wait for effects
-  getElementCount,   // Count matching elements
-  isVisible,         // Check if element is visible
-  getTextContent,    // Get element text
-  screenshotElement  // Screenshot specific element
-} from '../helpers/test-utils'
-```
-
-## 🎯 Best Practices
-
-### 1. Use Descriptive Test Names
-
-```typescript
-// ❌ Bad
-test('test 1', async ({ page }) => { ... })
-
-// ✅ Good
-test('should display tooltip on bubble hover', async ({ page }) => { ... })
-```
-
-### 2. Wait for Elements Properly
-
-```typescript
-// ❌ Bad
-await page.waitForTimeout(5000)
-
-// ✅ Good
-await page.waitForSelector('.chart', { state: 'visible' })
-await waitForChart(page, '.chart-container', 10000)
-```
-
-### 3. Use Specific Selectors
-
-```typescript
-// ❌ Bad
-await page.locator('div').first()
-
-// ✅ Good
-await page.locator('.bubble-chart-container')
-```
-
-### 4. Add Helpful Logging
-
-```typescript
-console.log('✅ Chart renders successfully')
-console.log(`✅ Found ${count} bubbles`)
-```
-
-## 📊 Visual Regression Testing
-
-Screenshot tests detect visual changes:
-
-```typescript
-test('visual regression', async ({ page }) => {
-  await expect(page).toHaveScreenshot('component-name.png')
-})
-```
-
-On first run, Playwright creates baseline screenshots.
-On subsequent runs, it compares against baselines.
-
-Update baselines:
-```bash
-npm run test:e2e -- --update-snapshots
-```
-
-## 🔍 Debugging Failed Tests
-
-### 1. Use UI Mode
+UI/debug modes still work:
 
 ```bash
 npm run test:e2e:ui
-```
-
-- Click on failed test
-- See step-by-step execution
-- View screenshots at each step
-
-### 2. Use Debug Mode
-
-```bash
 npm run test:e2e:debug
 ```
 
-- Tests run with Playwright Inspector
-- Step through test line by line
-- Inspect page state
+## Current Coverage
 
-### 3. Check Screenshots
+`miao-viz-static-report.spec.ts` verifies:
 
-Failed tests save screenshots to `test-results/`:
-```
-test-results/
-└── bubble-chart-should-render/
-    ├── test-failed-1.png
-    └── trace.zip
-```
+- `miao-viz profile` returns AI-readable profile metadata, column roles, quality, and chart hints.
+- `miao-viz render` writes a static HTML report from a local CSV and VizSpec YAML.
+- The generated HTML artifact includes embedded VizSpec, report title, chart headings, and SVG output.
+- When system Chrome can launch headless, Playwright also opens the generated HTML artifact directly and checks the rendered DOM.
 
-## 📈 CI Integration
+## Writing New E2E Tests
 
-Tests run automatically in CI when configured.
+Prefer testing static artifacts over Web app implementation details.
 
-GitHub Actions example:
+Good E2E targets:
 
-```yaml
-- name: Install Playwright
-  run: npx playwright install --with-deps chromium
+- CLI profile schema and useful hints.
+- CLI validate errors for broken VizSpec.
+- CLI render output for HTML/SVG.
+- Generated HTML opened in a browser and checked for expected charts, labels, and export-safe markup.
+- Future Web preview/gallery/debug screens that load an existing VizSpec.
 
-- name: Run E2E tests
-  run: npm run test:e2e
+Avoid reintroducing E2E tests for:
 
-- name: Upload test results
-  if: always()
-  uses: actions/upload-artifact@v3
-  with:
-    name: playwright-report
-    path: playwright-report/
-```
-
-## 🛠️ Configuration
-
-Edit `playwright.config.ts` to customize:
-
-- Test timeout
-- Browser types
-- Screenshot/video settings
-- Report format
-- Web server settings
-
-## 📚 Resources
-
-- [Playwright Documentation](https://playwright.dev)
-- [Best Practices](https://playwright.dev/docs/best-practices)
-- [Assertions Guide](https://playwright.dev/docs/test-assertions)
-- [Selectors Guide](https://playwright.dev/docs/selectors)
+- Full SQL Workspace flows.
+- Manual SQL editor interaction.
+- Query tabs, snippets, or query history.
+- Heavy real-time dashboard demos.

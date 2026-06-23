@@ -13,8 +13,6 @@
     FileText,
     ArrowRight,
     Github,
-    Filter,
-    Search,
     TrendingUp,
     Target,
     Zap,
@@ -32,21 +30,14 @@
 
   // Core features for hero section
   const coreFeatures = [
-    { icon: Rocket, label: 'In-Browser SQL', tag: 'DuckDB-WASM' },
+    { icon: Rocket, label: 'Agent Workflow', tag: 'CLI Ready' },
     { icon: BarChart3, label: '27+ Visualizations', tag: 'Pure SVG' },
-    { icon: Sparkles, label: 'AI Reports', tag: 'LLM Powered' },
+    { icon: Sparkles, label: 'AI VizSpec', tag: 'Easy to Generate' },
     { icon: Shield, label: 'Privacy First', tag: 'Local-First' }
   ]
 
   // Demo cards
   const demos = [
-    {
-      id: 'workspace',
-      icon: Database,
-      title: 'SQL Workspace',
-      desc: 'Interactive SQL Queries',
-      color: '#3B82F6'
-    },
     {
       id: 'article-ai',
       icon: Sparkles,
@@ -87,7 +78,7 @@
         <Github size={18} strokeWidth={1.5} />
         <span>GitHub</span>
       </a>
-      <button class="nav-btn" onclick={() => onNavigate('workspace')}>
+      <button class="nav-btn" onclick={() => onNavigate('article-ai')}>
         Launch App
       </button>
     </div>
@@ -99,18 +90,18 @@
       <!-- Badge -->
       <div class="hero-badge">
         <span class="badge-dot"></span>
-        Local-First Analytics Platform
+        AI-First Visualization Generator
       </div>
 
       <!-- Title -->
       <h1 class="hero-title">
-        <span class="title-line">Browser-Native</span>
-        <span class="title-gradient">Analytics Platform</span>
+        <span class="title-line">Local Data to</span>
+        <span class="title-gradient">Beautiful Reports</span>
       </h1>
 
       <!-- Subtitle -->
       <p class="hero-subtitle">
-        Zero Backend · Local-First · AI-Powered · Privacy Secure
+        Agent-Friendly · Local-First · Pure SVG · Polished HTML
       </p>
 
       <!-- Feature Pills -->
@@ -128,7 +119,7 @@
 
       <!-- CTA Buttons -->
       <div class="hero-cta">
-        <button class="btn-primary" onclick={() => onNavigate('workspace')}>
+        <button class="btn-primary" onclick={() => onNavigate('article-ai')}>
           <span>Get Started</span>
           <ArrowRight size={18} strokeWidth={2} />
         </button>
@@ -148,10 +139,10 @@
             <span class="dot yellow"></span>
             <span class="dot green"></span>
           </div>
-          <span class="window-title">SQL Workspace</span>
+          <span class="window-title">Miao Viz Report</span>
         </div>
         <div class="window-content">
-          <!-- Simulated SQL Editor -->
+          <!-- Simulated VizSpec -->
           <div class="mock-editor">
             <div class="editor-sidebar">
               <div class="sidebar-item active"></div>
@@ -160,23 +151,20 @@
             </div>
             <div class="editor-main">
               <div class="code-line">
-                <span class="code-keyword">SELECT</span>
-                <span class="code-text"> category, </span>
-                <span class="code-func">SUM</span>
-                <span class="code-text">(revenue)</span>
+                <span class="code-keyword">title:</span>
+                <span class="code-text"> Sales Report</span>
               </div>
               <div class="code-line">
-                <span class="code-keyword">FROM</span>
-                <span class="code-table"> sales_data</span>
+                <span class="code-keyword">theme:</span>
+                <span class="code-table"> editorial</span>
               </div>
               <div class="code-line">
-                <span class="code-keyword">GROUP BY</span>
-                <span class="code-text"> category</span>
+                <span class="code-keyword">charts:</span>
+                <span class="code-text"> bar, line, kpi</span>
               </div>
               <div class="code-line">
-                <span class="code-keyword">ORDER BY</span>
-                <span class="code-text"> revenue </span>
-                <span class="code-keyword">DESC</span>
+                <span class="code-keyword">render:</span>
+                <span class="code-text"> self-contained HTML</span>
               </div>
             </div>
           </div>
@@ -218,7 +206,7 @@
         <span class="title-gradient">AI Report Generation</span>
       </h2>
       <p class="showcase-subtitle">
-        Transform data into insights with AI-powered automation
+        Transform local files into polished visualization reports
       </p>
     </div>
 
@@ -242,7 +230,7 @@
         </div>
         <h3 class="feature-title">Instant Generation</h3>
         <p class="feature-desc">
-          Stream markdown reports with charts in real-time
+          Render self-contained HTML reports with charts
         </p>
       </div>
 
@@ -253,7 +241,7 @@
         </div>
         <h3 class="feature-title">Multi-Section Reports</h3>
         <p class="feature-desc">
-          KPIs, trends, rankings, insights - all automated
+          KPIs, trends, rankings, insights - all spec-driven
         </p>
       </div>
     </div>
@@ -265,8 +253,8 @@
         <div class="step-icon">
           <Database size={24} strokeWidth={1.75} />
         </div>
-        <h4 class="step-title">Select Data</h4>
-        <p class="step-desc">Choose tables or queries</p>
+        <h4 class="step-title">Profile Data</h4>
+        <p class="step-desc">Inspect local files</p>
       </div>
 
       <div class="workflow-arrow">→</div>
@@ -276,8 +264,8 @@
         <div class="step-icon">
           <MessageSquare size={24} strokeWidth={1.75} />
         </div>
-        <h4 class="step-title">Describe Need</h4>
-        <p class="step-desc">Natural language prompt</p>
+        <h4 class="step-title">Generate Spec</h4>
+        <p class="step-desc">AI writes VizSpec</p>
       </div>
 
       <div class="workflow-arrow">→</div>
@@ -287,8 +275,8 @@
         <div class="step-icon">
           <FileCheck size={24} strokeWidth={1.75} />
         </div>
-        <h4 class="step-title">Review Plan</h4>
-        <p class="step-desc">Preview & customize</p>
+        <h4 class="step-title">Validate</h4>
+        <p class="step-desc">Check fields & charts</p>
       </div>
 
       <div class="workflow-arrow">→</div>
@@ -298,8 +286,8 @@
         <div class="step-icon">
           <FileOutput size={24} strokeWidth={1.75} />
         </div>
-        <h4 class="step-title">Generate</h4>
-        <p class="step-desc">Instant Markdown</p>
+        <h4 class="step-title">Render</h4>
+        <p class="step-desc">Beautiful HTML</p>
       </div>
     </div>
 
@@ -345,4 +333,3 @@
     <span>© 2024</span>
   </footer>
 </div>
-

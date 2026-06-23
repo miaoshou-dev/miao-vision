@@ -29,15 +29,10 @@
 import { createContainer, type ServiceContainer } from './container'
 import type {
   IDatabaseService,
-  IChartService,
   IReportExecutionService,
-  ICoordinatorService,
-  ChartParseResult,
-  ChartBuildResult,
   ExecutionResult
 } from './interfaces'
 import type { QueryResult } from '@/types/database'
-import type { ChartConfig } from '@/types/chart'
 
 // ============================================================================
 // Mock Database Service
@@ -112,56 +107,6 @@ export function createMockDatabase(options: MockDatabaseOptions = {}): IDatabase
 }
 
 // ============================================================================
-// Mock Chart Service
-// ============================================================================
-
-/**
- * Options for creating mock chart service
- */
-export interface MockChartServiceOptions {
-  /**
-   * Default parse result
-   */
-  parseResult?: ChartParseResult
-
-  /**
-   * Default build result
-   */
-  buildResult?: ChartBuildResult
-
-  /**
-   * Map of block IDs to chart configs
-   */
-  chartConfigs?: Map<string, ChartConfig>
-}
-
-/**
- * Create a mock chart service
- */
-export function createMockChartService(options: MockChartServiceOptions = {}): IChartService {
-  const {
-    parseResult = { success: true },
-    buildResult = { success: true },
-    chartConfigs = new Map()
-  } = options
-
-  return {
-    parseChartBlockContent: () => parseResult,
-
-    interpolateString: (str) => str,
-
-    validateChartConfig: () => ({ valid: true, errors: [] }),
-
-    resolveDataSource: (dataSource, tableMapping) =>
-      tableMapping.get(dataSource) || null,
-
-    buildChartConfig: () => buildResult,
-
-    buildChartsFromBlocks: () => chartConfigs
-  }
-}
-
-// ============================================================================
 // Mock Report Execution Service
 // ============================================================================
 
@@ -211,46 +156,6 @@ export function createMockReportExecutionService(
 }
 
 // ============================================================================
-// Mock Coordinator Service
-// ============================================================================
-
-/**
- * Options for creating mock coordinator service
- */
-export interface MockCoordinatorOptions {
-  /**
-   * Default query result
-   */
-  queryResult?: any
-
-  /**
-   * Whether coordinator is initialized
-   */
-  initialized?: boolean
-}
-
-/**
- * Create a mock coordinator service
- */
-export function createMockCoordinator(options: MockCoordinatorOptions = {}): ICoordinatorService {
-  const { queryResult = [], initialized = true } = options
-
-  let isInit = initialized
-
-  return {
-    initialize: async () => {
-      isInit = true
-    },
-
-    query: async () => queryResult,
-
-    clearCache: () => {},
-
-    isInitialized: () => isInit
-  }
-}
-
-// ============================================================================
 // Test Container Factory
 // ============================================================================
 
@@ -264,19 +169,9 @@ export interface TestContainerOptions {
   database?: MockDatabaseOptions
 
   /**
-   * Mock chart service options
-   */
-  chart?: MockChartServiceOptions
-
-  /**
    * Mock report execution service options
    */
   reportExecution?: MockReportExecutionServiceOptions
-
-  /**
-   * Mock coordinator options
-   */
-  coordinator?: MockCoordinatorOptions
 }
 
 /**
@@ -299,9 +194,7 @@ export function createTestContainer(options: TestContainerOptions = {}): Service
   const container = createContainer()
 
   container.register('database', createMockDatabase(options.database))
-  container.register('chart', createMockChartService(options.chart))
   container.register('reportExecution', createMockReportExecutionService(options.reportExecution))
-  container.register('coordinator', createMockCoordinator(options.coordinator))
 
   return container
 }
@@ -323,26 +216,5 @@ export function createQueryResult(
     data,
     rowCount: data.length,
     executionTime: options.executionTime || 0
-  }
-}
-
-/**
- * Create a mock chart config
- */
-export function createChartConfig(overrides: Partial<ChartConfig> = {}): ChartConfig {
-  return {
-    type: 'bar',
-    data: {
-      table: 'test_table',
-      x: 'category',
-      y: 'value'
-    },
-    options: {
-      width: 680,
-      height: 400,
-      grid: true,
-      tooltip: true
-    },
-    ...overrides
   }
 }

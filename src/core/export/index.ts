@@ -35,8 +35,7 @@ export type {
 // Interactive Runtime (for embedded exports)
 export {
   generateInteractiveRuntime,
-  generateInteractiveStyles,
-  wrapTableRowsForDrilldown
+  generateInteractiveStyles
 } from './interactive-runtime'
 
 // MVR (MiaoVision Report) Format

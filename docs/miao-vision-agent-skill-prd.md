@@ -2,24 +2,38 @@
 
 ## 1. Background
 
-Miao Vision is currently a local-first BI analytics application built around DuckDB-WASM, Svelte 5, SVG visualization plugins, SQL Workspace, and BI Report generation. The next product direction is to make Miao Vision usable as an AI agent skill: an agent should be able to read a user-specified local data file and a natural language visualization request, then generate a viewable visualization artifact.
+Miao Vision is currently being refocused from a local BI analytics application into an AI-agent visualization skill. The next product direction is to make Miao Vision usable as an agent-operated local artifact generator: an agent should be able to read a user-specified article URL, Markdown file, or local data file, call `miao-viz` / `miao-vision-cli`, and return a viewable infographic or visualization artifact.
 
-The intended agent usage is:
+The intended article-to-infographic usage is:
+
+```text
+Use Miao Vision to turn this article URL into an editorial infographic report:
+https://example.com/market-analysis
+```
+
+or:
+
+```text
+Use Miao Vision to convert /Users/guming/articles/jvm-tuning.md into a one-page infographic.
+```
+
+The intended data-to-report usage is:
 
 ```text
 Use Miao Vision to read /Users/guming/data/sales.xlsx and generate an HTML report showing monthly sales trend, sales by region, and top product categories.
 ```
 
-The agent should handle data inspection, visualization planning, rendering, and artifact delivery without requiring the user to know Svelte, DuckDB, chart component props, or VizSpec.
+The agent should handle URL fetching, Markdown/text normalization, data inspection when relevant, visualization planning, rendering, and artifact delivery without requiring the user to know Svelte, DuckDB, chart component props, infographic templates, or VizSpec.
 
 ## 2. Goals
 
 - Enable Miao Vision to run as a headless visualization engine inside AI agent workflows.
-- Accept local file paths and natural language requirements as primary inputs.
+- Accept article URLs, Markdown/text files, local data files, and natural language requirements as primary inputs.
+- Make article URL / Markdown to infographic artifact a first-class skill workflow.
 - Generate HTML as the default output artifact for agent and TUI-friendly usage.
 - Preserve optional export paths for PNG, SVG, and PDF.
 - Reuse the existing chart/plugin architecture rather than rebuilding visualization components.
-- Keep the existing web BI application intact.
+- Reuse existing Article-to-Infographic pipeline code where possible while moving the product path to CLI/skill.
 
 ## 3. Non-Goals
 
@@ -28,10 +42,21 @@ The agent should handle data inspection, visualization planning, rendering, and 
 - Building a cloud backend.
 - Requiring users to write SQL or chart configuration for normal usage.
 - Making terminal image rendering the primary experience.
+- Making URL fetching a mandatory responsibility of the CLI in the first release. The skill/agent should fetch URLs and pass normalized local Markdown/text to the CLI.
 
 ## 4. Target Users
 
 ### Primary User
+
+An AI agent user who has an article URL or Markdown file and wants a polished static infographic artifact.
+
+Example:
+
+```text
+Turn this URL into an executive infographic report: https://example.com/q4-report
+```
+
+### Secondary User
 
 An AI agent user who has local data files and wants visual analysis through natural language.
 
@@ -41,7 +66,7 @@ Example:
 Analyze ./orders.csv and create an HTML visualization report for revenue trend and category performance.
 ```
 
-### Secondary User
+### Tertiary User
 
 A developer or analyst who wants to use Miao Vision directly from the command line.
 
@@ -79,6 +104,55 @@ The first implementation should prioritize self-contained static HTML:
 - embedded metadata such as VizSpec and data profile
 
 ## 6. User Experience
+
+### 6.0 Article URL / Markdown to Infographic
+
+User says:
+
+```text
+Use Miao Vision to convert this article into a polished infographic:
+https://example.com/ai-infrastructure-report
+```
+
+Agent performs:
+
+```text
+1. Fetch the URL or open it with the agent/browser tool.
+2. Extract the article title, author/date when available, headings, body text, lists, tables, and key quotes.
+3. Save normalized Markdown to /tmp/miao-vision/article.md.
+4. Run miao-viz article on the local Markdown file.
+```
+
+Example command:
+
+```bash
+miao-viz article /tmp/miao-vision/article.md \
+  --style editorial \
+  --format html \
+  --output /tmp/miao-vision/article-infographic.html
+```
+
+Agent returns:
+
+```text
+Generated infographic report:
+/tmp/miao-vision/article-infographic.html
+```
+
+For a local Markdown file:
+
+```bash
+miao-viz article /Users/guming/articles/jvm-tuning.md \
+  --style executive \
+  --format html \
+  --output /tmp/miao-vision/jvm-tuning-infographic.html
+```
+
+Important boundary:
+
+- Skill/Agent owns URL fetching, page interaction, paywall/login handling if authorized, and Markdown normalization.
+- CLI owns deterministic article-to-infographic generation from a local text/Markdown input.
+- CLI may later add `--url`, but that is not required for the first release.
 
 ### 6.1 Agent Natural Language Usage
 
@@ -361,25 +435,19 @@ Examples:
 ### 8.1 High-Level Architecture
 
 ```text
-User prompt + file path
+User prompt + article URL / markdown file / data file
         |
         v
 Agent skill workflow
         |
-        v
-miao-viz profile
+        ├── Article flow:
+        |     fetch/read article -> normalize markdown -> miao-viz article
+        |
+        └── Data flow:
+              miao-viz profile -> Agent creates VizSpec -> miao-viz render
         |
         v
-Data profile JSON
-        |
-        v
-Agent creates VizSpec/report spec
-        |
-        v
-miao-viz render
-        |
-        v
-HTML / SVG / PNG / PDF artifact
+Infographic / HTML / SVG / PNG / PDF artifact
 ```
 
 ### 8.2 Repository Additions
@@ -388,6 +456,7 @@ HTML / SVG / PNG / PDF artifact
 src/
 ├── agent/
 │   ├── cli.ts
+│   ├── article-infographic.ts
 │   ├── data-loader.ts
 │   ├── data-profiler.ts
 │   ├── spec-validator.ts
@@ -419,7 +488,6 @@ Current app initialization is browser-app oriented. Add a shared runtime initial
 ```ts
 export function initializeMiaoRuntime(): void {
   registerServices()
-  registerVgplotCharts()
   registerPlugins()
   initializeCatalog()
   initializeVizCatalog()
@@ -514,9 +582,46 @@ miao-viz catalog
 
 Outputs supported chart types, required encodings, optional style fields, and examples. This is mainly for agents and skill references.
 
+### 9.5 `article`
+
+```bash
+miao-viz article <markdown-or-text-file> \
+  [--style editorial|executive|analytical|storytelling|minimal] \
+  [--format markdown|json|uispec|html|png|pdf] \
+  --output <output-file>
+```
+
+Converts a local article/Markdown file into an infographic artifact.
+
+Example:
+
+```bash
+miao-viz article /tmp/miao-vision/article.md \
+  --style editorial \
+  --format html \
+  --output /tmp/miao-vision/article-infographic.html
+```
+
+For URL input, the skill/agent should fetch and normalize the URL first:
+
+```text
+URL -> Agent/browser extraction -> /tmp/miao-vision/article.md -> miao-viz article
+```
+
+The first release should not require the CLI to fetch URLs directly. This keeps the CLI deterministic and lets the agent handle browser-specific cases such as dynamic pages, redirects, login flows when authorized, and article extraction failures.
+
 ## 10. Skill Design
 
 The Codex skill should be thin. It should not duplicate all implementation details. It should instruct the agent to:
+
+For article URL / Markdown requests:
+
+1. Fetch the URL or read the Markdown/text file.
+2. Extract and normalize article content into a local Markdown file under `/tmp/miao-vision`.
+3. Run `miao-viz article`.
+4. Return the generated artifact path.
+
+For data visualization requests:
 
 1. Run `miao-viz profile` on the user-provided file.
 2. Read the compact profile.
@@ -531,12 +636,29 @@ The Codex skill should be thin. It should not duplicate all implementation detai
 The skill should trigger when the user asks to:
 
 - use Miao Vision
+- turn an article URL into an infographic
+- convert Markdown into an infographic report
+- generate an infographic from long-form text
 - generate charts from local files
 - create an HTML visualization report
 - visualize CSV/XLSX/JSON data through natural language
 - inspect data and choose charts automatically
 
 ### 10.2 Example Skill Workflow
+
+Article workflow:
+
+```text
+User: Turn https://example.com/cloud-cost-report into an editorial infographic.
+
+Agent:
+1. Fetch/open the URL and extract the article body.
+2. Save normalized Markdown to /tmp/miao-vision/cloud-cost-report.md.
+3. miao-viz article /tmp/miao-vision/cloud-cost-report.md --style editorial --format html --output /tmp/miao-vision/cloud-cost-report.html
+4. Return /tmp/miao-vision/cloud-cost-report.html
+```
+
+Data workflow:
 
 ```text
 User: Use Miao Vision to read ./marketing.csv and create a funnel chart for visits, signups, trials, and paid users.
@@ -553,6 +675,9 @@ Agent:
 
 ### 11.1 Inputs
 
+- Article URLs fetched by the agent and normalized to Markdown/text
+- Markdown
+- Plain text
 - CSV
 - TSV
 - XLSX
@@ -599,6 +724,16 @@ Deferred chart types:
 - Add `src/agent/data-profiler.ts`.
 - Add `miao-viz profile`.
 - Add basic CLI packaging.
+
+### Phase 1.5: Article-to-Infographic CLI
+
+- Add `src/agent/article-infographic.ts`.
+- Reuse `src/core/ai/agents/infographic/*` as the primary article pipeline.
+- Reuse `src/core/ai/infographic/*` where useful as fallback/legacy pipeline.
+- Add `miao-viz article`.
+- Support `--format markdown,json,uispec` first.
+- Add `--format html` once static infographic rendering is available.
+- Keep URL fetching in the skill/agent workflow for the first release.
 
 ### Phase 2: Spec and Validation
 
@@ -672,4 +807,3 @@ Deferred chart types:
 - Default chart selection: agent chooses from MVP chart types based on data profile
 - Default artifact naming: slug from prompt plus timestamp
 - Default retry behavior: repair spec once when validation/rendering returns structured errors
-

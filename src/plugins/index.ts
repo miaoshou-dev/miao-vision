@@ -17,7 +17,6 @@ import { registerMapPlugins, mapPlugins } from './maps'
 export * from './inputs'
 export * from './data-display'
 export * from './ui'
-export * from './viz'
 export * from './maps'
 
 /**
@@ -40,7 +39,6 @@ export function registerAllPlugins(registry: ComponentRegistry): void {
   registerDataDisplayPlugins(registry)
   registerUIPlugins(registry)
   registerMapPlugins(registry)
-  // Note: Viz plugins (charts) are registered separately with custom renderers
 
   console.log('✅ All plugins registered!')
 }

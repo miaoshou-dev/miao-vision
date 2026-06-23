@@ -106,13 +106,3 @@ export {
   canHideColumn,
   type ColumnVisibility
 } from './column-visibility'
-
-// Drilldown
-export {
-  buildDrilldownActionConfig,
-  buildDrilldownExecuteConfig,
-  buildDrilldownContext,
-  type DrilldownActionConfig,
-  type DrilldownExecuteConfig,
-  type DrilldownContext
-} from './drilldown'

@@ -28,7 +28,6 @@
     onExportStaticSite: () => void
     onExportMVR: () => void
     onImportMVR: () => void
-    onAIGenerate: () => void
     onContentChange: (content: string, reportId: string) => void
   }
 
@@ -51,7 +50,6 @@
     onExportStaticSite,
     onExportMVR,
     onImportMVR,
-    onAIGenerate,
     onContentChange
   }: Props = $props()
 
@@ -113,7 +111,6 @@
       onExportStaticSite={onExportStaticSite}
       onExportMVR={onExportMVR}
       onImportMVR={onImportMVR}
-      onAIGenerate={onAIGenerate}
       onVersionHistory={handleVersionHistory}
       onVersionCompare={handleVersionCompare}
       isExecuting={isExecuting}
@@ -150,7 +147,6 @@
             value={editorContent}
             reportId={currentReport.id}
             onChange={onContentChange}
-            onAIGenerate={onAIGenerate}
             height="calc(100vh - 300px)"
           />
         {/key}

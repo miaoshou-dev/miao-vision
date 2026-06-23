@@ -57,22 +57,13 @@ export function clearChartElements(chartElements: HTMLElement[]): void {
 export function calculateRenderStats(report: Report): {
   blocksCount: number
   blocksWithResults: number
-  blocksWithChartConfig: number
-  chartConfigsHash: string
 } {
   const blocksCount = report.blocks?.length || 0
   const blocksWithResults = report.blocks?.filter(b => b.sqlResult).length || 0
-  const blocksWithChartConfig = report.blocks?.filter(b => b.chartConfig).length || 0
-  const chartConfigsHash = report.blocks
-    ?.filter(b => b.chartConfig)
-    .map(b => `${b.id}:${b.chartConfig?.data?.table}`)
-    .join(',') || ''
 
   return {
     blocksCount,
-    blocksWithResults,
-    blocksWithChartConfig,
-    chartConfigsHash
+    blocksWithResults
   }
 }
 
@@ -85,7 +76,6 @@ export function logRenderDebug(
   tableMappingSize: number
 ): void {
   console.log(`🔄 ${prefix} triggered`)
-  console.log(`  Blocks: ${stats.blocksCount}, SQL results: ${stats.blocksWithResults}, Chart configs: ${stats.blocksWithChartConfig}`)
-  console.log(`  Chart configs hash: ${stats.chartConfigsHash}`)
+  console.log(`  Blocks: ${stats.blocksCount}, SQL results: ${stats.blocksWithResults}`)
   console.log(`  tableMapping size: ${tableMappingSize}`)
 }

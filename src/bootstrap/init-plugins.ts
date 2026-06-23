@@ -14,7 +14,7 @@ import { registerAllPlugins } from '@plugins/index'
  * Plugins include:
  * - inputs: dropdown, buttongroup, textinput, slider, daterange, etc.
  * - data-display: bigvalue, datatable, sparkline, bar, pie, histogram, etc.
- * - ui: alert, tabs, accordion, tooltip, etc.
+ * - ui: alert, accordion, tooltip, details, note
  * - layout: grid
  */
 export function registerPlugins(): void {

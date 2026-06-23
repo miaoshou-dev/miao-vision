@@ -11,7 +11,6 @@
     onExportStaticSite?: () => void
     onExportMVR?: () => void
     onImportMVR?: () => void
-    onAIGenerate?: () => void
     onVersionHistory?: () => void
     onVersionCompare?: () => void
     isExecuting?: boolean
@@ -34,7 +33,6 @@
     onExportStaticSite,
     onExportMVR,
     onImportMVR,
-    onAIGenerate,
     onVersionHistory,
     onVersionCompare,
     isExecuting = false,
@@ -50,12 +48,6 @@
   function handleInsertSQL() {
     if (editor) {
       editor.insertSQLBlock()
-    }
-  }
-
-  function handleInsertChart() {
-    if (editor) {
-      editor.insertChartBlock()
     }
   }
 
@@ -135,27 +127,12 @@
 
     <button
       class="toolbar-btn"
-      onclick={handleInsertChart}
-      title="Insert Chart Block"
-    >
-      📈 Chart
-    </button>
-
-    <button
-      class="toolbar-btn"
       onclick={handleInsertVariable}
       title="Insert Variable"
     >
       🔤 Variable
     </button>
 
-    <button
-      class="toolbar-btn btn-ai"
-      onclick={() => onAIGenerate?.()}
-      title="AI 生成图表 (Cmd+G)"
-    >
-      ✨ AI 生成
-    </button>
   </div>
 
   <div class="toolbar-divider"></div>
@@ -394,16 +371,6 @@
   .btn-mvr-import:hover:not(:disabled) {
     background-color: rgba(34, 197, 94, 0.3);
     border-color: rgba(34, 197, 94, 0.5);
-  }
-
-  .btn-ai {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
-    border-color: rgba(139, 92, 246, 0.3);
-  }
-
-  .btn-ai:hover:not(:disabled) {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3) 0%, rgba(236, 72, 153, 0.3) 100%);
-    border-color: rgba(139, 92, 246, 0.5);
   }
 
   .btn-execute {

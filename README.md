@@ -1,259 +1,263 @@
 # Miao Vision
 
-> 🔒 Local-First Data Analytics Framework - 在浏览器中进行数据分析，数据永不离开本地
+> AI-first local visualization artifacts from data files and documents.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![Svelte 5](https://img.shields.io/badge/Svelte-5-orange)](https://svelte.dev/)
-[![DuckDB-WASM](https://img.shields.io/badge/DuckDB--WASM-1.29-yellow)](https://duckdb.org/docs/api/wasm)
 
----
+Miao Vision is a local-first visualization toolkit centered on `miao-viz`, a CLI designed for AI agents and developers. It turns local data files into polished chart reports and browser-presentable slide decks, with article-to-infographic as the next product track.
 
-## ✨ 核心特点
+It is not a full BI workspace. The product is focused on static, shareable, high-quality visual artifacts that are easy for AI to generate and easy for users to like.
 
-- 🔒 **隐私优先** - 所有数据处理在浏览器端完成，数据永不上传云端
-- ⚡ **零成本部署** - 纯静态网站，免费托管到 Vercel/Netlify，年省 $5,000+
-- 📝 **Markdown 驱动** - 用 Markdown + SQL 编写报告，10 分钟搭建仪表板
-- 🚀 **专业级性能** - DuckDB-WASM 引擎，百万行数据查询 < 1 秒
-- 🎨 **43+ 组件** - 开箱即用的图表、输入、UI 组件，覆盖 90% 需求
+## Vision
 
-**适合场景**：个人数据分析 • 敏感数据报告 • 小团队 BI • 数据教学 • 离线分析
+Miao Vision is the visual artifact engine for AI agents, turning local data and documents into polished reports, infographics, and presentation decks.
 
-👉 **[为什么选择 Miaoshou?](./PRODUCT_OVERVIEW.md)** - 详细了解产品价值和适用场景
+The long-term goal is for every AI agent to work like a capable data designer: understand the source material, choose the right visual form, generate a compact spec, and produce an artifact that is clear, credible, and ready to share.
 
----
+## Product Tracks
 
-## 🚀 快速开始
+### 1. Data Display
 
-### 安装和运行
+Turn local data files into KPI, chart, table, annotation, and insight artifacts.
+
+```text
+CSV / TSV / XLSX / JSON
+  -> miao-viz profile
+  -> AI writes VizSpec
+  -> miao-viz validate
+  -> miao-viz render
+  -> self-contained HTML report
+```
+
+### 2. Article-to-Infographic
+
+Turn article URLs, Markdown files, or long-form text into static infographic artifacts through an agent-led workflow.
+
+```text
+article URL / Markdown
+  -> agent reads and normalizes content
+  -> miao-viz article
+  -> infographic artifact
+```
+
+`miao-viz article` is a product track. The current CLI surface focuses on `profile`, `catalog`, `validate`, `render`, and `deck`; URL fetching should stay in the agent or skill layer.
+
+### 3. Presentation Deck
+
+Turn local data files into browser-presentable slide decks.
+
+```text
+CSV / TSV / XLSX / JSON
+  -> miao-viz profile
+  -> AI writes DeckSpec
+  -> miao-viz deck
+  -> browser slide deck
+```
+
+## Why Miao Vision
+
+- **Agent-friendly specs**: YAML/JSON VizSpec and DeckSpec are small, explicit, and easy for AI to repair.
+- **Local-first data**: input data stays on the machine by default.
+- **Static-first output**: generated HTML can be opened, shared, archived, and printed without a backend.
+- **Rich data display**: KPI cards, charts, tables, annotations, insights, and editorial layouts.
+- **Presentation-ready decks**: browser slides with keyboard navigation, fullscreen, and print-to-PDF.
+- **Pure visual runtime**: charts are rendered with Svelte/SVG instead of a heavy BI workspace runtime.
+
+## Quick Start
 
 ```bash
-# 1. 克隆项目
-git clone https://github.com/your-username/miaoshou-vision.git
-cd miaoshou-vision
-
-# 2. 安装依赖
 npm install
-
-# 3. 启动开发服务器（⚠️ 必须使用，不要直接打开 HTML）
-npm run dev
-
-# 4. 浏览器访问
-# http://localhost:5173
+npm run build:cli
 ```
 
-### 其他命令
+Inspect a data file:
 
 ```bash
-npm run check          # TypeScript/Svelte 类型检查
-npm run build          # 生产构建
-npm run preview        # 预览生产构建
-npm run check:size     # 检查文件大小（限制 500 行）
+npm run miao-viz -- profile ./packages/miao-viz-cli/examples/sales.csv
 ```
 
-> ⚠️ **重要**：必须使用 `npm run dev` 启动，因为 DuckDB-WASM 需要特定的 CORS 头（SharedArrayBuffer 支持）
-
----
-
-## 📖 30 秒示例
-
-创建一个销售分析报告只需要简单的 Markdown：
-
-````markdown
-# 销售分析报告
-
-## 数据加载
-
-```sql sales_data
-SELECT * FROM 'sales.csv'
-```
-
-## 筛选条件
-
-```daterange
-name: date_filter
-title: 选择日期范围
-```
-
-## 数据查询
-
-```sql filtered_sales
-SELECT
-  region,
-  SUM(revenue) as total_revenue,
-  COUNT(*) as order_count
-FROM sales_data
-WHERE date BETWEEN ${date_filter.start} AND ${date_filter.end}
-GROUP BY region
-```
-
-## 可视化
-
-```barchart
-data: filtered_sales
-x: region
-y: total_revenue
-title: 各区域收入对比
-```
-
-**总收入**: ${filtered_sales.reduce((sum, row) => sum + row.total_revenue, 0).toLocaleString()}
-````
-
-**就这么简单！** 改变日期范围，图表自动更新。
-
----
-
-## 📚 文档导航
-
-### 产品文档
-- 📘 **[产品概述](./PRODUCT_OVERVIEW.md)** - 为什么选择 Miaoshou、使用场景、竞品对比
-- 📗 **[功能路线图](./FEATURE_ROADMAP.md)** - v1.0 状态、未来规划、发布时间表
-- 📕 **[组件速查](./COMPONENTS_QUICK_REFERENCE.md)** - 43 个组件的完整文档和示例
-- 📙 **[设计系统](./UI_DESIGN_SYSTEM.md)** - Gemini 风格设计规范、组件样式
-
-### 技术文档
-- 🏗️ **[架构总览](./docs/ARCHITECTURE_OVERVIEW.md)** - 5 层架构、依赖规则、设计原则
-- 🔌 **[插件架构](./docs/PLUGIN_ARCHITECTURE.md)** - 如何开发自定义组件
-- 💾 **[数据源架构](./docs/DATA_SOURCES_ARCHITECTURE.md)** - 连接器系统、多数据源支持
-- 🗄️ **[持久化架构](./docs/DUCKDB_PERSISTENCE_ARCHITECTURE.md)** - OPFS 持久化实现
-- 🎨 **[状态管理](./docs/MOSAIC_STATE_MANAGEMENT.md)** - Mosaic 图表状态同步
-
-### 开发文档
-- 👨‍💻 **[CLAUDE.md](./CLAUDE.md)** - 面向 Claude Code 和开发者的完整开发指南
-- 🆚 **[Evidence 对比](./docs/FEATURE-COMPARISION-EVIDENCE.md)** - 与 Evidence.dev 的详细对比
-
----
-
-## 🏗️ 技术栈
-
-<details>
-<summary><b>点击查看技术栈详情</b></summary>
-
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| **Vite** | ^6.0 | 构建工具 |
-| **Svelte 5** | ^5.15 | UI 框架（Runes 模式） |
-| **TypeScript** | ^5.7 | 类型系统（严格模式） |
-| **DuckDB-WASM** | ^1.29 | 浏览器端 SQL 引擎 |
-| **Mosaic vgplot** | latest | 声明式数据可视化 |
-| **Monaco Editor** | ^0.52 | SQL/Markdown 编辑器 |
-| **Unified/Remark** | ^11.0 | Markdown 解析和处理 |
-| **Tailwind CSS** | ^3.4 | CSS 工具类框架 |
-
-### 核心特性
-- ✅ **Svelte 5 Runes** - 使用 `$state`、`$derived`、`$effect` 的现代响应式
-- ✅ **DuckDB-WASM** - 接近原生的 SQL 性能，支持 Apache Arrow
-- ✅ **OPFS 持久化** - 使用浏览器 Origin Private File System 跨会话保存数据
-- ✅ **TypeScript 严格模式** - 完整的类型安全
-- ✅ **依赖注入** - 接口驱动的清晰架构
-
-</details>
-
----
-
-## 📁 项目结构
-
-<details>
-<summary><b>点击查看项目结构</b></summary>
-
-```
-src/
-├── bootstrap/         # 组合根层 - 依赖注入和初始化
-│   ├── init-services.ts   # DI 适配器注册
-│   ├── init-charts.ts     # vgplot 图表注册
-│   └── init-plugins.ts    # 插件组件注册
-│
-├── core/              # 核心引擎（仅依赖 types/）
-│   ├── connectors/    # 多数据源连接器（WASM、MotherDuck、HTTP）
-│   ├── database/      # DuckDB-WASM, Mosaic 集成, 表加载
-│   ├── engine/        # Block 渲染, 响应式执行, 依赖图
-│   ├── markdown/      # 解析器, SQL 执行器, 条件/循环处理
-│   ├── registry/      # 组件注册系统
-│   └── shared/        # DI 容器, 纯函数, 格式化, 图表服务
-│
-├── plugins/           # 可插拔组件（43 个）
-│   ├── inputs/        # 8 个输入组件
-│   ├── data-display/  # 22 个数据展示组件
-│   ├── viz/           # 7 个 vgplot 图表
-│   ├── ui/            # 6 个 UI 组件
-│   └── layout/        # 1 个布局组件
-│
-├── app/               # 应用层
-│   └── stores/        # Svelte stores（通过接口与 core 交互）
-│
-├── components/        # Svelte UI 组件
-├── types/             # TypeScript 类型定义和接口契约
-├── App.svelte         # 主应用组件
-└── main.ts            # 应用入口
-```
-
-### 架构原则
-- **分层依赖** - Bootstrap → Plugins/App → Core → Types
-- **依赖倒置** - Core 只依赖接口，不依赖具体实现
-- **插件化** - Evidence.dev 风格的组件注册系统
-- **类型安全** - 完整的 TypeScript 类型定义
-
-查看 [架构文档](./docs/ARCHITECTURE_OVERVIEW.md) 了解详细设计。
-
-</details>
-
----
-
-## 📦 部署
-
-Miao Vision 是纯静态网站，可部署到任何静态托管平台：
-
-### 推荐平台
-
-| 平台 | 免费额度 | 部署时间 | 推荐指数 |
-|------|----------|----------|----------|
-| **Vercel** | 100GB/月流量 | < 2 分钟 | ⭐⭐⭐⭐⭐ |
-| **Netlify** | 100GB/月流量 | < 2 分钟 | ⭐⭐⭐⭐⭐ |
-| **Cloudflare Pages** | 无限流量 | < 3 分钟 | ⭐⭐⭐⭐ |
-| **GitHub Pages** | 100GB/月流量 | < 5 分钟 | ⭐⭐⭐⭐ |
-
-### 快速部署
+List supported chart types:
 
 ```bash
-# 构建生产版本
-npm run build
-
-# dist/ 目录即可直接部署
+npm run miao-viz -- catalog
 ```
 
-**一键部署**：
-- [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone)
-- [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy)
+Validate a report spec:
 
----
+```bash
+npm run miao-viz -- validate \
+  --spec ./packages/miao-viz-cli/examples/sales-dashboard.yaml \
+  --profile ./profile.json
+```
 
-## 🤝 贡献
+Render a data display report:
 
-欢迎贡献！我们特别需要以下方面的帮助：
-- 🗺️ 地图组件（Choropleth、Point Map）
-- 🔌 数据库连接器（PostgreSQL、MySQL）
-- 📊 更多图表类型
-- 📖 文档和示例
+```bash
+npm run miao-viz -- render \
+  --input ./packages/miao-viz-cli/examples/sales.csv \
+  --spec ./packages/miao-viz-cli/examples/sales-dashboard.yaml \
+  --theme editorial \
+  --output /tmp/miao-report.html
+```
 
-查看 [贡献指南](./CONTRIBUTING.md) 了解如何参与。
+Generate a presentation deck:
 
----
+```bash
+npm run miao-viz -- deck \
+  --input ./packages/miao-viz-cli/examples/sales.csv \
+  --spec ./packages/miao-viz-cli/examples/sales-deck.yaml \
+  --theme editorial \
+  --output /tmp/miao-deck.html
+```
 
-## 📄 许可证
+Open the generated HTML file in a browser. Deck output supports arrow-key navigation, fullscreen, and browser print/PDF export.
 
-MIT License - 详见 [LICENSE](./LICENSE)
+## VizSpec Example
 
----
+```yaml
+title: Sales Dashboard
+description: Local sales report generated by Miao Viz
+theme: editorial
+charts:
+  - type: bigvalue
+    title: Total Sales
+    data:
+      transform:
+        - type: aggregate
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+    encoding:
+      value:
+        field: total_sales
 
-## 🔗 相关链接
+  - type: bar
+    title: Sales by Region
+    data:
+      transform:
+        - type: aggregate
+          groupBy: [region]
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+        - type: sort
+          field: total_sales
+          order: desc
+    encoding:
+      x:
+        field: region
+      y:
+        field: total_sales
+```
 
-- **官方网站**: [即将推出]
-- **GitHub**: https://github.com/your-username/miaoshou-vision
-- **问题反馈**: https://github.com/your-username/miaoshou-vision/issues
-- **讨论区**: https://github.com/your-username/miaoshou-vision/discussions
+## DeckSpec Example
 
----
+```yaml
+title: Sales Review
+theme: editorial
+slides:
+  - layout: cover
+    eyebrow: Q4 Review
+    title: Sales Momentum Is Concentrated In Key Regions
+    claim: Revenue is growing, but performance is not evenly distributed.
 
-**维护者**: Miao Vision Team
-**当前版本**: v0.2.0 (Alpha - Bootstrap + 43 Components)
-**最后更新**: 2024-12-23
+  - layout: metrics-chart
+    eyebrow: Executive Snapshot
+    title: Quarter At A Glance
+    metrics:
+      - label: Total Revenue
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: sales
+                  op: sum
+                  as: total_sales
+    charts:
+      - type: line
+        title: Monthly Sales Trend
+        data:
+          transform:
+            - type: derive-month
+              field: order_date
+              as: month
+            - type: aggregate
+              groupBy: [month]
+              measures:
+                - field: sales
+                  op: sum
+                  as: total_sales
+            - type: sort
+              field: month
+              order: asc
+        encoding:
+          x:
+            field: month
+          y:
+            field: total_sales
+```
+
+Supported deck layouts include `cover`, `title-only`, `text-points`, `text-chart`, `metrics-chart`, `chart-full`, `table-full`, and `ending`.
+
+## CLI Commands
+
+| Command | Purpose |
+| --- | --- |
+| `profile` | Inspect fields, types, quality, distributions, temporal spans, and chart hints. |
+| `catalog` | List chart types and AI-readable usage guidance. |
+| `validate` | Validate VizSpec fields, encodings, chart types, and transforms. |
+| `render` | Render a self-contained HTML data display report. |
+| `deck` | Render a browser-presentable slide deck from DeckSpec. |
+
+## Repository Layout
+
+```text
+src/agent/                 CLI profiling, validation, rendering, and deck generation
+src/agent/themes/          Report and deck themes
+src/plugins/data-display/  Svelte/SVG visualization assets
+packages/miao-viz-cli/     CLI package wrapper and examples
+packages/miao-vision-skill/
+                           Agent skill instructions for using miao-viz
+docs/                      Product, architecture, roadmap, and agent documentation
+```
+
+## Development
+
+```bash
+npm run dev          # Start the Svelte preview app
+npm run build        # Build the web app
+npm run build:cli    # Build the miao-viz CLI package
+npm run check        # TypeScript and Svelte diagnostics
+npm run test         # Run unit tests
+npm run test:e2e     # Run Playwright smoke tests
+npm run check:size   # Check 500-line file limit
+```
+
+The web app is a preview, gallery, and debugging surface. The main product path is CLI plus agent-generated specs.
+
+## Documentation
+
+- [Documentation Index](./docs/README.md)
+- [Product Overview](./docs/PRODUCT_OVERVIEW.md)
+- [Product Restructure Direction](./docs/miao-viz-product-restructure-direction.md)
+- [Feature Roadmap](./docs/roadmap/FEATURE_ROADMAP.md)
+- [Backlog Disposition](./docs/backlog-disposition.md)
+
+## Non-Goals
+
+Miao Vision is intentionally not investing in these as primary product paths:
+
+- Full SQL Workspace.
+- Manual SQL authoring with query tabs and snippets.
+- General BI dashboard builder.
+- Database connector management as the default workflow.
+- Global CrossFilter or Drilldown runtime.
+- Mosaic/vgplot compatibility runtime.
+
+## License
+
+License to be finalized before public release.

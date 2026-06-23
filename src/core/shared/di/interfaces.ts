@@ -11,9 +11,7 @@
  */
 
 import type { QueryResult, DatabaseConfig } from '@/types/database'
-import type { ParsedCodeBlock, ChartBlockConfig, Report } from '@/types/report'
-import type { ChartConfig } from '@/types/chart'
-import type { SQLTemplateContext } from '@core/database/template'
+import type { ParsedCodeBlock, Report } from '@/types/report'
 
 // ============================================================================
 // Database Service Interface
@@ -74,91 +72,6 @@ export interface IDatabaseService {
    * Close the database connection
    */
   close(): Promise<void>
-}
-
-// ============================================================================
-// Chart Service Interface
-// ============================================================================
-
-/**
- * Chart parse result
- */
-export interface ChartParseResult {
-  success: boolean
-  config?: ChartBlockConfig
-  errors?: string[]
-}
-
-/**
- * Chart build result
- */
-export interface ChartBuildResult {
-  success: boolean
-  config?: ChartConfig
-  error?: string
-}
-
-/**
- * Chart service interface
- *
- * Provides chart configuration building and validation.
- *
- * @example
- * ```typescript
- * const chartService: IChartService = container.get('chart')
- * const result = chartService.buildChartConfig(block, tableMapping)
- * if (result.success) {
- *   renderChart(result.config)
- * }
- * ```
- */
-export interface IChartService {
-  /**
-   * Parse chart block content into config object
-   */
-  parseChartBlockContent(content: string): ChartParseResult
-
-  /**
-   * Interpolate template variables in chart strings
-   */
-  interpolateString(
-    str: string | undefined,
-    context?: SQLTemplateContext
-  ): string | undefined
-
-  /**
-   * Validate chart configuration
-   */
-  validateChartConfig(config: Partial<ChartBlockConfig>): {
-    valid: boolean
-    errors: string[]
-  }
-
-  /**
-   * Resolve data source to table name
-   */
-  resolveDataSource(
-    dataSource: string,
-    tableMapping: Map<string, string>
-  ): string | null
-
-  /**
-   * Build ChartConfig from chart block
-   */
-  buildChartConfig(
-    chartBlock: ParsedCodeBlock,
-    tableMapping: Map<string, string>,
-    templateContext?: SQLTemplateContext
-  ): ChartBuildResult
-
-  /**
-   * Build multiple charts from blocks
-   */
-  buildChartsFromBlocks(
-    blocks: ParsedCodeBlock[],
-    tableMapping: Map<string, string>,
-    templateContext?: SQLTemplateContext
-  ): Map<string, ChartConfig>
 }
 
 // ============================================================================
@@ -266,37 +179,6 @@ export interface IReportExecutionService {
 }
 
 // ============================================================================
-// Coordinator Service Interface (Mosaic)
-// ============================================================================
-
-/**
- * Coordinator service interface
- *
- * Wraps Mosaic coordinator for query management.
- */
-export interface ICoordinatorService {
-  /**
-   * Initialize the coordinator
-   */
-  initialize(): Promise<void>
-
-  /**
-   * Execute a query through the coordinator
-   */
-  query(sql: string): Promise<any>
-
-  /**
-   * Clear the query cache
-   */
-  clearCache(): void
-
-  /**
-   * Check if coordinator is initialized
-   */
-  isInitialized(): boolean
-}
-
-// ============================================================================
 // Service Keys (for type-safe container access)
 // ============================================================================
 
@@ -307,9 +189,7 @@ export interface ICoordinatorService {
  */
 export interface ServiceRegistry {
   database: IDatabaseService
-  chart: IChartService
   reportExecution: IReportExecutionService
-  coordinator: ICoordinatorService
 }
 
 /**

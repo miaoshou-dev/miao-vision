@@ -219,13 +219,8 @@ export class BlockRenderer {
       }
 
       console.log(`  Calling parser for ${blockType}...`)
-      // Parse block - for charts, this includes chartConfig if available
+      // Parse block into component props.
       const props = registration.parser(parsedBlock, renderContext)
-
-      // For charts with pre-built config in block.chartConfig, use that
-      if (chartTypes.includes(blockType) && block?.chartConfig) {
-        props.chartConfig = block.chartConfig
-      }
 
       // Handle case where parser returns null (data dependencies not available)
       if (!props) {

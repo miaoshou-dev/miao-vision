@@ -4,9 +4,7 @@
  * This module re-exports pure functions from @/lib/pure/template-utils
  * and adds logging wrappers for debugging.
  *
- * IMPORTANT: When SQL queries are re-executed with different input values,
- * the Mosaic coordinator's query cache must be cleared to prevent stale results.
- * See App.svelte reactive execution logic for cache clearing implementation.
+ * Used by report SQL execution to interpolate lightweight input variables.
  */
 
 import type { IInputState } from '@/types/interfaces'

@@ -38,43 +38,14 @@ export * from './registry/schemas'
 // Engine - Execution engine
 export { blockRenderer, type BlockRenderContext } from './engine/block-renderer'
 
-// Database (uses new connector system via compat layer)
+// Database
 export {
   duckDBManager,
   DuckDBManager,
   loadDataIntoTable,
-  dropTable,
-  initializeMosaic,
-  isMosaicInitialized,
-  coordinator,
-  getVgplotContext
+  dropTable
 } from './database'
 export { interpolateSQL } from './database/template'
-
-// Connectors (new pluggable connector system)
-export {
-  // Connector types
-  type Connector,
-  type ConnectorConfig,
-  type ConnectorType,
-  type ConnectionStatus,
-  type QueryResult as ConnectorQueryResult,
-  type QueryOptions,
-  // WasmConnector
-  WasmConnector,
-  createWasmConnector,
-  isOPFSSupported,
-  // Registry
-  ConnectorRegistry,
-  // Result utilities
-  type Result,
-  ok,
-  err,
-  isOk,
-  isErr,
-  unwrap,
-  unwrapOr
-} from './connectors'
 
 // Markdown
 export { parseMarkdown } from './markdown/parser'

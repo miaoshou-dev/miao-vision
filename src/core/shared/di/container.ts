@@ -100,7 +100,7 @@ export class ServiceContainer {
    *
    * @example
    * ```typescript
-   * container.registerFactory('chart', () => new ChartService())
+ * container.registerFactory('reportExecution', () => new ReportExecutionService())
    * ```
    */
   registerFactory<K extends ServiceKey>(
@@ -254,27 +254,15 @@ export const container = new ServiceContainer()
 export function initializeDefaultServices(): void {
   // Import services lazily to avoid circular dependencies
   const { duckDBManager } = require('@core/database/duckdb')
-  const { ChartService } = require('@core/shared/chart.service')
   const { ReportExecutionService } = require('@core/engine/report-execution.service')
-  const { coordinator } = require('@core/database')
 
   // Register database service (already a singleton)
   if (!container.has('database')) {
     container.register('database', duckDBManager)
   }
 
-  // Register chart service
-  if (!container.has('chart')) {
-    container.registerFactory('chart', () => new ChartService())
-  }
-
   // Register report execution service
   if (!container.has('reportExecution')) {
     container.registerFactory('reportExecution', () => new ReportExecutionService())
-  }
-
-  // Register coordinator service
-  if (!container.has('coordinator')) {
-    container.register('coordinator', coordinator)
   }
 }

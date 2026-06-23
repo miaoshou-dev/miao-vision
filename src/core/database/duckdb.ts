@@ -18,17 +18,10 @@ const MANUAL_BUNDLES: duckdb.DuckDBBundles = {
   }
 }
 
-/**
- * Workspace database alias for ATTACH (deprecated - Memory-only mode)
- */
-export const WORKSPACE_DB_PATH = 'workspace.db'
-export const WORKSPACE_ATTACH_NAME = 'workspace_data'
-
 export class DuckDBManager {
   private db: duckdb.AsyncDuckDB | null = null
   private conn: duckdb.AsyncDuckDBConnection | null = null
   private logger: duckdb.ConsoleLogger
-  private attachedDatabases = new Set<string>()
   private schemas = new Set<string>(['main', 'report_data'])  // Track created schemas
 
   constructor() {
@@ -57,8 +50,8 @@ export class DuckDBManager {
 
       this.conn = await this.db.connect()
 
-      // Create report_data schema for report internal tables
-      // This separates report tables from user tables in SQL Workspace
+      // Create report_data schema for report internal tables.
+      // This keeps report execution artifacts separate from preview tables.
       await this.conn.query('CREATE SCHEMA IF NOT EXISTS report_data;')
       console.log('Created report_data schema for report tables')
 
@@ -248,67 +241,6 @@ export class DuckDBManager {
   }
 
   /**
-   * Attach workspace database (deprecated - Memory-only mode)
-   * Note: In Memory-only mode, both workspace and report use same memory space
-   *
-   * @returns true if attached, false if already attached
-   */
-  async attachWorkspaceDatabase(): Promise<boolean> {
-    if (!this.conn) {
-      throw new Error('Database not initialized')
-    }
-
-    // Check if already attached
-    if (this.attachedDatabases.has(WORKSPACE_ATTACH_NAME)) {
-      console.log(`📎 Workspace already attached as ${WORKSPACE_ATTACH_NAME}`)
-      return false
-    }
-
-    try {
-      // ATTACH workspace.db in read-only mode
-      await this.conn.query(`
-        ATTACH '${WORKSPACE_DB_PATH}' (READ_ONLY) AS ${WORKSPACE_ATTACH_NAME}
-      `)
-
-      this.attachedDatabases.add(WORKSPACE_ATTACH_NAME)
-      console.log(`✅ Attached workspace database as ${WORKSPACE_ATTACH_NAME} (READ_ONLY)`)
-      return true
-    } catch (error) {
-      console.warn(`⚠️  Failed to attach workspace database:`, error)
-      // Workspace DB might not exist yet (first time user)
-      return false
-    }
-  }
-
-  /**
-   * Detach workspace database
-   */
-  async detachWorkspaceDatabase(): Promise<void> {
-    if (!this.conn) {
-      return
-    }
-
-    if (!this.attachedDatabases.has(WORKSPACE_ATTACH_NAME)) {
-      return
-    }
-
-    try {
-      await this.conn.query(`DETACH ${WORKSPACE_ATTACH_NAME}`)
-      this.attachedDatabases.delete(WORKSPACE_ATTACH_NAME)
-      console.log(`🔓 Detached workspace database`)
-    } catch (error) {
-      console.warn(`Failed to detach workspace:`, error)
-    }
-  }
-
-  /**
-   * Check if workspace database is currently attached
-   */
-  isWorkspaceAttached(): boolean {
-    return this.attachedDatabases.has(WORKSPACE_ATTACH_NAME)
-  }
-
-  /**
    * Create a schema for a report
    * Uses schema isolation instead of separate DB instances
    *
@@ -426,8 +358,7 @@ export class DuckDBManager {
   }
 
   /**
-   * Get the underlying AsyncDuckDB instance
-   * Used to share with Mosaic's wasmConnector
+   * Get the underlying AsyncDuckDB instance.
    */
   getDB(): duckdb.AsyncDuckDB | null {
     return this.db
@@ -459,8 +390,8 @@ export class DuckDBManager {
 }
 
 /**
- * SQL Workspace database instance (Memory-only mode)
- * This is the main database instance for user data uploaded via SQL Workspace
+ * Local preview database instance (Memory-only mode).
+ * The exported name is kept for backward compatibility with older report code.
  */
 export const workspaceDB = new DuckDBManager()
 

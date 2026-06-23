@@ -58,7 +58,6 @@ export function getComponentDocumentation() {
 
 // Re-export for convenience
 export { registerServices } from "./init-services";
-export { registerVgplotCharts } from "./init-charts";
 export { registerPlugins } from "./init-plugins";
 export { initializeCatalog, getCatalog, isCatalogInitialized } from "./init-catalog";
 export { initializeMiaoRuntime, isMiaoRuntimeInitialized } from "./init-runtime";

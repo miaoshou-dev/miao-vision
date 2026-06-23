@@ -10,6 +10,8 @@ import { renderStaticHtml } from './html-export'
 import { getCatalogEntries, validateReportSpec } from './spec-validator'
 import { parseOutputFormats, singleOrReportSpecSchema } from './spec-schema'
 import { renderChartSvg } from './svg-renderer'
+import { deckSpecSchema } from './deck-schema'
+import { renderDeckHtml } from './deck-renderer'
 import type { AgentError, AgentOutputFormat, AgentReportSpec, DataProfile } from './types'
 
 interface CliArgs {
@@ -42,8 +44,13 @@ async function main(): Promise<void> {
       return
     }
 
+    if (args.command === 'deck') {
+      printJson(runDeck(args))
+      return
+    }
+
     printJson(agentError('UNKNOWN_COMMAND', `Unknown command: ${args.command ?? '(none)'}`, {
-      commands: ['profile', 'validate', 'catalog', 'render']
+      commands: ['profile', 'validate', 'catalog', 'render', 'deck']
     }))
     process.exitCode = 1
   } catch (error) {
@@ -105,11 +112,13 @@ function runRender(args: CliArgs): unknown {
   const validation = validateReportSpec(normalized, profile, formats)
   if (isAgentError(validation)) return fail(validation)
 
+  const themeFlag = stringFlag(args, 'theme') as 'default' | 'editorial' | 'dark' | 'minimal' | undefined
+
   const written: string[] = []
   for (const format of formats) {
     if (format === 'html') {
       const htmlPath = formatOutputPath(output, 'html', formats.length > 1)
-      writeOutput(htmlPath, renderStaticHtml(validation.value, profile, dataset.value.rows))
+      writeOutput(htmlPath, renderStaticHtml(validation.value, profile, dataset.value.rows, themeFlag))
       written.push(htmlPath)
     } else if (format === 'svg') {
       const svgPath = formatOutputPath(output, 'svg', formats.length > 1)
@@ -126,6 +135,32 @@ function runRender(args: CliArgs): unknown {
   }
 
   return { ok: true, value: { output: written, profile } }
+}
+
+function runDeck(args: CliArgs): unknown {
+  const input = requiredFlag(args, 'input')
+  const specPath = requiredFlag(args, 'spec')
+  const output = requiredFlag(args, 'output')
+  if (isAgentError(input)) return fail(input)
+  if (isAgentError(specPath)) return fail(specPath)
+  if (isAgentError(output)) return fail(output)
+
+  const dataset = loadDataset(input, {
+    sheet: stringFlag(args, 'sheet'),
+    limit: numberFlag(args, 'limit')
+  })
+  if (isAgentError(dataset)) return fail(dataset)
+
+  const raw = readSpec(specPath)
+  const parsed = deckSpecSchema.safeParse(raw)
+  if (!parsed.success) {
+    return fail(agentError('INVALID_DECK_SPEC', parsed.error.issues.map(i => i.message).join('; ')))
+  }
+
+  const themeFlag = stringFlag(args, 'theme') as 'default' | 'editorial' | 'dark' | 'minimal' | undefined
+  const html = renderDeckHtml(parsed.data, dataset.value.rows, themeFlag)
+  writeOutput(output, html)
+  return { ok: true, value: { output, slides: parsed.data.slides.length } }
 }
 
 function normalizeSpec(spec: unknown): AgentReportSpec | AgentError {

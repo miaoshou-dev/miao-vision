@@ -1,6 +1,5 @@
 import { duckDBManager } from '@core/database'
 import type { DatabaseState, DataSource, QueryResult } from '@/types/database'
-import { connectionStore } from './connection.svelte'
 
 // Database state using Svelte 5 runes
 export function createDatabaseStore() {
@@ -11,65 +10,21 @@ export function createDatabaseStore() {
     dataSources: []
   })
 
-  // Track current connection ID
-  let currentConnectionId = $state<string>('wasm-local')
-
   async function initialize() {
     state.loading = true
     state.error = null
 
     try {
-      // Initialize SQL Workspace (Memory mode)
+      // Initialize the local report database (Memory mode)
       await duckDBManager.initialize()
       state.initialized = true
-      // Update connection status
-      connectionStore.updateConnectionStatus('wasm-local', 'connected')
       console.log('Database store initialized (Memory mode)')
     } catch (error) {
       state.error = error instanceof Error ? error.message : 'Failed to initialize database'
-      connectionStore.updateConnectionStatus('wasm-local', 'error', state.error)
       console.error('Database initialization error:', error)
     } finally {
       state.loading = false
     }
-  }
-
-  /**
-   * Switch to a different database connection
-   *
-   * Uses the connectionStore.connect() which delegates to ConnectorManager
-   */
-  async function switchConnection(connectionId: string): Promise<boolean> {
-    const connection = connectionStore.getConnection(connectionId)
-    if (!connection) {
-      state.error = 'Connection not found'
-      return false
-    }
-
-    // Check if secrets are needed for remote connections
-    if (connectionStore.needsSecrets(connection)) {
-      state.error = 'Connection requires authentication. Please enter credentials in Connection settings.'
-      return false
-    }
-
-    // Use connectionStore.connect() which handles all connection types
-    const success = await connectionStore.connect(connectionId)
-
-    if (success) {
-      currentConnectionId = connectionId
-      state.error = null
-    } else {
-      state.error = connectionStore.state.error || 'Failed to connect'
-    }
-
-    return success
-  }
-
-  /**
-   * Get the current connection ID
-   */
-  function getCurrentConnectionId(): string {
-    return currentConnectionId
   }
 
   async function loadFile(file: File, tableName?: string) {
@@ -189,17 +144,12 @@ export function createDatabaseStore() {
     get state() {
       return state
     },
-    get currentConnectionId() {
-      return currentConnectionId
-    },
     initialize,
     loadFile,
     executeQuery,
     listTables,
     getTableSchema,
     removeDataSource,
-    switchConnection,
-    getCurrentConnectionId,
     cleanupReportTables,
     getDuckDB
   }

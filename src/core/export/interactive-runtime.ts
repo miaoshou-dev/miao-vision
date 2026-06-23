@@ -6,7 +6,6 @@
  *
  * Features:
  * - Table sorting and filtering
- * - Drilldown modals
  * - Input controls (dropdown, button group)
  * - Cross-component filtering via inputs
  *
@@ -38,8 +37,6 @@ export function generateInteractiveRuntime(): string {
     registerData,
     getData,
     subscribe,
-    showModal,
-    hideModal,
     filterTable,
     sortTable
   };
@@ -76,70 +73,6 @@ export function generateInteractiveRuntime(): string {
     state.listeners.forEach(fn => {
       try { fn(event); } catch (e) { console.error('Listener error:', e); }
     });
-  }
-
-  // ============================================
-  // Modal System
-  // ============================================
-  let modalContainer = null;
-
-  function createModalContainer() {
-    if (modalContainer) return;
-    modalContainer = document.createElement('div');
-    modalContainer.id = 'miao-modal-container';
-    modalContainer.innerHTML = \`
-      <div class="miao-modal-backdrop" onclick="MiaoVision.hideModal()">
-        <div class="miao-modal" onclick="event.stopPropagation()">
-          <header class="miao-modal-header">
-            <h2 class="miao-modal-title"></h2>
-            <button class="miao-modal-close" onclick="MiaoVision.hideModal()">&times;</button>
-          </header>
-          <div class="miao-modal-body"></div>
-          <footer class="miao-modal-footer">
-            <button class="miao-btn" onclick="MiaoVision.hideModal()">Close</button>
-          </footer>
-        </div>
-      </div>
-    \`;
-    document.body.appendChild(modalContainer);
-
-    // ESC key to close
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') hideModal();
-    });
-  }
-
-  function showModal(title, rowData, options = {}) {
-    createModalContainer();
-    const backdrop = modalContainer.querySelector('.miao-modal-backdrop');
-    const titleEl = modalContainer.querySelector('.miao-modal-title');
-    const bodyEl = modalContainer.querySelector('.miao-modal-body');
-
-    titleEl.textContent = title;
-
-    // Build content
-    const columns = options.displayColumns || Object.keys(rowData);
-    let html = '<dl class="miao-details">';
-    columns.forEach(col => {
-      const value = rowData[col];
-      const label = col.replace(/_/g, ' ').replace(/\\b\\w/g, c => c.toUpperCase());
-      html += \`
-        <div class="miao-detail-item">
-          <dt>\${label}</dt>
-          <dd>\${formatValue(value)}</dd>
-        </div>
-      \`;
-    });
-    html += '</dl>';
-    bodyEl.innerHTML = html;
-
-    backdrop.classList.add('visible');
-  }
-
-  function hideModal() {
-    if (modalContainer) {
-      modalContainer.querySelector('.miao-modal-backdrop').classList.remove('visible');
-    }
   }
 
   function formatValue(value) {
@@ -269,17 +202,6 @@ export function generateInteractiveRuntime(): string {
       });
     });
 
-    // Initialize drilldown rows
-    document.querySelectorAll('[data-miao-drilldown]').forEach(row => {
-      row.style.cursor = 'pointer';
-      row.addEventListener('click', () => {
-        const data = JSON.parse(row.dataset.rowData || '{}');
-        const title = row.dataset.drilldownTitle || 'Details';
-        const columns = row.dataset.drilldownColumns ? row.dataset.drilldownColumns.split(',') : null;
-        showModal(title, data, { displayColumns: columns });
-      });
-    });
-
     console.log('🎯 MiaoVision Interactive Runtime initialized');
   }
 
@@ -298,119 +220,6 @@ export function generateInteractiveRuntime(): string {
 export function generateInteractiveStyles(): string {
   return `
 /* MiaoVision Interactive Runtime Styles */
-
-/* Modal */
-.miao-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(4px);
-}
-
-.miao-modal-backdrop.visible {
-  display: flex;
-}
-
-.miao-modal {
-  width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  background: #1F2937;
-  border: 1px solid #374151;
-  border-radius: 12px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  animation: modalSlideIn 0.2s ease-out;
-}
-
-@keyframes modalSlideIn {
-  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.miao-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #374151;
-}
-
-.miao-modal-title {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #F3F4F6;
-}
-
-.miao-modal-close {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: #9CA3AF;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.miao-modal-close:hover {
-  background: rgba(255,255,255,0.1);
-  color: #F3F4F6;
-}
-
-.miao-modal-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.25rem;
-}
-
-.miao-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  padding: 1rem 1.25rem;
-  border-top: 1px solid #374151;
-}
-
-.miao-details {
-  margin: 0;
-  padding: 0;
-}
-
-.miao-detail-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #374151;
-}
-
-.miao-detail-item:last-child {
-  border-bottom: none;
-}
-
-.miao-detail-item dt {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #9CA3AF;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.miao-detail-item dd {
-  margin: 0;
-  font-size: 0.9375rem;
-  color: #F3F4F6;
-  font-family: 'JetBrains Mono', monospace;
-}
 
 /* Buttons */
 .miao-btn {
@@ -453,16 +262,6 @@ export function generateInteractiveStyles(): string {
   opacity: 1;
 }
 
-/* Drilldown Rows */
-[data-miao-drilldown] {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-[data-miao-drilldown]:hover {
-  background: rgba(59, 130, 246, 0.1) !important;
-}
-
 /* Input Controls */
 .miao-dropdown {
   padding: 0.5rem 0.75rem;
@@ -503,27 +302,4 @@ export function generateInteractiveStyles(): string {
   color: white;
 }
 `;
-}
-
-/**
- * Wrap table rows with drilldown data attributes
- */
-export function wrapTableRowsForDrilldown(
-  rows: Record<string, unknown>[],
-  config: {
-    titleTemplate?: string;
-    displayColumns?: string[];
-  }
-): string {
-  return rows.map((row, index) => {
-    const title = config.titleTemplate
-      ? config.titleTemplate.replace(/\{(\w+)\}/g, (_, key) => String(row[key] ?? ''))
-      : `Row ${index + 1}`;
-
-    const columnsAttr = config.displayColumns
-      ? `data-drilldown-columns="${config.displayColumns.join(',')}"`
-      : '';
-
-    return `data-miao-drilldown data-row-data='${JSON.stringify(row)}' data-drilldown-title="${title}" ${columnsAttr}`;
-  }).join('\n');
 }

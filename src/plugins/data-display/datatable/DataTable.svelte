@@ -2,7 +2,6 @@
   import type { DataTableData, SortState, FilterState, ColumnFilter } from './types'
   import { processData, toggleSort } from './operations'
   import { downloadCSV, downloadExcel } from './export'
-  import { drilldownService } from '@core/engine/drilldown'
 
   // Import sub-components
   import { TableToolbar, TableHeader, TableBody, TableFooter, EmptyState } from './components'
@@ -32,18 +31,14 @@
     calculateResizeWidth,
     updateColumnWidth,
     getCellValue,
-    buildDrilldownActionConfig,
-    buildDrilldownExecuteConfig,
-    buildDrilldownContext,
     type ColumnWidths
   } from './logic'
 
   interface Props {
     data: DataTableData
-    inputStore?: any
   }
 
-  let { data, inputStore }: Props = $props()
+  let { data }: Props = $props()
 
   // === State ===
   let searchQuery = $state('')
@@ -60,12 +55,6 @@
   let resizeStartWidth = $state(0)
 
   // === Effects ===
-  $effect(() => {
-    if (inputStore && data.config.drilldown?.enabled) {
-      drilldownService.setInputStore(inputStore)
-    }
-  })
-
   $effect(() => {
     if (typeof document === 'undefined') return
 
@@ -130,11 +119,6 @@
 
   const allSelected = $derived(isAllSelected(selectedRows, processedData.length))
   const someSelected = $derived(isSomeSelected(selectedRows, processedData.length))
-
-  const drilldownEnabled = $derived(config.drilldown?.enabled === true)
-  const drilldownCursor = $derived(config.drilldown?.cursor || 'pointer')
-  const drilldownHighlight = $derived(config.drilldown?.highlight !== false)
-  const drilldownTooltip = $derived(config.drilldown?.tooltip || 'Click to drill down')
 
   // === Event Handlers ===
   function handleSearch(query: string) {
@@ -211,20 +195,6 @@
     downloadExcel(processedData, visibleColumns, filename, 'Data', (row, col) => getCellValue(row, col))
   }
 
-  function handleDrilldownClick(row: Record<string, unknown>, rowIndex: number) {
-    const drilldown = config.drilldown
-    if (!drilldown?.enabled) return
-
-    const actionConfig = buildDrilldownActionConfig(drilldown)
-    if (!actionConfig) {
-      console.warn('Drilldown setInput action requires mappings')
-      return
-    }
-
-    const executeConfig = buildDrilldownExecuteConfig(drilldown, actionConfig)
-    const context = buildDrilldownContext(row, rowIndex, config.query)
-    drilldownService.execute(executeConfig, context)
-  }
 </script>
 
 <div class="datatable-container">
@@ -283,12 +253,7 @@
           {offsetY}
           selectable={config.selectable}
           {selectedRows}
-          {drilldownEnabled}
-          {drilldownCursor}
-          {drilldownHighlight}
-          {drilldownTooltip}
           {columnWidths}
-          onRowClick={handleDrilldownClick}
           onToggleRowSelection={handleToggleRowSelection}
         />
 

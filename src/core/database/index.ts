@@ -3,8 +3,9 @@
  *
  * Unified exports for all database-related functionality.
  *
- * Note: This module now uses the new connector system internally
- * while maintaining backward compatibility with the old API.
+ * The current product path uses the local DuckDB manager for report preview
+ * and CLI-oriented visualization generation. Remote connector exports have
+ * been removed with the SQL Workspace retirement.
  */
 
 // Export DuckDB Manager and instances
@@ -13,31 +14,11 @@ export {
   DuckDBManager,
   workspaceDB,
   duckDBManager,  // Alias for workspaceDB (with schema methods)
-  createReportDB,
-  WORKSPACE_DB_PATH,
-  WORKSPACE_ATTACH_NAME
+  createReportDB
 } from './duckdb'
-
-// Mosaic/vgplot integration
-export {
-  initializeMosaic,
-  isMosaicInitialized,
-  coordinator,
-  getVgplotContext
-} from './mosaic'
 
 // Table loading utilities
 export { loadDataIntoTable, dropTable } from './table-loader'
-
-// Re-export new connector system for gradual migration
-export {
-  WasmConnector,
-  createWasmConnector,
-  ConnectorRegistry,
-  type Connector,
-  type ConnectorConfig,
-  type QueryResult as ConnectorQueryResult
-} from '../connectors'
 
 // Schema analysis utilities
 export {

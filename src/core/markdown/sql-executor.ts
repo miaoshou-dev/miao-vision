@@ -9,8 +9,7 @@
  */
 
 import { getDatabaseStore } from '@core/services'
-import { loadDataIntoTable, WORKSPACE_ATTACH_NAME } from '@core/database'
-import { buildChartsFromBlocks } from '@core/services'
+import { loadDataIntoTable } from '@core/database'
 import type { ReportBlock, Report, ReportExecutionResult } from '@/types/report'
 import type { ParsedCodeBlock } from '@/types/report'
 import { extractSQLBlocks } from './parser'
@@ -25,33 +24,7 @@ import {
 import type { DuckDBManager } from '@core/database'
 
 /**
- * Detect if SQL references workspace tables
- *
- * Looks for patterns like:
- * - workspace_data.table_name
- * - FROM workspace_data.table_name
- *
- * @param sql - SQL query to analyze
- * @returns true if workspace reference detected
- */
-function detectWorkspaceTableReference(sql: string): boolean {
-  // Pattern: Explicit workspace_data schema reference
-  return sql.includes(`${WORKSPACE_ATTACH_NAME}.`)
-}
-
-/**
  * Execute a single SQL block and load result into DuckDB table
- *
- * SQL blocks can reference workspace tables using the workspace_data schema:
- *
- * @example
- * ```sql
- * -- Reference workspace tables
- * SELECT * FROM workspace_data.customers
- * WHERE region = '${inputs.region}'
- * ```
- *
- * The workspace database will be automatically attached (read-only) when needed.
  *
  * @param block - Parsed SQL code block
  * @param tableMapping - Map of logical names to physical table names
@@ -99,22 +72,13 @@ export async function executeSQLBlock(
       sql = resolveBlockReferences(sql, tableMapping)
     }
 
-    // Auto-attach workspace if Report Memory DB needs to access workspace tables
-    if (db && detectWorkspaceTableReference(sql)) {
-      console.log(`🔍 Detected workspace table reference in SQL block ${block.id}`)
-      const attached = await db.attachWorkspaceDatabase()
-      if (attached) {
-        console.log('✅ Workspace OPFS database attached for this query')
-      }
-    }
-
     // Execute the query
     let result
     if (db) {
       // Use provided DB instance (for Report Memory DB)
       result = await db.query(sql)
     } else {
-      // Use databaseStore (for SQL Workspace)
+      // Use the local preview database when no report-specific DB is provided.
       const dbStore = getDatabaseStore()
       if (!dbStore.state.initialized) {
         throw new Error('Database not initialized')
@@ -126,9 +90,8 @@ export async function executeSQLBlock(
     const tableName = `chart_data_${block.id}`
 
     // Load result into DuckDB table in report-specific schema
-    // Use schema isolation to separate different reports and SQL Workspace
+    // Use schema isolation to separate different reports and preview tables.
     // Plugin charts (bar, pie, line, area, scatter) don't need DuckDB access - they use JSON
-    // SQL Workspace only shows tables from main schema
     const actualSchema = schema || 'report_data'
     try {
       await loadDataIntoTable(tableName, result.data, result.columns, {
@@ -380,32 +343,6 @@ export async function executeReport(
       }
     }
 
-    // Build chart configs from chart blocks
-
-    const chartConfigs = buildChartsFromBlocks(parsedBlocks, result.tableMapping, templateContext)
-    console.log('Chart configurations:',chartConfigs)
-    
-    // Update chart blocks in report
-    for (const [blockId, chartConfig] of chartConfigs.entries()) {
-      const block = parsedBlocks.find(b => b.id === blockId)
-      if (block) {
-        const reportBlock: ReportBlock = {
-          id: blockId,
-          type: 'chart',
-          content: block.content,
-          chartConfig: chartConfig,
-          status: 'success'
-        }
-
-        const existingIndex = report.blocks.findIndex(b => b.id === blockId)
-        if (existingIndex !== -1) {
-          report.blocks[existingIndex] = reportBlock
-        } else {
-          report.blocks.push(reportBlock)
-        }
-      }
-    }
-
     if (onProgress) {
       onProgress(100)
     }
@@ -414,7 +351,6 @@ export async function executeReport(
     result.success = result.failedBlocks === 0
 
     console.log(`Report execution completed:`, result)
-    console.log(`Created ${chartConfigs.size} chart configurations`)
 
     return result
   } catch (error) {

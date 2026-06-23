@@ -17,8 +17,6 @@ export type {
   LLMProvider,
   ProviderConfig,
   AIContext,
-  ChartGenerationRequest,
-  ChartGenerationResult,
   // Report generation types
   DataSourceInfo,
   ReportSectionType,
@@ -42,7 +40,6 @@ export type {
 export { DeepSeekProvider, createDeepSeekProvider } from './providers/deepseek'
 
 // Services
-export { ChartGenerator, createChartGenerator } from './chart-generator'
 export { ReportPlanner, createReportPlanner } from './report-planner'
 export type { PlanningResult } from './report-planner'
 export {

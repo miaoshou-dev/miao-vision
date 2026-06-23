@@ -24,21 +24,90 @@ export interface LoadedDataset {
   sheet?: string
 }
 
+export interface HistogramBucket {
+  bucket: string
+  count: number
+}
+
+export interface ValueDistribution {
+  value: string
+  count: number
+  sharePct: number
+}
+
+export interface TemporalProfile {
+  span: string
+  granularity: 'day' | 'month' | 'quarter' | 'year'
+  isMonotonic: boolean
+  gapCount: number
+}
+
 export interface ColumnProfile {
   name: string
   type: AgentColumnType
+  role?: 'measure' | 'dimension' | 'time' | 'id' | 'flag' | 'unknown'
+  total: number
+  nonNullCount: number
+  nullCount: number
   nullRate: number
+  fillRate: number
+  uniqueRate: number
   samples: unknown[]
   distinctCount: number
+  // numeric
   min?: number
   max?: number
+  sum?: number
+  mean?: number
+  median?: number
+  p25?: number
+  p75?: number
+  stddev?: number
+  skewness?: number
+  coefficientOfVariation?: number
+  outlierCount?: number
+  histogram?: HistogramBucket[]
+  // string
+  topValue?: unknown
+  topSharePct?: number
+  distribution?: ValueDistribution[]
+  // date
+  temporal?: TemporalProfile
 }
+
+export interface DataQualityProfile {
+  completeness: number
+  nullRate: number
+  avgUniqueRate: number
+  highNullColumns: string[]
+  likelyIdColumns: string[]
+  duplicateProneDimensions: string[]
+}
+
+export interface ProfileInsight {
+  type: 'info' | 'warning' | 'suggestion' | 'trend'
+  title: string
+  description: string
+  fields?: string[]
+}
+
+export type ProfileHint =
+  | { type: 'kpi'; field: string; label: string }
+  | { type: 'time-series'; xField: string; yFields: string[] }
+  | { type: 'ranking'; groupField: string; measureField: string }
+  | { type: 'share'; labelField: string; valueField: string }
+  | { type: 'distribution'; field: string; skewed: boolean }
+  | { type: 'correlation'; a: string; b: string; r: number }
 
 export interface DataProfile {
   file: string
   rows: number
   columns: ColumnProfile[]
   sheet?: string
+  quality?: DataQualityProfile
+  correlations?: Array<{ a: string; b: string; r: number }>
+  hints?: ProfileHint[]
+  insights?: ProfileInsight[]
 }
 
 export interface AgentFieldEncoding {
@@ -84,6 +153,8 @@ export interface AgentChartSpec {
 export interface AgentReportSpec {
   title?: string
   description?: string
+  theme?: 'default' | 'editorial' | 'dark' | 'minimal'
+  insights?: string[]
   charts: AgentChartSpec[]
 }
 

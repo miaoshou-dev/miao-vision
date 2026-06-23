@@ -97,8 +97,7 @@ export async function exportToPDF(
       background-color: #f3f4f6 !important;
       color: #1f2937 !important;
     }
-    .pdf-export-container .chart-container,
-    .pdf-export-container .vgplot-container {
+    .pdf-export-container .chart-container {
       background: white !important;
     }
   `

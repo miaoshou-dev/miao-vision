@@ -53,7 +53,6 @@ export function handleSelectReport(report: Report, ctx: ReportHandlerContext): v
   if (currentReport && currentReport.blocks && currentReport.blocks.length > 0) {
     currentReport.blocks.forEach(block => {
       block.status = 'pending'
-      delete block.chartConfig
       delete block.sqlResult
     })
   }

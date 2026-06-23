@@ -57,6 +57,8 @@ export const chartSpecSchema: z.ZodType<AgentChartSpec> = z.object({
 export const reportSpecSchema: z.ZodType<AgentReportSpec> = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
+  theme: z.enum(['default', 'editorial', 'dark', 'minimal']).optional(),
+  insights: z.array(z.string()).optional(),
   charts: z.array(chartSpecSchema).min(1)
 })
 

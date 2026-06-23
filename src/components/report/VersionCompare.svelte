@@ -1,8 +1,8 @@
 <script lang="ts">
+  import './VersionCompare.css'
   import type { ReportVersion } from '@/types/version'
   import { versionStore } from '@app/stores/version.svelte'
   import { compareVersions, getDiffSummary, compareMarkdownStructure } from '@core/version'
-  import MonacoDiffEditor from '../MonacoDiffEditor.svelte'
 
   interface Props {
     /** Report ID to show versions for */
@@ -55,6 +55,24 @@
     }
     return ''
   })
+
+  let originalLines = $derived(selectedFrom ? selectedFrom.content.split('\n') : [])
+  let modifiedLines = $derived(selectedTo ? selectedTo.content.split('\n') : [])
+  let inlineLines = $derived.by(() => {
+    const maxLines = Math.max(originalLines.length, modifiedLines.length)
+    return Array.from({ length: maxLines }, (_, index) => ({
+      index,
+      original: originalLines[index],
+      modified: modifiedLines[index]
+    }))
+  })
+
+  function lineClass(original: string | undefined, modified: string | undefined): string {
+    if (original === undefined && modified !== undefined) return 'added'
+    if (original !== undefined && modified === undefined) return 'removed'
+    if (original !== modified) return 'modified'
+    return ''
+  }
 
   // Format timestamp
   function formatTimestamp(date: Date): string {
@@ -200,15 +218,21 @@
           </div>
         </div>
       {:else}
-        <!-- Monaco Diff Editor -->
-        <div class="monaco-diff-container">
-          <MonacoDiffEditor
-            original={selectedFrom.content}
-            modified={selectedTo.content}
-            language="markdown"
-            inlineDiff={viewMode === 'inline'}
-            height="calc(100vh - 320px)"
-          />
+        <div class="text-diff-container">
+          {#if viewMode === 'side-by-side'}
+            <div class="text-diff-grid">
+              <section class="text-diff-pane">
+                <div class="diff-pane-header">From v{selectedFrom.version}</div>
+                <pre class="diff-code">{#each inlineLines as line}<span class:modified={lineClass(line.original, line.modified) === 'modified'} class:removed={lineClass(line.original, line.modified) === 'removed'}>{line.original ?? ''}</span>{'\n'}{/each}</pre>
+              </section>
+              <section class="text-diff-pane">
+                <div class="diff-pane-header">To v{selectedTo.version}</div>
+                <pre class="diff-code">{#each inlineLines as line}<span class:modified={lineClass(line.original, line.modified) === 'modified'} class:added={lineClass(line.original, line.modified) === 'added'}>{line.modified ?? ''}</span>{'\n'}{/each}</pre>
+              </section>
+            </div>
+          {:else}
+            <pre class="diff-code inline">{#each inlineLines as line}{@const cls = lineClass(line.original, line.modified)}{#if cls === 'added'}<span class="added">+ {line.modified}</span>{'\n'}{:else if cls === 'removed'}<span class="removed">- {line.original}</span>{'\n'}{:else if cls === 'modified'}<span class="removed">- {line.original}</span>{'\n'}<span class="added">+ {line.modified}</span>{'\n'}{:else}<span>  {line.original}</span>{'\n'}{/if}{/each}</pre>
+          {/if}
         </div>
 
         <!-- Structural Diff Panel -->
@@ -324,308 +348,3 @@
   </div>
 {/if}
 
-<style>
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.75);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    backdrop-filter: blur(4px);
-  }
-
-  .modal-dialog {
-    width: 95%;
-    max-width: 1200px;
-    height: 90vh;
-    background: #111827;
-    border: 1px solid #374151;
-    border-radius: 12px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .version-compare {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: #111827;
-    color: #F3F4F6;
-  }
-
-  .compare-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem 1.5rem;
-    border-bottom: 1px solid #1F2937;
-  }
-
-  .compare-header h2 {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
-  }
-
-  .close-btn {
-    width: 2rem;
-    height: 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #1F2937;
-    border: 1px solid #374151;
-    border-radius: 4px;
-    color: #9CA3AF;
-    font-size: 1.25rem;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .close-btn:hover {
-    background: #374151;
-    color: #F3F4F6;
-  }
-
-  .compare-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  .version-selectors {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.5rem;
-    background: #111827;
-    border-bottom: 1px solid #1F2937;
-  }
-
-  .selector-group {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .selector-group label {
-    font-size: 0.8125rem;
-    color: #9CA3AF;
-  }
-
-  .version-select {
-    padding: 0.5rem 0.75rem;
-    background: #1F2937;
-    border: 1px solid #374151;
-    border-radius: 4px;
-    color: #F3F4F6;
-    font-size: 0.875rem;
-    font-family: 'JetBrains Mono', monospace;
-    cursor: pointer;
-  }
-
-  .version-select:focus {
-    outline: 2px solid #4285F4;
-    outline-offset: 2px;
-  }
-
-  .selector-arrow {
-    font-size: 1.5rem;
-    color: #4B5563;
-    margin-top: 1.5rem;
-  }
-
-  .diff-options {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0.75rem 1.5rem;
-    background: #111827;
-    border-bottom: 1px solid #1F2937;
-  }
-
-  .diff-stats {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 0.875rem;
-  }
-
-  .stats-label {
-    color: #9CA3AF;
-  }
-
-  .stats-value {
-    color: #F3F4F6;
-    font-weight: 500;
-  }
-
-  .stats-detail {
-    color: #6B7280;
-    font-size: 0.75rem;
-  }
-
-  .options-controls {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .option-btn {
-    padding: 0.375rem 0.75rem;
-    background: #1F2937;
-    border: 1px solid #374151;
-    border-radius: 4px;
-    color: #9CA3AF;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: all 0.15s;
-  }
-
-  .option-btn:hover {
-    background: #374151;
-    color: #F3F4F6;
-  }
-
-  .option-btn.active {
-    background: #4285F4;
-    border-color: #4285F4;
-    color: #FFFFFF;
-  }
-
-  .diff-viewer {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-  }
-
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: 2rem;
-  }
-
-  .empty-icon {
-    font-size: 3rem;
-    opacity: 0.3;
-  }
-
-  .empty-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: #9CA3AF;
-  }
-
-  .empty-hint {
-    font-size: 0.8125rem;
-    color: #6B7280;
-    text-align: center;
-  }
-
-  .monaco-diff-container {
-    flex: 1;
-    overflow: hidden;
-    padding: 1rem 1.5rem;
-  }
-
-  .structural-diff-panel {
-    width: 24rem;
-    flex-shrink: 0;
-    padding: 1rem;
-    background: #111827;
-    border-left: 1px solid #1F2937;
-    overflow-y: auto;
-  }
-
-  .structural-diff-panel h3 {
-    margin: 0 0 1rem;
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #F3F4F6;
-  }
-
-  .diff-section {
-    margin-bottom: 1.5rem;
-  }
-
-  .diff-section h4 {
-    margin: 0 0 0.75rem;
-    font-size: 0.8125rem;
-    font-weight: 500;
-    color: #D1D5DB;
-  }
-
-  .diff-group {
-    margin-bottom: 0.75rem;
-    padding: 0.75rem;
-    border-radius: 4px;
-  }
-
-  .diff-group.added {
-    background: rgba(34, 197, 94, 0.1);
-    border: 1px solid rgba(34, 197, 94, 0.2);
-  }
-
-  .diff-group.removed {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-  }
-
-  .diff-group.modified {
-    background: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-  }
-
-  .diff-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: #9CA3AF;
-  }
-
-  .diff-group ul {
-    margin: 0;
-    padding-left: 1.25rem;
-    font-size: 0.8125rem;
-    line-height: 1.6;
-  }
-
-  .diff-group.added ul {
-    color: #22C55E;
-  }
-
-  .diff-group.removed ul {
-    color: #EF4444;
-  }
-
-  .diff-group.modified ul {
-    color: #3B82F6;
-  }
-
-  .old-text {
-    text-decoration: line-through;
-    opacity: 0.7;
-  }
-
-  .new-text {
-    font-weight: 500;
-  }
-
-  code {
-    padding: 0.125rem 0.375rem;
-    background: #1F2937;
-    border-radius: 3px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-  }
-</style>

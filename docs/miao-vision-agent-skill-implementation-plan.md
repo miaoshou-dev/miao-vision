@@ -9,7 +9,7 @@ Goal: Confirm current reusable surfaces and identify code paths that must be sha
 Tasks:
 
 - [ ] Audit chart/plugin registration flow.
-  - Files: `src/bootstrap/index.ts`, `src/bootstrap/init-plugins.ts`, `src/bootstrap/init-charts.ts`
+  - Files: `src/bootstrap/index.ts`, `src/bootstrap/init-runtime.ts`, `src/bootstrap/init-plugins.ts`
   - Output: list of initialization steps needed by headless runtime.
 
 - [ ] Audit current VizSpec/catalog flow.
@@ -272,6 +272,46 @@ Acceptance:
 - Skill instructions are concise and do not duplicate implementation docs.
 - Agent can complete a local file to HTML report workflow using the skill.
 
+## Milestone 8.5: Article-to-Infographic Skill Workflow
+
+Goal: Let agents turn article URLs or Markdown files into infographic artifacts through the same CLI/skill product path.
+
+Tasks:
+
+- [ ] Add `src/agent/article-infographic.ts`.
+  - Input: local Markdown/text file.
+  - Output: markdown/json/uispec/html artifact.
+  - Reuse `src/core/ai/agents/infographic/*`.
+  - Avoid Svelte/browser dependencies.
+
+- [ ] Add `miao-viz article`.
+  - Example:
+    ```bash
+    miao-viz article /tmp/miao-vision/article.md \
+      --style editorial \
+      --format html \
+      --output /tmp/miao-vision/article-infographic.html
+    ```
+  - First supported formats: `markdown`, `json`, `uispec`.
+  - Add `html` after static infographic renderer is available.
+
+- [ ] Update the skill workflow.
+  - For URL input, the agent fetches or opens the page.
+  - The agent extracts title, metadata, headings, body, lists, tables, and useful quotes.
+  - The agent writes normalized Markdown to `/tmp/miao-vision/article.md`.
+  - The agent calls `miao-viz article`.
+
+- [ ] Preserve existing Web demo code as preview/debug.
+  - Keep `ArticleToInfographicDemo` as a Web surface.
+  - Refactor it later to call the same `src/agent/article-infographic.ts` adapter.
+  - Do not move Svelte UI components into the CLI package.
+
+Acceptance:
+
+- An agent can convert a Markdown file into an infographic artifact through `miao-viz article`.
+- An agent can convert a URL into an infographic by first normalizing it to local Markdown.
+- CLI has no mandatory browser or URL-fetching dependency for the first release.
+
 ## Milestone 9: Optional Export Formats
 
 Goal: Add additional artifact types after HTML is stable.
@@ -367,9 +407,9 @@ Tasks:
 
 - [ ] Milestone 6: Headless Browser Rendering
 - [ ] Milestone 8: Codex Skill Packaging
+- [ ] Milestone 8.5: Article-to-Infographic Skill Workflow
 - [ ] Add realistic examples
 
 Expected result:
 
-An agent can follow the skill workflow from local file path to generated HTML report.
-
+An agent can follow the skill workflow from local data file to generated HTML report, or from article URL/Markdown to infographic artifact.

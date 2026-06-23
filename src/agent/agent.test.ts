@@ -35,7 +35,13 @@ describe('agent data loader and profiler', () => {
     const profile = profileDataset(dataset.value)
     expect(profile.rows).toBe(4)
     expect(profile.columns.find(column => column.name === 'sales')?.type).toBe('number')
+    expect(profile.columns.find(column => column.name === 'sales')?.role).toBe('measure')
+    expect(profile.columns.find(column => column.name === 'sales')?.p25).toBe(97.5)
+    expect(profile.columns.find(column => column.name === 'region')?.role).toBe('dimension')
     expect(profile.columns.find(column => column.name === 'region')?.distinctCount).toBe(3)
+    expect(profile.quality?.completeness).toBe(1)
+    expect(profile.hints?.some(hint => hint.type === 'time-series')).toBe(true)
+    expect(profile.insights?.some(insight => insight.title.includes('Strong relationship'))).toBe(true)
   })
 })
 
@@ -95,6 +101,66 @@ describe('agent spec validation and HTML rendering', () => {
     expect(html).toContain('id="miao-viz-spec"')
     expect(html).toContain('<svg')
     expect(html).toContain('Sales by Region')
+    expect(html).toContain('class="chart-block"')
+  })
+
+  it('renders editorial theme with correct structure', () => {
+    const dataset = loadDataset(csvPath)
+    expect(dataset.ok).toBe(true)
+    if (!dataset.ok) return
+
+    const profile = profileDataset(dataset.value)
+    const spec: AgentReportSpec = {
+      title: 'Editorial Test',
+      description: 'Checking editorial theme output.',
+      charts: [
+        {
+          type: 'bar',
+          title: 'Sales by Region',
+          data: {
+            transform: [
+              {
+                type: 'aggregate',
+                groupBy: ['region'],
+                measures: [{ field: 'sales', op: 'sum', as: 'total_sales' }]
+              }
+            ]
+          },
+          encoding: { x: { field: 'region' }, y: { field: 'total_sales' } }
+        },
+        {
+          type: 'bigvalue',
+          title: 'Total Sales',
+          encoding: { value: { field: 'sales' } }
+        }
+      ]
+    }
+
+    const html = renderStaticHtml(spec, profile, dataset.value.rows, 'editorial')
+    expect(html).toContain('--mv-paper')
+    expect(html).toContain('class="report-hero"')
+    expect(html).toContain('class="chart-card"')
+    expect(html).toContain('class="chart-label"')
+    expect(html).toContain('class="chart-caption"')
+    expect(html).toContain('id="miao-viz-spec"')
+    expect(html).toContain('<svg')
+    expect(html).not.toContain('class="chart-block"')
+  })
+
+  it('spec theme field survives parse and drives output', () => {
+    const dataset = loadDataset(csvPath)
+    expect(dataset.ok).toBe(true)
+    if (!dataset.ok) return
+
+    const profile = profileDataset(dataset.value)
+    const spec: AgentReportSpec = {
+      title: 'Theme via Spec',
+      theme: 'editorial',
+      charts: [{ type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'sales' } } }]
+    }
+    const html = renderStaticHtml(spec, profile, dataset.value.rows)
+    expect(html).toContain('--mv-paper')
+    expect(html).toContain('class="report-hero"')
   })
 
   it('returns structured field errors', () => {

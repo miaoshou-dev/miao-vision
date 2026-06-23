@@ -27,7 +27,7 @@ export interface LoadTableOptions {
  * Load data from query result into a DuckDB table
  *
  * With the unified DuckDB instance, this creates the table directly
- * in duckDBManager, which is shared with Mosaic for chart rendering.
+ * in duckDBManager for report preview and SQL references.
  *
  * @param tableName - Name of the table to create
  * @param data - Array of row objects

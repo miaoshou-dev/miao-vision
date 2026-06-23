@@ -6,39 +6,17 @@
  */
 
 import {
-  registerChartBuilder,
   registerInputInitializer,
   registerDatabaseStore
 } from '@core/services'
-import type { IChartBuilder, IInputInitializer, IInputStore, IDatabaseStore } from '@/types/interfaces'
+import type { IInputInitializer, IInputStore, IDatabaseStore } from '@/types/interfaces'
 import type { ParsedCodeBlock } from '@/types/report'
-import type { ChartConfig } from '@/types/chart'
 
 // Import actual implementations from plugins
-import {
-  buildChartFromBlock as pluginBuildChart,
-  buildChartsFromBlocks as pluginBuildCharts
-} from '@plugins/viz/chart-builder'
 import { initializeInputDefaults } from '@plugins/inputs/initialize-defaults'
 
 // Import database store from app
 import { databaseStore } from '@app/stores/database.svelte'
-
-/**
- * Chart builder adapter
- * Wraps plugin chart builder to match IChartBuilder interface
- */
-const chartBuilderAdapter: IChartBuilder = {
-  buildFromBlock(block, tableMapping, context): ChartConfig | null {
-    // Cast ISQLTemplateContext to plugin's expected type (compatible at runtime)
-    return pluginBuildChart(block, tableMapping, context as any)
-  },
-
-  buildFromBlocks(blocks, tableMapping, context): Map<string, ChartConfig> {
-    // Cast ISQLTemplateContext to plugin's expected type (compatible at runtime)
-    return pluginBuildCharts(blocks, tableMapping, context as any)
-  }
-}
 
 /**
  * Input initializer adapter
@@ -76,7 +54,6 @@ const databaseStoreAdapter: IDatabaseStore = {
 export function registerServices(): void {
   console.log('🔧 Registering services...')
 
-  registerChartBuilder(chartBuilderAdapter)
   registerInputInitializer(inputInitializerAdapter)
   registerDatabaseStore(databaseStoreAdapter)
 

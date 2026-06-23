@@ -5,7 +5,6 @@
  */
 
 import type { QueryResult } from './database'
-import type { ChartConfig } from './chart'
 
 /**
  * Type of content block in a report
@@ -26,8 +25,6 @@ export interface ReportBlock {
   content: string
   // For SQL blocks
   sqlResult?: QueryResult
-  // For chart blocks
-  chartConfig?: ChartConfig
   // Metadata (e.g., SQL block name)
   metadata?: any
   // Execution state
@@ -151,37 +148,6 @@ export interface ReportState {
 }
 
 /**
- * Chart block configuration (simplified syntax)
- */
-export interface ChartBlockConfig {
-  type: 'bar' | 'line' | 'scatter' | 'histogram' | 'area' | 'pie' | 'boxplot' | 'heatmap' | 'funnel'
-  data: string // Table name or query result reference
-  x: string
-  y?: string  // Optional for histogram
-  group?: string
-  title?: string
-  width?: number
-  height?: number
-  xLabel?: string
-  yLabel?: string
-  bins?: number  // For histogram
-  fillOpacity?: number  // For area chart
-  curve?: 'linear' | 'step' | 'basis' | 'monotone'  // For line/area chart
-  stacked?: boolean  // For area chart
-  normalized?: boolean  // For area chart
-  xScaleType?: 'point' | 'linear' | 'log' | 'sqrt' | 'time' | 'utc'  // X-axis scale type
-  // Pie chart specific options
-  innerRadius?: number  // Inner radius (0 for pie, > 0 for donut)
-  outerRadius?: number  // Outer radius
-  padAngle?: number  // Padding between slices
-  cornerRadius?: number  // Corner radius for slices
-  showLabels?: boolean  // Show labels on slices
-  showPercentages?: boolean  // Show percentages in labels
-  // Heatmap specific options
-  color?: string  // Column for color encoding (defaults to y or group)
-}
-
-/**
  * SQL block metadata
  */
 export interface SQLBlockMetadata {
@@ -202,7 +168,7 @@ export interface ParsedCodeBlock {
   language: string
   content: string
   meta?: string
-  metadata?: SQLBlockMetadata | ChartBlockConfig
+  metadata?: SQLBlockMetadata | Record<string, unknown>
 }
 
 /**

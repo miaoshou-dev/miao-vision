@@ -20,12 +20,7 @@
     offsetY: number
     selectable: boolean
     selectedRows: Set<number>
-    drilldownEnabled: boolean
-    drilldownCursor: string
-    drilldownHighlight: boolean
-    drilldownTooltip: string
     columnWidths: ColumnWidths
-    onRowClick: (row: Record<string, unknown>, index: number) => void
     onToggleRowSelection: (index: number) => void
   }
 
@@ -39,20 +34,9 @@
     offsetY,
     selectable,
     selectedRows,
-    drilldownEnabled,
-    drilldownCursor,
-    drilldownHighlight,
-    drilldownTooltip,
     columnWidths,
-    onRowClick,
     onToggleRowSelection
   }: Props = $props()
-
-  function handleRowClick(row: Record<string, unknown>, index: number) {
-    if (drilldownEnabled) {
-      onRowClick(row, index)
-    }
-  }
 
   function getCellIconInfo(row: Record<string, unknown>, column: ColumnDef): IconInfo | null {
     return getIconForValue(row, column, allRows)
@@ -89,11 +73,7 @@
             <tr
               class="data-row"
               class:selected={selectedRows.has(actualIndex)}
-              class:drilldown-enabled={drilldownEnabled}
-              class:drilldown-highlight={drilldownEnabled && drilldownHighlight}
-              style="height: {rowHeight}px; {drilldownEnabled ? `cursor: ${drilldownCursor}` : ''}"
-              onclick={() => handleRowClick(row, actualIndex)}
-              title={drilldownEnabled ? drilldownTooltip : undefined}
+              style="height: {rowHeight}px;"
             >
               {#if selectable}
                 <td class="data-cell select-cell">
@@ -192,24 +172,6 @@
 
   .data-row.selected:hover {
     background: #2E4A6F;
-  }
-
-  /* Drill-down styles */
-  .data-row.drilldown-enabled {
-    cursor: pointer;
-  }
-
-  .data-row.drilldown-highlight:hover {
-    background: #3B82F6 !important;
-    box-shadow: inset 0 0 0 1px #60A5FA;
-  }
-
-  .data-row.drilldown-highlight:hover .data-cell {
-    color: #FFFFFF;
-  }
-
-  .data-row.drilldown-enabled:active {
-    background: #2563EB !important;
   }
 
   .data-cell {

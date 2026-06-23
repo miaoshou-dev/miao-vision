@@ -26,7 +26,7 @@ export interface StaticSiteOptions {
   includeSource?: boolean
   /** Custom favicon (base64 data URL) */
   favicon?: string
-  /** Enable interactive features (drilldown, filtering, sorting) */
+  /** Enable lightweight static report interactions */
   interactive?: boolean
 }
 
@@ -350,7 +350,7 @@ hr {
 }
 
 /* Charts */
-.chart-container, .vgplot-container {
+.chart-container {
   margin: 1.5rem 0;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -359,7 +359,7 @@ hr {
   overflow-x: auto;
 }
 
-.chart-container svg, .vgplot-container svg {
+.chart-container svg {
   max-width: 100%;
   height: auto;
 }
@@ -581,7 +581,6 @@ Simply upload the contents of this folder to your web server.
 If exported with \`interactive: true\`, the following features are available:
 
 - **Table Sorting**: Click column headers to sort
-- **Drilldown Modal**: Click rows to view details
 - **Input Controls**: Dropdowns and button groups work
 - **Cross-Filtering**: Inputs can filter related tables
 

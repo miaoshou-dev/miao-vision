@@ -1,5 +1,0 @@
-export { default as SQLWorkspace } from './SQLWorkspace.svelte'
-export { default as DataExplorer } from './DataExplorer.svelte'
-export { default as QueryTabs } from './QueryTabs.svelte'
-export { default as QueryToolbar } from './QueryToolbar.svelte'
-export { default as ResultsTable } from './ResultsTable.svelte'

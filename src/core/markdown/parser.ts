@@ -208,32 +208,8 @@ export function extractSQLQueries(codeBlocks: CodeBlock[]): string[] {
 }
 
 /**
- * Extract chart specifications from markdown
- */
-export function extractChartSpecs(codeBlocks: CodeBlock[]): any[] {
-  return codeBlocks
-    .filter(block => ['json', 'chart', 'vgplot'].includes(block.language))
-    .map(block => {
-      try {
-        return JSON.parse(block.value)
-      } catch (error) {
-        console.error('Failed to parse chart spec:', error)
-        return null
-      }
-    })
-    .filter(spec => spec !== null)
-}
-
-/**
  * Extract SQL blocks with metadata
  */
 export function extractSQLBlocks(codeBlocks: ParsedCodeBlock[]): ParsedCodeBlock[] {
   return codeBlocks.filter(block => block.language === 'sql')
-}
-
-/**
- * Extract chart blocks with metadata
- */
-export function extractChartBlocks(codeBlocks: ParsedCodeBlock[]): ParsedCodeBlock[] {
-  return codeBlocks.filter(block => block.language === 'chart' || block.language === 'json')
 }

@@ -1,30 +1,15 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { SQLWorkspace } from './components/sql-workspace'
   import { databaseStore } from '@app/stores/database.svelte'
   import { reportStore } from '@app/stores/report.svelte'
-  import ConnectionsPage from './components/connections/ConnectionsPage.svelte'
   import type { InputStore } from '@app/stores/report-inputs'
-  import { initializeMosaic } from '@core/database'
   import { reportExecutionService } from '@core/engine/report-execution.service'
   import type { Report } from './types/report'
   import { versionStore } from '@app/stores/version.svelte'
 
-  // Demo pages
-  import StreamingDemo from './components/StreamingDemo.svelte'
-  import HybridGNodeDemo from './components/HybridGNodeDemo.svelte'
-  import WeatherStreamingDemo from './components/WeatherStreamingDemo.svelte'
-  import CrossFilterDemo from './components/CrossFilterDemo.svelte'
-  import DrilldownDemo from './components/DrilldownDemo.svelte'
   import InfographicDemo from './components/InfographicDemo.svelte'
   import ArticleToInfographicDemo from './components/ArticleToInfographicDemo.svelte'
   import LandingPage from './components/LandingPage.svelte'
-
-  // Modals
-  import DrilldownModal from './components/DrilldownModal.svelte'
-  import AIGenerateDialog from './components/AIGenerateDialog.svelte'
-  import { drilldownStore } from '@app/stores/drilldown.svelte'
-  import { drilldownService } from '@core/engine/drilldown/drilldown-service'
 
   // AI Report Generator
   import { ReportGeneratorWizard } from './components/ai-report'
@@ -41,7 +26,7 @@
   import { gatherDataSources } from './components/app/logic/ai-report-sources'
 
   // Types
-  type TabType = 'landing' | 'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown' | 'infographic' | 'article-ai'
+  type TabType = 'landing' | 'report' | 'infographic' | 'article-ai'
 
   // App state
   let appTitle = $state('Miao Vision')
@@ -60,7 +45,6 @@
   let currentInputStore = $state<InputStore | null>(null)
 
   // Dialog state
-  let showAIGenerateDialog = $state(false)
   let showReportGenerator = $state(false)
   let availableDataSources = $state<DataSourceInfo[]>([])
 
@@ -82,13 +66,11 @@
     const init = async () => {
       try {
         await databaseStore.initialize()
-        await initializeMosaic()
 
         // Clear stale block statuses
         if (reportStore.state.currentReport?.blocks) {
           reportStore.state.currentReport.blocks.forEach(block => {
             block.status = 'pending'
-            block.chartConfig = undefined
             block.sqlResult = undefined
           })
           reportStore.state.currentReport = { ...reportStore.state.currentReport }
@@ -103,9 +85,6 @@
     const handleKeydown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
         e.preventDefault()
-        if (activeTab === 'report' && reportStore.state.currentReport) {
-          showAIGenerateDialog = true
-        }
       }
     }
     window.addEventListener('keydown', handleKeydown)
@@ -176,26 +155,6 @@
     )
     return () => unsubscribe()
   })
-
-  // Drilldown modal handler
-  $effect(() => {
-    drilldownService.onDrilldown('app-modal-handler', (event) => {
-      if (event.config.action.type === 'modal') {
-        const action = event.config.action as { type: 'modal'; titleTemplate?: string; displayColumns?: string[] }
-        let title = action.titleTemplate || 'Details'
-        title = title.replace(/\{(\w+)\}/g, (_, key) => {
-          const value = event.context.rowData[key]
-          return value !== undefined ? String(value) : `{${key}}`
-        })
-        drilldownStore.showModal(title, event.context.rowData, {
-          displayColumns: action.displayColumns,
-          sourceComponent: event.context.sourceComponent,
-          blockId: event.context.blockId
-        })
-      }
-    })
-    return () => drilldownService.offDrilldown('app-modal-handler')
-  })
 </script>
 
 <main>
@@ -222,20 +181,6 @@
 
       {#if activeTab === 'landing'}
         <div class="page-container landing-page"><LandingPage onNavigate={setTab} /></div>
-      {:else if activeTab === 'workspace'}
-        <div class="page-container workspace-page"><SQLWorkspace /></div>
-      {:else if activeTab === 'connections'}
-        <div class="page-container"><ConnectionsPage /></div>
-      {:else if activeTab === 'streaming'}
-        <div class="page-container"><StreamingDemo /></div>
-      {:else if activeTab === 'gnode'}
-        <div class="page-container"><HybridGNodeDemo /></div>
-      {:else if activeTab === 'weather'}
-        <div class="page-container"><WeatherStreamingDemo /></div>
-      {:else if activeTab === 'crossfilter'}
-        <div class="page-container"><CrossFilterDemo /></div>
-      {:else if activeTab === 'drilldown'}
-        <div class="page-container"><DrilldownDemo /></div>
       {:else if activeTab === 'infographic'}
         <div class="page-container"><InfographicDemo /></div>
       {:else if activeTab === 'article-ai'}
@@ -261,7 +206,6 @@
             onExportStaticSite={() => {}}
             onExportMVR={() => {}}
             onImportMVR={() => {}}
-            onAIGenerate={() => showAIGenerateDialog = true}
             onContentChange={handleReportContentChange}
           />
         </div>
@@ -270,20 +214,12 @@
   </div>
 </main>
 
-<DrilldownModal />
-
-<AIGenerateDialog
-  visible={showAIGenerateDialog}
-  onClose={() => showAIGenerateDialog = false}
-  onInsert={() => {}}
-/>
-
 {#if showReportGenerator}
   <ReportGeneratorWizard
     availableSources={availableDataSources}
     onComplete={handleReportGeneratorComplete}
     onCancel={() => showReportGenerator = false}
-    onImportData={() => { showReportGenerator = false; setTab('workspace') }}
+    onImportData={() => { showReportGenerator = false; setTab('article-ai') }}
     onLoadSampleData={() => {}}
   />
 {/if}
@@ -322,12 +258,6 @@
     margin: 0 auto;
     padding: 1.5rem;
     height: 100%;
-  }
-
-  .page-container.workspace-page {
-    max-width: none;
-    padding: 0;
-    height: 100vh;
   }
 
   .page-container.report-layout {

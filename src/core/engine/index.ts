@@ -1,22 +1,16 @@
 /**
  * Core Engine Exports
+ *
+ * The current product path uses the report execution engine and VizSpec
+ * catalog. The legacy HybridGNode realtime workspace engine has been removed.
  */
 
-export { HybridGNode } from './hybrid-gnode'
-export { HybridView } from './view'
+export { blockRenderer } from './block-renderer'
+export type { BlockRenderContext } from './block-renderer'
+export { ReportExecutionService, reportExecutionService } from './report-execution.service'
 export type {
-  SchemaDefinition,
-  ViewConfig,
-  FilterSpec,
-  SortSpec,
-  GNodeDescriptor,
-  IncrementalState,
-  AggregateValue,
-  Delta,
-  DeltaOperation,
-  UpdateCallback,
-  QueryResult,
-  NodeType,
-  AggregateFunction,
-  OperationType
-} from './types'
+  ExecutionResult,
+  ProgressCallback,
+  BlockUpdateCallback,
+  ReportExecutionState
+} from './report-execution.service'

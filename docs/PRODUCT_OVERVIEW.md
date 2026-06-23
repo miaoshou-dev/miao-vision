@@ -1,325 +1,275 @@
 # Miao Vision 产品概述
 
-> Local-First Data Analytics Framework - 为注重隐私和自主权的数据分析师打造
+> AI-first local data visualization generator - 让 AI 更容易理解，让用户更喜欢结果。
 
-**当前版本**: v0.2.0 (Alpha - Bootstrap + 43 Components)
-**最后更新**: 2024-12-23
+**当前方向**：围绕 `miao-viz-cli` 发展本地数据可视化生成能力。
+**最后更新**：2026-06-23
 
----
+## 一、产品定位
 
-## 💡 为什么选择 Miao Vision
+Miao Vision 正在从完整本地 BI 工作台，收敛为面向 AI Agent 的本地数据可视化生成器。
 
-### 🔒 您的数据，您掌控
+新的产品主线分为三条：
 
-**问题**：传统 BI 工具需要上传数据到云端，敏感数据（财务、客户信息、HR 数据）的安全性令人担忧。
+```text
+Data Display:
+本地数据文件
+  -> miao-viz profile
+  -> AI 生成 VizSpec
+  -> miao-viz validate
+  -> miao-viz render
+  -> 图表 / KPI / 表格 / 洞察 / HTML 报告
 
-**解决方案**：Miao Vision 所有数据处理都在您的浏览器中完成，**数据永不离开本地**。
+Article-to-Infographic:
+文章 URL / Markdown
+  -> Agent 归一化正文
+  -> miao-viz article
+  -> 静态 infographic artifact
 
-**用户价值**：
-- ✅ **绝对隐私** - 财务报表、客户数据、敏感信息 100% 安全
-- ✅ **合规无忧** - 满足 GDPR、HIPAA 等数据合规要求
-- ✅ **离线工作** - 飞机上、咖啡厅、没网络？照样分析数据
-- ✅ **数据持久化** - 使用浏览器 OPFS 技术，刷新页面数据不丢失
-
-**适用场景**：个人数据分析、敏感数据报告、离线环境、教学演示
-
----
-
-### ⚡ 零成本，秒级部署
-
-**问题**：传统 BI 平台需要购买服务器、配置数据库、维护基础设施，成本高昂。
-
-**解决方案**：纯静态网页，拖拽到任何静态托管平台（Vercel、Netlify、GitHub Pages），**5 分钟完成部署**。
-
-**用户价值**：
-- ✅ **零服务器成本** - 不需要后端服务器和数据库
-- ✅ **零运维成本** - 不需要 DevOps 团队维护
-- ✅ **免费托管** - Vercel/Netlify 免费版足够使用
-- ✅ **全球 CDN** - 自动获得全球加速
-
-**投资回报**：每年节省 $5,000+ 云服务器和数据库费用
-
----
-
-### 📝 像写文档一样写报告
-
-**问题**：传统 BI 工具需要点击拖拽配置仪表板，效率低下且难以版本控制。
-
-**解决方案**：使用 **Markdown + SQL** 语法编写报告，像写技术文档一样简单直观。
-
-**用户价值**：
-- ✅ **学习曲线平缓** - 会写 Markdown 就能做数据分析
-- ✅ **版本控制友好** - 报告可以用 Git 管理，支持 Code Review
-- ✅ **团队协作** - 多人编辑报告，合并冲突清晰可见
-- ✅ **快速迭代** - 复制粘贴即可复用报告模板
-
-**示例**：
-
-````markdown
-# 销售分析报告
-
-```sql sales
-SELECT region, SUM(revenue) as total_revenue
-FROM sales_data
-WHERE date >= '2024-01-01'
-GROUP BY region
+Presentation Deck:
+本地数据文件
+  -> miao-viz profile
+  -> AI 生成 DeckSpec
+  -> miao-viz deck
+  -> browser-presentable slide deck
 ```
 
-## 区域销售趋势
+产品不再以用户手写 SQL、维护查询标签页、搭建 BI dashboard 为主线，而是帮助 AI 和用户快速得到高质量可视化报告。
 
-```barchart
-data: sales
-x: region
-y: total_revenue
+## 二、核心价值
+
+### 1. AI 容易理解
+
+传统 BI 工具的交互状态、图表配置和查询逻辑很难由 AI 稳定生成。
+
+Miao Viz 使用短小、显式、可验证的 YAML/JSON VizSpec：
+
+```yaml
+charts:
+  - type: bar
+    title: Sales by Region
+    encoding:
+      x: { field: region }
+      y: { field: sales }
 ```
 
-**总收入**: ${sales[0].total_revenue.toLocaleString()}
-````
+AI 不需要操作复杂 UI，只需要：
 
-**效率提升**：创建仪表板从 2 小时缩短到 10 分钟
+- 读取 profile
+- 选择 catalog 中的图表
+- 生成 spec
+- 调用 validate 修复错误
+- 调用 render 输出报告
 
----
+### 2. 用户更喜欢结果
 
-### 🚀 专业级性能，浏览器原生
+用户关心的不只是能不能画图，而是结果是否专业、好看、能分享。
 
-**问题**：在线 BI 工具加载慢，Excel 处理大数据集卡顿。
+Miao Viz 的视觉方向：
 
-**解决方案**：使用 **DuckDB-WASM**，在浏览器中提供接近桌面级的 SQL 分析性能。
+- editorial report
+- dark report
+- minimal report
+- finance / executive / magazine 风格
+- 图表 caption
+- KPI section
+- 信息图版式
+- 自包含 HTML
+- SVG 清晰渲染
 
-**用户价值**：
-- ✅ **秒级查询** - 百万级数据聚合查询 < 1 秒
-- ✅ **本地计算** - 不受网络延迟影响
-- ✅ **内存高效** - 列式存储 + Apache Arrow，内存占用小
-- ✅ **标准 SQL** - 完整的 PostgreSQL 兼容 SQL 语法
+### 3. 数据展示是一条产品主线
 
-**性能对比**：
-| 操作 | Excel | Miao Vision |
-|------|-------|-----------------|
-| 加载 1M 行 CSV | 30-60s | < 5s |
-| 聚合查询 | 卡顿 | < 1s |
-| 透视表 | 内存溢出 | 流畅 |
+数据展示不是旧 Web 插件系统的附属能力，而是新产品的核心输出之一。
 
----
+短期目标：
 
-### 🎨 43+ 开箱即用的组件
+- 把 `src/plugins/data-display` 中有价值的图表资产迁移为 AI 可理解的 catalog。
+- 用 VizSpec 表达 KPI、趋势、排行、占比、分布、相关性、表格、注释和洞察。
+- 让 `miao-viz render` 稳定生成单文件 HTML/SVG artifact。
+- 优先服务静态报告、轻量可分享页面和 Agent 自动化输出。
 
-**问题**：从零开始实现图表和交互组件需要大量开发时间。
+边界：
 
-**解决方案**：内置 **43 个专业级组件**，覆盖 90% 的数据可视化需求。
+- 保留图表资产和展示能力。
+- 不恢复完整 dashboard builder。
+- 不恢复全局 CrossFilter / Drilldown 状态系统。
+- 简单筛选、排序、tooltip 只作为静态报告增强。
 
-**组件类型**：
+### 4. 本地优先
 
-**📊 数据展示（22 个）**
-- KPI 卡片、数据表格、趋势线、对比图
-- 桑基图、瀑布图、热力图、雷达图
-- 漏斗图、树图、箱线图、日历热图
+数据来自本地文件，默认不需要后端、不需要上传到云端。
 
-**🎛️ 交互组件（8 个）**
-- 下拉选择、按钮组、日期范围、滑块
-- 文本搜索、多选框、维度网格
+优先支持：
 
-**📈 图表（7 个）**
-- 折线图、柱状图、面积图、散点图
-- 饼图、直方图、通用图表
+- CSV
+- TSV
+- XLSX
+- JSON
 
-**💎 UI 组件（6 个）**
-- 提示框、选项卡、手风琴、工具提示、详情、模态框
+### 5. 输出物优先
 
-**用户价值**：
-- ✅ **快速原型** - 10 分钟搭建完整仪表板
-- ✅ **一致体验** - 所有组件遵循统一设计系统
-- ✅ **响应式** - 自动适配手机、平板、桌面
-- ✅ **无障碍** - WCAG 2.1 AA 合规
+Miao Viz 的交付物是可查看、可分享、可归档的报告文件。
 
-查看 [COMPONENTS_QUICK_REFERENCE.md](./COMPONENTS_QUICK_REFERENCE.md) 获取完整的组件文档。
+当前重点：
 
----
+- HTML
+- SVG
 
-### 🔄 实时响应，智能联动
+后续扩展：
 
-**问题**：传统报告是静态的，每次筛选都需要重新生成。
+- PNG
+- PDF
 
-**解决方案**：**响应式执行引擎** - 输入变化时，自动检测依赖关系，仅重新计算受影响的部分。
+## 三、与旧路线的区别
 
-**用户价值**：
-- ✅ **即时反馈** - 改变筛选条件，图表立即更新
-- ✅ **智能优化** - 只重新执行受影响的查询，节省计算
-- ✅ **组件联动** - 一个组件的输入自动影响其他组件
-- ✅ **流畅体验** - 无需刷新页面或重新加载
+| 旧路线 | 新路线 |
+| --- | --- |
+| 完整 SQL Workspace | `miao-viz-cli` |
+| 用户手写 SQL | AI 生成 VizSpec |
+| Markdown BI Report | 静态/轻交互 HTML 报告 |
+| 浏览器数据库能力为核心 | 本地文件到报告为核心 |
+| 复杂插件和交互 dashboard | 数据展示 artifact、丰富图表和高级视觉主题 |
+| 多数据源连接器 | 先聚焦本地文件 |
 
-**交互示例**：
-```markdown
-<!-- 用户选择日期范围 -->
-```daterange
-name: date_filter
+## 四、目标用户
+
+### AI Agent 用户
+
+希望让 Codex、Claude Code 等 Agent 读取本地数据文件，并生成可视化报告。
+
+### 数据内容创作者
+
+需要快速把 CSV/XLSX 变成漂亮图表、简报、分析页面。
+
+### 业务分析用户
+
+不想维护 BI 平台，只需要把数据文件变成可读、可分享的分析结果。
+
+### 开发者
+
+需要一个可脚本化、可验证、可集成到自动化流程的数据可视化工具。
+
+## 五、推荐工作流
+
+### 路线 A：Data Display
+
+面向本地数据文件，输出图表、KPI、表格、注释、洞察和轻量静态报告。
+
+### Step 1: Profile
+
+```bash
+miao-viz profile ./sales.csv
 ```
 
-<!-- 自动筛选数据 -->
-```sql filtered_sales
-SELECT * FROM sales
-WHERE date BETWEEN ${date_filter.start} AND ${date_filter.end}
+输出字段类型、缺失率、样本、时间粒度、数值范围、推荐 hints。
+
+### Step 2: Catalog
+
+```bash
+miao-viz catalog
 ```
 
-<!-- 图表自动更新 -->
-```linechart
-data: filtered_sales
+输出支持的图表类型、required encodings、可选 encodings、适用场景。
+
+### Step 3: Validate
+
+```bash
+miao-viz validate --spec ./report.yaml --profile ./profile.json
 ```
+
+检查字段是否存在、图表类型是否支持、encoding 是否完整。
+
+### Step 4: Render
+
+```bash
+miao-viz render \
+  --input ./sales.csv \
+  --spec ./report.yaml \
+  --theme editorial \
+  --output ./sales-report.html
 ```
 
----
+生成自包含 HTML 报告。
 
-## 🎯 完整的使用场景
+### 路线 B：Article-to-Infographic
 
-### 个人分析师
-- 📊 分析个人财务数据（股票、消费、投资）
-- 📈 追踪健身数据、阅读统计、时间管理
-- 🎓 学术研究数据分析和可视化
+文章 URL、Markdown 或长文本由 Agent 读取和清洗，CLI 只处理本地 markdown/text 输入，输出信息图 artifact。
 
-### 小型团队
-- 💼 创业公司的产品数据分析（用户增长、留存、转化）
-- 📉 营销团队的广告效果分析（ROI、CPC、转化率）
-- 🛒 电商团队的销售分析（GMV、SKU 分析、复购率）
+### 路线 C：Presentation Deck
 
-### 数据教学
-- 👨‍🏫 SQL 和数据分析课程演示
-- 🎓 数据可视化教学案例
-- 📚 交互式数据故事讲述
+本地数据文件经 `profile` 后由 AI 生成 DeckSpec，再调用 `miao-viz deck` 输出可浏览器播放的演示文稿。
 
-### 合规场景
-- 🏥 医疗数据分析（HIPAA 合规）
-- 🏦 金融数据报告（SOX 合规）
-- 🔐 敏感客户数据分析（GDPR 合规）
+## 六、轻量交互方向
 
----
+静态报告可以支持简单交互，但不走完整 dashboard builder。
 
-## 🆚 与其他工具对比
+推荐支持：
 
-### 功能对比表
+- tooltip
+- legend toggle
+- select / checkbox filters
+- time range filter
+- metric switch
+- click-to-filter
+- table sort / search / lightweight column filters
 
-| 特性 | Miao Vision | Tableau | Power BI | Google Sheets | Evidence.dev |
-|------|-----------------|---------|----------|---------------|--------------|
-| **成本** | 免费 | $70/月 | $10-20/月 | 免费 | $20/月 |
-| **隐私** | 完全本地 | 云端 | 云端 | 云端 | 云端 |
-| **部署** | 静态托管 | 企业服务器 | Microsoft 365 | N/A | 托管服务 |
-| **性能** | 百万行 | 千万行+ | 百万行 | 十万行 | 百万行 |
-| **学习曲线** | 低（Markdown） | 高 | 中 | 低 | 低 |
-| **离线工作** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **版本控制** | ✅ Git | ❌ | ❌ | ❌ | ✅ Git |
-| **开源** | ✅ MIT | ❌ | ❌ | ❌ | ✅ |
+不推荐短期支持：
 
-### 选择建议
+- 任意 SQL 查询
+- 多表 join 实时重算
+- 保存用户状态
+- 登录权限
+- 协作 dashboard
+- 通用组件式交互平台
 
-**选择 Miao Vision**：
-- ✅ 隐私敏感场景（医疗、金融、HR 数据）
-- ✅ 成本敏感（创业公司、个人用户）
-- ✅ 小团队快速原型
-- ✅ 个人数据分析
-- ✅ 教学和演示场景
-- ✅ 需要离线工作
+原则：
 
-**选择 Tableau**：
-- 大型企业
-- 复杂数据建模
-- 千万级数据
-- 预算充足
+> 交互是静态报告的渐进增强，不是回到传统 BI。
 
-**选择 Power BI**：
-- 微软生态用户
-- 企业 BI 需求
-- Azure 集成
+## 七、短期优先级
 
-**选择 Google Sheets**：
-- 简单分析
-- 团队协作表格
-- 不需要高级图表
+### P0
 
-**选择 Evidence.dev**：
-- 需要云端托管
-- 团队协作报告
-- CI/CD 集成
+- 补齐 CLI 已声明图表类型的 SVG/HTML 渲染
+- 将数据展示能力产品化为 VizSpec sections：KPI、chart、table、annotation、insight
+- 强化 `profile` 的字段语义和数据质量输出
+- 强化 `catalog` 的 AI 选图提示
+- 优化 `validate` 错误和修复建议
+- 默认输出更漂亮的 editorial 报告
 
----
+### P1
 
-## 🎁 核心优势总结
+- 多主题系统
+- PNG/PDF 导出
+- 简单交互 static runtime
+- `interactionPreset`
+- chart captions 和 insight blocks
 
-| 优势 | 说明 | 适用人群 |
-|------|------|----------|
-| **🔒 隐私第一** | 数据永不离开本地，100% 安全 | 医疗、金融、敏感数据分析 |
-| **💰 零成本** | 免费开源，静态托管，年省 $5,000+ | 创业公司、个人用户、教育机构 |
-| **⚡ 高性能** | DuckDB-WASM，百万行数据 < 1s 查询 | 数据分析师、研究人员 |
-| **📝 易上手** | Markdown + SQL，10 分钟搭建仪表板 | 技术写作者、开发者、数据新手 |
-| **🔄 响应式** | 智能依赖分析，自动重新计算 | 交互式报告、动态仪表板 |
-| **🎨 组件丰富** | 43+ 专业组件，覆盖 90% 需求 | 产品经理、业务分析师 |
-| **🌐 离线可用** | 无需网络，随时随地分析数据 | 出差、移动办公、网络受限环境 |
+### P2
 
----
+- 轻量 Web preview
+- theme gallery
+- chart catalog gallery
+- spec editor
 
-## 📊 实际案例
+## 八、非目标
 
-### 案例 1：个人投资组合分析
+短期不继续投入：
 
-**场景**：追踪股票、基金、数字货币投资表现
+- SQL Workspace
+- SQL snippets
+- query tabs
+- 手动 SQL 分析工作台
+- 多数据库连接管理
+- 完整 dashboard builder
+- 全局 drilldown/modal 交互系统
 
-**数据来源**：
-- 导出券商 CSV 文件
-- 手动记录的交易记录
+## 九、成功标准
 
-**实现效果**：
-- 总资产 KPI 卡片
-- 各资产类别饼图
-- 收益率趋势折线图
-- 按股票代码的收益对比柱状图
+Miao Viz 成功时应该满足：
 
-**用户价值**：数据完全私密，无需担心财务信息泄露
-
----
-
-### 案例 2：创业公司产品分析
-
-**场景**：SaaS 产品的用户增长和留存分析
-
-**数据来源**：
-- 从数据库导出的用户行为数据（Parquet 格式）
-- Google Analytics 导出的流量数据
-
-**实现效果**：
-- 日活/月活趋势
-- 用户注册漏斗
-- 功能使用热力图
-- 留存率 Cohort 分析
-
-**用户价值**：零成本 BI 方案，快速迭代报告
-
----
-
-### 案例 3：教学案例演示
-
-**场景**：大学数据分析课程
-
-**数据来源**：
-- 课程提供的示例数据集
-- 学生自己的项目数据
-
-**实现效果**：
-- 交互式教学报告
-- 学生可以修改 SQL 查询实时看到结果
-- 版本控制，追踪学生作业迭代
-
-**用户价值**：学生无需安装任何软件，浏览器即可学习
-
----
-
-## 🚀 开始使用
-
-准备好体验本地优先的数据分析了吗？
-
-👉 [快速开始](./README.md#-快速开始)
-👉 [组件文档](./COMPONENTS_QUICK_REFERENCE.md)
-👉 [产品路线图](./FEATURE_ROADMAP.md)
-👉 [架构设计](./docs/ARCHITECTURE_OVERVIEW.md)
-
----
-
-**维护者**: Miao Vision Team
-**许可证**: MIT
-**最后更新**: 2024-12-23
+- AI 通过少量工具调用即可生成正确图表报告
+- 用户打开 HTML 后觉得结果专业、清晰、好看
+- spec 足够短，token 成本可控
+- validation 能帮助 AI 自动修复错误
+- 输出物可以离线查看和分享

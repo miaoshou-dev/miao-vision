@@ -122,33 +122,6 @@ export interface AIContext {
   }
 }
 
-/**
- * Chart generation request
- */
-export interface ChartGenerationRequest {
-  /** User's natural language description */
-  prompt: string
-  /** Available context */
-  context: AIContext
-  /** Preferred chart type (optional) */
-  chartType?: string
-}
-
-/**
- * Chart generation result
- */
-export interface ChartGenerationResult {
-  success: boolean
-  /** Generated chart configuration (YAML string) */
-  chartConfig?: string
-  /** Chart type used */
-  chartType?: string
-  /** Explanation of why this chart was chosen */
-  explanation?: string
-  /** Error message if failed */
-  error?: string
-}
-
 // ============================================================================
 // Report Generation Types
 // ============================================================================

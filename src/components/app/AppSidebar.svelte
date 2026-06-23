@@ -1,10 +1,9 @@
 <script lang="ts">
   import { databaseStore } from '@app/stores/database.svelte'
-  import { connectionStore } from '@app/stores/connection.svelte'
   import { reportStore } from '@app/stores/report.svelte'
   import type { Report } from '@/types/report'
 
-  type TabType = 'workspace' | 'connections' | 'report' | 'streaming' | 'gnode' | 'weather' | 'crossfilter' | 'drilldown' | 'infographic'
+  type TabType = 'report' | 'infographic' | 'article-ai'
 
   interface Props {
     appTitle: string
@@ -54,61 +53,10 @@
   <nav class="sidebar-nav">
     <button
       class="nav-item"
-      class:active={activeTab === 'workspace'}
-      onclick={() => onTabChange('workspace')}
+      class:active={activeTab === 'article-ai'}
+      onclick={() => onTabChange('article-ai')}
     >
-      <span class="nav-label">Workspace</span>
-    </button>
-
-    <button
-      class="nav-item"
-      class:active={activeTab === 'connections'}
-      onclick={() => onTabChange('connections')}
-    >
-      <span class="nav-label">Connections</span>
-      {#if connectionStore.state.connections.some(c => c.status === 'connected')}
-        <span class="connection-indicator"></span>
-      {/if}
-    </button>
-
-    <button
-      class="nav-item"
-      class:active={activeTab === 'streaming'}
-      onclick={() => onTabChange('streaming')}
-    >
-      <span class="nav-label">🔴 Streaming</span>
-    </button>
-
-    <button
-      class="nav-item"
-      class:active={activeTab === 'gnode'}
-      onclick={() => onTabChange('gnode')}
-    >
-      <span class="nav-label">⚡ Hybrid GNode</span>
-    </button>
-
-    <button
-      class="nav-item"
-      class:active={activeTab === 'weather'}
-      onclick={() => onTabChange('weather')}
-    >
-      <span class="nav-label">🌡️ Weather</span>
-    </button>
-
-    <button
-      class="nav-item"
-      class:active={activeTab === 'crossfilter'}
-      onclick={() => onTabChange('crossfilter')}
-    >
-      <span class="nav-label">🔗 CrossFilter</span>
-    </button>
-
-    <button
-      class="nav-item"
-      class:active={activeTab === 'drilldown'}
-      onclick={() => onTabChange('drilldown')}
-    >
-      <span class="nav-label">🔍 Drilldown</span>
+      <span class="nav-label">AI Infographic</span>
     </button>
 
     <button
@@ -116,7 +64,7 @@
       class:active={activeTab === 'infographic'}
       onclick={() => onTabChange('infographic')}
     >
-      <span class="nav-label">📊 Infographic</span>
+      <span class="nav-label">Chart Gallery</span>
     </button>
 
     <div class="nav-section">
@@ -275,14 +223,6 @@
 
   .nav-label {
     flex: 1;
-  }
-
-  .connection-indicator {
-    width: 8px;
-    height: 8px;
-    background: #10B981;
-    border-radius: 50%;
-    margin-left: 0.5rem;
   }
 
   .nav-section {

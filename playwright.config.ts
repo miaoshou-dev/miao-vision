@@ -1,8 +1,8 @@
 /**
  * Playwright E2E Test Configuration
  *
- * Configuration for end-to-end testing of Miaoshou Vision components.
- * Tests run against a local development server.
+ * Configuration for end-to-end testing of Miao Vision artifacts.
+ * CLI/static artifact tests do not require the Web preview dev server.
  */
 
 import { defineConfig, devices } from '@playwright/test'
@@ -31,9 +31,6 @@ export default defineConfig({
 
   // Shared settings for all the projects below
   use: {
-    // Base URL for navigation
-    baseURL: 'http://localhost:5173',
-
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
 
@@ -51,7 +48,10 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: 'chrome'
+      }
     },
 
     // Uncomment to test on Firefox and WebKit
@@ -63,15 +63,5 @@ export default defineConfig({
     //   name: 'webkit',
     //   use: { ...devices['Desktop Safari'] }
     // }
-  ],
-
-  // Run your local dev server before starting the tests
-  webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
-    reuseExistingServer: !process.env.CI,
-    stdout: 'ignore',
-    stderr: 'pipe',
-    timeout: 120000
-  }
+  ]
 })

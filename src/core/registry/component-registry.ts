@@ -285,12 +285,6 @@ export function createMetadata(config: ComponentMetadata): ComponentMetadata {
 }
 
 /**
- * Chart block types that need placeholders (vgplot charts only)
- * Note: histogram is now a plugin component, not a vgplot chart
- */
-const CHART_TYPES = ['chart', 'line', 'area', 'bar', 'scatter', 'pie']
-
-/**
  * Check if a code block language should have a placeholder in markdown
  *
  * Called by rehype-block-placeholder to determine if a ```language
@@ -303,11 +297,6 @@ const CHART_TYPES = ['chart', 'line', 'area', 'bar', 'scatter', 'pie']
 export function shouldCreatePlaceholder(language: string): boolean {
   // SQL blocks always get placeholders (executed by DuckDB)
   if (language === 'sql') {
-    return true
-  }
-
-  // Chart blocks get placeholders (rendered via vgplot)
-  if (CHART_TYPES.includes(language)) {
     return true
   }
 

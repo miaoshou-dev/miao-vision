@@ -5,7 +5,6 @@
 import { componentRegistry } from '@core/registry'
 import { initializeVizCatalog } from '@/core/catalog'
 import { registerServices } from './init-services'
-import { registerVgplotCharts } from './init-charts'
 import { registerPlugins } from './init-plugins'
 import { initializeCatalog } from './init-catalog'
 
@@ -17,7 +16,6 @@ export function initializeMiaoRuntime(): void {
   }
 
   registerServices()
-  registerVgplotCharts()
   registerPlugins()
   initializeCatalog()
   initializeVizCatalog()
