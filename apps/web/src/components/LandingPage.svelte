@@ -170,7 +170,7 @@
     <div class="nav-actions">
       <a class="nav-link" href="#workflow">Workflow</a>
       <a class="nav-link" href="#install">Install</a>
-      <a href="https://github.com/miaoshou/vision" target="_blank" rel="noopener" class="nav-link icon-link">
+      <a href="https://github.com/guming/miao-vision" target="_blank" rel="noopener" class="nav-link icon-link">
         <Github size={18} strokeWidth={1.75} />
         <span>GitHub</span>
       </a>
