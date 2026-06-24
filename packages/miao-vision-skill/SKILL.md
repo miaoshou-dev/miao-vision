@@ -192,5 +192,5 @@ When a `time-series` hint exists, use `temporal.granularity` to pick the right t
 
 ## References
 
-- Read `https://raw.githubusercontent.com/guming/miao-vision/main/packages/miao-vision-skill/references/vizspec.md` before writing specs.
-- Read `https://raw.githubusercontent.com/guming/miao-vision/main/packages/miao-vision-skill/references/examples.md` when the request is ambiguous or close to an existing example.
+- Read `references/vizspec.md` before writing specs.
+- Read `references/examples.md` when the request is ambiguous or close to an existing example.
