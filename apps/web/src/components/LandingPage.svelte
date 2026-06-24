@@ -400,24 +400,13 @@
         </p>
       </div>
       <div class="command-card">
-        <pre><code># Step 1 — you drop a file and ask
-# "Create a sales dashboard from sales.csv"
+        <pre><code># Drop a file, then tell your agent:
+"Create a sales dashboard from sales.csv"
+"Turn this article into an infographic"
+"Make an executive deck from my data"
 
-# Step 2 — agent profiles the data
-miao-viz profile ./sales.csv > profile.json
-
-# Step 3 — agent browses chart options
-miao-viz catalog
-
-# Step 4 — agent writes report.yaml (you never edit this)
-# Step 5 — agent validates before rendering
-miao-viz validate --spec ./report.yaml --profile ./profile.json
-
-# Step 6 — agent renders the final artifact
-miao-viz render --input ./sales.csv --spec ./report.yaml \
-  --theme editorial --output ./sales-report.html
-
-# → open sales-report.html in any browser, no server needed</code></pre>
+# The agent handles the rest and returns:
+→ sales-report.html  (open in any browser, no server needed)</code></pre>
       </div>
       <div class="workflow-steps">
         {#each workflow as step, index}
