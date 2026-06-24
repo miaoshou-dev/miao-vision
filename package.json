@@ -30,7 +30,7 @@
   "homepage": "https://github.com/guming/miao-vision#readme",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "cp packages/miao-vision-skill/SKILL.md apps/web/public/SKILL.md && vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:size": "bash scripts/check-file-size.sh",
