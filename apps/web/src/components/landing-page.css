@@ -203,6 +203,17 @@
 .install-method { display: flex; flex-direction: column; gap: 0.35rem; }
 .method-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #8ab4f8; }
 .install-method pre { margin: 0; }
+.code-block { position: relative; }
+.code-block pre { margin: 0; padding-right: 2.4rem; }
+.copy-btn {
+  position: absolute; top: 0.55rem; right: 0.55rem;
+  display: flex; align-items: center; justify-content: center;
+  width: 1.6rem; height: 1.6rem; padding: 0;
+  background: #2d3135; border: 1px solid #44484d; border-radius: 6px;
+  color: #9aa0a6; cursor: pointer; transition: color 0.15s, background 0.15s;
+}
+.copy-btn:hover { background: #3c4043; color: #e8eaed; }
+.copy-btn:has(svg[data-check]) { color: #12a678; }
 .install-card code {
   font-family: Menlo, Consolas, monospace;
   font-size: 0.8rem;
