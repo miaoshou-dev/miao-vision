@@ -423,18 +423,31 @@
     <section id="workflow" class="workflow-section" aria-labelledby="workflow-title">
       <div class="workflow-copy">
         <p class="section-kicker">Agent workflow</p>
-        <h2 id="workflow-title">Profile, specify, validate, render</h2>
+        <h2 id="workflow-title">You bring data. The agent does the rest.</h2>
         <p>
-          The product path is not a BI workspace. An agent reads local files, writes a compact
-          VizSpec or DeckSpec, validates it, then renders an artifact the user can open or share.
+          Tell Claude or Codex what you want. The agent profiles your file, writes a VizSpec,
+          validates it, and renders a self-contained HTML artifact — no manual YAML required.
         </p>
       </div>
       <div class="command-card">
-        <pre><code>miao-viz profile ./sales.csv
+        <pre><code># Step 1 — you drop a file and ask
+# "Create a sales dashboard from sales.csv"
+
+# Step 2 — agent profiles the data
+miao-viz profile ./sales.csv > profile.json
+
+# Step 3 — agent browses chart options
 miao-viz catalog
+
+# Step 4 — agent writes report.yaml (you never edit this)
+# Step 5 — agent validates before rendering
 miao-viz validate --spec ./report.yaml --profile ./profile.json
+
+# Step 6 — agent renders the final artifact
 miao-viz render --input ./sales.csv --spec ./report.yaml \
-  --theme editorial --output ./sales-report.html</code></pre>
+  --theme editorial --output ./sales-report.html
+
+# → open sales-report.html in any browser, no server needed</code></pre>
       </div>
       <div class="workflow-steps">
         {#each workflow as step, index}
