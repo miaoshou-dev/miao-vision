@@ -22,8 +22,8 @@ miao-viz catalog</code></pre>
       <div class="install-methods">
         <div class="install-method">
           <span class="method-label">URL install</span>
-          <pre><code># In Claude Code chat
-/add-skill {skillUrl}</code></pre>
+          <pre><code>Read {skillUrl} and follow the instructions
+to install or upgrade miao-viz for your AI agent</code></pre>
         </div>
         <div class="install-method">
           <span class="method-label">ZIP install</span>
@@ -39,8 +39,8 @@ mkdir -p ~/.claude/skills && unzip skill.zip -d ~/.claude/skills/</code></pre>
       <div class="install-methods">
         <div class="install-method">
           <span class="method-label">URL install</span>
-          <pre><code># In Codex chat
-/add-skill {skillUrl}</code></pre>
+          <pre><code>Read {skillUrl} and follow the instructions
+to install or upgrade miao-viz for your AI agent</code></pre>
         </div>
         <div class="install-method">
           <span class="method-label">ZIP install</span>
