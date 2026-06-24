@@ -27,7 +27,7 @@ miao-viz catalog</code></pre>
         </div>
         <div class="install-method">
           <span class="method-label">ZIP install</span>
-          <pre><code>curl -L https://github.com/guming/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip
+          <pre><code>curl -L https://github.com/maishou-dev/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip
 mkdir -p ~/.claude/skills && unzip skill.zip -d ~/.claude/skills/</code></pre>
         </div>
       </div>
@@ -44,7 +44,7 @@ mkdir -p ~/.claude/skills && unzip skill.zip -d ~/.claude/skills/</code></pre>
         </div>
         <div class="install-method">
           <span class="method-label">ZIP install</span>
-          <pre><code>curl -L https://github.com/guming/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip
+          <pre><code>curl -L https://github.com/maishou-dev/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip
 mkdir -p ~/.codex/skills && unzip skill.zip -d ~/.codex/skills/</code></pre>
         </div>
       </div>

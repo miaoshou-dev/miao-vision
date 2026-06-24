@@ -67,7 +67,7 @@ Use this workflow when the user asks for:
 
 1. Run `miao-viz profile <file>` to inspect the data.
 2. Read the profile JSON — pay close attention to the `hints` array and `correlations`.
-3. Create a YAML or JSON report spec using the decision framework below and `https://raw.githubusercontent.com/guming/miao-vision/main/packages/miao-vision-skill/references/vizspec.md`.
+3. Create a YAML or JSON report spec using the decision framework below and `https://raw.githubusercontent.com/maishou-dev/miao-vision/main/packages/miao-vision-skill/references/vizspec.md`.
 4. Validate it:
 
 ```bash
@@ -104,7 +104,7 @@ Steps:
 
 1. Run `miao-viz profile <file>` to inspect the data.
 2. Read the profile JSON and decide the story arc: opening claim, key metrics, supporting chart, and closing implication.
-3. Create a DeckSpec YAML using `https://raw.githubusercontent.com/guming/miao-vision/main/packages/miao-vision-skill/references/vizspec.md`.
+3. Create a DeckSpec YAML using `https://raw.githubusercontent.com/maishou-dev/miao-vision/main/packages/miao-vision-skill/references/vizspec.md`.
 4. Render the deck directly. Do not run `miao-viz validate`; DeckSpec uses its own schema inside the `deck` command.
 
 ```bash
@@ -192,5 +192,5 @@ When a `time-series` hint exists, use `temporal.granularity` to pick the right t
 
 ## References
 
-- Read `https://raw.githubusercontent.com/guming/miao-vision/main/packages/miao-vision-skill/references/vizspec.md` before writing specs.
-- Read `https://raw.githubusercontent.com/guming/miao-vision/main/packages/miao-vision-skill/references/examples.md` when the request is ambiguous or close to an existing example.
+- Read `https://raw.githubusercontent.com/maishou-dev/miao-vision/main/packages/miao-vision-skill/references/vizspec.md` before writing specs.
+- Read `https://raw.githubusercontent.com/maishou-dev/miao-vision/main/packages/miao-vision-skill/references/examples.md` when the request is ambiguous or close to an existing example.

@@ -22,15 +22,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/guming/miao-vision.git"
+    "url": "https://github.com/maishou-dev/miao-vision.git"
   },
   "bugs": {
-    "url": "https://github.com/guming/miao-vision/issues"
+    "url": "https://github.com/maishou-dev/miao-vision/issues"
   },
-  "homepage": "https://github.com/guming/miao-vision#readme",
+  "homepage": "https://github.com/maishou-dev/miao-vision#readme",
   "scripts": {
     "dev": "vite",
-    "build": "sed 's|references/vizspec.md|https://raw.githubusercontent.com/guming/miao-vision/main/packages/miao-vision-skill/references/vizspec.md|g; s|references/examples.md|https://raw.githubusercontent.com/guming/miao-vision/main/packages/miao-vision-skill/references/examples.md|g' packages/miao-vision-skill/SKILL.md > apps/web/public/SKILL.md && vite build",
+    "build": "sed 's|references/vizspec.md|https://raw.githubusercontent.com/maishou-dev/miao-vision/main/packages/miao-vision-skill/references/vizspec.md|g; s|references/examples.md|https://raw.githubusercontent.com/maishou-dev/miao-vision/main/packages/miao-vision-skill/references/examples.md|g' packages/miao-vision-skill/SKILL.md > apps/web/public/SKILL.md && vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:size": "bash scripts/check-file-size.sh",
