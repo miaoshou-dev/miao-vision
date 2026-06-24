@@ -4,8 +4,12 @@
   "description": "AI-first local data visualization generator powered by miao-viz CLI",
   "author": "Miao Vision Team",
   "license": "MIT",
-  "private": false,
+  "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "keywords": [
     "data-visualization",
     "ai-agent",
@@ -42,7 +46,6 @@
     "publish:cli": "cd packages/miao-viz-cli && npm publish",
     "publish:skill": "npm run pack:skill",
     "pack:skill": "node scripts/pack-miao-vision-skill.mjs",
-    "create-plugin": "npx ts-node scripts/create-plugin.ts",
     "prepare": "husky"
   },
   "devDependencies": {

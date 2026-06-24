@@ -4,7 +4,7 @@
 # Ensures no source files exceed the 500 line limit
 # Usage: npm run check:size
 
-echo "Checking file sizes in src/..."
+echo "Checking file sizes in apps/web/src, packages/*/src..."
 echo ""
 
 # Colors
@@ -41,7 +41,7 @@ while IFS= read -r file; do
       warning_count=$((warning_count + 1))
     fi
   fi
-done < <(find src -type f \( -name "*.ts" -o -name "*.svelte" \) -not -path "*/node_modules/*")
+done < <(find apps/web/src packages -path "*/src/*" -type f \( -name "*.ts" -o -name "*.svelte" \) -not -path "*/node_modules/*")
 
 # Print results
 if [ -s "$tmpfile" ]; then

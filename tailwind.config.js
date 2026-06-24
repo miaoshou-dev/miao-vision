@@ -1,8 +1,8 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    './index.html',
-    './src/**/*.{js,ts,svelte}',
+    './apps/web/index.html',
+    './apps/web/src/**/*.{js,ts,svelte}',
   ],
   theme: {
     extend: {
@@ -250,4 +250,3 @@ export default {
     require('@tailwindcss/container-queries'),
   ],
 }
-

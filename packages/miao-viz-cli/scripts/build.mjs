@@ -5,13 +5,13 @@ import { resolve } from 'node:path'
 import { build } from 'esbuild'
 
 const packageRoot = resolve(import.meta.dirname, '..')
-const repoRoot = resolve(packageRoot, '../..')
 const distDir = resolve(packageRoot, 'dist')
+const srcDir = resolve(packageRoot, 'src')
 
 mkdirSync(distDir, { recursive: true })
 
 await build({
-  entryPoints: [resolve(repoRoot, 'src/agent/cli.ts')],
+  entryPoints: [resolve(srcDir, 'cli.ts')],
   outfile: resolve(distDir, 'cli.cjs'),
   bundle: true,
   platform: 'node',
@@ -20,5 +20,5 @@ await build({
   logLevel: 'info'
 })
 
-copyFileSync(resolve(repoRoot, 'src/agent/types.ts'), resolve(distDir, 'types.ts'))
+copyFileSync(resolve(srcDir, 'types.ts'), resolve(distDir, 'types.ts'))
 cpSync(resolve(packageRoot, 'examples'), resolve(distDir, 'examples'), { recursive: true })

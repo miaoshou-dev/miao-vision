@@ -19,13 +19,16 @@
     "moduleResolution": "bundler",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@core/*": ["./src/core/*"],
-      "@plugins/*": ["./src/plugins/*"],
-      "@app/*": ["./src/app/*"]
+      "@/*": ["./apps/web/src/*"]
     },
     "skipLibCheck": true
   },
-  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.svelte"],
+  "include": [
+    "apps/web/src/**/*.ts",
+    "apps/web/src/**/*.js",
+    "apps/web/src/**/*.svelte",
+    "packages/miao-viz-cli/src/**/*.ts",
+    "packages/shared/src/**/*.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

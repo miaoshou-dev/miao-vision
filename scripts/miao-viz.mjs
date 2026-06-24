@@ -10,7 +10,7 @@ const outdir = mkdtempSync(join(tmpdir(), 'miao-viz-'))
 const outfile = join(outdir, 'cli.cjs')
 
 await build({
-  entryPoints: ['src/agent/cli.ts'],
+  entryPoints: ['packages/miao-viz-cli/src/cli.ts'],
   outfile,
   bundle: true,
   platform: 'node',

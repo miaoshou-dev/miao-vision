@@ -55,7 +55,7 @@ local CSV/JSON/TSV
 ## What To Build Against
 
 - `packages/miao-viz-cli/` for command-line report generation
-- `src/agent/` for profiling, planning, validation, rendering, and export logic
+- `packages/miao-viz-cli/src/` for profiling, planning, validation, rendering, and export logic
 - `src/core/catalog/` for chart/component catalog metadata
 - `src/plugins/data-display/` for pure Svelte + SVG visual components
 

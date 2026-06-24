@@ -9,6 +9,8 @@ Miao Vision is a local-first visualization toolkit centered on `miao-viz`, a CLI
 
 It is not a full BI workspace. The product is focused on static, shareable, high-quality visual artifacts that are easy for AI to generate and easy for users to like.
 
+The recommended user experience is agent-led: install the `miao-vision` skill in Codex or Claude, then ask the agent to create a report, infographic, or deck. The skill decides when to call `miao-viz profile`, `catalog`, `validate`, `render`, or `deck`.
+
 ## Vision
 
 Miao Vision is the visual artifact engine for AI agents, turning local data and documents into polished reports, infographics, and presentation decks.
@@ -57,6 +59,7 @@ CSV / TSV / XLSX / JSON
 
 ## Why Miao Vision
 
+- **Agent skill included**: `packages/miao-vision-skill` teaches Codex or Claude how to choose the right workflow and call the CLI.
 - **Agent-friendly specs**: YAML/JSON VizSpec and DeckSpec are small, explicit, and easy for AI to repair.
 - **Local-first data**: input data stays on the machine by default.
 - **Static-first output**: generated HTML can be opened, shared, archived, and printed without a backend.
@@ -112,6 +115,48 @@ npm run miao-viz -- deck \
 ```
 
 Open the generated HTML file in a browser. Deck output supports arrow-key navigation, fullscreen, and browser print/PDF export.
+
+## Agent Skill
+
+Miao Vision ships with an agent skill for Codex and Claude-style local coding agents. The skill is the product layer above the CLI: it reads the user request, profiles local data when needed, writes VizSpec or DeckSpec, runs the correct `miao-viz` command, and returns the generated artifact path.
+
+Install the CLI first:
+
+```bash
+npm install -g @miao-vision/cli
+miao-viz catalog
+```
+
+Install the skill for Codex from a local checkout:
+
+```bash
+mkdir -p ~/.codex/skills
+cp -R packages/miao-vision-skill ~/.codex/skills/miao-vision
+```
+
+Then restart Codex and ask for an artifact:
+
+```text
+Use miao-vision to analyze ~/data/sales.csv and generate an editorial HTML report.
+```
+
+```text
+Use miao-vision to turn ~/data/sales.csv into a presentation deck for an executive review.
+```
+
+```text
+Use miao-vision to turn this article Markdown file into an infographic.
+```
+
+The skill uses this decision framework:
+
+| User intent | Skill workflow | CLI command |
+| --- | --- | --- |
+| report, analysis, chart, dashboard-like artifact | Data Display | `miao-viz profile` -> `validate` -> `render` |
+| slides, presentation, PPT, deck, executive briefing | Presentation Deck | `miao-viz profile` -> `deck` |
+| article URL, Markdown, long-form text, infographic | Article-to-Infographic | agent normalizes text -> `miao-viz article` product track |
+
+See [packages/miao-vision-skill](./packages/miao-vision-skill) and [Agent Install Guide](./docs/miao-vision-agent-install.md) for details.
 
 ## VizSpec Example
 
@@ -216,9 +261,11 @@ Supported deck layouts include `cover`, `title-only`, `text-points`, `text-chart
 ## Repository Layout
 
 ```text
-src/agent/                 CLI profiling, validation, rendering, and deck generation
-src/agent/themes/          Report and deck themes
-src/plugins/data-display/  Svelte/SVG visualization assets
+apps/web/src/              Landing page and lightweight web surface
+packages/miao-viz-cli/src/ CLI profiling, validation, rendering, and deck generation
+packages/miao-viz-cli/src/themes/
+                           Report and deck themes
+packages/shared/src/types/ Shared type definitions retained from the old app
 packages/miao-viz-cli/     CLI package wrapper and examples
 packages/miao-vision-skill/
                            Agent skill instructions for using miao-viz
@@ -233,7 +280,6 @@ npm run build        # Build the web app
 npm run build:cli    # Build the miao-viz CLI package
 npm run check        # TypeScript and Svelte diagnostics
 npm run test         # Run unit tests
-npm run test:e2e     # Run Playwright smoke tests
 npm run check:size   # Check 500-line file limit
 ```
 
@@ -244,6 +290,7 @@ The web app is a preview, gallery, and debugging surface. The main product path 
 - [Documentation Index](./docs/README.md)
 - [Product Overview](./docs/PRODUCT_OVERVIEW.md)
 - [Product Restructure Direction](./docs/miao-viz-product-restructure-direction.md)
+- [Evidence-Grounded Visualization Generation](./docs/evidence-grounded-visualization-generation.md)
 - [Feature Roadmap](./docs/roadmap/FEATURE_ROADMAP.md)
 - [Backlog Disposition](./docs/backlog-disposition.md)
 
