@@ -199,6 +199,10 @@
 .install-card h3 { margin: 0 0 0.7rem; font-size: 1.12rem; }
 .install-card p { min-height: 3.4rem; margin: 0 0 1rem; color: #c4c7c5; line-height: 1.5; }
 .install-card pre { margin: 0; padding: 0.9rem; overflow-x: auto; background: #111314; border: 1px solid #34383d; border-radius: 16px; }
+.install-methods { display: flex; flex-direction: column; gap: 0.75rem; }
+.install-method { display: flex; flex-direction: column; gap: 0.35rem; }
+.method-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #8ab4f8; }
+.install-method pre { margin: 0; }
 .install-card code {
   font-family: Menlo, Consolas, monospace;
   font-size: 0.8rem;

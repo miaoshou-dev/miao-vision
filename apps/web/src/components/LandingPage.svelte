@@ -3,6 +3,7 @@
    * Landing page for the CLI-first Miao Vision product direction.
    */
   import './landing-page.css'
+  import InstallSection from './InstallSection.svelte'
   import {
     ArrowRight,
     BarChart3,
@@ -48,23 +49,6 @@
     }
   ]
 
-  const installSteps = [
-    {
-      title: 'Install the CLI',
-      detail: 'Put miao-viz on PATH so agents can profile, validate, render, and build decks.',
-      command: 'npm install -g @miao-vision/cli\nmiao-viz catalog'
-    },
-    {
-      title: 'Install the Codex skill',
-      detail: 'Copy the skill into your local Codex skills folder, then restart Codex.',
-      command: 'mkdir -p ~/.codex/skills\ncp -R packages/miao-vision-skill ~/.codex/skills/miao-vision'
-    },
-    {
-      title: 'Install the Claude skill',
-      detail: 'Use Claude Code local skills, or package the skill as a ZIP for supported Claude surfaces.',
-      command: 'mkdir -p ~/.claude/skills\ncp -R packages/miao-vision-skill ~/.claude/skills/miao-vision'
-    }
-  ]
 
   const workflow = [
     { icon: Database, title: 'Profile', detail: 'Inspect fields and quality' },
@@ -379,21 +363,7 @@
       </div>
     </section>
 
-    <section id="install" class="install-section" aria-labelledby="install-title">
-      <div class="section-heading">
-        <p class="section-kicker">Install</p>
-        <h2 id="install-title">Install the CLI, then give your agent the skill</h2>
-      </div>
-      <div class="install-grid">
-        {#each installSteps as step}
-          <article class="install-card">
-            <h3>{step.title}</h3>
-            <p>{step.detail}</p>
-            <pre><code>{step.command}</code></pre>
-          </article>
-        {/each}
-      </div>
-    </section>
+    <InstallSection />
 
     <section class="tracks-section" aria-labelledby="tracks-title">
       <div class="section-heading">
