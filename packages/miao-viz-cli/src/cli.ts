@@ -23,6 +23,16 @@ interface CliArgs {
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
 
+  if (args.command === '--help' || args.command === '-h' || args.command === 'help' || !args.command) {
+    printHelp()
+    return
+  }
+
+  if (args.flags['help'] === true || args.flags['h'] === true) {
+    printHelp(args.command)
+    return
+  }
+
   try {
     if (args.command === 'profile') {
       printJson(runProfile(args))
@@ -257,6 +267,78 @@ function fail(error: AgentError): AgentError {
 
 function printJson(value: unknown): void {
   process.stdout.write(`${JSON.stringify(value, null, 2)}\n`)
+}
+
+const COMMAND_HELP: Record<string, string> = {
+  profile: `Usage: miao-viz profile <file> [options]
+
+Profile a data file and output column statistics.
+
+Arguments:
+  file              Path to CSV, Excel (.xlsx/.xls), or JSON file
+
+Options:
+  --sheet <name>    Sheet name (Excel only)
+  --limit <n>       Max rows to read
+`,
+  validate: `Usage: miao-viz validate --spec <file> --profile <file>
+
+Validate a vizspec against a data profile.
+
+Options:
+  --spec <file>     Path to vizspec YAML/JSON
+  --profile <file>  Path to profile JSON (output of "profile")
+`,
+  catalog: `Usage: miao-viz catalog
+
+List all available chart types and their required fields.
+`,
+  render: `Usage: miao-viz render --input <file> --spec <file> --output <file> [options]
+
+Render a vizspec to HTML or SVG.
+
+Options:
+  --input <file>    Path to data file
+  --spec <file>     Path to vizspec YAML/JSON
+  --output <file>   Output file path
+  --format <fmt>    Output format: html, svg (default: html)
+  --theme <name>    Theme: default, editorial, dark, minimal
+  --sheet <name>    Sheet name (Excel only)
+  --limit <n>       Max rows to read
+`,
+  deck: `Usage: miao-viz deck --input <file> --spec <file> --output <file> [options]
+
+Render a deck spec to HTML slides.
+
+Options:
+  --input <file>    Path to data file
+  --spec <file>     Path to deck spec YAML/JSON
+  --output <file>   Output file path
+  --theme <name>    Theme: default, editorial, dark, minimal
+  --sheet <name>    Sheet name (Excel only)
+  --limit <n>       Max rows to read
+`,
+}
+
+function printHelp(command?: string): void {
+  if (command && COMMAND_HELP[command]) {
+    process.stdout.write(COMMAND_HELP[command])
+    return
+  }
+  process.stdout.write(`miao-viz — local data visualization CLI
+
+Usage:
+  miao-viz <command> [options]
+
+Commands:
+  profile   Profile a data file (CSV, Excel, JSON)
+  validate  Validate a vizspec against a data profile
+  catalog   List all available chart types
+  render    Render a vizspec to HTML or SVG
+  deck      Render a deck spec to HTML slides
+
+Run "miao-viz <command> --help" for command-specific options.
+`)
 }
 
 main()
