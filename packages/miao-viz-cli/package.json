@@ -17,6 +17,11 @@
     "prepublishOnly": "node scripts/build.mjs",
     "smoke": "node dist/cli.cjs profile examples/sales.csv"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/guming/miao-vision.git",
+    "directory": "packages/miao-viz-cli"
+  },
   "publishConfig": {
     "access": "public"
   },
