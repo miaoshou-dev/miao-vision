@@ -391,7 +391,10 @@
 
 .proof-grid { grid-template-columns: repeat(2, 1fr); }
 .proof-card { display: flex; align-items: flex-start; gap: 0.65rem; padding: 1rem; box-shadow: var(--soft-shadow); }
-.proof-card svg { flex: 0 0 auto; color: var(--green); }
+.proof-card svg { flex: 0 0 auto; margin-top: 0.1rem; color: var(--green); }
+.proof-body { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+.proof-body strong { font-size: 0.95rem; line-height: 1.3; }
+.proof-body span { color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
 
 .footer {
   display: flex; justify-content: space-between; gap: 1rem;

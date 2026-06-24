@@ -59,12 +59,30 @@
   ]
 
   const proofPoints = [
-    'Agent-friendly YAML / JSON specs',
-    'Local files stay on the machine',
-    'Self-contained HTML opens offline',
-    'Editorial themes and SVG charts',
-    'Structured validation errors',
-    'Reports, infographics, and decks'
+    {
+      title: 'Agent-friendly YAML / JSON specs',
+      detail: 'VizSpec is compact and predictable — agents write it correctly on the first pass.'
+    },
+    {
+      title: 'Local files stay on the machine',
+      detail: 'No upload, no cloud call. Your data never leaves the filesystem.'
+    },
+    {
+      title: 'Self-contained HTML opens offline',
+      detail: 'Every artifact is a single file with no external dependencies or CDN calls.'
+    },
+    {
+      title: 'Editorial themes and SVG charts',
+      detail: 'Pure SVG rendering with curated palettes — no canvas, no library overhead.'
+    },
+    {
+      title: 'Structured validation errors',
+      detail: 'The spec validator returns machine-readable errors the agent can fix autonomously.'
+    },
+    {
+      title: 'Three artifact formats, one workflow',
+      detail: 'Reports, infographics, and decks all follow the same profile → spec → render pattern.'
+    }
   ]
 
   const artifacts = [
@@ -363,33 +381,6 @@
       </div>
     </section>
 
-    <InstallSection />
-
-    <section class="tracks-section" aria-labelledby="tracks-title">
-      <div class="section-heading">
-        <p class="section-kicker">Product tracks</p>
-        <h2 id="tracks-title">One engine, three artifact workflows</h2>
-      </div>
-      <div class="track-grid">
-        {#each productTracks as track}
-          <article class="track-card">
-            <div class="track-icon"><track.icon size={24} strokeWidth={1.75} /></div>
-            <h3>{track.title}</h3>
-            <dl>
-              <div>
-                <dt>Input</dt>
-                <dd>{track.input}</dd>
-              </div>
-              <div>
-                <dt>Output</dt>
-                <dd>{track.output}</dd>
-              </div>
-            </dl>
-          </article>
-        {/each}
-      </div>
-    </section>
-
     <section id="workflow" class="workflow-section" aria-labelledby="workflow-title">
       <div class="workflow-copy">
         <p class="section-kicker">Agent workflow</p>
@@ -420,6 +411,31 @@
       </div>
     </section>
 
+    <section class="tracks-section" aria-labelledby="tracks-title">
+      <div class="section-heading">
+        <p class="section-kicker">Product tracks</p>
+        <h2 id="tracks-title">One engine, three artifact workflows</h2>
+      </div>
+      <div class="track-grid">
+        {#each productTracks as track}
+          <article class="track-card">
+            <div class="track-icon"><track.icon size={24} strokeWidth={1.75} /></div>
+            <h3>{track.title}</h3>
+            <dl>
+              <div>
+                <dt>Input</dt>
+                <dd>{track.input}</dd>
+              </div>
+              <div>
+                <dt>Output</dt>
+                <dd>{track.output}</dd>
+              </div>
+            </dl>
+          </article>
+        {/each}
+      </div>
+    </section>
+
     <section class="why-section" aria-labelledby="why-title">
       <div>
         <p class="section-kicker">Why Miao Vision</p>
@@ -429,11 +445,16 @@
         {#each proofPoints as point}
           <div class="proof-card">
             <CheckCircle2 size={18} strokeWidth={2} />
-            <span>{point}</span>
+            <div class="proof-body">
+              <strong>{point.title}</strong>
+              <span>{point.detail}</span>
+            </div>
           </div>
         {/each}
       </div>
     </section>
+
+    <InstallSection />
   </div>
 
   <footer class="footer">
