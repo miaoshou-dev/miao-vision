@@ -1,0 +1,106 @@
+title: Ops Update
+theme: editorial
+slides:
+  - layout: cover
+    eyebrow: "Operations Update"
+    title: "Reliability Improved While Throughput Increased"
+    claim: "Incident volume and resolution time are trending down across core sites."
+
+  - layout: metrics-chart
+    eyebrow: "01 · OPERATING SNAPSHOT"
+    title: "Higher Throughput Came With Better Reliability"
+    metrics:
+      - label: Incidents
+        format: ",.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: incidents
+                  op: sum
+                  as: total_incidents
+      - label: Avg Uptime
+        format: "%"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: uptime_pct
+                  op: avg
+                  as: avg_uptime
+      - label: Avg Resolution
+        format: ",.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: resolution_hours
+                  op: avg
+                  as: avg_resolution
+    charts:
+      - type: line
+        title: Monthly Throughput
+        data:
+          transform:
+            - type: derive-month
+              field: event_date
+              as: month
+            - type: aggregate
+              groupBy: [month]
+              measures:
+                - field: throughput
+                  op: sum
+                  as: total_throughput
+            - type: sort
+              field: month
+              order: asc
+        encoding:
+          x: { field: month }
+          y: { field: total_throughput }
+
+  - layout: text-chart
+    eyebrow: "02 · SITES"
+    title: "West DC Still Carries More Incident Load"
+    annotation: "West DC has more incidents and tickets than East DC."
+    bullets:
+      - "East DC shows the best reliability profile."
+      - "West DC remains the key improvement target."
+      - "Resolution time is improving but still uneven by site."
+    charts:
+      - type: bar
+        title: Incidents by Site
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [site]
+              measures:
+                - field: incidents
+                  op: sum
+                  as: total_incidents
+            - type: sort
+              field: total_incidents
+              order: desc
+        encoding:
+          x: { field: site }
+          y: { field: total_incidents }
+
+  - layout: table-full
+    eyebrow: "03 · DETAIL"
+    title: "Site Operating Detail"
+    charts:
+      - type: table
+        title: Latest Operating Records
+        data:
+          transform:
+            - type: sort
+              field: event_date
+              order: desc
+            - type: limit
+              value: 12
+        encoding:
+          x: { field: site }
+          y: { field: uptime_pct }
+
+  - layout: ending
+    title: "Target West DC reliability"
+    claim: "The next reliability gain should come from reducing West DC incident load."

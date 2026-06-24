@@ -270,6 +270,14 @@ miao-viz deck \
 
 Do not run `miao-viz validate` for DeckSpec. The `deck` command validates DeckSpec with its own schema.
 
+Validation rules:
+
+- `text-chart`, `metrics-chart`, and `chart-full` slides require at least one chart.
+- `metrics-chart` slides require 1-4 metrics.
+- `table-full` slides may omit `charts` for a default table, but any explicit chart must use `type: table`.
+- All chart and metric fields must exist in the input profile or be created by an earlier transform in the same chain.
+- `derive-month` creates its `as` field for later transforms and encodings.
+
 ### Deck Shape
 
 ```yaml
@@ -378,3 +386,20 @@ Deck themes are the same as report themes:
 | `default` | Plain baseline style. |
 
 Prefer `theme: editorial` unless the user asks otherwise.
+
+### Deck Error Handling
+
+`INVALID_DECK_SPEC` includes an `errors` array with `path`, `message`, and `hint`. Fix the first error path before regenerating the deck.
+
+`DECK_FIELD_NOT_FOUND` includes the failing `path` and `field`. Use profile column names exactly, or add the missing derived field in an earlier transform.
+
+### Deck Examples
+
+Use these CLI examples as starting points:
+
+| Scenario | Data | DeckSpec |
+| --- | --- | --- |
+| Sales executive review | `examples/sales.csv` | `examples/sales-deck.yaml` |
+| Product metrics review | `examples/product-metrics.csv` | `examples/product-metrics-deck.yaml` |
+| Finance review | `examples/finance-review.csv` | `examples/finance-review-deck.yaml` |
+| Ops update | `examples/ops-update.csv` | `examples/ops-update-deck.yaml` |

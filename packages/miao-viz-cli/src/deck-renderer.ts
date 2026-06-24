@@ -60,8 +60,8 @@ const SLIDE_CSS = `
 
   /* ── Shared slide elements ── */
   .slide-eyebrow { font-family: var(--mv-mono); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 3px; color: var(--mv-muted); margin-bottom: 14px; }
-  .slide-title { font-family: var(--mv-serif); font-size: 50px; font-weight: 500; line-height: 1.1; letter-spacing: -0.6px; color: var(--mv-ink); margin-bottom: 24px; }
-  .slide-claim { font-family: var(--mv-serif); font-size: 21px; line-height: 1.45; color: var(--mv-soft); margin-bottom: 18px; max-width: 52ch; }
+  .slide-title { font-family: var(--mv-serif); font-size: 50px; font-weight: 500; line-height: 1.1; letter-spacing: -0.6px; color: var(--mv-ink); margin-bottom: 24px; max-width: 19ch; overflow-wrap: anywhere; }
+  .slide-claim { font-family: var(--mv-serif); font-size: 21px; line-height: 1.45; color: var(--mv-soft); margin-bottom: 18px; max-width: 52ch; overflow-wrap: anywhere; }
   .slide-pts { list-style: none; counter-reset: pts; }
   .slide-pts li { counter-increment: pts; font-size: 16px; line-height: 1.55; color: var(--mv-soft); padding-left: 22px; position: relative; margin-bottom: 10px; }
   .slide-pts li::before { content: counter(pts) "."; position: absolute; left: 0; color: var(--mv-brand); font-weight: 500; font-family: var(--mv-mono); font-size: 13px; }
@@ -72,7 +72,7 @@ const SLIDE_CSS = `
   .slide-chart-full svg, .slide-chart-full .miao-table-wrap { width: 100%; }
 
   /* ── Metrics ── */
-  .slide-metrics { display: flex; gap: 0; padding-top: 14px; border-top: 0.5px dotted var(--mv-border); margin-bottom: 20px; }
+  .slide-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding-top: 14px; border-top: 0.5px dotted var(--mv-border); margin-bottom: 20px; }
   .slide-metric { flex: 1; display: flex; flex-direction: column; gap: 5px; padding-right: 24px; }
   .slide-metric .v { font-family: var(--mv-serif); font-size: 42px; font-weight: 500; color: var(--mv-brand); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
   .slide-metric .l { font-family: var(--mv-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--mv-muted); }
@@ -80,8 +80,8 @@ const SLIDE_CSS = `
   /* ── Cover ── */
   .slide-cover { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; height: 100%; }
   .slide-cover-left { display: flex; flex-direction: column; }
-  .slide-cover h1 { font-family: var(--mv-serif); font-size: 56px; font-weight: 500; line-height: 1.05; letter-spacing: -1px; color: var(--mv-ink); margin-bottom: 14px; }
-  .slide-cover .sub { font-size: 18px; color: var(--mv-soft); line-height: 1.5; margin-bottom: 22px; max-width: 34ch; }
+  .slide-cover h1 { font-family: var(--mv-serif); font-size: 56px; font-weight: 500; line-height: 1.05; letter-spacing: -1px; color: var(--mv-ink); margin-bottom: 14px; max-width: 12ch; overflow-wrap: anywhere; }
+  .slide-cover .sub { font-size: 18px; color: var(--mv-soft); line-height: 1.5; margin-bottom: 22px; max-width: 34ch; overflow-wrap: anywhere; }
   .slide-cover .line { width: 48px; height: 2px; background: var(--mv-brand); margin-bottom: 14px; }
   .slide-cover .meta { font-family: var(--mv-mono); font-size: 11px; color: var(--mv-muted); letter-spacing: 0.5px; }
   .slide-cover-right { display: flex; align-items: center; justify-content: center; }
@@ -102,6 +102,8 @@ const SLIDE_CSS = `
 
   /* ── Table styles inside slide ── */
   .miao-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .miao-table-wrap { max-height: 430px; overflow: hidden; }
+  .miao-table caption { caption-side: top; text-align: left; padding: 0 0 10px; color: var(--mv-muted); font-family: var(--mv-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
   .miao-table th { border-bottom: 1px solid var(--mv-border); padding: 7px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--mv-muted); font-family: var(--mv-mono); }
   .miao-table td { border-bottom: 1px solid var(--mv-border); padding: 8px 12px; color: var(--mv-soft); font-variant-numeric: tabular-nums; }
   .miao-table tbody tr:last-child td { border-bottom: none; }
@@ -142,8 +144,8 @@ const SLIDE_JS = `
     if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
     else if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
     else if (e.key === 'f' || e.key === 'F') {
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-      else document.exitFullscreen();
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function() {});
+      else document.exitFullscreen().catch(function() {});
     }
   });
 
@@ -154,8 +156,8 @@ const SLIDE_JS = `
   if (btnPrev)  btnPrev.addEventListener('click', function() { goTo(current - 1); });
   if (btnNext)  btnNext.addEventListener('click', function() { goTo(current + 1); });
   if (btnFs)    btnFs.addEventListener('click', function() {
-    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-    else document.exitFullscreen();
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function() {});
+    else document.exitFullscreen().catch(function() {});
   });
   if (btnPrint) btnPrint.addEventListener('click', function() {
     document.body.classList.remove('present-mode');

@@ -1,0 +1,110 @@
+title: Product Metrics Review
+theme: editorial
+slides:
+  - layout: cover
+    eyebrow: "Product Review"
+    title: "Product Adoption Is Moving Toward AI Workflows"
+    claim: "AI Report and SQL Workspace usage are becoming the strongest adoption signals."
+
+  - layout: metrics-chart
+    eyebrow: "01 · EXECUTIVE SNAPSHOT"
+    title: "Adoption Is Growing While Churn Trends Down"
+    metrics:
+      - label: Active Users
+        format: ",.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: active_users
+                  op: sum
+                  as: total_users
+      - label: Signups
+        format: ",.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: signups
+                  op: sum
+                  as: total_signups
+      - label: Avg Churn
+        format: "%"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: churn_rate
+                  op: avg
+                  as: avg_churn
+    charts:
+      - type: line
+        title: Monthly Active Users
+        data:
+          transform:
+            - type: derive-month
+              field: event_date
+              as: month
+            - type: aggregate
+              groupBy: [month]
+              measures:
+                - field: active_users
+                  op: sum
+                  as: users
+            - type: sort
+              field: month
+              order: asc
+        encoding:
+          x: { field: month }
+          y: { field: users }
+
+  - layout: text-chart
+    eyebrow: "02 · SEGMENTS"
+    title: "Enterprise Accounts Lead Usage Depth"
+    annotation: "Enterprise usage carries higher revenue and lower churn."
+    bullets:
+      - "Enterprise has the strongest active user base."
+      - "SMB continues to supply signup volume."
+      - "AI workflow onboarding should target both segments."
+    charts:
+      - type: bar
+        title: Revenue by Segment
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [segment]
+              measures:
+                - field: revenue
+                  op: sum
+                  as: total_revenue
+            - type: sort
+              field: total_revenue
+              order: desc
+        encoding:
+          x: { field: segment }
+          y: { field: total_revenue }
+
+  - layout: chart-full
+    eyebrow: "03 · FEATURES"
+    title: "Feature Revenue Is Concentrated In Core Workflows"
+    charts:
+      - type: bar
+        title: Revenue by Feature
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [feature]
+              measures:
+                - field: revenue
+                  op: sum
+                  as: total_revenue
+            - type: sort
+              field: total_revenue
+              order: desc
+        encoding:
+          x: { field: feature }
+          y: { field: total_revenue }
+
+  - layout: ending
+    title: "Focus onboarding on AI workflows"
+    claim: "Prioritize activation paths that turn signups into repeat analytical work."

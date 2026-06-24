@@ -3,6 +3,8 @@
 **关联设计文档**: `PRESENTATION_KAMI_HYBRID_DESIGN.md`  
 **撰写日期**: 2026-06-23
 
+**当前状态**: 基础 `miao-viz deck` 链路已完成，后续 hardening 已补齐 DeckSpec 结构化错误、profile 字段校验、product/finance/ops 示例和浏览器演示 smoke。PPTX native export 仍作为 HTML deck 稳定后的后续工作。
+
 ---
 
 ## 现有代码复用清单

@@ -1,0 +1,110 @@
+title: Finance Review
+theme: editorial
+slides:
+  - layout: cover
+    eyebrow: "Finance Review"
+    title: "Profit Expansion Is Outpacing Cost Growth"
+    claim: "Revenue growth is converting into stronger profit and cash flow."
+
+  - layout: metrics-chart
+    eyebrow: "01 · FINANCIAL SNAPSHOT"
+    title: "Revenue, Profit, And Cash Flow Are Moving Together"
+    metrics:
+      - label: Revenue
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: revenue
+                  op: sum
+                  as: total_revenue
+      - label: Profit
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: profit
+                  op: sum
+                  as: total_profit
+      - label: Cash Flow
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: cash_flow
+                  op: sum
+                  as: total_cash_flow
+    charts:
+      - type: line
+        title: Monthly Profit
+        data:
+          transform:
+            - type: derive-month
+              field: month
+              as: fiscal_month
+            - type: aggregate
+              groupBy: [fiscal_month]
+              measures:
+                - field: profit
+                  op: sum
+                  as: monthly_profit
+            - type: sort
+              field: fiscal_month
+              order: asc
+        encoding:
+          x: { field: fiscal_month }
+          y: { field: monthly_profit }
+
+  - layout: text-chart
+    eyebrow: "02 · BUSINESS UNITS"
+    title: "North Is The Primary Profit Driver"
+    annotation: "North contributes the larger absolute profit pool."
+    bullets:
+      - "North delivers stronger revenue scale."
+      - "South still improves cash flow across the quarter."
+      - "Cost discipline remains the operating lever."
+    charts:
+      - type: bar
+        title: Profit by Business Unit
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [business_unit]
+              measures:
+                - field: profit
+                  op: sum
+                  as: total_profit
+            - type: sort
+              field: total_profit
+              order: desc
+        encoding:
+          x: { field: business_unit }
+          y: { field: total_profit }
+
+  - layout: chart-full
+    eyebrow: "03 · COST BASE"
+    title: "Cost Is Growing More Slowly Than Revenue"
+    charts:
+      - type: bar
+        title: Cost by Business Unit
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [business_unit]
+              measures:
+                - field: cost
+                  op: sum
+                  as: total_cost
+            - type: sort
+              field: total_cost
+              order: desc
+        encoding:
+          x: { field: business_unit }
+          y: { field: total_cost }
+
+  - layout: ending
+    title: "Protect the operating leverage"
+    claim: "Keep cost growth below revenue growth while funding the highest-return units."

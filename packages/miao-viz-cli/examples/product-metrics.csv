@@ -1,0 +1,7 @@
+event_date,segment,feature,active_users,signups,churn_rate,revenue
+2025-01-01,Enterprise,Dashboard,1200,90,0.035,42000
+2025-01-01,SMB,Dashboard,860,130,0.052,21000
+2025-02-01,Enterprise,AI Report,1380,110,0.031,48600
+2025-02-01,SMB,AI Report,940,150,0.049,23800
+2025-03-01,Enterprise,SQL Workspace,1510,125,0.029,53200
+2025-03-01,SMB,SQL Workspace,990,170,0.046,25100

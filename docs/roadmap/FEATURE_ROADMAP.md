@@ -87,6 +87,8 @@ Priority: High
 
 Priority: High
 
+Detailed plan: [Article-to-Infographic Implementation Plan](../article-to-infographic-implementation-plan.md)
+
 - [ ] Implement or finalize `miao-viz article`.
 - [ ] Keep URL fetching in the agent/skill layer; CLI accepts local Markdown/text.
 - [ ] Reuse existing article analysis and infographic planning logic where it still fits.
@@ -97,9 +99,9 @@ Priority: High
 
 Priority: Medium
 
-- [ ] Harden DeckSpec schema and structured errors.
-- [ ] Add more deck examples beyond sales: product metrics, finance review, ops update.
-- [ ] Improve browser presentation ergonomics: keyboard navigation, fullscreen, print layout.
+- [x] Harden DeckSpec schema and structured errors.
+- [x] Add more deck examples beyond sales: product metrics, finance review, ops update.
+- [x] Improve browser presentation ergonomics: keyboard navigation, fullscreen, print layout.
 - [ ] Keep PPTX native export as later work until deck HTML is stable.
 
 ## v0.7 - Export And Preview

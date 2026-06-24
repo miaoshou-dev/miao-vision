@@ -1,0 +1,7 @@
+event_date,site,incidents,uptime_pct,tickets,resolution_hours,throughput
+2025-01-01,East DC,4,99.91,52,3.8,12400
+2025-01-01,West DC,7,99.84,68,4.6,11800
+2025-02-01,East DC,3,99.94,49,3.4,13100
+2025-02-01,West DC,5,99.88,61,4.1,12200
+2025-03-01,East DC,2,99.96,44,3.1,13900
+2025-03-01,West DC,4,99.9,55,3.7,12800
