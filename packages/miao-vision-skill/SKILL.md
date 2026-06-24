@@ -59,7 +59,7 @@ Keep URL fetching in the agent workflow. Do not require the CLI to fetch URLs di
 
 Use this workflow when the user asks for a report, analysis, dashboard, charts, or visualizations from a data file.
 
-**Fast path (< 100 rows or pure KPI summary):** Skip Phase 2 targeted profiling. Run `miao-viz profile --summary` then go directly to a single aggregate query in Phase 3. The Narrative Plan is still required, even if short.
+**Fast path (< 100 rows or pure KPI summary):** Skip Phase 2 targeted profiling. Run `miao-viz profile --summary <file>` then go directly to a single aggregate query in Phase 3. The Narrative Plan is still required, even if short.
 
 ---
 
@@ -159,6 +159,22 @@ miao-viz deck \
 
 Use `--theme editorial` for user-facing decks unless the user asks for `dark` or `minimal`.
 
+If `miao-viz deck` returns `INVALID_DECK_SPEC`, read the `errors` array and fix the reported `path` first. Common fixes:
+
+- Add `charts` to `text-chart`, `metrics-chart`, and `chart-full` slides.
+- Add 1-4 `metrics` to each `metrics-chart` slide.
+- Use only a `table` chart inside `table-full`.
+- Split more than 4 metrics across multiple slides.
+
+If it returns `DECK_FIELD_NOT_FOUND`, use the reported `path` and `field` to correct the chart or metric transform. Only reference input fields from the profile, or fields created earlier in the same transform chain.
+
+Example DeckSpecs are available in the CLI package:
+
+- `examples/sales-deck.yaml`
+- `examples/product-metrics-deck.yaml`
+- `examples/finance-review-deck.yaml`
+- `examples/ops-update-deck.yaml`
+
 ## Decision Framework for Spec Creation
 
 ### Choose the right command
@@ -239,21 +255,21 @@ Even without hints, apply these rules when choosing chart type:
 
 ### Step C — Write insights
 
-Populate the `insights` field with 2–4 short sentences based on profile signals. Write in plain language for non-technical readers:
+Populate the `insights` field with 2–4 short sentences grounded in the Narrative Plan's query results. Write in plain language for non-technical readers:
 
 ```yaml
 insights:
-  - "Sales are right-skewed (skewness 2.1): a small number of large orders drive most revenue."
-  - "North region accounts for 43% of total sales — the dominant market."
-  - "Strong correlation between sales and quantity (r=0.87): bundle promotions may amplify revenue."
-  - "2 months have no data in the time series — the trend chart may show gaps."
+  - "East generated 240 in sales, 53.3% of the 450 total, making it the largest region."
+  - "West generated 120 in sales, half of East's total."
 ```
 
-Sources for insight text:
-- `skewness` > 1 or < -1 → mention skewed distribution (only when `rows ≥ 30`; suppress for small datasets)
-- `correlations[].r` > 0.6 → mention positive correlation (only when `n ≥ 10` for the correlated pair)
-- `correlations[].r` < -0.5 → mention negative relationship (same `n ≥ 10` guard)
-- `outlierCount` > 0 → mention outliers and their potential impact (only when `rows ≥ 20`)
+Primary source for insight text:
+- `miao-viz query` values listed in the Narrative Plan's Data evidence section.
+
+Allowed supplemental sources:
+- `skewness` > 1 or < -1 → mention skewed distribution only when `rows ≥ 30` and the statistic is included in Data evidence.
+- `correlations[].r` > 0.6 or < -0.5 → mention relationship only when `n ≥ 10` and the statistic is included in Data evidence.
+- `outlierCount` > 0 → mention outliers only when `rows ≥ 20` and the statistic is included in Data evidence.
 - **Forbidden**: `topSharePct` — row frequency, not value contribution. Never use as a percentage claim in insights.
 - **Forbidden for assertion**: `temporal.gapCount` — note in caption only, never assert "N periods of missing data" in insights.
 
@@ -263,7 +279,8 @@ Every insight sentence must be traceable to one of these allowed sources:
 
 | Source | Example | Allowed in insights |
 | --- | --- | --- |
-| Profile statistic with sufficient sample (`rows ≥ 30` for skewness, `n ≥ 10` for correlation) | `skewness=2.1, rows=1200` | ✅ Yes |
+| `miao-viz query` real aggregated value from Narrative Plan | `sum(sales, region=East)=240` | ✅ Yes |
+| Profile statistic with sufficient sample and listed in Data evidence (`rows ≥ 30` for skewness, `n ≥ 10` for correlation) | `skewness=2.1, rows=1200` | ✅ Yes |
 | User's own statement in the request | "user said Q3 was weak" | ✅ Yes |
 | **Profile `topSharePct`** | `topSharePct=0.5` | ❌ No — row frequency, not value share |
 | Profile statistic with insufficient sample | `skewness=2.1, rows=8` | ❌ No — statistically unreliable |
@@ -308,7 +325,7 @@ Output the following checklist explicitly (as a comment block or separate reason
 
 ```
 Self-Review:
-  [ ] Every insight traces to a profile statistic with sufficient sample OR the user's own statement?
+  [ ] Every insight traces to a Narrative Plan query value, an evidence-listed reliable profile statistic, OR the user's own statement?
   [ ] No insight cites topSharePct as a value-share percentage?
   [ ] No insight asserts gapCount as "missing data"?
   [ ] No insight relies on a statistic where rows < 30 (skewness) or n < 10 (correlation)?

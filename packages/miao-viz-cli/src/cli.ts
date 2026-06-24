@@ -11,8 +11,8 @@ import { renderStaticHtml } from './html-export'
 import { getCatalogEntries, validateReportSpec } from './spec-validator'
 import { parseOutputFormats, singleOrReportSpecSchema } from './spec-schema'
 import { renderChartSvg } from './svg-renderer'
-import { deckSpecSchema } from './deck-schema'
 import { renderDeckHtml } from './deck-renderer'
+import { parseDeckSpec, validateDeckFields } from './deck-validator'
 import type { AgentError, AgentOutputFormat, AgentReportSpec, DataProfile } from './types'
 
 interface CliArgs {
@@ -20,6 +20,8 @@ interface CliArgs {
   positional: string[]
   flags: Record<string, string | boolean>
 }
+
+const BOOLEAN_FLAGS = new Set(['h', 'help', 'summary', 'reliable-only'])
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
@@ -177,15 +179,17 @@ function runDeck(args: CliArgs): unknown {
   if (isAgentError(dataset)) return fail(dataset)
 
   const raw = readSpec(specPath)
-  const parsed = deckSpecSchema.safeParse(raw)
-  if (!parsed.success) {
-    return fail(agentError('INVALID_DECK_SPEC', parsed.error.issues.map(i => i.message).join('; ')))
-  }
+  const parsed = parseDeckSpec(raw)
+  if (isAgentError(parsed)) return fail(parsed)
+
+  const profile = profileDataset(dataset.value)
+  const validation = validateDeckFields(parsed.value, profile)
+  if (isAgentError(validation)) return fail(validation)
 
   const themeFlag = stringFlag(args, 'theme') as 'default' | 'editorial' | 'dark' | 'minimal' | undefined
-  const html = renderDeckHtml(parsed.data, dataset.value.rows, themeFlag)
+  const html = renderDeckHtml(validation.value, dataset.value.rows, themeFlag)
   writeOutput(output, html)
-  return { ok: true, value: { output, slides: parsed.data.slides.length } }
+  return { ok: true, value: { output, slides: validation.value.slides.length } }
 }
 
 function runQuery(args: CliArgs): unknown {
@@ -249,6 +253,11 @@ function parseArgs(argv: string[]): CliArgs {
     const value = rest[i]
     if (value.startsWith('--')) {
       const key = value.slice(2)
+      if (BOOLEAN_FLAGS.has(key)) {
+        flags[key] = true
+        continue
+      }
+
       const next = rest[i + 1]
       if (!next || next.startsWith('--')) {
         flags[key] = true

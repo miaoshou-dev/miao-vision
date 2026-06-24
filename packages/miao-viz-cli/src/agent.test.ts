@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os'
 import * as XLSX from 'xlsx'
 import { describe, expect, it } from 'vitest'
 import { loadDataset } from './data-loader'
-import { profileDataset } from './data-profiler'
+import { profileDataset, profileSummary } from './data-profiler'
+import { queryDataset } from './data-query'
 import { renderStaticHtml } from './html-export'
 import { validateReportSpec } from './spec-validator'
 import type { AgentReportSpec } from './types'
@@ -42,6 +43,47 @@ describe('agent data loader and profiler', () => {
     expect(profile.quality?.completeness).toBe(1)
     expect(profile.hints?.some(hint => hint.type === 'time-series')).toBe(true)
     expect(profile.insights?.some(insight => insight.title.includes('Strong relationship'))).toBe(true)
+  })
+
+  it('returns summary and targeted reliable profiles for agent context control', () => {
+    const dataset = loadDataset(csvPath)
+    expect(dataset.ok).toBe(true)
+    if (!dataset.ok) return
+
+    const summary = profileSummary(dataset.value)
+    expect(summary.columns).toEqual([
+      { name: 'order_date', type: 'date' },
+      { name: 'region', type: 'string' },
+      { name: 'category', type: 'string' },
+      { name: 'sales', type: 'number' },
+      { name: 'orders', type: 'number' }
+    ])
+
+    const profile = profileDataset(dataset.value, { columns: ['sales', 'region'], reliableOnly: true })
+    expect(profile.columns.map(column => column.name)).toEqual(['region', 'sales'])
+    expect(profile.columns.find(column => column.name === 'sales')?.skewness).toBeUndefined()
+    expect(profile.columns.find(column => column.name === 'sales')?.histogram).toBeUndefined()
+    expect(profile.insights?.some(insight => insight.description.includes('non-empty values'))).not.toBe(true)
+  })
+
+  it('queries real aggregate values for grounded insights', () => {
+    const dataset = loadDataset(csvPath)
+    expect(dataset.ok).toBe(true)
+    if (!dataset.ok) return
+
+    const result = queryDataset(dataset.value.rows, {
+      groupby: 'region',
+      measure: 'sum(sales) as total_sales',
+      orderby: 'total_sales desc',
+      limit: 2
+    })
+
+    if ('ok' in result && result.ok === false) return
+    expect(result.rows).toEqual([
+      { region: 'East', total_sales: 240 },
+      { region: 'West', total_sales: 120 }
+    ])
+    expect(result.sql).toContain('SUM(sales) AS total_sales')
   })
 })
 
@@ -196,6 +238,53 @@ describe('miao-viz CLI', () => {
     const parsed = JSON.parse(output) as { ok: boolean; value: { rows: number } }
     expect(parsed.ok).toBe(true)
     expect(parsed.value.rows).toBe(4)
+  })
+
+  it('accepts profile flags before the file path', () => {
+    const summaryOutput = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'profile', '--summary', csvPath], {
+      encoding: 'utf8'
+    })
+    const summary = JSON.parse(summaryOutput) as { ok: boolean; value: { columns: Array<{ name: string }> } }
+    expect(summary.ok).toBe(true)
+    expect(summary.value.columns.map(column => column.name)).toContain('sales')
+
+    const targetedOutput = execFileSync('npm', [
+      'run',
+      '--silent',
+      'miao-viz',
+      '--',
+      'profile',
+      '--columns',
+      'sales,region',
+      '--reliable-only',
+      csvPath
+    ], { encoding: 'utf8' })
+    const targeted = JSON.parse(targetedOutput) as { ok: boolean; value: { columns: Array<{ name: string; skewness?: number }> } }
+    expect(targeted.ok).toBe(true)
+    expect(targeted.value.columns.map(column => column.name)).toEqual(['region', 'sales'])
+    expect(targeted.value.columns.find(column => column.name === 'sales')?.skewness).toBeUndefined()
+  })
+
+  it('prints query JSON', () => {
+    const output = execFileSync('npm', [
+      'run',
+      '--silent',
+      'miao-viz',
+      '--',
+      'query',
+      csvPath,
+      '--groupby',
+      'region',
+      '--measure',
+      'sum(sales) as total_sales',
+      '--orderby',
+      'total_sales desc',
+      '--limit',
+      '1'
+    ], { encoding: 'utf8' })
+    const parsed = JSON.parse(output) as { ok: boolean; value: { rows: Array<Record<string, unknown>> } }
+    expect(parsed.ok).toBe(true)
+    expect(parsed.value.rows).toEqual([{ region: 'East', total_sales: 240 }])
   })
 })
 

@@ -400,15 +400,6 @@ function generateProfileInsights(
   }
 
   for (const col of columns) {
-    if (col.role === 'dimension' && col.distinctCount >= 2 && col.distinctCount <= 12 && col.topSharePct && col.topSharePct >= 0.5) {
-      insights.push({
-        type: 'suggestion',
-        title: `Dominant category in ${col.name}`,
-        description: `${String(col.topValue)} accounts for ${Math.round(col.topSharePct * 100)}% of non-empty values; annotate this imbalance in share or ranking charts.`,
-        fields: [col.name]
-      })
-    }
-
     if (col.role === 'measure' && col.coefficientOfVariation !== undefined && col.coefficientOfVariation >= 1) {
       insights.push({
         type: 'trend',
