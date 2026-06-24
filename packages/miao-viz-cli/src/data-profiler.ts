@@ -10,13 +10,42 @@ import type {
   TemporalProfile
 } from './types'
 
-export function profileDataset(dataset: LoadedDataset): DataProfile {
-  const columns = dataset.columns.map(col => profileColumn(col, dataset.rows))
+export interface ProfilingOptions {
+  /** Return only file, rows, and column names+types — no statistics. */
+  summary?: boolean
+  /** Limit deep profiling to these column names. Correlations only computed between selected columns. */
+  columns?: string[]
+  /** Strip statistics with reliable=false from the output. */
+  reliableOnly?: boolean
+}
+
+/** Lightweight schema-only profile (< 200 tokens). */
+export function profileSummary(dataset: LoadedDataset): Pick<DataProfile, 'file' | 'rows' | 'sheet'> & {
+  columns: Array<{ name: string; type: AgentColumnType }>
+} {
+  const allCols = dataset.columns.map(name => {
+    const values = dataset.rows.map(r => r[name]).filter(v => v !== null && v !== undefined && v !== '')
+    const type = inferColumnType(values)
+    return { name, type }
+  })
+  return { file: dataset.file, rows: dataset.rows.length, sheet: dataset.sheet, columns: allCols }
+}
+
+export function profileDataset(dataset: LoadedDataset, options: ProfilingOptions = {}): DataProfile {
+  const targetCols = options.columns
+    ? dataset.columns.filter(c => options.columns!.includes(c))
+    : dataset.columns
+
+  const columns = targetCols.map(col => profileColumn(col, dataset.rows, options.reliableOnly))
 
   const numericNames = columns.filter(c => c.type === 'number').map(c => c.name)
-  const correlations = numericNames.length >= 2
+  const rawCorrelations = numericNames.length >= 2
     ? computeCorrelations(numericNames, dataset.rows)
     : undefined
+
+  const correlations = options.reliableOnly
+    ? rawCorrelations?.filter(c => c.reliable)
+    : rawCorrelations
 
   const hints = generateHints(columns, correlations ?? [])
   const quality = computeDataQuality(columns, dataset.rows.length)
@@ -34,7 +63,7 @@ export function profileDataset(dataset: LoadedDataset): DataProfile {
   }
 }
 
-function profileColumn(name: string, rows: Record<string, unknown>[]): ColumnProfile {
+function profileColumn(name: string, rows: Record<string, unknown>[], reliableOnly = false): ColumnProfile {
   const values = rows.map(row => row[name])
   const nonNull = values.filter(v => v !== null && v !== undefined && v !== '')
   const type = inferColumnType(nonNull)
@@ -62,7 +91,7 @@ function profileColumn(name: string, rows: Record<string, unknown>[]): ColumnPro
       const sorted = [...nums].sort((a, b) => a - b)
       profile.min = sorted[0]
       profile.max = sorted[sorted.length - 1]
-      Object.assign(profile, computeNumericStats(nums, sorted))
+      Object.assign(profile, computeNumericStats(nums, sorted, rows.length, reliableOnly))
     }
   }
 
@@ -93,7 +122,9 @@ function profileColumn(name: string, rows: Record<string, unknown>[]): ColumnPro
 
 function computeNumericStats(
   values: number[],
-  sorted: number[]
+  sorted: number[],
+  totalRows: number,
+  reliableOnly: boolean
 ): Partial<ColumnProfile> {
   const n = values.length
   const sum = values.reduce((s, v) => s + v, 0)
@@ -108,18 +139,36 @@ function computeNumericStats(
   const iqr = p75 - p25
   const outlierCount = values.filter(v => v < p25 - 1.5 * iqr || v > p75 + 1.5 * iqr).length
 
-  return {
+  const skewnessReliable = totalRows >= 30
+  const outlierReliable = totalRows >= 20
+  const histogramReliable = totalRows >= 20
+
+  const result: Partial<ColumnProfile> = {
     sum: round(sum),
     mean: round(mean),
     median: round(median),
     p25: round(p25),
     p75: round(p75),
     stddev: round(stddev),
-    skewness,
     coefficientOfVariation: Math.abs(mean) < 1e-10 ? undefined : round(stddev / Math.abs(mean)),
-    outlierCount,
-    histogram: computeHistogram(values, sorted[0], sorted[n - 1])
   }
+
+  if (!reliableOnly || skewnessReliable) {
+    result.skewness = skewness
+    result.skewnessReliable = skewnessReliable
+  }
+
+  if (!reliableOnly || outlierReliable) {
+    result.outlierCount = outlierCount
+    result.outlierReliable = outlierReliable
+  }
+
+  if (!reliableOnly || histogramReliable) {
+    result.histogram = computeHistogram(values, sorted[0], sorted[n - 1])
+    result.histogramReliable = histogramReliable
+  }
+
+  return result
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -221,8 +270,8 @@ function countGaps(sorted: Date[], granularity: TemporalProfile['granularity']):
 function computeCorrelations(
   numericNames: string[],
   rows: Record<string, unknown>[]
-): Array<{ a: string; b: string; r: number }> {
-  const result: Array<{ a: string; b: string; r: number }> = []
+): Array<{ a: string; b: string; r: number; n: number; reliable: boolean }> {
+  const result: Array<{ a: string; b: string; r: number; n: number; reliable: boolean }> = []
   for (let i = 0; i < numericNames.length; i++) {
     for (let j = i + 1; j < numericNames.length; j++) {
       const a = numericNames[i]
@@ -232,7 +281,7 @@ function computeCorrelations(
         .filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y))
       if (pairs.length < 3) continue
       const r = pearsonR(pairs)
-      if (Math.abs(r) >= 0.3) result.push({ a, b, r: round(r) })
+      if (Math.abs(r) >= 0.3) result.push({ a, b, r: round(r), n: pairs.length, reliable: pairs.length >= 10 })
     }
   }
   return result.sort((x, y) => Math.abs(y.r) - Math.abs(x.r))
@@ -254,7 +303,7 @@ function pearsonR(pairs: [number, number][]): number {
 
 function generateHints(
   columns: ColumnProfile[],
-  correlations: Array<{ a: string; b: string; r: number }>
+  correlations: Array<{ a: string; b: string; r: number; n: number; reliable: boolean }>
 ): ProfileHint[] {
   const hints: ProfileHint[] = []
   const nums = columns.filter(c => c.type === 'number')
@@ -318,7 +367,7 @@ function computeDataQuality(columns: ColumnProfile[], rowCount: number): DataQua
 function generateProfileInsights(
   columns: ColumnProfile[],
   quality: DataQualityProfile,
-  correlations: Array<{ a: string; b: string; r: number }>,
+  correlations: Array<{ a: string; b: string; r: number; n: number; reliable: boolean }>,
   rowCount: number
 ): ProfileInsight[] {
   const insights: ProfileInsight[] = []

@@ -90,9 +90,12 @@ export interface ColumnProfile {
   p75?: number
   stddev?: number
   skewness?: number
+  skewnessReliable?: boolean      // rows >= 30
   coefficientOfVariation?: number
   outlierCount?: number
+  outlierReliable?: boolean       // rows >= 20
   histogram?: HistogramBucket[]
+  histogramReliable?: boolean     // rows >= 20
   // string
   topValue?: unknown
   topSharePct?: number
@@ -131,7 +134,7 @@ export interface DataProfile {
   columns: ColumnProfile[]
   sheet?: string
   quality?: DataQualityProfile
-  correlations?: Array<{ a: string; b: string; r: number }>
+  correlations?: Array<{ a: string; b: string; r: number; n: number; reliable: boolean }>
   hints?: ProfileHint[]
   insights?: ProfileInsight[]
 }

@@ -57,25 +57,65 @@ Keep URL fetching in the agent workflow. Do not require the CLI to fetch URLs di
 
 ### Data File → Visualization Report
 
-Use this workflow when the user asks for:
+Use this workflow when the user asks for a report, analysis, dashboard, charts, or visualizations from a data file.
 
-- a report
-- analysis
-- a dashboard-like HTML artifact
-- charts or visualizations from data
-- detailed findings that should be read as a document
+**Fast path (< 100 rows or pure KPI summary):** Skip Phase 2 targeted profiling. Run `miao-viz profile --summary` then go directly to a single aggregate query in Phase 3. The Narrative Plan is still required, even if short.
 
-1. Run `miao-viz profile <file>` to inspect the data.
-2. Read the profile JSON — pay close attention to the `hints` array and `correlations`.
-3. Create a YAML or JSON report spec using the decision framework below and `references/vizspec.md`.
-4. Validate it:
+---
+
+#### Phase 1 — Intent Extraction
+
+Fill this out from the user request and filename alone, **before any CLI commands**:
+
+```
+INTENT CARD
+══════════════════════════════════════════
+User question     : [core analytical question from the user's request]
+Analysis type     : [up to 2 of: trend / comparison / distribution / correlation / KPI]
+Primary measure   : [guessed numeric column name, e.g. sales, revenue]
+Primary dimension : [guessed grouping column name, e.g. region, category]
+Time focus        : [yes / no]
+══════════════════════════════════════════
+```
+
+#### Phase 2 — Targeted Profiling
+
+1. Run the lightweight summary to confirm column names match Intent Card guesses:
+
+```bash
+miao-viz profile --summary <file>
+```
+
+2. If column names don't match your guesses, revise the Intent Card (once only).
+
+3. Select at most 5 relevant columns and load their detailed statistics:
+
+```bash
+miao-viz profile --columns col1,col2,col3 <file>
+```
+
+Column selection priority: primary measure (required) → primary dimension (required) → time column (if time focus = yes) → secondary measure/dimension (optional).
+
+**Rules:** Do not load full profile before Phase 1. Maximum 5 columns per `--columns` call.
+
+#### Phase 3 — Narrative Planning
+
+Run 1–3 `miao-viz query` calls to get real aggregated values, then output a Narrative Plan (see the Narrative Planning section in the Decision Framework). Maximum 3 queries; exceeding this requires explicit justification.
+
+Only proceed to spec writing after completing the Narrative Plan.
+
+#### Phase 4 — Spec Writing, Validation, and Render
+
+1. Write spec in YAML or JSON using the Decision Framework below and `references/vizspec.md`. Ground every insight in the Narrative Plan's real numbers.
+2. Run Self-Review (Step G) before finalising.
+3. Validate:
 
 ```bash
 miao-viz validate --spec /tmp/miao-vision/report.yaml --profile /tmp/miao-vision/profile.json
 ```
 
-5. Fix structured errors once when possible, especially `FIELD_NOT_FOUND`, `MISSING_ENCODING`, and `UNSUPPORTED_CHART_TYPE`.
-6. Render HTML with the editorial theme by default:
+4. Fix structured errors once when possible (`FIELD_NOT_FOUND`, `MISSING_ENCODING`, `UNSUPPORTED_CHART_TYPE`).
+5. Render:
 
 ```bash
 miao-viz render \
@@ -86,7 +126,7 @@ miao-viz render \
   --output /tmp/miao-vision/report.html
 ```
 
-Return the generated HTML path to the user. Use `--theme editorial` for all user-facing HTML reports. Use `--theme default` only when the user explicitly asks for plain or minimal output.
+Return the generated HTML path to the user. Use `--theme editorial` for all user-facing reports.
 
 ### Data File → Presentation Deck
 
@@ -128,6 +168,50 @@ Use `--theme editorial` for user-facing decks unless the user asks for `dark` or
 - User provides an article URL, Markdown file, plain text article, or asks to "turn this into an infographic" → use `miao-viz article`.
 - If the request mixes report and presentation, ask only if the output format is ambiguous. Otherwise prefer the explicitly named format.
 
+### Phase 3: Narrative Planning (required before writing spec)
+
+Before creating any spec, run 1–3 `miao-viz query` commands to get real aggregated values, then produce a Narrative Plan. Maximum 3 query calls; exceeding this requires explicit justification.
+
+**Query examples:**
+
+```bash
+# Ranking by measure
+miao-viz query sales.csv --groupby region --measure "sum(sales) as total_sales" --orderby total_sales --limit 10
+
+# KPI total
+miao-viz query sales.csv --measure "sum(sales) as total, count(*) as orders"
+
+# Filtered sub-group
+miao-viz query sales.csv --filter "region=East" --groupby quarter --measure "sum(sales) as east_sales" --orderby quarter
+```
+
+**Narrative Plan format** (output this before writing the spec):
+
+```
+NARRATIVE PLAN
+══════════════════════════════════════════════════════════
+Main story   : [1–2 sentences summarising the most important finding, using real numbers]
+
+Data evidence: (from miao-viz query — list the actual values)
+  - [field]: [real value] ([share or change %])
+  - [field]: [real value]
+
+Chart intents:
+  Chart 1 ([type]): [which analytical goal this chart serves]
+  Chart 2 ([type]): [which analytical goal this chart serves]
+
+Excluded charts: [chart types not generated and why]
+
+Insight drafts:
+  - "[statement grounded in real numbers above]"
+  - "[statement grounded in real numbers above]"
+══════════════════════════════════════════════════════════
+```
+
+Only proceed to spec writing after completing the Narrative Plan. Every insight in the spec must reference a value that appears in the "Data evidence" section above.
+
+**Fast path:** For files with fewer than 100 rows or pure KPI summaries, Phase 3 can be reduced to a single total-aggregate query. The Narrative Plan still must be output, even if short.
+
 ### Step A — Read profile hints
 
 The `hints` array in the profile is the primary signal. Map each hint to a chart type:
@@ -150,8 +234,8 @@ Even without hints, apply these rules when choosing chart type:
 - `distinctCount ≤ 5` → pie is fine
 - `distinctCount 6–12` → bar is better than pie
 - `distinctCount > 12` → table only (too many categories for pie/bar)
-- `topSharePct > 0.7` → note dominant category in the insights field
-- `temporal.gapCount > 0` → note missing periods in insights
+- `topSharePct` — **do not use in insights**. This field measures row frequency (how often a value appears), not value contribution (its share of the total measure). The two diverge significantly on skewed data. To get actual value share, run a `miao-viz query` aggregation instead (see Phase 3, available in P1).
+- `temporal.gapCount > 0` → note missing periods in a chart caption only; do not assert "missing data" in insights (gaps may be non-business days or expected sparse periods)
 
 ### Step C — Write insights
 
@@ -166,20 +250,74 @@ insights:
 ```
 
 Sources for insight text:
-- `skewness` > 1 or < -1 → mention skewed distribution
-- `topSharePct` > 0.5 → mention dominant value
-- `correlations[].r` > 0.6 → mention positive correlation
-- `correlations[].r` < -0.5 → mention negative relationship
-- `temporal.gapCount` > 0 → mention missing periods
-- `outlierCount` > 0 → mention outliers and their potential impact
+- `skewness` > 1 or < -1 → mention skewed distribution (only when `rows ≥ 30`; suppress for small datasets)
+- `correlations[].r` > 0.6 → mention positive correlation (only when `n ≥ 10` for the correlated pair)
+- `correlations[].r` < -0.5 → mention negative relationship (same `n ≥ 10` guard)
+- `outlierCount` > 0 → mention outliers and their potential impact (only when `rows ≥ 20`)
+- **Forbidden**: `topSharePct` — row frequency, not value contribution. Never use as a percentage claim in insights.
+- **Forbidden for assertion**: `temporal.gapCount` — note in caption only, never assert "N periods of missing data" in insights.
 
-### Step D — Temporal granularity rules
+### Step D — Insights Grounding rules
+
+Every insight sentence must be traceable to one of these allowed sources:
+
+| Source | Example | Allowed in insights |
+| --- | --- | --- |
+| Profile statistic with sufficient sample (`rows ≥ 30` for skewness, `n ≥ 10` for correlation) | `skewness=2.1, rows=1200` | ✅ Yes |
+| User's own statement in the request | "user said Q3 was weak" | ✅ Yes |
+| **Profile `topSharePct`** | `topSharePct=0.5` | ❌ No — row frequency, not value share |
+| Profile statistic with insufficient sample | `skewness=2.1, rows=8` | ❌ No — statistically unreliable |
+| `temporal.gapCount` as a claim | `gapCount=29` → "29 missing days" | ❌ No — assert in caption only |
+
+**Forbidden insight patterns:**
+
+```yaml
+# ❌ topSharePct misread as value share
+- "East region accounts for 50% of sales."
+  # topSharePct=0.5 means East appears in 50% of rows, not 50% of revenue
+
+# ❌ Small-sample skewness assertion
+- "Data shows a strong right skew (skewness=2.1)."
+  # rows=8 — skewness has no statistical meaning here
+
+# ❌ gapCount misread as missing records
+- "The time series has 29 days of missing data."
+  # gapCount counts calendar gaps; non-business days are expected
+```
+
+### Step E — Temporal granularity rules
 
 When a `time-series` hint exists, use `temporal.granularity` to pick the right transform:
 
 - `granularity = day` → use the date field directly as x, no derive-month needed
 - `granularity = month` → use `derive-month` transform on the date field
 - `granularity = year` → use `bar` instead of `line` (few data points)
+
+### Step F — Chart Budget
+
+- Default maximum: **6 charts** per report (4 `bigvalue` blocks count as 1).
+- Every chart must serve one of the analytical goals stated in the Intent Card.
+- Two charts of the same type (e.g. two `bar`) must cover clearly different dimensions.
+- When over budget, merge rather than drop:
+  - Multiple trends → multi-line `line` chart
+  - Multiple measure bars → grouped `bar` chart
+
+### Step G — Self-Review before submitting spec
+
+Output the following checklist explicitly (as a comment block or separate reasoning step) before finalising the spec. Do not skip this step.
+
+```
+Self-Review:
+  [ ] Every insight traces to a profile statistic with sufficient sample OR the user's own statement?
+  [ ] No insight cites topSharePct as a value-share percentage?
+  [ ] No insight asserts gapCount as "missing data"?
+  [ ] No insight relies on a statistic where rows < 30 (skewness) or n < 10 (correlation)?
+  [ ] Chart count ≤ 6 (bigvalue groups counted as 1)?
+  [ ] Every chart maps to a goal in the Intent Card?
+  [ ] Time-series granularity matches derive-month usage?
+```
+
+Resolve any unchecked items before rendering.
 
 ## Defaults
 

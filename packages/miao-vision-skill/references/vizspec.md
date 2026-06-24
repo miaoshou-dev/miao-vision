@@ -95,12 +95,164 @@ charts: [...]
 
 The theme can also be set via CLI flag (`--theme dark`), which takes precedence over the spec field.
 
+## Insights Field
+
+The `insights` field holds 2–4 sentences shown to the reader below the charts.
+
+```yaml
+charts:
+  - type: bar
+    title: Sales by Region
+    insights:
+      - "East region leads with ¥420K total sales — 1.5× West's ¥280K."
+      - "North contributes only 16% of total revenue; it may need targeted promotion."
+    data:
+      transform: [...]
+    encoding:
+      x: { field: region }
+      y: { field: total_sales }
+```
+
+### Grounding rules — mandatory
+
+Every insight sentence must trace to one of these sources:
+
+| Source | Allowed |
+| --- | --- |
+| `miao-viz query` real aggregated value | ✅ Yes |
+| Profile statistic with sufficient sample (rows ≥ 30 for skewness; n ≥ 10 for correlation) | ✅ Yes |
+| User's own statement in the request | ✅ Yes |
+| `profile.topSharePct` used as a value-share % | ❌ No — it is row frequency |
+| Profile statistic with rows < 30 (skewness) or n < 10 (correlation) | ❌ No — unreliable |
+| `temporal.gapCount` asserted as "missing data" | ❌ No — note in caption only |
+
+### Narrative Plan example
+
+Before writing insights, produce a Narrative Plan with real query results:
+
+```
+NARRATIVE PLAN
+══════════════════════════════════════════════════════════
+Main story   : East region dominates with ¥420K (51% of total). Q4 2024
+               marks the first quarter-on-quarter decline (−8.2%).
+
+Data evidence: (from miao-viz query)
+  - East total_sales:  420,000  (50.6%)
+  - West total_sales:  280,000  (33.7%)
+  - North total_sales: 130,000  (15.7%)
+  - Grand total:       830,000
+  - East Q4 QoQ:       −8.2%
+
+Chart intents:
+  Chart 1 (bigvalue): Anchor the reader with total revenue scale
+  Chart 2 (bar):      Show regional gap — East dominance is the story
+  Chart 3 (line):     East quarterly trend to highlight Q4 inflection
+
+Excluded charts:
+  - histogram: region is categorical, not distributional
+  - pie: bar already shows comparison; pie is redundant
+  - scatter: no meaningful second numeric dimension
+
+Insight drafts:
+  - "East region recorded ¥420K in sales — 51% of the total and 1.5× West."
+  - "Q4 2024 saw East's first quarter-on-quarter decline (−8.2%) — worth monitoring."
+══════════════════════════════════════════════════════════
+```
+
+These insight drafts become the `insights` field values in the spec. Numbers must match the query output exactly — do not round or paraphrase figures.
+
+### Forbidden insight patterns
+
+```yaml
+# ❌ topSharePct misread as value share
+- "East accounts for 50% of sales."  # topSharePct=0.5 is row frequency, not revenue share
+
+# ❌ Small-sample skewness
+- "Data is strongly right-skewed (skewness=2.1)."  # rows=8 — statistically meaningless
+
+# ❌ gapCount as missing-data assertion
+- "The time series has 29 days of missing data."  # gapCount may include weekends
+```
+
+## Narrative Plan
+
+A Narrative Plan is the required intermediate step between data profiling and spec writing. It ties every chart and insight to a real query result.
+
+### Format
+
+```
+NARRATIVE PLAN
+══════════════════════════════════════════════════════════
+Main story   : [1–2 sentences. Use real numbers from query results.]
+
+Data evidence: (from miao-viz query — list actual computed values)
+  - [field or group]: [value] ([share or change, if applicable])
+
+Chart intents:
+  Chart 1 ([type]): [analytical goal this chart serves]
+  Chart 2 ([type]): [analytical goal this chart serves]
+  Chart 3 ([type]): [analytical goal this chart serves]
+
+Excluded charts: [chart types skipped and why]
+
+Insight drafts:
+  - "[statement referencing a data evidence value above]"
+  - "[statement referencing a data evidence value above]"
+══════════════════════════════════════════════════════════
+```
+
+### Full example — regional sales analysis
+
+Queries run before writing this plan:
+
+```bash
+miao-viz query sales.csv --groupby region \
+  --measure "sum(sales) as total_sales, count(*) as orders" \
+  --orderby total_sales
+
+miao-viz query sales.csv --measure "sum(sales) as grand_total"
+```
+
+Resulting Narrative Plan:
+
+```
+NARRATIVE PLAN
+══════════════════════════════════════════════════════════
+Main story   : East region dominates with ¥420K (51% of total), 1.5× West's
+               ¥280K. Q4 2024 shows East's first quarter-on-quarter decline (−8.2%).
+
+Data evidence: (from miao-viz query)
+  - East   total_sales: 420,000  (50.6%)
+  - West   total_sales: 280,000  (33.7%)
+  - North  total_sales: 130,000  (15.7%)
+  - Grand total:        830,000
+  - East Q4 QoQ:        −8.2%
+
+Chart intents:
+  Chart 1 (bigvalue): Anchor the reader with total revenue — establishes scale
+  Chart 2 (bar):      Compare three regions — East's dominance is the story
+  Chart 3 (line):     East quarterly trend — surfaces the Q4 inflection point
+
+Excluded charts:
+  - histogram: region is categorical, distributional view adds nothing
+  - pie: bar already shows the regional comparison; pie is redundant
+  - scatter: no meaningful second numeric dimension in this dataset
+
+Insight drafts:
+  - "East region recorded ¥420K — 51% of total revenue, 1.5× West's ¥280K."
+  - "Q4 2024 was East's first quarter-on-quarter decline (−8.2%) — worth monitoring."
+══════════════════════════════════════════════════════════
+```
+
+The insight drafts become the `insights` field in the spec. Numbers must match the query output exactly.
+
 ## Rules
 
 - Only reference fields present in the profile or created by prior transforms.
 - Use `bar` for rankings, `line` for temporal trends, `bigvalue` for KPIs, and `table` for row previews.
 - Default to `theme: editorial` for all user-facing HTML reports.
 - Render HTML unless the user asks for SVG.
+- Insights must be grounded in real aggregated values from `miao-viz query` or reliable profile statistics. See grounding rules above.
 
 ## DeckSpec (Presentation Deck)
 

@@ -4,7 +4,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import * as YAML from 'yaml'
 import { loadDataset } from './data-loader'
-import { profileDataset } from './data-profiler'
+import { profileDataset, profileSummary } from './data-profiler'
+import { queryDataset } from './data-query'
 import { agentError, isAgentError } from './errors'
 import { renderStaticHtml } from './html-export'
 import { getCatalogEntries, validateReportSpec } from './spec-validator'
@@ -59,8 +60,13 @@ async function main(): Promise<void> {
       return
     }
 
+    if (args.command === 'query') {
+      printJson(runQuery(args))
+      return
+    }
+
     printJson(agentError('UNKNOWN_COMMAND', `Unknown command: ${args.command ?? '(none)'}`, {
-      commands: ['profile', 'validate', 'catalog', 'render', 'deck']
+      commands: ['profile', 'validate', 'catalog', 'render', 'deck', 'query']
     }))
     process.exitCode = 1
   } catch (error) {
@@ -71,14 +77,23 @@ async function main(): Promise<void> {
 
 function runProfile(args: CliArgs): unknown {
   const file = args.positional[0]
-  if (!file) return fail(agentError('MISSING_INPUT', 'Usage: miao-viz profile <file> [--sheet <name>] [--limit <rows>]'))
+  if (!file) return fail(agentError('MISSING_INPUT', 'Usage: miao-viz profile <file> [--summary] [--columns col1,col2] [--reliable-only] [--sheet <name>] [--limit <rows>]'))
 
   const dataset = loadDataset(file, {
     sheet: stringFlag(args, 'sheet'),
     limit: numberFlag(args, 'limit')
   })
   if (isAgentError(dataset)) return fail(dataset)
-  return { ok: true, value: profileDataset(dataset.value) }
+
+  if (args.flags['summary'] === true) {
+    return { ok: true, value: profileSummary(dataset.value) }
+  }
+
+  const columnsFlag = stringFlag(args, 'columns')
+  const columns = columnsFlag ? columnsFlag.split(',').map(c => c.trim()).filter(Boolean) : undefined
+  const reliableOnly = args.flags['reliable-only'] === true
+
+  return { ok: true, value: profileDataset(dataset.value, { columns, reliableOnly }) }
 }
 
 function runValidate(args: CliArgs): unknown {
@@ -171,6 +186,24 @@ function runDeck(args: CliArgs): unknown {
   const html = renderDeckHtml(parsed.data, dataset.value.rows, themeFlag)
   writeOutput(output, html)
   return { ok: true, value: { output, slides: parsed.data.slides.length } }
+}
+
+function runQuery(args: CliArgs): unknown {
+  const file = args.positional[0]
+  if (!file) return fail(agentError('MISSING_INPUT', 'Usage: miao-viz query <file> [--groupby cols] [--measure "fn(col) as alias"] [--filter col=val] [--orderby "col desc"] [--limit n]'))
+
+  const dataset = loadDataset(file, { sheet: stringFlag(args, 'sheet') })
+  if (isAgentError(dataset)) return fail(dataset)
+
+  const result = queryDataset(dataset.value.rows, {
+    groupby: stringFlag(args, 'groupby'),
+    measure: stringFlag(args, 'measure'),
+    filter: stringFlag(args, 'filter'),
+    orderby: stringFlag(args, 'orderby'),
+    limit: numberFlag(args, 'limit')
+  })
+  if (isAgentError(result)) return fail(result)
+  return { ok: true, value: result }
 }
 
 function normalizeSpec(spec: unknown): AgentReportSpec | AgentError {
@@ -275,11 +308,20 @@ const COMMAND_HELP: Record<string, string> = {
 Profile a data file and output column statistics.
 
 Arguments:
-  file              Path to CSV, Excel (.xlsx/.xls), or JSON file
+  file                  Path to CSV, Excel (.xlsx/.xls), or JSON file
 
 Options:
-  --sheet <name>    Sheet name (Excel only)
-  --limit <n>       Max rows to read
+  --summary             Return only file, row count, and column names+types (~200 tokens)
+  --columns col1,col2   Deep-profile only the specified columns (comma-separated)
+  --reliable-only       Suppress statistics where sample size is too small to be reliable
+  --sheet <name>        Sheet name (Excel only)
+  --limit <n>           Max rows to read
+
+Reliability thresholds:
+  skewness              rows >= 30
+  correlation           n  >= 10 (paired non-null values)
+  outlierCount          rows >= 20
+  histogram             rows >= 20
 `,
   validate: `Usage: miao-viz validate --spec <file> --profile <file>
 
@@ -318,6 +360,21 @@ Options:
   --sheet <name>    Sheet name (Excel only)
   --limit <n>       Max rows to read
 `,
+  query: `Usage: miao-viz query <file> [options]
+
+Run an aggregation query against a data file and return JSON results.
+Use this to get real computed values before writing chart insights.
+
+Supported aggregate functions: sum, count, avg, min, max
+
+Options:
+  --groupby <cols>      Comma-separated column names to group by
+  --measure <exprs>     Aggregate expressions, e.g. "sum(sales) as total, count(*) as cnt"
+  --filter <col=val>    Simple equality filter (one condition only)
+  --orderby <col dir>   Sort column and direction, e.g. "total_sales desc"
+  --limit <n>           Max rows to return
+  --sheet <name>        Sheet name (Excel only)
+`,
 }
 
 function printHelp(command?: string): void {
@@ -332,6 +389,7 @@ Usage:
 
 Commands:
   profile   Profile a data file (CSV, Excel, JSON)
+  query     Run an aggregation query to get real computed values
   validate  Validate a vizspec against a data profile
   catalog   List all available chart types
   render    Render a vizspec to HTML or SVG
