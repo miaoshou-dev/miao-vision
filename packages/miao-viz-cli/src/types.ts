@@ -188,7 +188,7 @@ export interface AgentChartSpec {
     source?: string
     transform?: AgentDataTransform[]
   }
-  encoding: {
+  encoding?: {
     x?: AgentFieldEncoding
     y?: AgentFieldEncoding
     color?: AgentFieldEncoding

@@ -137,7 +137,7 @@ function renderPieChart(chart: AgentChartSpec, rows: Record<string, unknown>[], 
 function renderTable(chart: AgentChartSpec, rows: Record<string, unknown>[], options: RenderOptions): string {
   const columns = Object.keys(rows[0] ?? {}).slice(0, 8)
   const header = columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')
-  const markField = chart.encoding.label?.field ?? chart.encoding.x?.field ?? columns[0] ?? ''
+  const markField = chart.encoding?.label?.field ?? chart.encoding?.x?.field ?? columns[0] ?? ''
   const body = rows.slice(0, 20).map(row =>
     `<tr ${markAttrs(options.chartId, markField, row[markField], 0, String(row[markField] ?? 'Row'))}>${columns.map(c => `<td>${escapeHtml(String(row[c] ?? ''))}</td>`).join('')}</tr>`
   ).join('')

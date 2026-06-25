@@ -63,7 +63,7 @@ export const chartSpecSchema: z.ZodType<AgentChartSpec> = z.object({
     size: fieldEncodingSchema.optional(),
     label: fieldEncodingSchema.optional(),
     value: fieldEncodingSchema.optional()
-  }).catchall(fieldEncodingSchema.optional()),
+  }).catchall(fieldEncodingSchema.optional()).optional(),
   style: z.record(z.string(), z.unknown()).optional()
 })
 

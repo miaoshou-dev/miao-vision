@@ -99,7 +99,7 @@ function validateChartType(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
 function validateRequiredEncodings(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
   const required = REQUIRED_ENCODINGS[chart.type] ?? []
   for (const encoding of required) {
-    if (!chart.encoding[encoding]?.field) {
+    if (!chart.encoding?.[encoding]?.field) {
       return agentError('MISSING_ENCODING', `Chart type '${chart.type}' requires encoding '${encoding}'.`, {
         chartType: chart.type,
         requiredEncodings: required
@@ -163,7 +163,7 @@ function validateChartInteraction(chart: AgentChartSpec): AgentResult<AgentChart
 function collectSourceFields(chart: AgentChartSpec, derivedFields: Set<string>): string[] {
   const fields = new Set<string>()
 
-  for (const encoding of Object.values(chart.encoding)) {
+  for (const encoding of Object.values(chart.encoding ?? {})) {
     if (encoding?.field && !derivedFields.has(encoding.field)) fields.add(encoding.field)
   }
 
