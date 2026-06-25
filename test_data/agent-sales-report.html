@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agent Sales Report</title>
+  <style>
+    :root {
+      --mv-paper: #f5f4ed;
+      --mv-surface: #faf9f5;
+      --mv-border: #e5e3d8;
+      --mv-ink: #141413;
+      --mv-muted: #6b6a64;
+      --mv-soft-text: #504e49;
+      --mv-brand: #1b365d;
+      --mv-mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
+      --mv-serif: Charter, Georgia, "Times New Roman", serif;
+      --mv-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+    body { margin: 0; background: var(--mv-paper); color: var(--mv-ink); font-family: var(--mv-sans); }
+    .miao-viz-report { max-width: 1120px; margin: 0 auto; padding: 56px 32px 72px; }
+    .report-hero { margin-bottom: 48px; border-bottom: 1px solid var(--mv-border); padding-bottom: 32px; }
+    .report-eyebrow { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--mv-muted); font-family: var(--mv-mono); }
+    h1 { margin: 0 0 12px; font-size: 36px; font-weight: 700; letter-spacing: -0.02em; font-family: var(--mv-serif); color: var(--mv-brand); line-height: 1.15; }
+    .report-description { margin: 0 0 20px; max-width: 680px; color: var(--mv-soft-text); line-height: 1.65; font-size: 15px; }
+    .report-tokens { display: flex; gap: 24px; flex-wrap: wrap; font-size: 12px; font-family: var(--mv-mono); color: var(--mv-muted); }
+    .report-tokens b { color: var(--mv-ink); font-weight: 600; margin-right: 3px; }
+    .chart-card { background: var(--mv-surface); border: 1px solid var(--mv-border); border-radius: 3px; padding: 28px 28px 20px; margin: 24px 0; }
+    .chart-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--mv-muted); font-family: var(--mv-mono); margin-bottom: 6px; }
+    h2 { margin: 0 0 20px; font-size: 18px; font-weight: 650; letter-spacing: -0.01em; color: var(--mv-ink); font-family: var(--mv-serif); }
+    .chart-caption { margin: 14px 0 0; font-size: 11px; color: var(--mv-muted); font-family: var(--mv-mono); line-height: 1.5; }
+    .miao-chart-svg { display: block; max-width: 100%; overflow: visible; }
+    svg text { font-family: var(--mv-mono); }
+    .miao-table-wrap { overflow-x: auto; }
+    .miao-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .miao-table caption { display: block; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: var(--mv-muted); font-family: var(--mv-mono); margin-bottom: 10px; }
+    .miao-table th { border-bottom: 1px solid var(--mv-border); padding: 7px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--mv-muted); font-family: var(--mv-mono); }
+    .miao-table td { border-bottom: 1px solid var(--mv-border); padding: 10px 12px; color: var(--mv-soft-text); font-variant-numeric: tabular-nums; }
+    .miao-table tbody tr:last-child td { border-bottom: none; }
+    .miao-bigvalue { border: 1px solid var(--mv-border); background: var(--mv-surface); border-radius: 3px; padding: 28px; }
+    .miao-bigvalue-label { color: var(--mv-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; font-family: var(--mv-mono); }
+    .miao-bigvalue-number { margin-top: 10px; font-size: 52px; font-weight: 700; font-family: var(--mv-serif); color: var(--mv-brand); font-variant-numeric: tabular-nums; line-height: 1; }
+    .kpi-group { padding: 0 !important; overflow: hidden; }
+    .kpi-group .chart-label { padding: 20px 24px 0; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .kpi-grid .miao-bigvalue { border: none; border-radius: 0; border-right: 1px solid var(--mv-border); padding: 16px 24px 24px; }
+    .kpi-grid .miao-bigvalue:last-child { border-right: none; }
+    .miao-unsupported { padding: 18px; border-radius: 3px; background: #fff7ed; color: #9a3412; font-size: 13px; border: 1px solid #fed7aa; }
+    @media (max-width: 720px) {
+      .miao-viz-report { padding: 32px 16px 48px; }
+      h1 { font-size: 26px; }
+      .chart-card { padding: 20px 16px 16px; }
+      .report-eyebrow { flex-wrap: wrap; gap: 4px; }
+      .report-tokens { gap: 12px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .kpi-grid .miao-bigvalue:nth-child(even) { border-right: none; }
+    }
+  
+  .report-insights { margin: 0 0 32px; padding: 16px 20px 14px; border-radius: 4px; border: 1px solid rgba(128,128,128,0.18); background: rgba(128,128,128,0.04); }
+  .insights-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.45; margin: 0 0 8px; }
+  .insights-list { margin: 0; padding: 0 0 0 18px; }
+  .insights-list li { margin: 5px 0; font-size: 13px; line-height: 1.55; opacity: 0.75; }
+</style>
+</head>
+<body>
+  <main class="miao-viz-report">
+    <header class="report-hero">
+    <div class="report-eyebrow">
+      <span>Miao Vision Report</span>
+      <span>Generated 2026-06-24</span>
+    </div>
+    <h1>Agent Sales Report</h1>
+    <p class="report-description">区域与品类销售分析</p>
+    <div class="report-tokens">
+      <span><b>Rows</b>4</span>
+      <span><b>Columns</b>5</span>
+      <span><b>Source</b>/Users/guming/dev/gitcode/miao-vision/test_data/agent-sales.csv</span>
+    </div>
+  </header>
+    <section class="report-insights">
+    <p class="insights-label">Key Observations</p>
+    <ul class="insights-list">
+      <li>总销售额 450，共 18 笔订单，客单价均值 25。</li>
+      <li>East 区域销售额 240，占总额 53.3%，是 West（120）的 2 倍、North（90）的 2.7 倍。</li>
+      <li>品类 A 销售额 240，同样占总额 53.3%，与 East 的销售结构高度吻合，B、C 各占 26.7% 和 20%。</li>
+    </ul>
+  </section>
+    <section class="chart-card kpi-group">
+    <div class="chart-label">KEY METRICS</div>
+    <div class="kpi-grid"><div class="miao-bigvalue"><div class="miao-bigvalue-label">Total Sales</div><div class="miao-bigvalue-number">450</div></div>
+<div class="miao-bigvalue"><div class="miao-bigvalue-label">Total Orders</div><div class="miao-bigvalue-number">18</div></div></div>
+  </section>
+<section class="chart-card">
+    <div class="chart-label">BAR CHART</div>
+    <h2>Sales by Region</h2>
+    <svg class="miao-chart-svg" viewBox="0 0 720 420" width="100%" height="420" role="img" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="420" fill="#faf9f5" />
+    
+    
+    <line x1="72" y1="285.0" x2="696" y2="285.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="198.0" x2="696" y2="198.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="111.0" x2="696" y2="111.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="24.0" x2="696" y2="24.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" />
+    <line x1="72" y1="372" x2="696" y2="372" stroke="#c8c5b8" />
+    <line x1="72" y1="24" x2="72" y2="372" stroke="#c8c5b8" />
+    <text x="66" y="376.0" text-anchor="end" fill="#6b6a64" font-size="11">0</text><text x="66" y="289.0" text-anchor="end" fill="#6b6a64" font-size="11">60</text><text x="66" y="202.0" text-anchor="end" fill="#6b6a64" font-size="11">120</text><text x="66" y="115.0" text-anchor="end" fill="#6b6a64" font-size="11">180</text><text x="66" y="28.0" text-anchor="end" fill="#6b6a64" font-size="11">240</text>
+    <text x="384.0" y="426" text-anchor="middle" fill="#6b6a64" font-size="12">region</text>
+    <text x="14" y="198.0" text-anchor="middle" transform="rotate(-90 14 198.0)" fill="#6b6a64" font-size="12">total_sales</text>
+  
+    <g>
+      <rect x="72.0" y="24.0" width="202.7" height="348.0" rx="3" fill="#1b365d" />
+      <text x="173.3" y="390.0" text-anchor="middle" fill="#6b6a64" font-size="11">East</text>
+    </g><g>
+      <rect x="282.7" y="198.0" width="202.7" height="174.0" rx="3" fill="#8a5a44" />
+      <text x="384.0" y="390.0" text-anchor="middle" fill="#6b6a64" font-size="11">West</text>
+    </g><g>
+      <rect x="493.3" y="241.5" width="202.7" height="130.5" rx="3" fill="#4f6f52" />
+      <text x="594.7" y="390.0" text-anchor="middle" fill="#6b6a64" font-size="11">North</text>
+    </g>
+  
+  </svg>
+    <p class="chart-caption">x: region · y: total_sales · grouped by region · sorted by total_sales desc</p>
+  </section>
+<section class="chart-card">
+    <div class="chart-label">BAR CHART</div>
+    <h2>Sales by Category</h2>
+    <svg class="miao-chart-svg" viewBox="0 0 720 420" width="100%" height="420" role="img" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="420" fill="#faf9f5" />
+    
+    
+    <line x1="72" y1="285.0" x2="696" y2="285.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="198.0" x2="696" y2="198.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="111.0" x2="696" y2="111.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="24.0" x2="696" y2="24.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" />
+    <line x1="72" y1="372" x2="696" y2="372" stroke="#c8c5b8" />
+    <line x1="72" y1="24" x2="72" y2="372" stroke="#c8c5b8" />
+    <text x="66" y="376.0" text-anchor="end" fill="#6b6a64" font-size="11">0</text><text x="66" y="289.0" text-anchor="end" fill="#6b6a64" font-size="11">60</text><text x="66" y="202.0" text-anchor="end" fill="#6b6a64" font-size="11">120</text><text x="66" y="115.0" text-anchor="end" fill="#6b6a64" font-size="11">180</text><text x="66" y="28.0" text-anchor="end" fill="#6b6a64" font-size="11">240</text>
+    <text x="384.0" y="426" text-anchor="middle" fill="#6b6a64" font-size="12">category</text>
+    <text x="14" y="198.0" text-anchor="middle" transform="rotate(-90 14 198.0)" fill="#6b6a64" font-size="12">total_sales</text>
+  
+    <g>
+      <rect x="72.0" y="24.0" width="202.7" height="348.0" rx="3" fill="#1b365d" />
+      <text x="173.3" y="390.0" text-anchor="middle" fill="#6b6a64" font-size="11">A</text>
+    </g><g>
+      <rect x="282.7" y="198.0" width="202.7" height="174.0" rx="3" fill="#8a5a44" />
+      <text x="384.0" y="390.0" text-anchor="middle" fill="#6b6a64" font-size="11">B</text>
+    </g><g>
+      <rect x="493.3" y="241.5" width="202.7" height="130.5" rx="3" fill="#4f6f52" />
+      <text x="594.7" y="390.0" text-anchor="middle" fill="#6b6a64" font-size="11">C</text>
+    </g>
+  
+  </svg>
+    <p class="chart-caption">x: category · y: total_sales · grouped by category · sorted by total_sales desc</p>
+  </section>
+  </main>
+  <script type="application/json" id="miao-viz-spec">{
+  &quot;title&quot;: &quot;Agent Sales Report&quot;,
+  &quot;description&quot;: &quot;区域与品类销售分析&quot;,
+  &quot;insights&quot;: [
+    &quot;总销售额 450，共 18 笔订单，客单价均值 25。&quot;,
+    &quot;East 区域销售额 240，占总额 53.3%，是 West（120）的 2 倍、North（90）的 2.7 倍。&quot;,
+    &quot;品类 A 销售额 240，同样占总额 53.3%，与 East 的销售结构高度吻合，B、C 各占 26.7% 和 20%。&quot;
+  ],
+  &quot;charts&quot;: [
+    {
+      &quot;type&quot;: &quot;bigvalue&quot;,
+      &quot;title&quot;: &quot;Total Sales&quot;,
+      &quot;data&quot;: {
+        &quot;transform&quot;: [
+          {
+            &quot;type&quot;: &quot;aggregate&quot;,
+            &quot;measures&quot;: [
+              {
+                &quot;field&quot;: &quot;sales&quot;,
+                &quot;op&quot;: &quot;sum&quot;,
+                &quot;as&quot;: &quot;total_sales&quot;
+              }
+            ]
+          }
+        ]
+      },
+      &quot;encoding&quot;: {
+        &quot;value&quot;: {
+          &quot;field&quot;: &quot;total_sales&quot;
+        }
+      }
+    },
+    {
+      &quot;type&quot;: &quot;bigvalue&quot;,
+      &quot;title&quot;: &quot;Total Orders&quot;,
+      &quot;data&quot;: {
+        &quot;transform&quot;: [
+          {
+            &quot;type&quot;: &quot;aggregate&quot;,
+            &quot;measures&quot;: [
+              {
+                &quot;field&quot;: &quot;orders&quot;,
+                &quot;op&quot;: &quot;sum&quot;,
+                &quot;as&quot;: &quot;total_orders&quot;
+              }
+            ]
+          }
+        ]
+      },
+      &quot;encoding&quot;: {
+        &quot;value&quot;: {
+          &quot;field&quot;: &quot;total_orders&quot;
+        }
+      }
+    },
+    {
+      &quot;type&quot;: &quot;bar&quot;,
+      &quot;title&quot;: &quot;Sales by Region&quot;,
+      &quot;data&quot;: {
+        &quot;transform&quot;: [
+          {
+            &quot;type&quot;: &quot;aggregate&quot;,
+            &quot;groupBy&quot;: [
+              &quot;region&quot;
+            ],
+            &quot;measures&quot;: [
+              {
+                &quot;field&quot;: &quot;sales&quot;,
+                &quot;op&quot;: &quot;sum&quot;,
+                &quot;as&quot;: &quot;total_sales&quot;
+              }
+            ]
+          },
+          {
+            &quot;type&quot;: &quot;sort&quot;,
+            &quot;field&quot;: &quot;total_sales&quot;,
+            &quot;order&quot;: &quot;desc&quot;
+          }
+        ]
+      },
+      &quot;encoding&quot;: {
+        &quot;x&quot;: {
+          &quot;field&quot;: &quot;region&quot;
+        },
+        &quot;y&quot;: {
+          &quot;field&quot;: &quot;total_sales&quot;
+        }
+      }
+    },
+    {
+      &quot;type&quot;: &quot;bar&quot;,
+      &quot;title&quot;: &quot;Sales by Category&quot;,
+      &quot;data&quot;: {
+        &quot;transform&quot;: [
+          {
+            &quot;type&quot;: &quot;aggregate&quot;,
+            &quot;groupBy&quot;: [
+              &quot;category&quot;
+            ],
+            &quot;measures&quot;: [
+              {
+                &quot;field&quot;: &quot;sales&quot;,
+                &quot;op&quot;: &quot;sum&quot;,
+                &quot;as&quot;: &quot;total_sales&quot;
+              }
+            ]
+          },
+          {
+            &quot;type&quot;: &quot;sort&quot;,
+            &quot;field&quot;: &quot;total_sales&quot;,
+            &quot;order&quot;: &quot;desc&quot;
+          }
+        ]
+      },
+      &quot;encoding&quot;: {
+        &quot;x&quot;: {
+          &quot;field&quot;: &quot;category&quot;
+        },
+        &quot;y&quot;: {
+          &quot;field&quot;: &quot;total_sales&quot;
+        }
+      }
+    }
+  ]
+}</script>
+  <script type="application/json" id="miao-viz-profile">{
+  &quot;file&quot;: &quot;/Users/guming/dev/gitcode/miao-vision/test_data/agent-sales.csv&quot;,
+  &quot;rows&quot;: 4,
+  &quot;columns&quot;: [
+    {
+      &quot;name&quot;: &quot;order_date&quot;,
+      &quot;type&quot;: &quot;date&quot;,
+      &quot;total&quot;: 4,
+      &quot;nonNullCount&quot;: 4,
+      &quot;nullCount&quot;: 0,
+      &quot;nullRate&quot;: 0,
+      &quot;fillRate&quot;: 1,
+      &quot;uniqueRate&quot;: 1,
+      &quot;samples&quot;: [
+        &quot;2025-01-01&quot;,
+        &quot;2025-01-02&quot;,
+        &quot;2025-02-01&quot;,
+        &quot;2025-02-02&quot;
+      ],
+      &quot;distinctCount&quot;: 4,
+      &quot;temporal&quot;: {
+        &quot;span&quot;: &quot;2025-01-01 ~ 2025-02-02&quot;,
+        &quot;granularity&quot;: &quot;day&quot;,
+        &quot;isMonotonic&quot;: true,
+        &quot;gapCount&quot;: 29
+      },
+      &quot;role&quot;: &quot;time&quot;
+    },
+    {
+      &quot;name&quot;: &quot;region&quot;,
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;total&quot;: 4,
+      &quot;nonNullCount&quot;: 4,
+      &quot;nullCount&quot;: 0,
+      &quot;nullRate&quot;: 0,
+      &quot;fillRate&quot;: 1,
+      &quot;uniqueRate&quot;: 0.75,
+      &quot;samples&quot;: [
+        &quot;East&quot;,
+        &quot;West&quot;,
+        &quot;North&quot;
+      ],
+      &quot;distinctCount&quot;: 3,
+      &quot;topValue&quot;: &quot;East&quot;,
+      &quot;topSharePct&quot;: 0.5,
+      &quot;distribution&quot;: [
+        {
+          &quot;value&quot;: &quot;East&quot;,
+          &quot;count&quot;: 2,
+          &quot;sharePct&quot;: 0.5
+        },
+        {
+          &quot;value&quot;: &quot;West&quot;,
+          &quot;count&quot;: 1,
+          &quot;sharePct&quot;: 0.25
+        },
+        {
+          &quot;value&quot;: &quot;North&quot;,
+          &quot;count&quot;: 1,
+          &quot;sharePct&quot;: 0.25
+        }
+      ],
+      &quot;role&quot;: &quot;dimension&quot;
+    },
+    {
+      &quot;name&quot;: &quot;category&quot;,
+      &quot;type&quot;: &quot;string&quot;,
+      &quot;total&quot;: 4,
+      &quot;nonNullCount&quot;: 4,
+      &quot;nullCount&quot;: 0,
+      &quot;nullRate&quot;: 0,
+      &quot;fillRate&quot;: 1,
+      &quot;uniqueRate&quot;: 0.75,
+      &quot;samples&quot;: [
+        &quot;A&quot;,
+        &quot;B&quot;,
+        &quot;C&quot;
+      ],
+      &quot;distinctCount&quot;: 3,
+      &quot;topValue&quot;: &quot;A&quot;,
+      &quot;topSharePct&quot;: 0.5,
+      &quot;distribution&quot;: [
+        {
+          &quot;value&quot;: &quot;A&quot;,
+          &quot;count&quot;: 2,
+          &quot;sharePct&quot;: 0.5
+        },
+        {
+          &quot;value&quot;: &quot;B&quot;,
+          &quot;count&quot;: 1,
+          &quot;sharePct&quot;: 0.25
+        },
+        {
+          &quot;value&quot;: &quot;C&quot;,
+          &quot;count&quot;: 1,
+          &quot;sharePct&quot;: 0.25
+        }
+      ],
+      &quot;role&quot;: &quot;dimension&quot;
+    },
+    {
+      &quot;name&quot;: &quot;sales&quot;,
+      &quot;type&quot;: &quot;number&quot;,
+      &quot;total&quot;: 4,
+      &quot;nonNullCount&quot;: 4,
+      &quot;nullCount&quot;: 0,
+      &quot;nullRate&quot;: 0,
+      &quot;fillRate&quot;: 1,
+      &quot;uniqueRate&quot;: 1,
+      &quot;samples&quot;: [
+        100,
+        120,
+        140,
+        90
+      ],
+      &quot;distinctCount&quot;: 4,
+      &quot;min&quot;: 90,
+      &quot;max&quot;: 140,
+      &quot;sum&quot;: 450,
+      &quot;mean&quot;: 112.5,
+      &quot;median&quot;: 110,
+      &quot;p25&quot;: 97.5,
+      &quot;p75&quot;: 125,
+      &quot;stddev&quot;: 19.2029,
+      &quot;coefficientOfVariation&quot;: 0.1707,
+      &quot;skewness&quot;: 0.3906,
+      &quot;skewnessReliable&quot;: false,
+      &quot;outlierCount&quot;: 0,
+      &quot;outlierReliable&quot;: false,
+      &quot;histogram&quot;: [
+        {
+          &quot;bucket&quot;: &quot;90-102.5&quot;,
+          &quot;count&quot;: 2
+        },
+        {
+          &quot;bucket&quot;: &quot;115-127.5&quot;,
+          &quot;count&quot;: 1
+        },
+        {
+          &quot;bucket&quot;: &quot;127.5-140&quot;,
+          &quot;count&quot;: 1
+        }
+      ],
+      &quot;histogramReliable&quot;: false,
+      &quot;role&quot;: &quot;measure&quot;
+    },
+    {
+      &quot;name&quot;: &quot;orders&quot;,
+      &quot;type&quot;: &quot;number&quot;,
+      &quot;total&quot;: 4,
+      &quot;nonNullCount&quot;: 4,
+      &quot;nullCount&quot;: 0,
+      &quot;nullRate&quot;: 0,
+      &quot;fillRate&quot;: 1,
+      &quot;uniqueRate&quot;: 1,
+      &quot;samples&quot;: [
+        4,
+        5,
+        6,
+        3
+      ],
+      &quot;distinctCount&quot;: 4,
+      &quot;min&quot;: 3,
+      &quot;max&quot;: 6,
+      &quot;sum&quot;: 18,
+      &quot;mean&quot;: 4.5,
+      &quot;median&quot;: 4.5,
+      &quot;p25&quot;: 3.75,
+      &quot;p75&quot;: 5.25,
+      &quot;stddev&quot;: 1.118,
+      &quot;coefficientOfVariation&quot;: 0.2485,
+      &quot;skewness&quot;: 0,
+      &quot;skewnessReliable&quot;: false,
+      &quot;outlierCount&quot;: 0,
+      &quot;outlierReliable&quot;: false,
+      &quot;histogram&quot;: [
+        {
+          &quot;bucket&quot;: &quot;3-3.75&quot;,
+          &quot;count&quot;: 1
+        },
+        {
+          &quot;bucket&quot;: &quot;3.75-4.5&quot;,
+          &quot;count&quot;: 1
+        },
+        {
+          &quot;bucket&quot;: &quot;4.5-5.25&quot;,
+          &quot;count&quot;: 1
+        },
+        {
+          &quot;bucket&quot;: &quot;5.25-6&quot;,
+          &quot;count&quot;: 1
+        }
+      ],
+      &quot;histogramReliable&quot;: false,
+      &quot;role&quot;: &quot;measure&quot;
+    }
+  ],
+  &quot;quality&quot;: {
+    &quot;completeness&quot;: 1,
+    &quot;nullRate&quot;: 0,
+    &quot;avgUniqueRate&quot;: 0.9,
+    &quot;highNullColumns&quot;: [],
+    &quot;likelyIdColumns&quot;: [],
+    &quot;duplicateProneDimensions&quot;: [
+      &quot;region&quot;,
+      &quot;category&quot;
+    ]
+  },
+  &quot;correlations&quot;: [
+    {
+      &quot;a&quot;: &quot;sales&quot;,
+      &quot;b&quot;: &quot;orders&quot;,
+      &quot;r&quot;: 0.9898,
+      &quot;n&quot;: 4,
+      &quot;reliable&quot;: false
+    }
+  ],
+  &quot;hints&quot;: [
+    {
+      &quot;type&quot;: &quot;kpi&quot;,
+      &quot;field&quot;: &quot;sales&quot;,
+      &quot;label&quot;: &quot;sales&quot;
+    },
+    {
+      &quot;type&quot;: &quot;kpi&quot;,
+      &quot;field&quot;: &quot;orders&quot;,
+      &quot;label&quot;: &quot;orders&quot;
+    },
+    {
+      &quot;type&quot;: &quot;time-series&quot;,
+      &quot;xField&quot;: &quot;order_date&quot;,
+      &quot;yFields&quot;: [
+        &quot;sales&quot;,
+        &quot;orders&quot;
+      ]
+    },
+    {
+      &quot;type&quot;: &quot;ranking&quot;,
+      &quot;groupField&quot;: &quot;region&quot;,
+      &quot;measureField&quot;: &quot;sales&quot;
+    },
+    {
+      &quot;type&quot;: &quot;ranking&quot;,
+      &quot;groupField&quot;: &quot;region&quot;,
+      &quot;measureField&quot;: &quot;orders&quot;
+    },
+    {
+      &quot;type&quot;: &quot;ranking&quot;,
+      &quot;groupField&quot;: &quot;category&quot;,
+      &quot;measureField&quot;: &quot;sales&quot;
+    },
+    {
+      &quot;type&quot;: &quot;ranking&quot;,
+      &quot;groupField&quot;: &quot;category&quot;,
+      &quot;measureField&quot;: &quot;orders&quot;
+    },
+    {
+      &quot;type&quot;: &quot;share&quot;,
+      &quot;labelField&quot;: &quot;region&quot;,
+      &quot;valueField&quot;: &quot;sales&quot;
+    },
+    {
+      &quot;type&quot;: &quot;share&quot;,
+      &quot;labelField&quot;: &quot;category&quot;,
+      &quot;valueField&quot;: &quot;sales&quot;
+    },
+    {
+      &quot;type&quot;: &quot;correlation&quot;,
+      &quot;a&quot;: &quot;sales&quot;,
+      &quot;b&quot;: &quot;orders&quot;,
+      &quot;r&quot;: 0.9898
+    }
+  ],
+  &quot;insights&quot;: [
+    {
+      &quot;type&quot;: &quot;trend&quot;,
+      &quot;title&quot;: &quot;Strong relationship: sales and orders&quot;,
+      &quot;description&quot;: &quot;Pearson correlation is 0.9898; a scatter chart with an annotation can surface this relationship.&quot;,
+      &quot;fields&quot;: [
+        &quot;sales&quot;,
+        &quot;orders&quot;
+      ]
+    }
+  ]
+}</script>
+</body>
+</html>

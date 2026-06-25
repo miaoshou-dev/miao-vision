@@ -89,11 +89,11 @@ Priority: High
 
 Detailed plan: [Article-to-Infographic Implementation Plan](../article-to-infographic-implementation-plan.md)
 
-- [ ] Implement or finalize `miao-viz article`.
-- [ ] Keep URL fetching in the agent/skill layer; CLI accepts local Markdown/text.
-- [ ] Reuse existing article analysis and infographic planning logic where it still fits.
-- [ ] Output HTML first, then add PNG/PDF export.
-- [ ] Add examples for editorial, executive, analytical, storytelling, and minimal styles.
+- [x] Implement or finalize `miao-viz article`.
+- [x] Keep URL fetching in the agent/skill layer; CLI accepts local Markdown/text.
+- [x] Add a deterministic local article parser and dedicated `InfographicSpec`.
+- [x] Output HTML first, with JSON and Markdown debug/fallback formats.
+- [ ] Add examples for analytical and storytelling styles after those styles are implemented.
 
 ## v0.6 - Presentation Deck
 

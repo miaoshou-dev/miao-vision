@@ -36,9 +36,22 @@ const transformSchema = z.object({
   value: z.unknown().optional()
 })
 
+const globalFilterSchema = z.object({
+  field: z.string().min(1),
+  type: z.enum(['select', 'range'])
+})
+
+const chartInteractionSchema = z.object({
+  tooltip: z.boolean().optional(),
+  select: z.enum(['filter', 'detail']).optional()
+})
+
 export const chartSpecSchema: z.ZodType<AgentChartSpec> = z.object({
+  id: z.string().min(1).optional(),
   type: z.enum(MVP_CHART_TYPES),
   title: z.string().optional(),
+  interaction: chartInteractionSchema.optional(),
+  drilldownPreset: z.enum(['category-detail']).optional(),
   data: z.object({
     source: z.string().optional(),
     transform: z.array(transformSchema).optional()
@@ -58,6 +71,9 @@ export const reportSpecSchema: z.ZodType<AgentReportSpec> = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
   theme: z.enum(['default', 'editorial', 'dark', 'minimal']).optional(),
+  interactions: z.object({
+    globalFilters: z.array(globalFilterSchema).optional()
+  }).optional(),
   insights: z.array(z.string()).optional(),
   charts: z.array(chartSpecSchema).min(1)
 })

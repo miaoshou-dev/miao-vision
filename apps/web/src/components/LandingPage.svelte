@@ -98,7 +98,7 @@
       title: 'Regional Sales Infographic',
       label: 'Sales data distilled into a narrative infographic with regional focus, growth drivers, and next actions.',
       source: 'sales-summary.md',
-      command: 'miao-viz infographic',
+      command: 'miao-viz article',
       format: 'Infographic',
       className: 'infographic'
     },

@@ -1,5 +1,6 @@
 import { renderChartSvg, escapeHtml } from './svg-renderer'
 import { getTheme } from './themes/index'
+import { renderInteractiveAssets, shouldEnableInteractiveRuntime, type InteractiveHtmlOptions } from './interactive-runtime'
 import type { ThemeName, ReportTheme } from './themes/types'
 import type { AgentChartSpec, AgentReportSpec, DataProfile } from './types'
 
@@ -14,10 +15,12 @@ export function renderStaticHtml(
   spec: AgentReportSpec,
   profile: DataProfile,
   rows: Record<string, unknown>[],
-  themeOverride?: ThemeName
+  themeOverride?: ThemeName,
+  interactiveOptions: InteractiveHtmlOptions = {}
 ): string {
   const theme = getTheme(themeOverride ?? spec.theme)
   const title = spec.title ?? 'Miao Vision Report'
+  const interactive = shouldEnableInteractiveRuntime(spec, interactiveOptions)
 
   const header = theme.layout === 'editorial'
     ? renderEditorialHeader(title, spec.description, profile)
@@ -40,16 +43,18 @@ export function renderStaticHtml(
         sections.push(renderKpiGroup(group, rows, theme))
       } else {
         const chart = spec.charts[i]
-        const svg = renderChartSvg(chart, rows, theme.svg)
-        sections.push(renderEditorialCard(chart, i, svg))
+        const chartId = chartIdFor(chart, i)
+        const svg = renderChartSvg(chart, rows, theme.svg, { chartId })
+        sections.push(renderEditorialCard(chart, i, svg, chartId))
         i++
       }
     }
     charts = sections.join('\n')
   } else {
     charts = spec.charts.map((chart, index) => {
-      const svg = renderChartSvg(chart, rows, theme.svg)
-      return renderDefaultCard(chart, index, svg)
+      const chartId = chartIdFor(chart, index)
+      const svg = renderChartSvg(chart, rows, theme.svg, { chartId })
+      return renderDefaultCard(chart, index, svg, chartId)
     }).join('\n')
   }
 
@@ -69,6 +74,7 @@ export function renderStaticHtml(
   </main>
   <script type="application/json" id="miao-viz-spec">${escapeHtml(JSON.stringify(spec, null, 2))}</script>
   <script type="application/json" id="miao-viz-profile">${escapeHtml(JSON.stringify(profile, null, 2))}</script>
+  ${interactive ? renderInteractiveAssets(rows) : ''}
 </body>
 </html>`
 }
@@ -99,11 +105,11 @@ function renderEditorialHeader(title: string, description: string | undefined, p
   </header>`
 }
 
-function renderDefaultCard(chart: AgentChartSpec, index: number, svg: string): string {
+function renderDefaultCard(chart: AgentChartSpec, index: number, svg: string, chartId: string): string {
   const chartTitle = chart.title ?? `${chart.type} chart ${index + 1}`
-  return `<section class="chart-block">
+  return `<section class="chart-block" data-miao-chart="${escapeHtml(chartId)}">
     <h2>${escapeHtml(chartTitle)}</h2>
-    ${svg}
+    <div class="miao-render-slot">${svg}</div>
   </section>`
 }
 
@@ -115,15 +121,19 @@ function renderKpiGroup(charts: AgentChartSpec[], rows: Record<string, unknown>[
   </section>`
 }
 
-function renderEditorialCard(chart: AgentChartSpec, index: number, svg: string): string {
+function renderEditorialCard(chart: AgentChartSpec, index: number, svg: string, chartId: string): string {
   const chartTitle = chart.title ?? `${chart.type} chart ${index + 1}`
   const caption = buildCaption(chart)
-  return `<section class="chart-card">
+  return `<section class="chart-card" data-miao-chart="${escapeHtml(chartId)}">
     <div class="chart-label">${escapeHtml(chart.type.toUpperCase())} CHART</div>
     <h2>${escapeHtml(chartTitle)}</h2>
-    ${svg}
+    <div class="miao-render-slot">${svg}</div>
     ${caption ? `<p class="chart-caption">${escapeHtml(caption)}</p>` : ''}
   </section>`
+}
+
+function chartIdFor(chart: AgentChartSpec, index: number): string {
+  return chart.id ?? `chart-${index + 1}`
 }
 
 function renderInsights(insights: string[]): string {

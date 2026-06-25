@@ -160,9 +160,30 @@ export interface AgentDataTransform {
   value?: unknown
 }
 
+export type AgentGlobalFilterType = 'select' | 'range'
+export type AgentInteractionSelectMode = 'filter' | 'detail'
+export type AgentDrilldownPreset = 'category-detail'
+
+export interface AgentGlobalFilter {
+  field: string
+  type: AgentGlobalFilterType
+}
+
+export interface AgentChartInteraction {
+  tooltip?: boolean
+  select?: AgentInteractionSelectMode
+}
+
+export interface AgentReportInteractions {
+  globalFilters?: AgentGlobalFilter[]
+}
+
 export interface AgentChartSpec {
+  id?: string
   type: VizType
   title?: string
+  interaction?: AgentChartInteraction
+  drilldownPreset?: AgentDrilldownPreset
   data?: {
     source?: string
     transform?: AgentDataTransform[]
@@ -183,6 +204,7 @@ export interface AgentReportSpec {
   title?: string
   description?: string
   theme?: 'default' | 'editorial' | 'dark' | 'minimal'
+  interactions?: AgentReportInteractions
   insights?: string[]
   charts: AgentChartSpec[]
 }

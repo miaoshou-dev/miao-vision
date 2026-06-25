@@ -2,6 +2,10 @@ import { prepareChartData } from './data-transform'
 import type { AgentChartSpec } from './types'
 import type { SvgTheme } from './themes/types'
 
+interface RenderOptions {
+  chartId?: string
+}
+
 const DEFAULT_SVG_THEME: SvgTheme = {
   palette: ['#2563eb', '#16a34a', '#f97316', '#dc2626', '#7c3aed', '#0891b2'],
   background: '#ffffff',
@@ -12,18 +16,20 @@ const DEFAULT_SVG_THEME: SvgTheme = {
 export function renderChartSvg(
   chart: AgentChartSpec,
   rows: Record<string, unknown>[],
-  svgTheme?: SvgTheme
+  svgTheme?: SvgTheme,
+  options: RenderOptions = {}
 ): string {
   const theme = svgTheme ?? DEFAULT_SVG_THEME
   const data = prepareChartData(rows, chart)
-  if (chart.type === 'line' || chart.type === 'area') return renderLineChart(chart, data, theme)
-  if (chart.type === 'bar') return renderBarChart(chart, data, theme)
-  if (chart.type === 'table') return renderTable(chart, data)
+  if (chart.type === 'line' || chart.type === 'area') return renderLineChart(chart, data, theme, options)
+  if (chart.type === 'bar') return renderBarChart(chart, data, theme, options)
+  if (chart.type === 'pie') return renderPieChart(chart, data, theme, options)
+  if (chart.type === 'table') return renderTable(chart, data, options)
   if (chart.type === 'bigvalue') return renderBigValue(chart, data)
   return renderUnsupported(chart)
 }
 
-function renderBarChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme): string {
+function renderBarChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: RenderOptions): string {
   const xField = chart.encoding.x?.field ?? ''
   const yField = chart.encoding.y?.field ?? ''
   const width = numberStyle(chart, 'width', 720)
@@ -43,9 +49,11 @@ function renderBarChart(chart: AgentChartSpec, rows: Record<string, unknown>[], 
     const x = margin.left + index * (barWidth + barGap)
     const y = margin.top + chartHeight - barHeight
     const color = theme.palette[index % theme.palette.length]
+    const label = String(row[xField] ?? '')
+    const tooltip = `${label}: ${value}`
     return `<g>
-      <rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" rx="3" fill="${color}" />
-      <text x="${(x + barWidth / 2).toFixed(1)}" y="${(margin.top + chartHeight + 18).toFixed(1)}" text-anchor="middle" fill="${theme.labelColor}" font-size="11">${escapeHtml(String(row[xField] ?? ''))}</text>
+      <rect ${markAttrs(options.chartId, xField, row[xField], index, tooltip)} x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" rx="3" fill="${color}" />
+      <text x="${(x + barWidth / 2).toFixed(1)}" y="${(margin.top + chartHeight + 18).toFixed(1)}" text-anchor="middle" fill="${theme.labelColor}" font-size="11">${escapeHtml(label)}</text>
     </g>`
   }).join('')
 
@@ -55,7 +63,7 @@ function renderBarChart(chart: AgentChartSpec, rows: Record<string, unknown>[], 
   `)
 }
 
-function renderLineChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme): string {
+function renderLineChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: RenderOptions): string {
   const xField = chart.encoding.x?.field ?? ''
   const yField = chart.encoding.y?.field ?? ''
   const width = numberStyle(chart, 'width', 720)
@@ -77,7 +85,7 @@ function renderLineChart(chart: AgentChartSpec, rows: Record<string, unknown>[],
 
   const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
   const dots = points.map(p =>
-    `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${lineColor}"><title>${escapeHtml(p.label)}: ${p.value}</title></circle>`
+    `<circle ${markAttrs(options.chartId, xField, p.label, 0, `${p.label}: ${p.value}`)} cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${lineColor}"><title>${escapeHtml(p.label)}: ${p.value}</title></circle>`
   ).join('')
   const labels = points.map((p, i) => {
     if (i % Math.ceil(points.length / 8) !== 0) return ''
@@ -92,11 +100,46 @@ function renderLineChart(chart: AgentChartSpec, rows: Record<string, unknown>[],
   `)
 }
 
-function renderTable(chart: AgentChartSpec, rows: Record<string, unknown>[]): string {
+function renderPieChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: RenderOptions): string {
+  const labelField = chart.encoding.label?.field ?? ''
+  const valueField = chart.encoding.value?.field ?? ''
+  const width = numberStyle(chart, 'width', 720)
+  const height = numberStyle(chart, 'height', 420)
+  const cx = width / 2 - 80
+  const cy = height / 2
+  const radius = Math.min(width, height) * 0.34
+  const values = rows.map(row => Math.max(0, Number(row[valueField]) || 0))
+  const total = values.reduce((sum, value) => sum + value, 0) || 1
+  let angle = -Math.PI / 2
+
+  const slices = rows.map((row, index) => {
+    const value = values[index]
+    const nextAngle = angle + (value / total) * Math.PI * 2
+    const path = describeArc(cx, cy, radius, angle, nextAngle)
+    const color = theme.palette[index % theme.palette.length]
+    const label = String(row[labelField] ?? '')
+    const tooltip = `${label}: ${value}`
+    angle = nextAngle
+    return `<path ${markAttrs(options.chartId, labelField, row[labelField], index, tooltip)} d="${path}" fill="${color}" stroke="${theme.background}" stroke-width="2" />`
+  }).join('')
+
+  const legend = rows.map((row, index) => {
+    const y = 72 + index * 24
+    return `<g>
+      <rect x="${width - 210}" y="${y - 10}" width="10" height="10" fill="${theme.palette[index % theme.palette.length]}" />
+      <text x="${width - 192}" y="${y}" fill="${theme.labelColor}" font-size="12">${escapeHtml(String(row[labelField] ?? ''))}</text>
+    </g>`
+  }).join('')
+
+  return svgFrame(width, height, theme.background, `${slices}${legend}`)
+}
+
+function renderTable(chart: AgentChartSpec, rows: Record<string, unknown>[], options: RenderOptions): string {
   const columns = Object.keys(rows[0] ?? {}).slice(0, 8)
   const header = columns.map(c => `<th>${escapeHtml(c)}</th>`).join('')
+  const markField = chart.encoding.label?.field ?? chart.encoding.x?.field ?? columns[0] ?? ''
   const body = rows.slice(0, 20).map(row =>
-    `<tr>${columns.map(c => `<td>${escapeHtml(String(row[c] ?? ''))}</td>`).join('')}</tr>`
+    `<tr ${markAttrs(options.chartId, markField, row[markField], 0, String(row[markField] ?? 'Row'))}>${columns.map(c => `<td>${escapeHtml(String(row[c] ?? ''))}</td>`).join('')}</tr>`
   ).join('')
   return `<div class="miao-table-wrap"><table class="miao-table"><caption>${escapeHtml(chart.title ?? 'Table')}</caption><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table></div>`
 }
@@ -116,6 +159,36 @@ function svgFrame(width: number, height: number, bgColor: string, body: string):
     <rect x="0" y="0" width="${width}" height="${height}" fill="${bgColor}" />
     ${body}
   </svg>`
+}
+
+function markAttrs(chartId: string | undefined, field: string, value: unknown, rowKey: number, tooltip: string): string {
+  return [
+    'data-miao-mark="true"',
+    chartId ? `data-chart-id="${escapeHtml(chartId)}"` : '',
+    `data-field="${escapeHtml(field)}"`,
+    `data-value="${escapeHtml(String(value ?? ''))}"`,
+    `data-row-key="${escapeHtml(String(rowKey))}"`,
+    `data-tooltip="${escapeHtml(tooltip)}"`
+  ].filter(Boolean).join(' ')
+}
+
+function describeArc(cx: number, cy: number, radius: number, startAngle: number, endAngle: number): string {
+  const start = polarToCartesian(cx, cy, radius, endAngle)
+  const end = polarToCartesian(cx, cy, radius, startAngle)
+  const largeArcFlag = endAngle - startAngle <= Math.PI ? '0' : '1'
+  return [
+    `M ${cx.toFixed(1)} ${cy.toFixed(1)}`,
+    `L ${start.x.toFixed(1)} ${start.y.toFixed(1)}`,
+    `A ${radius.toFixed(1)} ${radius.toFixed(1)} 0 ${largeArcFlag} 0 ${end.x.toFixed(1)} ${end.y.toFixed(1)}`,
+    'Z'
+  ].join(' ')
+}
+
+function polarToCartesian(cx: number, cy: number, radius: number, angle: number): { x: number; y: number } {
+  return {
+    x: cx + radius * Math.cos(angle),
+    y: cy + radius * Math.sin(angle)
+  }
 }
 
 function buildAxis(

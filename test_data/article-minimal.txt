@@ -1,0 +1,5 @@
+Release readiness notes
+
+The launch checklist has 12 remaining items. Three items are customer-facing and should be reviewed before the release candidate is approved.
+
+The key takeaway is to resolve customer-facing copy before expanding the beta group.

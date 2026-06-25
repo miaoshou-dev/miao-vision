@@ -5,11 +5,11 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 [![Svelte 5](https://img.shields.io/badge/Svelte-5-orange)](https://svelte.dev/)
 
-Miao Vision is a local-first visualization toolkit centered on `miao-viz`, a CLI designed for AI agents and developers. It turns local data files into polished chart reports and browser-presentable slide decks, with article-to-infographic as the next product track.
+Miao Vision is a local-first visualization toolkit centered on `miao-viz`, a CLI designed for AI agents and developers. It turns local data files into polished chart reports and browser-presentable slide decks, and turns local article Markdown/text into static infographic artifacts.
 
 It is not a full BI workspace. The product is focused on static, shareable, high-quality visual artifacts that are easy for AI to generate and easy for users to like.
 
-The recommended user experience is agent-led: install the `miao-vision` skill in Codex or Claude, then ask the agent to create a report, infographic, or deck. The skill decides when to call `miao-viz profile`, `catalog`, `validate`, `render`, or `deck`.
+The recommended user experience is agent-led: install the `miao-vision` skill in Codex or Claude, then ask the agent to create a report, infographic, or deck. The skill decides when to call `miao-viz profile`, `catalog`, `validate`, `render`, `article`, or `deck`.
 
 ## Vision
 
@@ -43,7 +43,7 @@ article URL / Markdown
   -> infographic artifact
 ```
 
-`miao-viz article` is a product track. The current CLI surface focuses on `profile`, `catalog`, `validate`, `render`, and `deck`; URL fetching should stay in the agent or skill layer.
+`miao-viz article` accepts local Markdown/text input. URL fetching stays in the agent or skill layer, which normalizes the page into a local Markdown file before calling the CLI.
 
 ### 3. Presentation Deck
 
@@ -116,6 +116,37 @@ npm run miao-viz -- deck \
 
 Open the generated HTML file in a browser. Deck output supports arrow-key navigation, fullscreen, and browser print/PDF export.
 
+Generate an article infographic:
+
+```bash
+npm run miao-viz -- article ./test_data/article-editorial.md \
+  --style editorial \
+  --format html \
+  --output /tmp/miao-infographic.html
+```
+
+Additional deck examples:
+
+```bash
+npm run miao-viz -- deck \
+  --input ./packages/miao-viz-cli/examples/product-metrics.csv \
+  --spec ./packages/miao-viz-cli/examples/product-metrics-deck.yaml \
+  --theme editorial \
+  --output /tmp/product-metrics-deck.html
+
+npm run miao-viz -- deck \
+  --input ./packages/miao-viz-cli/examples/finance-review.csv \
+  --spec ./packages/miao-viz-cli/examples/finance-review-deck.yaml \
+  --theme editorial \
+  --output /tmp/finance-review-deck.html
+
+npm run miao-viz -- deck \
+  --input ./packages/miao-viz-cli/examples/ops-update.csv \
+  --spec ./packages/miao-viz-cli/examples/ops-update-deck.yaml \
+  --theme editorial \
+  --output /tmp/ops-update-deck.html
+```
+
 ## Agent Skill
 
 Miao Vision ships with an agent skill for Codex and Claude-style local coding agents. The skill is the product layer above the CLI: it reads the user request, profiles local data when needed, writes VizSpec or DeckSpec, runs the correct `miao-viz` command, and returns the generated artifact path.
@@ -154,7 +185,7 @@ The skill uses this decision framework:
 | --- | --- | --- |
 | report, analysis, chart, dashboard-like artifact | Data Display | `miao-viz profile` -> `validate` -> `render` |
 | slides, presentation, PPT, deck, executive briefing | Presentation Deck | `miao-viz profile` -> `deck` |
-| article URL, Markdown, long-form text, infographic | Article-to-Infographic | agent normalizes text -> `miao-viz article` product track |
+| article URL, Markdown, long-form text, infographic | Article-to-Infographic | agent normalizes text -> `miao-viz article` |
 
 See [packages/miao-vision-skill](./packages/miao-vision-skill) and [Agent Install Guide](./docs/miao-vision-agent-install.md) for details.
 
@@ -248,6 +279,8 @@ slides:
 
 Supported deck layouts include `cover`, `title-only`, `text-points`, `text-chart`, `metrics-chart`, `chart-full`, `table-full`, and `ending`.
 
+DeckSpec validation returns structured repair information. `INVALID_DECK_SPEC` includes an `errors` array with `path`, `message`, and `hint`; `DECK_FIELD_NOT_FOUND` points to the slide/chart/metric field that is missing from the input profile or transform chain.
+
 ## CLI Commands
 
 | Command | Purpose |
@@ -257,6 +290,7 @@ Supported deck layouts include `cover`, `title-only`, `text-points`, `text-chart
 | `validate` | Validate VizSpec fields, encodings, chart types, and transforms. |
 | `render` | Render a self-contained HTML data display report. |
 | `deck` | Render a browser-presentable slide deck from DeckSpec. |
+| `article` | Convert local Markdown/text into a static infographic artifact. |
 
 ## Repository Layout
 

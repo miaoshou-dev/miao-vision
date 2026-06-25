@@ -13,6 +13,8 @@ import { parseOutputFormats, singleOrReportSpecSchema } from './spec-schema'
 import { renderChartSvg } from './svg-renderer'
 import { renderDeckHtml } from './deck-renderer'
 import { parseDeckSpec, validateDeckFields } from './deck-validator'
+import { generateInfographicFromFile, parseArticleFormat, parseArticleStyle } from './article-infographic'
+import { renderInfographicHtml } from './article-html'
 import type { AgentError, AgentOutputFormat, AgentReportSpec, DataProfile } from './types'
 
 interface CliArgs {
@@ -21,7 +23,7 @@ interface CliArgs {
   flags: Record<string, string | boolean>
 }
 
-const BOOLEAN_FLAGS = new Set(['h', 'help', 'summary', 'reliable-only'])
+const BOOLEAN_FLAGS = new Set(['h', 'help', 'summary', 'reliable-only', 'interactive', 'no-interactive'])
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
@@ -62,13 +64,18 @@ async function main(): Promise<void> {
       return
     }
 
+    if (args.command === 'article') {
+      printJson(runArticle(args))
+      return
+    }
+
     if (args.command === 'query') {
       printJson(runQuery(args))
       return
     }
 
     printJson(agentError('UNKNOWN_COMMAND', `Unknown command: ${args.command ?? '(none)'}`, {
-      commands: ['profile', 'validate', 'catalog', 'render', 'deck', 'query']
+      commands: ['profile', 'validate', 'catalog', 'render', 'deck', 'article', 'query']
     }))
     process.exitCode = 1
   } catch (error) {
@@ -140,12 +147,17 @@ function runRender(args: CliArgs): unknown {
   if (isAgentError(validation)) return fail(validation)
 
   const themeFlag = stringFlag(args, 'theme') as 'default' | 'editorial' | 'dark' | 'minimal' | undefined
+  const interactive = args.flags['interactive'] === true
+    ? true
+    : args.flags['no-interactive'] === true
+      ? false
+      : undefined
 
   const written: string[] = []
   for (const format of formats) {
     if (format === 'html') {
       const htmlPath = formatOutputPath(output, 'html', formats.length > 1)
-      writeOutput(htmlPath, renderStaticHtml(validation.value, profile, dataset.value.rows, themeFlag))
+      writeOutput(htmlPath, renderStaticHtml(validation.value, profile, dataset.value.rows, themeFlag, { enabled: interactive }))
       written.push(htmlPath)
     } else if (format === 'svg') {
       const svgPath = formatOutputPath(output, 'svg', formats.length > 1)
@@ -208,6 +220,53 @@ function runQuery(args: CliArgs): unknown {
   })
   if (isAgentError(result)) return fail(result)
   return { ok: true, value: result }
+}
+
+function runArticle(args: CliArgs): unknown {
+  const file = args.positional[0]
+  if (!file) {
+    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz article <file> --output <file> [--style editorial|executive|minimal] [--format html|json|markdown]'))
+  }
+
+  const output = requiredFlag(args, 'output')
+  if (isAgentError(output)) return fail(output)
+
+  const styleFlag = stringFlag(args, 'style')
+  const style = parseArticleStyle(styleFlag)
+  if (!style) {
+    return fail(agentError('UNSUPPORTED_ARTICLE_STYLE', `Unsupported article style: ${styleFlag}`, {
+      supportedStyles: ['editorial', 'executive', 'minimal']
+    }))
+  }
+
+  const formatFlag = stringFlag(args, 'format')
+  const format = parseArticleFormat(formatFlag)
+  if (!format) {
+    return fail(agentError('UNSUPPORTED_ARTICLE_FORMAT', `Unsupported article output format: ${formatFlag}`, {
+      supportedFormats: ['html', 'json', 'markdown']
+    }))
+  }
+
+  const generated = generateInfographicFromFile(file, style)
+  if (isAgentError(generated)) return fail(generated)
+
+  if (format === 'json') {
+    writeOutput(output, `${JSON.stringify(generated.value.spec, null, 2)}\n`)
+  } else if (format === 'markdown') {
+    writeOutput(output, generated.value.markdown)
+  } else {
+    writeOutput(output, renderInfographicHtml(generated.value.spec))
+  }
+
+  return {
+    ok: true,
+    value: {
+      output,
+      format,
+      style,
+      sections: generated.value.spec.sections.map(section => section.type)
+    }
+  }
 }
 
 function normalizeSpec(spec: unknown): AgentReportSpec | AgentError {
@@ -354,6 +413,8 @@ Options:
   --output <file>   Output file path
   --format <fmt>    Output format: html, svg (default: html)
   --theme <name>    Theme: default, editorial, dark, minimal
+  --interactive     Force lightweight interactive runtime for HTML output
+  --no-interactive  Force static HTML output even when interaction spec exists
   --sheet <name>    Sheet name (Excel only)
   --limit <n>       Max rows to read
 `,
@@ -368,6 +429,19 @@ Options:
   --theme <name>    Theme: default, editorial, dark, minimal
   --sheet <name>    Sheet name (Excel only)
   --limit <n>       Max rows to read
+`,
+  article: `Usage: miao-viz article <file> --output <file> [options]
+
+Convert a local Markdown or plain-text article into a static infographic artifact.
+URL fetching is intentionally handled by the agent/skill layer; this command only reads local files.
+
+Arguments:
+  file              Path to a .md, .markdown, or .txt article file
+
+Options:
+  --output <file>   Output file path
+  --format <fmt>    Output format: html, json, markdown (default: html)
+  --style <name>    Style: editorial, executive, minimal (default: editorial)
 `,
   query: `Usage: miao-viz query <file> [options]
 
@@ -403,6 +477,7 @@ Commands:
   catalog   List all available chart types
   render    Render a vizspec to HTML or SVG
   deck      Render a deck spec to HTML slides
+  article   Convert a local article to an infographic artifact
 
 Run "miao-viz <command> --help" for command-specific options.
 `)
