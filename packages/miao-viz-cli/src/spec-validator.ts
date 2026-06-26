@@ -1,25 +1,25 @@
 import { agentError, isAgentError, ok } from './errors'
 import { MVP_CHART_TYPES, OUTPUT_FORMATS, reportSpecSchema } from './spec-schema'
+import { parseEvidenceRefs, resolveEvidencePath } from './directive-resolver'
+import { getCatalogItem } from './chart-catalog'
+import type { AnalyzeContext } from './context-schema'
 import type { AgentChartSpec, AgentOutputFormat, AgentResult, AgentReportSpec, DataProfile } from './types'
 
-const REQUIRED_ENCODINGS: Record<string, string[]> = {
-  bar: ['x', 'y'],
-  line: ['x', 'y'],
-  area: ['x', 'y'],
-  pie: ['label', 'value'],
-  scatter: ['x', 'y'],
-  histogram: ['x'],
-  heatmap: ['x', 'y', 'value'],
-  table: [],
-  bigvalue: ['value']
-}
+const FORBIDDEN_WORDS: Array<{ pattern: RegExp; word: string }> = [
+  { pattern: /\b(trend|趋势)\b/i, word: 'trend/趋势' },
+  { pattern: /\b(drive|drives|drove|driven|驱动)\b/i, word: 'drive/驱动' },
+  { pattern: /\b(significant|显著)\b/i, word: 'significant/显著' },
+  { pattern: /strong\s+correlation|强相关/i, word: 'strong correlation/强相关' },
+  { pattern: /\bshould\b|应该/i, word: 'should/应该' }
+]
 
 const DRILLDOWN_CHART_TYPES = ['bar', 'pie', 'table'] as const
 
 export function validateReportSpec(
   spec: unknown,
   profile: DataProfile,
-  formats: AgentOutputFormat[] = ['html']
+  formats: AgentOutputFormat[] = ['html'],
+  context?: AnalyzeContext
 ): AgentResult<AgentReportSpec> {
   const parsed = reportSpecSchema.safeParse(spec)
   if (!parsed.success) {
@@ -58,6 +58,12 @@ export function validateReportSpec(
     const chartInteractionResult = validateChartInteraction(chart)
     if (isAgentError(chartInteractionResult)) return chartInteractionResult
 
+    const transformResult = validateTransforms(chart)
+    if (isAgentError(transformResult)) return transformResult
+
+    const catalogErrorResult = runCatalogErrorRules(chart, context)
+    if (isAgentError(catalogErrorResult)) return catalogErrorResult
+
     const derivedFields = collectDerivedFields(chart)
     const sourceFields = collectSourceFields(chart, derivedFields)
     for (const field of sourceFields) {
@@ -78,13 +84,146 @@ export function getCatalogEntries(): Array<{
   requiredEncodings: string[]
   optionalEncodings: string[]
 }> {
-  return MVP_CHART_TYPES.map(type => ({
-    type,
-    requiredEncodings: REQUIRED_ENCODINGS[type] ?? [],
-    optionalEncodings: ['color', 'size', 'label', 'value'].filter(encoding => {
-      return !(REQUIRED_ENCODINGS[type] ?? []).includes(encoding)
-    })
-  }))
+  return MVP_CHART_TYPES.map(type => {
+    const catalogItem = getCatalogItem(type)
+    const required = catalogItem?.requiredEncodings ?? []
+    return {
+      type,
+      requiredEncodings: required,
+      optionalEncodings: ['color', 'size', 'label', 'value'].filter(encoding => !required.includes(encoding))
+    }
+  })
+}
+
+// Collect soft warnings (non-fatal issues the LLM should fix before rendering).
+// Requires profile for semantic checks; pass context to also run catalog compliance.
+export function collectValidationWarnings(
+  spec: AgentReportSpec,
+  profile: DataProfile,
+  context?: AnalyzeContext
+): string[] {
+  const warnings: string[] = []
+
+  // V01: too many charts in a single report
+  if (spec.charts.length > 6) {
+    warnings.push(
+      `Report has ${spec.charts.length} charts (>6). Consider splitting into multiple sections or removing low-value charts.`
+    )
+  }
+
+  // V02: too many bigvalue cards
+  const bigvalueCount = spec.charts.filter(c => c.type === 'bigvalue').length
+  if (bigvalueCount > 4) {
+    warnings.push(
+      `Report has ${bigvalueCount} bigvalue cards (>4). Use kpigrid for 5+ KPI cards to avoid visual clutter.`
+    )
+  }
+
+  for (const chart of spec.charts) {
+    const chartLabel = chart.id ? `chart '${chart.id}'` : `${chart.type} chart`
+
+    // T24: derive-month applied to a string field (profile-based check)
+    for (const t of chart.data?.transform ?? []) {
+      if (t.type === 'derive-month' && t.field) {
+        const col = profile.columns.find(c => c.name === t.field)
+        if (col && col.type === 'string') {
+          warnings.push(
+            `${chartLabel}: derive-month applied to '${t.field}' which is a string field in the profile. ` +
+            'derive-month expects a date field; the transform will silently produce empty strings.'
+          )
+        }
+      }
+    }
+
+    // T26: catalog compliance — chart type is blocked by context.json
+    if (context) {
+      const blocked = context.catalog.blockedCharts.find(b => b.type === chart.type)
+      if (blocked) {
+        warnings.push(
+          `${chartLabel}: type '${chart.type}' is in catalog.blockedCharts (${blocked.reason}). ` +
+          'Choose a type from catalog.charts instead.'
+        )
+      }
+    }
+
+    // Catalog warning rules (V03/V04 MISSING_SORT_TRANSFORM, TOO_MANY_CATEGORIES, TOO_MANY_SLICES, etc.)
+    const catalogItem = getCatalogItem(chart.type)
+    if (catalogItem) {
+      for (const rule of catalogItem.rules) {
+        if (rule.severity !== 'warning' || !rule.validate) continue
+        const issue = rule.validate(chart, context)
+        if (issue) {
+          warnings.push(issue.message)
+        }
+      }
+    }
+  }
+
+  return warnings
+}
+
+// T38: validate that every $evidence:id.path ref in insights resolves in context.evidence
+export function validateEvidencePaths(
+  spec: AgentReportSpec,
+  context: AnalyzeContext
+): AgentResult<void> {
+  const texts: string[] = [
+    ...(spec.insights ?? []),
+    ...spec.charts.map(c => c.title).filter((t): t is string => Boolean(t))
+  ]
+  for (const text of texts) {
+    for (const ref of parseEvidenceRefs(text)) {
+      const { found } = resolveEvidencePath(context.evidence, ref.id, ref.path)
+      if (!found) {
+        return agentError(
+          'EVIDENCE_PATH_NOT_FOUND',
+          `$evidence:${ref.id}.${ref.path} not found in context.evidence. ` +
+          `Available ids: ${context.evidence.map(e => e.id).join(', ') || '(none)'}`,
+          { evidenceId: ref.id, path: ref.path, availableIds: context.evidence.map(e => e.id) }
+        )
+      }
+    }
+  }
+  return ok(undefined)
+}
+
+// T47–T49: forbidden-word and caveat-propagation checks (--verify mode)
+export function collectVerifyWarnings(
+  spec: AgentReportSpec,
+  context?: AnalyzeContext
+): string[] {
+  const warnings: string[] = []
+  const insights = spec.insights ?? []
+
+  // T49: forbidden word detection in insights
+  for (const text of insights) {
+    for (const { pattern, word } of FORBIDDEN_WORDS) {
+      if (pattern.test(text)) {
+        warnings.push(
+          `insight contains forbidden word '${word}': "${text.slice(0, 80)}${text.length > 80 ? '...' : ''}" — ` +
+          'use only when backed by statistical evidence in context.evidence[]'
+        )
+      }
+    }
+  }
+
+  // T48: sampleWarning caveat propagation — if sampleWarnings exist, at least one insight must contain a caveat
+  if (context?.sampleWarnings.length) {
+    const CAVEAT_PATTERNS = [
+      /仅供参考|样本量|有限数据|based on.*rows?|N-row sample|limited data|small sample/i,
+      /环比变化|period.over.period/i
+    ]
+    const hasCaveat = insights.some(text => CAVEAT_PATTERNS.some(p => p.test(text)))
+    if (insights.length > 0 && !hasCaveat) {
+      const codes = context.sampleWarnings.map(w => w.code).join(', ')
+      warnings.push(
+        `sampleWarnings present (${codes}) but no insight contains a required caveat. ` +
+        'Add "(based on N rows only)" or "仅供参考，样本量极小" to data-backed insights.'
+      )
+    }
+  }
+
+  return warnings
 }
 
 function validateChartType(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
@@ -97,13 +236,27 @@ function validateChartType(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
 }
 
 function validateRequiredEncodings(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
-  const required = REQUIRED_ENCODINGS[chart.type] ?? []
+  const catalogItem = getCatalogItem(chart.type)
+  const required = catalogItem?.requiredEncodings ?? []
   for (const encoding of required) {
     if (!chart.encoding?.[encoding]?.field) {
       return agentError('MISSING_ENCODING', `Chart type '${chart.type}' requires encoding '${encoding}'.`, {
         chartType: chart.type,
         requiredEncodings: required
       })
+    }
+  }
+  return ok(chart)
+}
+
+function runCatalogErrorRules(chart: AgentChartSpec, ctx?: AnalyzeContext): AgentResult<AgentChartSpec> {
+  const catalogItem = getCatalogItem(chart.type)
+  if (!catalogItem) return ok(chart)
+  for (const rule of catalogItem.rules) {
+    if (rule.severity !== 'error' || !rule.validate) continue
+    const issue = rule.validate(chart, ctx)
+    if (issue) {
+      return agentError(issue.code, issue.message, { chartId: issue.chartId })
     }
   }
   return ok(chart)
@@ -157,6 +310,20 @@ function validateChartInteraction(chart: AgentChartSpec): AgentResult<AgentChart
     })
   }
 
+  return ok(chart)
+}
+
+function validateTransforms(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
+  for (const transform of chart.data?.transform ?? []) {
+    if (transform.type === 'filter') {
+      return agentError(
+        'UNSUPPORTED_TRANSFORM',
+        `Chart '${chart.id ?? chart.type}': transform type 'filter' has no renderer executor and will silently return unfiltered rows. ` +
+        'Use miao-viz query --filter to pre-filter, or remove this transform.',
+        { chartId: chart.id ?? chart.type, transformType: 'filter' }
+      )
+    }
+  }
   return ok(chart)
 }
 

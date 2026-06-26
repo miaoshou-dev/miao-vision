@@ -1,0 +1,40 @@
+charts:
+  - id: kpi_total_sales
+    type: bigvalue
+    title: Total sales
+    data:
+      transform:
+        - type: aggregate
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+    encoding:
+      value:
+        field: total_sales
+        type: quantitative
+
+  - id: ranking_by_region
+    type: bar
+    title: Sales by Region
+    data:
+      transform:
+        - type: aggregate
+          groupBy:
+            - region
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+        - type: sort
+          field: total_sales
+          order: desc
+        - type: limit
+          value: 10
+    encoding:
+      x: { field: region, type: nominal }
+      y: { field: total_sales, type: quantitative }
+
+insights:
+  - "Total sales across all regions: $evidence:total.values.total_sales (based on 4 rows only)."
+  - "East leads with $evidence:by_dimension.rows[0].total_sales in sales ($evidence:by_dimension.rows[0].share of total), followed by West and North. Rankings are descriptive only given the small sample."

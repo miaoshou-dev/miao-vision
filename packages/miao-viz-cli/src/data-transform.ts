@@ -32,6 +32,13 @@ function applyTransform(
     return rows.slice(0, transform.value)
   }
 
+  if (transform.type === 'filter') {
+    throw new Error(
+      "Transform type 'filter' is not supported in the renderer. " +
+      "Use miao-viz query --filter to pre-filter data, or the validate command will catch this before render."
+    )
+  }
+
   return rows
 }
 

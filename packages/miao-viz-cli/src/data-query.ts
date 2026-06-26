@@ -99,30 +99,55 @@ function parseMeasures(measure: string): ParsedMeasure[] | AgentError {
   return results
 }
 
+type FilterOp = '>=' | '<=' | '>' | '<' | '='
+
+interface ParsedFilter {
+  col: string
+  op: FilterOp
+  val: string
+}
+
+function parseFilter(filter: string): ParsedFilter | null {
+  // Order matters: check two-char operators before single-char
+  const match = filter.match(/^(\w+)\s*(>=|<=|>|<|=)\s*(.+)$/)
+  if (!match) return null
+  return { col: match[1], op: match[2] as FilterOp, val: match[3].trim() }
+}
+
 function applyFilter(
   rows: Record<string, unknown>[],
   filter: string
 ): { ok: true; rows: Record<string, unknown>[] } | { ok: false; error: AgentError } {
-  // Only "col=val" simple equality is supported
-  const match = filter.match(/^(\w+)\s*=\s*(.+)$/)
-  if (!match) {
+  const parsed = parseFilter(filter)
+  if (!parsed) {
     return {
       ok: false,
       error: agentError(
         'QUERY_INVALID_FILTER',
-        `Cannot parse filter: "${filter}". Use "column=value" (simple equality only).`
+        `Cannot parse filter: "${filter}". Use "column=value" or "column>=value" (supported: =, >=, <=, >, <).`
       ),
     }
   }
-  const [, col, rawVal] = match
-  const val = rawVal.trim()
+  const { col, op, val } = parsed
   const numVal = Number(val)
+  const useNumeric = Number.isFinite(numVal)
   const filtered = rows.filter(row => {
     const cell = row[col]
-    if (Number.isFinite(numVal) && Number.isFinite(Number(cell))) {
-      return Number(cell) === numVal
+    if (useNumeric && Number.isFinite(Number(cell))) {
+      const n = Number(cell)
+      if (op === '=')  return n === numVal
+      if (op === '>=') return n >= numVal
+      if (op === '<=') return n <= numVal
+      if (op === '>')  return n > numVal
+      if (op === '<')  return n < numVal
     }
-    return String(cell ?? '') === val
+    const s = String(cell ?? '')
+    if (op === '=')  return s === val
+    if (op === '>=') return s >= val
+    if (op === '<=') return s <= val
+    if (op === '>')  return s > val
+    if (op === '<')  return s < val
+    return false
   })
   return { ok: true, rows: filtered }
 }
@@ -203,8 +228,11 @@ function buildSql(
   ]
   let sql = `SELECT ${selectParts.length > 0 ? selectParts.join(', ') : '*'} FROM data`
   if (filter) {
-    const [col, val] = filter.split('=', 2)
-    sql += ` WHERE ${col.trim()} = ${val.trim()}`
+    const parsed = parseFilter(filter)
+    if (parsed) {
+      const quotedVal = Number.isFinite(Number(parsed.val)) ? parsed.val : `'${parsed.val}'`
+      sql += ` WHERE ${parsed.col} ${parsed.op} ${quotedVal}`
+    }
   }
   if (groupByCols.length > 0) sql += ` GROUP BY ${groupByCols.join(', ')}`
   if (orderby) sql += ` ORDER BY ${orderby}`

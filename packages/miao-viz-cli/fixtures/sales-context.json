@@ -1,0 +1,399 @@
+{
+  "ok": true,
+  "value": {
+    "intent": {
+      "raw": "regional sales ranking",
+      "coverage": "full",
+      "assumptions": [
+        "primary measure is \"sales\" (verify: sales, orders — choose with --correct-assumption primary_measure=<name>)",
+        "primary dimension is \"region\"",
+        "time field is \"order_date\""
+      ]
+    },
+    "fields": [
+      {
+        "name": "order_date",
+        "role": "time",
+        "type": "date",
+        "distinctCount": 4,
+        "timePeriods": 4,
+        "span": "2025-01-01 ~ 2025-02-02"
+      },
+      {
+        "name": "region",
+        "role": "dimension",
+        "type": "string",
+        "distinctCount": 3
+      },
+      {
+        "name": "category",
+        "role": "status",
+        "type": "string",
+        "distinctCount": 3
+      },
+      {
+        "name": "sales",
+        "role": "measure",
+        "type": "number",
+        "distinctCount": 4,
+        "min": 90,
+        "max": 140
+      },
+      {
+        "name": "orders",
+        "role": "measure",
+        "type": "number",
+        "distinctCount": 4,
+        "min": 3,
+        "max": 6
+      }
+    ],
+    "evidence": [
+      {
+        "id": "total",
+        "query": "Total aggregates: sum(sales) as total_sales, sum(orders) as total_orders, count(*) as row_count",
+        "values": {
+          "total_sales": 450,
+          "total_orders": 18,
+          "row_count": 4
+        }
+      },
+      {
+        "id": "by_dimension",
+        "query": "sales by region, with share",
+        "rows": [
+          {
+            "region": "East",
+            "total_sales": 240,
+            "row_count": 2,
+            "share": 0.5333
+          },
+          {
+            "region": "West",
+            "total_sales": 120,
+            "row_count": 1,
+            "share": 0.2667
+          },
+          {
+            "region": "North",
+            "total_sales": 90,
+            "row_count": 1,
+            "share": 0.2
+          }
+        ]
+      },
+      {
+        "id": "by_time",
+        "query": "sales by order_date (ascending)",
+        "rows": [
+          {
+            "order_date": "2025-01-01",
+            "total_sales": 100
+          },
+          {
+            "order_date": "2025-01-02",
+            "total_sales": 120
+          },
+          {
+            "order_date": "2025-02-01",
+            "total_sales": 140
+          },
+          {
+            "order_date": "2025-02-02",
+            "total_sales": 90
+          }
+        ]
+      }
+    ],
+    "catalog": {
+      "charts": [
+        "bigvalue",
+        "table",
+        "bar",
+        "line",
+        "area",
+        "pie",
+        "scatter"
+      ],
+      "blockedCharts": [
+        {
+          "type": "histogram",
+          "reason": "rows=4 < 20; distribution is unreliable"
+        }
+      ],
+      "recommendedPlan": [
+        {
+          "type": "bigvalue",
+          "note": "show sales, orders as KPI"
+        },
+        {
+          "type": "bar",
+          "note": "sales by region, top N"
+        },
+        {
+          "type": "line",
+          "note": "sales over order_date"
+        }
+      ],
+      "blocks": [
+        {
+          "id": "snapshot-ranking",
+          "score": 0.8999999999999999,
+          "description": "KPI card + ranked bar chart. Best for static snapshots without a time dimension.",
+          "bestFor": [
+            "regional ranking",
+            "category comparison",
+            "top-N with no time axis"
+          ],
+          "density": "compact",
+          "examplePrompt": "Show me sales by region, top 10",
+          "charts": [
+            "bigvalue",
+            "bar"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Metric to rank by",
+              "default": "sales"
+            },
+            "primaryDimension": {
+              "type": "field",
+              "role": "dimension",
+              "description": "Dimension to group by",
+              "default": "region"
+            },
+            "topN": {
+              "type": "number",
+              "description": "Number of top rows to show",
+              "default": 10,
+              "min": 3,
+              "max": 50
+            }
+          },
+          "qualityChecks": [
+            "bar chart has sort (desc) + limit — verify transform order",
+            "Do not exceed 4 bigvalue cards",
+            "Add caveat if context.json contains sampleWarnings"
+          ]
+        },
+        {
+          "id": "trend-overview",
+          "score": 0.8999999999999999,
+          "description": "KPI card + line chart. For datasets with a time dimension and ≥3 periods.",
+          "bestFor": [
+            "time series trend",
+            "monthly/quarterly overview",
+            "single measure over time"
+          ],
+          "density": "compact",
+          "examplePrompt": "Show me sales trend over time",
+          "charts": [
+            "bigvalue",
+            "line"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Metric to trend",
+              "default": "sales"
+            },
+            "timeField": {
+              "type": "field",
+              "role": "time",
+              "description": "Time dimension field",
+              "default": "order_date"
+            }
+          },
+          "qualityChecks": [
+            "line chart has sort asc on time field — already included",
+            "Add caveat if timePeriods is limited (< 6)"
+          ]
+        },
+        {
+          "id": "comparison-breakdown",
+          "score": 0.8999999999999999,
+          "description": "Bar chart + pie chart for dual-angle breakdown of a measure by one dimension.",
+          "bestFor": [
+            "category share",
+            "part-to-whole analysis",
+            "bar + pie dual view"
+          ],
+          "density": "medium",
+          "examplePrompt": "Break down revenue by product category, show both ranking and share",
+          "charts": [
+            "bar",
+            "pie"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Metric to break down",
+              "default": "sales"
+            },
+            "primaryDimension": {
+              "type": "field",
+              "role": "dimension",
+              "description": "Grouping dimension",
+              "default": "region"
+            },
+            "topN": {
+              "type": "number",
+              "description": "Top N bars to show",
+              "default": 10,
+              "min": 3,
+              "max": 20
+            }
+          },
+          "qualityChecks": [
+            "pie chart limited to ≤7 slices — already enforced",
+            "bar top-N for long-tail dimensions"
+          ]
+        },
+        {
+          "id": "trend-ranking",
+          "score": 0.8999999999999999,
+          "description": "KPI + line trend + ranking bar. Executive summary combining time and category views.",
+          "bestFor": [
+            "executive summary",
+            "monthly review with category breakdown",
+            "combined trend + ranking"
+          ],
+          "density": "full",
+          "examplePrompt": "Show me sales trend and which regions are performing best",
+          "charts": [
+            "bigvalue",
+            "line",
+            "bar"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Main metric",
+              "default": "sales"
+            },
+            "primaryDimension": {
+              "type": "field",
+              "role": "dimension",
+              "description": "Ranking dimension",
+              "default": "region"
+            },
+            "timeField": {
+              "type": "field",
+              "role": "time",
+              "description": "Time dimension",
+              "default": "order_date"
+            },
+            "topN": {
+              "type": "number",
+              "description": "Top N bars in ranking",
+              "default": 5,
+              "min": 3,
+              "max": 10
+            }
+          },
+          "qualityChecks": [
+            "line chart sort asc on time field — already included",
+            "bar chart sort desc + limit — already included",
+            "Add caveat if sampleWarnings present"
+          ]
+        },
+        {
+          "id": "full-detail-report",
+          "score": 0.8999999999999999,
+          "description": "Complete report: KPI + trend line + ranking bar + detail table.",
+          "bestFor": [
+            "comprehensive analysis",
+            "full business review",
+            "all-in-one report"
+          ],
+          "density": "full",
+          "examplePrompt": "Give me a complete analysis of our sales performance",
+          "charts": [
+            "bigvalue",
+            "line",
+            "bar",
+            "table"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Main metric",
+              "default": "sales"
+            },
+            "primaryDimension": {
+              "type": "field",
+              "role": "dimension",
+              "description": "Grouping dimension",
+              "default": "region"
+            },
+            "timeField": {
+              "type": "field",
+              "role": "time",
+              "description": "Time dimension",
+              "default": "order_date"
+            },
+            "topN": {
+              "type": "number",
+              "description": "Top N in ranking bar",
+              "default": 5,
+              "min": 3,
+              "max": 10
+            }
+          },
+          "qualityChecks": [
+            "total chart count is 4 — within V01 limit of 6",
+            "line chart sort asc on time field — already included",
+            "bar chart sort desc + limit — already included",
+            "Add caveat if sampleWarnings present",
+            "Table shows aggregated rows, not raw rows"
+          ]
+        },
+        {
+          "id": "kpi-summary",
+          "score": 0.7999999999999999,
+          "description": "One or more KPI cards showing total metrics at a glance.",
+          "bestFor": [
+            "executive summary",
+            "single-metric overview",
+            "no dimension breakdown needed"
+          ],
+          "density": "compact",
+          "examplePrompt": "Show me the total sales and order count",
+          "charts": [
+            "bigvalue"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Main metric to display as KPI",
+              "default": "sales"
+            }
+          },
+          "qualityChecks": [
+            "Do not exceed 4 bigvalue cards per report"
+          ]
+        }
+      ],
+      "blockedBlocks": []
+    },
+    "sampleWarnings": [
+      {
+        "code": "extreme_small_sample",
+        "message": "Only 4 rows. Rankings and comparisons are descriptive only; do not generalize."
+      }
+    ],
+    "promptRules": [
+      "Use only chart types listed in catalog.charts: bigvalue, table, bar, line, area, pie, scatter.",
+      "Every insight must cite at least one evidence id from the evidence array.",
+      "Do not compute new percentages or aggregates. Use values from evidence rows directly.",
+      "Mention sampleWarnings as caveats in related insights. Use language: \"在当前样本中\" (in this N-row sample) or \"based on limited data\"."
+    ]
+  }
+}

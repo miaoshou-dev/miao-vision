@@ -47,7 +47,7 @@ export function profileDataset(dataset: LoadedDataset, options: ProfilingOptions
     ? rawCorrelations?.filter(c => c.reliable)
     : rawCorrelations
 
-  const hints = generateHints(columns, correlations ?? [])
+  const hints = buildCatalogHints(columns, correlations ?? [])
   const quality = computeDataQuality(columns, dataset.rows.length)
   const insights = generateProfileInsights(columns, quality, correlations ?? [], dataset.rows.length)
 
@@ -301,7 +301,7 @@ function pearsonR(pairs: [number, number][]): number {
   return den < 1e-10 ? 0 : num / den
 }
 
-function generateHints(
+export function buildCatalogHints(
   columns: ColumnProfile[],
   correlations: Array<{ a: string; b: string; r: number; n: number; reliable: boolean }>
 ): ProfileHint[] {

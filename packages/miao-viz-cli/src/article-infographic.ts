@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { extname, basename } from 'node:path'
+import { z } from 'zod'
 import { agentError, ok } from './errors'
 import type { AgentResult } from './types'
 
@@ -37,6 +38,53 @@ export interface InfographicSpec {
     generatedAt: string
     wordCount: number
   }
+}
+
+const infographicSectionItemSchema = z.object({
+  label: z.string().optional(),
+  value: z.string().optional(),
+  text: z.string().min(1, 'item.text must not be empty'),
+  detail: z.string().optional()
+})
+
+const infographicSectionSchema = z.object({
+  type: z.enum(['hero', 'facts', 'timeline', 'comparison', 'quote', 'takeaways']),
+  title: z.string().min(1, 'section.title must not be empty'),
+  items: z.array(infographicSectionItemSchema).min(1, 'section.items must have at least one item'),
+  emphasis: z.string().optional(),
+  notes: z.string().optional()
+})
+
+export const infographicSpecSchema = z.object({
+  title: z.string().min(1, 'title must not be empty'),
+  subtitle: z.string().optional(),
+  source: z.string().optional(),
+  style: z.enum(['editorial', 'executive', 'minimal']).default('editorial'),
+  summary: z.string().min(1, 'summary must not be empty'),
+  sections: z.array(infographicSectionSchema).min(1, 'sections must have at least one entry'),
+  metadata: z.object({
+    inputFile: z.string().default(''),
+    generatedAt: z.string().default(() => new Date().toISOString()),
+    wordCount: z.number().int().min(0).default(0)
+  }).default({})
+})
+
+export function loadInfographicSpec(file: string): AgentResult<InfographicSpec> {
+  let raw: unknown
+  try {
+    raw = JSON.parse(readFileSync(file, 'utf8'))
+  } catch (error) {
+    return agentError('ARTICLE_INPUT_UNREADABLE', error instanceof Error ? error.message : 'Spec file could not be read.', { file })
+  }
+  const parsed = infographicSpecSchema.safeParse(raw)
+  if (!parsed.success) {
+    return agentError(
+      'INVALID_INFOGRAPHIC_SPEC',
+      `Spec validation failed: ${parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')}`,
+      { issues: parsed.error.issues.map(i => ({ path: i.path.join('.'), message: i.message })) }
+    )
+  }
+  return ok(parsed.data as InfographicSpec)
 }
 
 interface ParsedArticle {

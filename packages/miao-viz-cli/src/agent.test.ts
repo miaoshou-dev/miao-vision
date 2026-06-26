@@ -9,7 +9,9 @@ import { profileDataset, profileSummary } from './data-profiler'
 import { queryDataset } from './data-query'
 import { renderStaticHtml } from './html-export'
 import { applyInteractiveFilters, selectDetailRows, shouldEnableInteractiveRuntime } from './interactive-runtime'
-import { validateReportSpec } from './spec-validator'
+import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
+import { parseEvidenceRefs, resolveEvidencePath, resolveDirectives } from './directive-resolver'
+import { generatePatchHints } from './patch-hints'
 import { generateInfographicFromFile } from './article-infographic'
 import { renderInfographicHtml } from './article-html'
 import type { AgentReportSpec } from './types'
@@ -563,6 +565,104 @@ charts:
   })
 })
 
+describe('article --spec-input (T30–T33)', () => {
+  const validSpec = {
+    title: 'Test Article',
+    subtitle: 'A test subtitle',
+    style: 'editorial',
+    summary: 'A short summary for testing purposes.',
+    sections: [
+      {
+        type: 'hero',
+        title: 'Test Article',
+        emphasis: 'A short summary for testing purposes.',
+        items: [{ text: 'A short summary for testing purposes.' }]
+      },
+      {
+        type: 'facts',
+        title: 'Key Facts',
+        items: [
+          { value: '42%', text: 'Increase in reported cases.' },
+          { value: '$1.2B', text: 'Estimated economic impact.' }
+        ]
+      }
+    ],
+    metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
+  }
+
+  it('renders HTML from a valid --spec-input file', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-spec-input-'))
+    const specFile = join(dir, 'spec.json')
+    const htmlOutput = join(dir, 'out.html')
+    writeFileSync(specFile, JSON.stringify(validSpec), 'utf8')
+
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', specFile,
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { format: string; sections: string[] } }
+    expect(result.ok).toBe(true)
+    expect(result.value.format).toBe('html')
+    expect(result.value.sections).toContain('hero')
+    expect(result.value.sections).toContain('facts')
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('Test Article')
+    expect(html).toContain('<style>')
+  })
+
+  it('renders markdown from a valid --spec-input file', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-spec-input-md-'))
+    const specFile = join(dir, 'spec.json')
+    const mdOutput = join(dir, 'out.md')
+    writeFileSync(specFile, JSON.stringify(validSpec), 'utf8')
+
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', specFile,
+      '--format', 'markdown',
+      '--output', mdOutput
+    ], { encoding: 'utf8' })
+    expect(JSON.parse(out).ok).toBe(true)
+    const md = readFileSync(mdOutput, 'utf8')
+    expect(md).toContain('# Test Article')
+    expect(md).toContain('## Key Facts')
+  })
+
+  it('returns INVALID_INFOGRAPHIC_SPEC for a malformed spec', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-bad-spec-'))
+    const specFile = join(dir, 'bad.json')
+    const htmlOutput = join(dir, 'out.html')
+    writeFileSync(specFile, JSON.stringify({ title: '', sections: [] }), 'utf8')
+
+    const out = runCliExpectFailure([
+      'article',
+      '--spec-input', specFile,
+      '--format', 'html',
+      '--output', htmlOutput
+    ])
+    expect(JSON.parse(out).code).toBe('INVALID_INFOGRAPHIC_SPEC')
+  })
+
+  it('still renders articles from a file path when --spec-input is absent', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-article-path-'))
+    const htmlOutput = join(dir, 'out.html')
+
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      articlePath,
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    expect(JSON.parse(out).ok).toBe(true)
+    expect(readFileSync(htmlOutput, 'utf8')).toContain('<style>')
+  })
+})
+
 describe('article infographic generation', () => {
   it('builds a deterministic spec and HTML renderer output', () => {
     const generated = generateInfographicFromFile(articlePath, 'executive')
@@ -577,6 +677,442 @@ describe('article infographic generation', () => {
     expect(html).toContain('<style>')
     expect(html).toContain('mv-fact-grid')
     expect(html).toContain('miao-infographic-spec')
+  })
+})
+
+describe('validate semantic warnings (T24–T28)', () => {
+  const dataset = loadDataset(csvPath)
+  const profile = dataset.ok ? profileDataset(dataset.value) : ({} as ReturnType<typeof profileDataset>)
+
+  // T23: filter transform is a hard error, not a warning
+  it('rejects filter transform with UNSUPPORTED_TRANSFORM', () => {
+    const spec: AgentReportSpec = {
+      charts: [{
+        type: 'bar',
+        id: 'test',
+        data: { transform: [{ type: 'filter', field: 'region', value: 'East' }] },
+        encoding: { x: { field: 'region' }, y: { field: 'sales' } }
+      }]
+    }
+    const result = validateReportSpec(spec, profile)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.code).toBe('UNSUPPORTED_TRANSFORM')
+  })
+
+  // T24: derive-month on string field → warning
+  it('warns when derive-month is applied to a string column', () => {
+    if (!dataset.ok) return
+    const spec: AgentReportSpec = {
+      charts: [{
+        id: 'chart1',
+        type: 'bar',
+        data: {
+          transform: [
+            { type: 'derive-month', field: 'region', as: 'month' }, // region is string
+            { type: 'aggregate', groupBy: ['month'], measures: [{ field: 'sales', op: 'sum', as: 'total' }] }
+          ]
+        },
+        encoding: { x: { field: 'month' }, y: { field: 'total' } }
+      }]
+    }
+    const result = validateReportSpec(spec, profile)
+    expect(result.ok).toBe(true) // not a hard error
+    const warnings = collectValidationWarnings(spec, profile)
+    expect(warnings.length).toBeGreaterThan(0)
+    expect(warnings[0]).toContain("derive-month")
+    expect(warnings[0]).toContain("string field")
+  })
+
+  // T25: line chart with nominal x-axis → error (catalog rule X_MUST_BE_TEMPORAL, severity='error')
+  it('fails with X_MUST_BE_TEMPORAL when line chart has nominal x-axis type', () => {
+    if (!dataset.ok) return
+    const spec: AgentReportSpec = {
+      charts: [{
+        id: 'chart2',
+        type: 'line',
+        data: {
+          transform: [
+            { type: 'aggregate', groupBy: ['region'], measures: [{ field: 'sales', op: 'sum', as: 'total' }] }
+          ]
+        },
+        encoding: { x: { field: 'region', type: 'nominal' }, y: { field: 'total' } }
+      }]
+    }
+    const result = validateReportSpec(spec, profile)
+    expect(result.ok).toBe(false) // hard error per catalog rule X_MUST_BE_TEMPORAL
+    expect(result.ok ? '' : result.code).toBe('X_MUST_BE_TEMPORAL')
+    expect(result.ok ? '' : result.message).toContain('nominal')
+  })
+
+  // T26: blockedChart without context → no warning; with context → warning
+  it('warns when chart type is in catalog.blockedCharts', () => {
+    if (!dataset.ok) return
+    const spec: AgentReportSpec = {
+      charts: [{
+        id: 'chart3',
+        type: 'histogram',
+        data: { transform: [{ type: 'aggregate', measures: [{ field: 'sales', op: 'count', as: 'count' }] }] },
+        encoding: { x: { field: 'sales' } }
+      }]
+    }
+
+    // Without context: no catalog warning
+    const noContextWarnings = collectValidationWarnings(spec, profile)
+    expect(noContextWarnings.filter(w => w.includes('blockedCharts'))).toHaveLength(0)
+
+    // With context containing blockedCharts: warning appears
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [],
+      evidence: [],
+      catalog: {
+        charts: ['bigvalue', 'bar', 'table'],
+        blockedCharts: [{ type: 'histogram', reason: 'rows=4 < 20; distribution unreliable' }],
+        recommendedPlan: []
+      },
+      sampleWarnings: [],
+      promptRules: []
+    }
+    const withContextWarnings = collectValidationWarnings(spec, profile, context)
+    expect(withContextWarnings.length).toBeGreaterThan(0)
+    expect(withContextWarnings[0]).toContain("histogram")
+    expect(withContextWarnings[0]).toContain("blockedCharts")
+  })
+
+  // T27 + T26 strict: CLI-level tests requiring file I/O
+  it('fails with INVALID_CONTEXT when context.json is malformed', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-validate-ctx-'))
+    const specFile = join(dir, 'spec.yaml')
+    const profileFile = join(dir, 'profile.json')
+    const badContextFile = join(dir, 'bad-context.json')
+
+    const spec: AgentReportSpec = {
+      charts: [{ type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'sales' } } }]
+    }
+    writeFileSync(specFile, JSON.stringify(spec), 'utf8')
+    writeFileSync(profileFile, JSON.stringify({ ok: true, value: profile }), 'utf8')
+    writeFileSync(badContextFile, JSON.stringify({ not: 'a valid context' }), 'utf8')
+
+    const out = runCliExpectFailure([
+      'validate',
+      '--spec', specFile,
+      '--profile', profileFile,
+      '--context', badContextFile
+    ])
+    expect(JSON.parse(out).code).toBe('INVALID_CONTEXT')
+  })
+
+  it('fails with BLOCKED_CHART_STRICT when --strict and blocked chart is used', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-strict-'))
+    const specFile = join(dir, 'spec.yaml')
+    const profileFile = join(dir, 'profile.json')
+    const contextFile = join(dir, 'context.json')
+
+    const spec: AgentReportSpec = {
+      charts: [{ id: 'c1', type: 'histogram', encoding: { x: { field: 'sales' } } }]
+    }
+    const context = {
+      ok: true,
+      value: {
+        intent: { raw: 'test', coverage: 'full', assumptions: [] },
+        fields: [],
+        evidence: [],
+        catalog: {
+          charts: ['bar', 'table'],
+          blockedCharts: [{ type: 'histogram', reason: 'rows < 20' }],
+          recommendedPlan: []
+        },
+        sampleWarnings: [],
+        promptRules: []
+      }
+    }
+    writeFileSync(specFile, JSON.stringify(spec), 'utf8')
+    writeFileSync(profileFile, JSON.stringify({ ok: true, value: profile }), 'utf8')
+    writeFileSync(contextFile, JSON.stringify(context), 'utf8')
+
+    const out = runCliExpectFailure([
+      'validate',
+      '--spec', specFile,
+      '--profile', profileFile,
+      '--context', contextFile,
+      '--strict'
+    ])
+    expect(JSON.parse(out).code).toBe('BLOCKED_CHART_STRICT')
+  })
+
+  // T26 without strict: blocked chart is warning, not error
+  it('returns warnings (not error) for blocked chart without --strict', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-warn-'))
+    const specFile = join(dir, 'spec.yaml')
+    const profileFile = join(dir, 'profile.json')
+    const contextFile = join(dir, 'context.json')
+
+    const spec: AgentReportSpec = {
+      charts: [{ id: 'c1', type: 'histogram', encoding: { x: { field: 'sales' } } }]
+    }
+    const context = {
+      ok: true,
+      value: {
+        intent: { raw: 'test', coverage: 'full', assumptions: [] },
+        fields: [],
+        evidence: [],
+        catalog: {
+          charts: ['bar', 'table'],
+          blockedCharts: [{ type: 'histogram', reason: 'rows < 20' }],
+          recommendedPlan: []
+        },
+        sampleWarnings: [],
+        promptRules: []
+      }
+    }
+    writeFileSync(specFile, JSON.stringify(spec), 'utf8')
+    writeFileSync(profileFile, JSON.stringify({ ok: true, value: profile }), 'utf8')
+    writeFileSync(contextFile, JSON.stringify(context), 'utf8')
+
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'validate',
+      '--spec', specFile,
+      '--profile', profileFile,
+      '--context', contextFile
+    ], { encoding: 'utf8' })
+    const parsed = JSON.parse(out) as { ok: boolean; warnings?: string[] }
+    expect(parsed.ok).toBe(true)
+    expect(parsed.warnings).toBeDefined()
+    expect(parsed.warnings!.length).toBeGreaterThan(0)
+    expect(parsed.warnings![0]).toContain('histogram')
+  })
+})
+
+describe('directive-resolver (T37)', () => {
+  const evidence = [
+    {
+      id: 'total',
+      query: 'SELECT sum(sales) as total_sales, count(*) as row_count FROM data',
+      values: { total_sales: 4500, row_count: 4 }
+    },
+    {
+      id: 'by_dimension',
+      query: 'SELECT region, sum(sales) as total FROM data GROUP BY region ORDER BY total DESC',
+      rows: [
+        { region: 'East', total: 2400 },
+        { region: 'West', total: 2100 }
+      ]
+    }
+  ]
+
+  it('parses $evidence refs from a string', () => {
+    const refs = parseEvidenceRefs('Sales total: $evidence:total.values.total_sales from $evidence:by_dimension.rows[0].region')
+    expect(refs).toHaveLength(2)
+    expect(refs[0]).toMatchObject({ id: 'total', path: 'values.total_sales' })
+    expect(refs[1]).toMatchObject({ id: 'by_dimension', path: 'rows[0].region' })
+  })
+
+  it('returns empty array when no directives found', () => {
+    expect(parseEvidenceRefs('No directives here')).toHaveLength(0)
+  })
+
+  it('resolves values evidence path', () => {
+    const { found, value } = resolveEvidencePath(evidence, 'total', 'values.total_sales')
+    expect(found).toBe(true)
+    expect(value).toBe(4500)
+  })
+
+  it('resolves rows evidence path with bracket notation', () => {
+    const { found, value } = resolveEvidencePath(evidence, 'by_dimension', 'rows[0].region')
+    expect(found).toBe(true)
+    expect(value).toBe('East')
+  })
+
+  it('returns found=false for unknown evidence id', () => {
+    const { found } = resolveEvidencePath(evidence, 'nonexistent', 'values.x')
+    expect(found).toBe(false)
+  })
+
+  it('returns found=false for valid id but bad path', () => {
+    const { found } = resolveEvidencePath(evidence, 'total', 'values.nonexistent_field')
+    expect(found).toBe(false)
+  })
+
+  it('interpolates directives into a string', () => {
+    const result = resolveDirectives(
+      'East achieved $evidence:by_dimension.rows[0].total out of $evidence:total.values.total_sales total.',
+      evidence
+    )
+    expect(result).toBe('East achieved 2400 out of 4500 total.')
+  })
+
+  it('marks unresolvable paths with [?id.path] placeholder', () => {
+    const result = resolveDirectives('Value: $evidence:total.values.missing', evidence)
+    expect(result).toContain('[?total.values.missing]')
+  })
+})
+
+describe('validateEvidencePaths (T38)', () => {
+  const evidence = [
+    { id: 'total', query: 'SELECT sum(sales) as total FROM data', values: { total: 4500 } }
+  ]
+  const context = {
+    intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+    fields: [],
+    evidence,
+    catalog: { charts: ['bar'], blockedCharts: [], recommendedPlan: [] },
+    sampleWarnings: [],
+    promptRules: []
+  }
+
+  it('passes when all evidence refs resolve', () => {
+    const spec: AgentReportSpec = {
+      charts: [{ type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'sales' } } }],
+      insights: ['Total sales: $evidence:total.values.total']
+    }
+    const result = validateEvidencePaths(spec, context)
+    expect(result.ok).toBe(true)
+  })
+
+  it('fails with EVIDENCE_PATH_NOT_FOUND for missing evidence id', () => {
+    const spec: AgentReportSpec = {
+      charts: [],
+      insights: ['Revenue: $evidence:missing_id.values.revenue']
+    }
+    const result = validateEvidencePaths(spec, context)
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.code).toBe('EVIDENCE_PATH_NOT_FOUND')
+      expect(result.message).toContain('missing_id')
+    }
+  })
+
+  it('fails for valid id but non-existent path', () => {
+    const spec: AgentReportSpec = {
+      charts: [],
+      insights: ['Total: $evidence:total.values.nonexistent']
+    }
+    const result = validateEvidencePaths(spec, context)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.code).toBe('EVIDENCE_PATH_NOT_FOUND')
+  })
+
+  it('also checks chart titles', () => {
+    const spec: AgentReportSpec = {
+      charts: [{ type: 'bar', title: 'Sales: $evidence:bad.values.x', encoding: { x: { field: 'region' }, y: { field: 'sales' } } }]
+    }
+    const result = validateEvidencePaths(spec, context)
+    expect(result.ok).toBe(false)
+  })
+})
+
+describe('collectVerifyWarnings (T47–T49)', () => {
+  it('flags forbidden word "trend" in insights', () => {
+    const spec: AgentReportSpec = {
+      charts: [],
+      insights: ['Sales show a clear upward trend across regions.']
+    }
+    const warnings = collectVerifyWarnings(spec)
+    expect(warnings.some(w => w.includes('trend'))).toBe(true)
+  })
+
+  it('flags "should" in insights', () => {
+    const spec: AgentReportSpec = {
+      charts: [],
+      insights: ['Management should increase East region investment.']
+    }
+    const warnings = collectVerifyWarnings(spec)
+    expect(warnings.some(w => w.includes('should'))).toBe(true)
+  })
+
+  it('flags "strong correlation" in insights', () => {
+    const spec: AgentReportSpec = {
+      charts: [],
+      insights: ['There is a strong correlation between region and sales.']
+    }
+    const warnings = collectVerifyWarnings(spec)
+    expect(warnings.some(w => w.includes('strong correlation'))).toBe(true)
+  })
+
+  it('passes insights with no forbidden words', () => {
+    const spec: AgentReportSpec = {
+      charts: [],
+      insights: ['East contributed 2400 (53%) of total sales (based on 4 rows only).']
+    }
+    expect(collectVerifyWarnings(spec)).toHaveLength(0)
+  })
+
+  it('warns when sampleWarnings exist but no caveat in insights', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [], evidence: [],
+      catalog: { charts: [], blockedCharts: [], recommendedPlan: [] },
+      sampleWarnings: [{ code: 'small_sample' as const, message: 'rows < 20', field: undefined }],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      charts: [],
+      insights: ['East leads in sales volume.']
+    }
+    const warnings = collectVerifyWarnings(spec, context)
+    expect(warnings.some(w => w.includes('sampleWarnings'))).toBe(true)
+  })
+
+  it('passes when sampleWarning caveat is present', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [], evidence: [],
+      catalog: { charts: [], blockedCharts: [], recommendedPlan: [] },
+      sampleWarnings: [{ code: 'small_sample' as const, message: 'rows < 20', field: undefined }],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      charts: [],
+      insights: ['East leads (based on 4 rows only).']
+    }
+    expect(collectVerifyWarnings(spec, context)).toHaveLength(0)
+  })
+})
+
+describe('generatePatchHints (T40)', () => {
+  it('generates remove patch for UNSUPPORTED_TRANSFORM filter', () => {
+    const spec: AgentReportSpec = {
+      charts: [{
+        id: 'c1',
+        type: 'bar',
+        data: { transform: [{ type: 'filter', field: 'region', value: 'East' }] },
+        encoding: { x: { field: 'region' }, y: { field: 'sales' } }
+      }]
+    }
+    const err = { ok: false as const, code: 'UNSUPPORTED_TRANSFORM', message: '', detail: { chartId: 'c1' } }
+    const patches = generatePatchHints(err, spec)
+    expect(patches).toBeDefined()
+    expect(patches![0]).toMatchObject({ op: 'remove', path: '/charts/0/data/transform/0' })
+  })
+
+  it('generates replace patch for BLOCKED_CHART_STRICT', () => {
+    const spec: AgentReportSpec = {
+      charts: [{ id: 'c1', type: 'histogram', encoding: { x: { field: 'sales' } } }]
+    }
+    const err = { ok: false as const, code: 'BLOCKED_CHART_STRICT', message: '', detail: { chartId: 'c1', chartType: 'histogram' } }
+    const patches = generatePatchHints(err, spec, ['bar', 'line'])
+    expect(patches).toBeDefined()
+    expect(patches![0]).toMatchObject({ op: 'replace', path: '/charts/0/type', value: 'bar' })
+  })
+
+  it('generates replace patch for DUPLICATE_CHART_ID', () => {
+    const spec: AgentReportSpec = {
+      charts: [
+        { id: 'chart1', type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'sales' } } },
+        { id: 'chart1', type: 'line', encoding: { x: { field: 'region' }, y: { field: 'sales' } } }
+      ]
+    }
+    const err = { ok: false as const, code: 'DUPLICATE_CHART_ID', message: '', detail: { chartId: 'chart1' } }
+    const patches = generatePatchHints(err, spec)
+    expect(patches).toBeDefined()
+    expect(patches![0]).toMatchObject({ op: 'replace', path: '/charts/1/id', value: 'chart1_2' })
+  })
+
+  it('returns undefined for errors without a known fix', () => {
+    const spec: AgentReportSpec = { charts: [] }
+    const err = { ok: false as const, code: 'FIELD_NOT_FOUND', message: '', detail: {} }
+    expect(generatePatchHints(err, spec)).toBeUndefined()
   })
 })
 

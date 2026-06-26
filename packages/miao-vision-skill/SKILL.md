@@ -55,7 +55,11 @@ Use this workflow when the user provides:
 - a plain-text article
 - a request such as "turn this into an infographic"
 
-Steps:
+There are two paths depending on how much control the user wants over the layout.
+
+#### Path A — Auto-extract (default)
+
+The CLI parses the article and generates an `InfographicSpec` automatically.
 
 1. If the input is a URL, fetch/open the page and extract the main article content. Preserve title, date/author if available, headings, body text, lists, tables, and key quotes.
 2. Save normalized Markdown to `/tmp/miao-vision/article.md`.
@@ -80,15 +84,88 @@ Examples:
 - Markdown file input: run `miao-viz article /path/to/article.md --style editorial --format html --output /tmp/miao-vision/article-infographic.html`.
 - Pasted text input: write the text to `/tmp/miao-vision/article.md`, then run `miao-viz article /tmp/miao-vision/article.md --style editorial --format html --output /tmp/miao-vision/article-infographic.html`.
 
+#### Path B — LLM-written spec + `--spec-input`
+
+Use this when the user wants to control which sections appear, or when auto-extract produces poor structure (e.g., paywalled content, non-standard formatting).
+
+1. Read the article and write an `InfographicSpec` JSON:
+
+```json
+{
+  "title": "Article Title",
+  "subtitle": "One-line summary",
+  "source": "https://example.com/article",
+  "style": "editorial",
+  "summary": "Two-sentence summary of the key finding.",
+  "sections": [
+    {
+      "type": "hero",
+      "title": "Article Title",
+      "emphasis": "Lead sentence.",
+      "items": [{ "text": "Lead sentence." }]
+    },
+    {
+      "type": "facts",
+      "title": "Key Facts",
+      "items": [
+        { "value": "42%", "text": "Increase in reported cases since 2020." },
+        { "value": "$1.2B", "text": "Estimated economic impact." }
+      ]
+    },
+    {
+      "type": "takeaways",
+      "title": "Takeaways",
+      "items": [
+        { "text": "Regulators are expected to respond by Q3." }
+      ]
+    }
+  ],
+  "metadata": { "inputFile": "", "generatedAt": "", "wordCount": 0 }
+}
+```
+
+Allowed section types: `hero`, `facts`, `timeline`, `comparison`, `quote`, `takeaways`.
+Every section must have at least one item. `hero` is required and must come first.
+
+2. Save to `/tmp/miao-vision/article-spec.json`, then render:
+
+```bash
+miao-viz article \
+  --spec-input /tmp/miao-vision/article-spec.json \
+  --format html \
+  --output /tmp/miao-vision/article-infographic.html
+```
+
+If `miao-viz article` returns `INVALID_INFOGRAPHIC_SPEC`, read the `issues` array and fix each reported `path`. Common fixes:
+
+- Add `"text"` to every item.
+- Add at least one item to each section.
+- Use only allowed section types.
+- Ensure `title` and `summary` are non-empty strings.
+
 ### Data File → Visualization Report
 
 Use this workflow when the user asks for a report, analysis, dashboard, charts, or visualizations from a data file.
 
-**Fast path (< 100 rows or pure KPI summary):** Skip Phase 2 targeted profiling. Run `miao-viz profile --summary <file>` then go directly to a single aggregate query in Phase 3. The Narrative Plan is still required, even if short.
-
 ---
 
-#### Phase 1 — Intent Extraction
+#### Step 0 — Intent Routing
+
+Before running any CLI command, classify the user's intent to narrow the candidate blocks for Phase 3.
+
+| If the intent is... | Candidate block |
+|---------------------|-----------------|
+| Time trend ("over time", "monthly", "by quarter") | `trend-overview` or `trend-ranking` |
+| Static ranking ("top N", "by region", "category comparison") | `snapshot-ranking` |
+| Part-to-whole / share ("breakdown", "share", "composition") | `comparison-breakdown` |
+| Executive summary with both trend + ranking | `trend-ranking` |
+| Comprehensive analysis with detail table | `full-detail-report` |
+| KPI only ("total", "summary numbers", "key metrics") | `kpi-summary` |
+| User specifies custom chart types or complex requirements | build from `catalog.charts` directly |
+
+Record the candidate block in the Intent Card below. After analyze, check `catalog.blocks` to confirm the block is available.
+
+#### Phase 1 — Intent Card
 
 Fill this out from the user request and filename alone, **before any CLI commands**:
 
@@ -103,44 +180,121 @@ Time focus        : [yes / no]
 ══════════════════════════════════════════
 ```
 
-#### Phase 2 — Targeted Profiling
+#### Phase 2 — Analyze
 
-1. Run the lightweight summary to confirm column names match Intent Card guesses:
-
-```bash
-miao-viz profile --summary <file>
-```
-
-2. If column names don't match your guesses, revise the Intent Card (once only).
-
-3. Select at most 5 relevant columns and load their detailed statistics:
+Run two commands. The analyze output is what you read; the profile is only needed as a technical input to validate.
 
 ```bash
-miao-viz profile --columns col1,col2,col3 <file>
+# Evidence pack + catalog (read this before writing spec)
+miao-viz analyze /path/to/data.csv \
+  --intent "..." \
+  --output /tmp/miao-vision/context.json
+
+# Profile for validate (you do not need to read this)
+miao-viz profile /path/to/data.csv > /tmp/miao-vision/profile.json
 ```
 
-Column selection priority: primary measure (required) → primary dimension (required) → time column (if time focus = yes) → secondary measure/dimension (optional).
-
-**Rules:** Do not load full profile before Phase 1. Maximum 5 columns per `--columns` call.
-
-#### Phase 3 — Narrative Planning
-
-Run 1–3 `miao-viz query` calls to get real aggregated values, then output a Narrative Plan (see the Narrative Planning section in the Decision Framework). Maximum 3 queries; exceeding this requires explicit justification.
-
-Only proceed to spec writing after completing the Narrative Plan.
-
-#### Phase 4 — Spec Writing, Validation, and Render
-
-1. Write spec in YAML or JSON using the Decision Framework below and `references/vizspec.md`. Ground every insight in the Narrative Plan's real numbers.
-2. Run Self-Review (Step G) before finalising.
-3. Validate:
+If the auto-detected primary measure or dimension in `context.json` is wrong, rerun analyze with a correction:
 
 ```bash
-miao-viz validate --spec /tmp/miao-vision/report.yaml --profile /tmp/miao-vision/profile.json
+miao-viz analyze /path/to/data.csv \
+  --intent "..." \
+  --correct-assumption "primary_measure=orders" \
+  --output /tmp/miao-vision/context.json
 ```
 
-4. Fix structured errors once when possible (`FIELD_NOT_FOUND`, `MISSING_ENCODING`, `UNSUPPORTED_CHART_TYPE`).
-5. Render:
+To add a non-standard query (cross-dimensional, conditional sub-group) not covered by the 3 standard evidence queries:
+
+```bash
+miao-viz analyze /path/to/data.csv \
+  --intent "..." \
+  --extra-query "groupby=region,month;measure=sum(revenue) as total;filter=year>=2024" \
+  --output /tmp/miao-vision/context.json
+```
+
+**Read `context.json` and use these fields before writing the spec:**
+
+| Field | How to use |
+|-------|-----------|
+| `fields[]` | Column roles and types — use `role` to understand what each column is for |
+| `evidence[]` | Precomputed query results — cite `id` in insights, use `values`/`rows` for actual numbers |
+| `catalog.charts` | Allowed chart types — **only use types listed here** |
+| `catalog.blockedCharts` | Blocked types with reasons — do not use these |
+| `catalog.blocks[]` | Available report blocks sorted by score — pick the one matching your Step 0 routing |
+| `catalog.blockedBlocks[]` | Excluded blocks with machine-readable reasons — read reason if a block seems relevant |
+| `catalog.recommendedPlan` | Suggested starting combination — use as fallback when no block matches |
+| `sampleWarnings[]` | Sample size limitations — must appear as caveats in related insights |
+| `promptRules[]` | Dataset-specific generation rules — read and follow all |
+
+#### Phase 3 — Write Spec
+
+Write the report spec based solely on `context.json`. Follow all `promptRules[]`.
+
+**Block selection (preferred path):**
+
+1. Read `catalog.blocks` (sorted by score). Find the block whose `bestFor` matches your Step 0 routing intent.
+2. Run `miao-viz block instantiate <id> --context /tmp/miao-vision/context.json` to get a draft spec with real field names pre-filled and transforms already structured.
+3. Review the draft: confirm field names from `context.json fields[]`, adjust variables (e.g. `topN`), fill `insights[]` using `evidence[]` values.
+4. Add the block's `qualityChecks` to your Self-Review checklist.
+5. Proceed to Phase 4 validate — skip manual chart writing below.
+
+If `catalog.blocks` is empty or no block matches your intent: fall back to manual chart selection from `catalog.charts`.
+
+If a seemingly relevant block appears in `catalog.blockedBlocks`: read its `reason` and explain the limitation to the user (e.g., "The trend block requires ≥3 time periods — your data has only 2").
+
+**Manual chart selection (fallback):** Use only types in `catalog.charts`. Never use a type in `catalog.blockedCharts`. Use `catalog.recommendedPlan` as a layout starting point.
+
+**Insights:** Cite evidence ids for every claim. Do not compute new percentages or totals — use values from `evidence[].values` or `evidence[].rows` directly.
+
+Use `$evidence:<id>.<path>` directives to embed precomputed values inline:
+
+```yaml
+insights:
+  - "East contributed $evidence:by_dimension.rows[0].total out of $evidence:total.values.total_sales total (based on 4 rows only)."
+```
+
+Path formats:
+- `$evidence:total.values.total_sales` — from a single-row summary (`evidence[].values`)
+- `$evidence:by_dimension.rows[0].region` — from a multi-row result (`evidence[].rows`)
+
+`miao-viz validate --context context.json` checks every `$evidence` path at validation time and returns `EVIDENCE_PATH_NOT_FOUND` if a path does not resolve. Fix before rendering.
+
+**sampleWarnings:** Each warning requires a caveat:
+
+| code | Required caveat pattern |
+|------|------------------------|
+| `extreme_small_sample` | Add "(仅供参考，样本量极小)" or "(based on N rows only)" after any ranking or comparison |
+| `small_sample` | Add "(基于有限数据)" after distribution or outlier claims |
+| `two_period_only` | Write "环比变化" or "period-over-period change", not "趋势" or "trend" |
+| `one_period_only` | No time-based analysis; describe only current state |
+
+#### Phase 4 — Validate and Render
+
+1. Validate with full checks:
+
+```bash
+miao-viz validate \
+  --spec /tmp/miao-vision/report.yaml \
+  --profile /tmp/miao-vision/profile.json \
+  --context /tmp/miao-vision/context.json \
+  --verify
+```
+
+2. Read the `warnings[]` array in the output. Fix every warning before rendering.
+3. Fix structured errors once when possible. When the error is machine-fixable, add `--patch-hints` to get a JSON Patch you can apply directly:
+
+```bash
+miao-viz validate \
+  --spec /tmp/miao-vision/report.yaml \
+  --profile /tmp/miao-vision/profile.json \
+  --context /tmp/miao-vision/context.json \
+  --patch-hints
+```
+
+Patchable errors: `UNSUPPORTED_TRANSFORM` (removes the filter entry), `BLOCKED_CHART_STRICT` (replaces type), `DUPLICATE_CHART_ID` (renames), `MISSING_ENCODING` (adds skeleton encoding).
+
+For non-patchable errors (`FIELD_NOT_FOUND`, `UNSUPPORTED_CHART_TYPE`, `EVIDENCE_PATH_NOT_FOUND`), fix the spec manually.
+4. Render:
 
 ```bash
 miao-viz render \
@@ -152,6 +306,40 @@ miao-viz render \
 ```
 
 Return the generated HTML path to the user. Use `--theme editorial` for all user-facing reports.
+
+#### Edit Mode — modifying an existing spec
+
+Use Edit Mode when the user asks to change an existing report (not create a new one). The goal is minimum change — do not regenerate the whole spec.
+
+```
+New report:  analyze → block instantiate (draft) → fill insights → validate → render
+Edit report: read existing spec → identify minimum change → edit only that part → validate → render
+```
+
+**Steps:**
+
+1. Read the existing spec file completely before making changes.
+2. Identify the minimum set of fields to change. Do **not** rewrite the whole spec.
+3. Apply common edit patterns:
+   - Change a parameter: modify that field only (e.g., `limit: value: 5`)
+   - Add a chart: append to `charts[]`, do not touch existing charts
+   - Fix a validate warning: apply the `--patch-hints` output directly
+   - Change an insight: edit only that string in `insights[]`
+4. Run `miao-viz validate` again after editing to confirm no regressions.
+
+Rewrite the full spec only when: the user asks for a completely different report structure, or more than 50% of the spec needs to change.
+
+**Patch-hints for automatic fixes:**
+
+```bash
+miao-viz validate \
+  --spec /tmp/miao-vision/report.yaml \
+  --profile /tmp/miao-vision/profile.json \
+  --context /tmp/miao-vision/context.json \
+  --patch-hints
+```
+
+Patchable errors include `MISSING_SORT_TRANSFORM` (adds sort to line/area), `MISSING_ENCODING` (adds skeleton encoding), `UNSUPPORTED_TRANSFORM` (removes filter), `BLOCKED_CHART_STRICT` (replaces chart type).
 
 ### Data File → Presentation Deck
 
@@ -200,7 +388,7 @@ Example DeckSpecs are available in the CLI package:
 - `examples/finance-review-deck.yaml`
 - `examples/ops-update-deck.yaml`
 
-## Decision Framework for Spec Creation
+## Spec Writing Reference
 
 ### Choose the right command
 
@@ -209,133 +397,107 @@ Example DeckSpecs are available in the CLI package:
 - User provides an article URL, Markdown file, plain text article, or asks to "turn this into an infographic" → use `miao-viz article`.
 - If the request mixes report and presentation, ask only if the output format is ambiguous. Otherwise prefer the explicitly named format.
 
-### Phase 3: Narrative Planning (required before writing spec)
+### Encoding & Transform Syntax
 
-Before creating any spec, run 1–3 `miao-viz query` commands to get real aggregated values, then produce a Narrative Plan. Maximum 3 query calls; exceeding this requires explicit justification.
+Read `references/vizspec.md` for full field reference. Key rules for common transforms:
 
-**Query examples:**
+**derive-month** — extract year-month from a date field:
+
+```yaml
+transform:
+  - type: derive-month
+    field: order_date   # must be a date column (role: time)
+    as: month
+encoding:
+  x: { field: month, type: temporal }
+```
+
+Use only when `fields[].role = "time"` and time granularity is monthly. Do not apply to string columns.
+
+**aggregate** — group and compute measures:
+
+```yaml
+transform:
+  - type: aggregate
+    groupBy: [region]          # one or more dimension fields
+    measures:
+      - { field: sales, op: sum, as: total_sales }
+      - { field: orders, op: count, as: row_count }
+```
+
+**sort + limit** — rank a grouped result:
+
+```yaml
+transform:
+  - type: sort
+    field: total_sales
+    order: desc
+  - type: limit
+    value: 10
+```
+
+**filter transform is NOT supported** — do not use `type: filter` in transforms. Use `miao-viz query --filter` to pre-filter data before writing the spec.
+
+**Encoding type mapping:**
+
+| Field role | Encoding type |
+|-----------|---------------|
+| measure / score | `quantitative` |
+| dimension / status | `nominal` |
+| time | `temporal` |
+| ordinal rank | `ordinal` |
+
+**Chart order:** KPI bigvalues → time-series → ranking → comparison → table (always last if useful).
+
+**Temporal granularity:** use `fields[].timePeriods` from context.json to decide:
+- `timePeriods ≥ 3` and in `catalog.charts` → use `line` with `derive-month`
+- `timePeriods = 2` → use `bar` (period comparison), write "环比变化" not "趋势"
+- `timePeriods = 1` → describe current state only, no time chart
+
+**Multi-column groupby** — `miao-viz query` supports comma-separated columns:
 
 ```bash
-# Ranking by measure
-miao-viz query sales.csv --groupby region --measure "sum(sales) as total_sales" --orderby total_sales --limit 10
+# Group by region AND month together
+miao-viz query sales.csv \
+  --groupby region,month \
+  --measure "sum(revenue) as total"
 
-# KPI total
-miao-viz query sales.csv --measure "sum(sales) as total, count(*) as orders"
-
-# Filtered sub-group
-miao-viz query sales.csv --filter "region=East" --groupby quarter --measure "sum(sales) as east_sales" --orderby quarter
+# Range filter — use >=, <=, >, < in addition to =
+miao-viz query sales.csv \
+  --filter "year>=2024" \
+  --groupby region \
+  --measure "sum(revenue) as total"
 ```
 
-**Narrative Plan format** (output this before writing the spec):
+### Conservative Language
 
-```
-NARRATIVE PLAN
-══════════════════════════════════════════════════════════
-Main story   : [1–2 sentences summarising the most important finding, using real numbers]
+These rules apply to all insight text. Violations are caught by `miao-viz validate --verify`.
 
-Data evidence: (from miao-viz query — list the actual values)
-  - [field]: [real value] ([share or change %])
-  - [field]: [real value]
+**Forbidden words** (unless backed by statistical output in `context.json`):
+- `trend` / `趋势` — use only when `timePeriods ≥ 3` and line chart is in `catalog.charts`
+- `drive` / `驱动` — correlation ≠ causation; never assert causation from data alone
+- `significant` / `显著` — use only with statistical test output, not visual impression
+- `strong correlation` / `强相关` — use only when correlation r value is in `evidence[]`
+- `should` / `应该` — do not recommend actions from data alone
 
-Chart intents:
-  Chart 1 ([type]): [which analytical goal this chart serves]
-  Chart 2 ([type]): [which analytical goal this chart serves]
-
-Excluded charts: [chart types not generated and why]
-
-Insight drafts:
-  - "[statement grounded in real numbers above]"
-  - "[statement grounded in real numbers above]"
-══════════════════════════════════════════════════════════
-```
-
-Only proceed to spec writing after completing the Narrative Plan. Every insight in the spec must reference a value that appears in the "Data evidence" section above.
-
-**Fast path:** For files with fewer than 100 rows or pure KPI summaries, Phase 3 can be reduced to a single total-aggregate query. The Narrative Plan still must be output, even if short.
-
-### Step A — Read profile hints
-
-The `hints` array in the profile is the primary signal. Map each hint to a chart type:
-
-| Hint type | Chart to use | Notes |
-| --- | --- | --- |
-| `kpi` | `bigvalue` | Place ALL kpi hints first, group them together |
-| `time-series` | `line` or `area` | Use `xField` as x, pick primary `yField` as y |
-| `ranking` | `bar` | Use `groupField` as x, `measureField` as y; add aggregate + sort + limit 10 |
-| `share` | `pie` | Use `labelField` as label, `valueField` as value; add aggregate |
-| `distribution` | `histogram` | Use `field` as x; add note "(skewed)" to title if `skewed: true` |
-| `correlation` | `scatter` | Use `a` as x, `b` as y; mention r value in title |
-
-**Chart order:** KPI bigvalues → time-series → ranking → share/pie → distribution → scatter → table (always last if useful).
-
-### Step B — Apply cardinality rules
-
-Even without hints, apply these rules when choosing chart type:
-
-- `distinctCount ≤ 5` → pie is fine
-- `distinctCount 6–12` → bar is better than pie
-- `distinctCount > 12` → table only (too many categories for pie/bar)
-- `topSharePct` — **do not use in insights**. This field measures row frequency (how often a value appears), not value contribution (its share of the total measure). The two diverge significantly on skewed data. To get actual value share, run a `miao-viz query` aggregation instead (see Phase 3, available in P1).
-- `temporal.gapCount > 0` → note missing periods in a chart caption only; do not assert "missing data" in insights (gaps may be non-business days or expected sparse periods)
-
-### Step C — Write insights
-
-Populate the `insights` field with 2–4 short sentences grounded in the Narrative Plan's query results. Write in plain language for non-technical readers:
+**Required patterns when `sampleWarnings` exist:**
 
 ```yaml
+# ✅ Correct — caveat added
 insights:
-  - "East generated 240 in sales, 53.3% of the 450 total, making it the largest region."
-  - "West generated 120 in sales, half of East's total."
+  - "East contributed 240 in sales (53.3% of total), the largest region in this 4-row sample."
+
+# ❌ Wrong — no caveat, overstated confidence
+insights:
+  - "East is the dominant region, driving most of the company's revenue."
 ```
 
-Primary source for insight text:
-- `miao-viz query` values listed in the Narrative Plan's Data evidence section.
+**Allowed formulations:**
+- "在当前样本中" / "in this N-row sample"
+- "基于现有数据" / "based on available data"
+- "环比变化" / "period-over-period change" (when only 2 time periods)
 
-Allowed supplemental sources:
-- `skewness` > 1 or < -1 → mention skewed distribution only when `rows ≥ 30` and the statistic is included in Data evidence.
-- `correlations[].r` > 0.6 or < -0.5 → mention relationship only when `n ≥ 10` and the statistic is included in Data evidence.
-- `outlierCount` > 0 → mention outliers only when `rows ≥ 20` and the statistic is included in Data evidence.
-- **Forbidden**: `topSharePct` — row frequency, not value contribution. Never use as a percentage claim in insights.
-- **Forbidden for assertion**: `temporal.gapCount` — note in caption only, never assert "N periods of missing data" in insights.
-
-### Step D — Insights Grounding rules
-
-Every insight sentence must be traceable to one of these allowed sources:
-
-| Source | Example | Allowed in insights |
-| --- | --- | --- |
-| `miao-viz query` real aggregated value from Narrative Plan | `sum(sales, region=East)=240` | ✅ Yes |
-| Profile statistic with sufficient sample and listed in Data evidence (`rows ≥ 30` for skewness, `n ≥ 10` for correlation) | `skewness=2.1, rows=1200` | ✅ Yes |
-| User's own statement in the request | "user said Q3 was weak" | ✅ Yes |
-| **Profile `topSharePct`** | `topSharePct=0.5` | ❌ No — row frequency, not value share |
-| Profile statistic with insufficient sample | `skewness=2.1, rows=8` | ❌ No — statistically unreliable |
-| `temporal.gapCount` as a claim | `gapCount=29` → "29 missing days" | ❌ No — assert in caption only |
-
-**Forbidden insight patterns:**
-
-```yaml
-# ❌ topSharePct misread as value share
-- "East region accounts for 50% of sales."
-  # topSharePct=0.5 means East appears in 50% of rows, not 50% of revenue
-
-# ❌ Small-sample skewness assertion
-- "Data shows a strong right skew (skewness=2.1)."
-  # rows=8 — skewness has no statistical meaning here
-
-# ❌ gapCount misread as missing records
-- "The time series has 29 days of missing data."
-  # gapCount counts calendar gaps; non-business days are expected
-```
-
-### Step E — Temporal granularity rules
-
-When a `time-series` hint exists, use `temporal.granularity` to pick the right transform:
-
-- `granularity = day` → use the date field directly as x, no derive-month needed
-- `granularity = month` → use `derive-month` transform on the date field
-- `granularity = year` → use `bar` instead of `line` (few data points)
-
-### Step F — Chart Budget
+### Chart Budget
 
 - Default maximum: **6 charts** per report (4 `bigvalue` blocks count as 1).
 - Every chart must serve one of the analytical goals stated in the Intent Card.
@@ -344,19 +506,22 @@ When a `time-series` hint exists, use `temporal.granularity` to pick the right t
   - Multiple trends → multi-line `line` chart
   - Multiple measure bars → grouped `bar` chart
 
-### Step G — Self-Review before submitting spec
+### Self-Review before submitting spec
 
-Output the following checklist explicitly (as a comment block or separate reasoning step) before finalising the spec. Do not skip this step.
+Output the following checklist explicitly before finalising the spec. Do not skip this step.
 
 ```
 Self-Review:
-  [ ] Every insight traces to a Narrative Plan query value, an evidence-listed reliable profile statistic, OR the user's own statement?
-  [ ] No insight cites topSharePct as a value-share percentage?
-  [ ] No insight asserts gapCount as "missing data"?
-  [ ] No insight relies on a statistic where rows < 30 (skewness) or n < 10 (correlation)?
+  [ ] Every chart type is in catalog.charts (not in catalog.blockedCharts)?
+  [ ] Every numeric claim in insights comes from evidence[].values or evidence[].rows?
+  [ ] No new percentages computed — using evidence values directly?
+  [ ] Every insight cites which evidence id it relies on?
+  [ ] sampleWarnings are reflected as caveats in related insights?
+  [ ] No forbidden words (trend/drive/significant/strong correlation/should) used without statistical backing?
+  [ ] filter transform NOT used in spec (use miao-viz query --filter instead)?
+  [ ] derive-month applied only to date-role fields?
   [ ] Chart count ≤ 6 (bigvalue groups counted as 1)?
   [ ] Every chart maps to a goal in the Intent Card?
-  [ ] Time-series granularity matches derive-month usage?
 ```
 
 Resolve any unchecked items before rendering.

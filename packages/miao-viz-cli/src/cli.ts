@@ -1,29 +1,29 @@
 #!/usr/bin/env node
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
-import * as YAML from 'yaml'
+import { agentError, isAgentError } from './errors'
 import { loadDataset } from './data-loader'
 import { profileDataset, profileSummary } from './data-profiler'
 import { queryDataset } from './data-query'
-import { agentError, isAgentError } from './errors'
 import { renderStaticHtml } from './html-export'
-import { getCatalogEntries, validateReportSpec } from './spec-validator'
-import { parseOutputFormats, singleOrReportSpecSchema } from './spec-schema'
+import { getCatalogEntries, validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
+import { analyzeContextSchema } from './context-schema'
 import { renderChartSvg } from './svg-renderer'
 import { renderDeckHtml } from './deck-renderer'
 import { parseDeckSpec, validateDeckFields } from './deck-validator'
-import { generateInfographicFromFile, parseArticleFormat, parseArticleStyle } from './article-infographic'
+import { generateInfographicFromFile, loadInfographicSpec, parseArticleFormat, parseArticleStyle, renderInfographicMarkdown } from './article-infographic'
 import { renderInfographicHtml } from './article-html'
+import { analyzeDataset } from './analyzer'
+import { generatePatchHints } from './patch-hints'
+import { printHelp } from './cli-help'
+import { runCatalog, runBlock } from './cli-block'
+import {
+  BOOLEAN_FLAGS, parseArgs, requiredFlag, stringFlag, numberFlag,
+  formatOutputPath, writeOutput, fail, printJson,
+  readSpec, readJson, readProfile, normalizeSpec, parseFormats
+} from './cli-utils'
+import type { CliArgs } from './cli-utils'
+import type { AnalyzeContext } from './context-schema'
 import type { AgentError, AgentOutputFormat, AgentReportSpec, DataProfile } from './types'
-
-interface CliArgs {
-  command?: string
-  positional: string[]
-  flags: Record<string, string | boolean>
-}
-
-const BOOLEAN_FLAGS = new Set(['h', 'help', 'summary', 'reliable-only', 'interactive', 'no-interactive'])
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
@@ -50,7 +50,12 @@ async function main(): Promise<void> {
     }
 
     if (args.command === 'catalog') {
-      printJson({ ok: true, value: { charts: getCatalogEntries() } })
+      printJson(runCatalog(args))
+      return
+    }
+
+    if (args.command === 'block') {
+      printJson(runBlock(args))
       return
     }
 
@@ -74,8 +79,13 @@ async function main(): Promise<void> {
       return
     }
 
+    if (args.command === 'analyze') {
+      await runAnalyze(args)
+      return
+    }
+
     printJson(agentError('UNKNOWN_COMMAND', `Unknown command: ${args.command ?? '(none)'}`, {
-      commands: ['profile', 'validate', 'catalog', 'render', 'deck', 'article', 'query']
+      commands: ['profile', 'validate', 'catalog', 'block', 'render', 'deck', 'article', 'query', 'analyze']
     }))
     process.exitCode = 1
   } catch (error) {
@@ -117,8 +127,70 @@ function runValidate(args: CliArgs): unknown {
   if (isAgentError(normalized)) return fail(normalized)
 
   const result = validateReportSpec(normalized, profile)
-  if (isAgentError(result)) return fail(result)
-  return { ok: true, value: result.value }
+  if (isAgentError(result)) {
+    if (args.flags['patch-hints'] === true) {
+      return fail({ ...result, patches: generatePatchHints(result, normalized as AgentReportSpec) })
+    }
+    return fail(result)
+  }
+
+  // Optional context.json for catalog compliance and semantic checks (T26, T27)
+  let context: AnalyzeContext | undefined
+  const contextPath = stringFlag(args, 'context')
+  if (contextPath) {
+    const raw = readJson<unknown>(contextPath)
+    const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true
+      ? (raw as { value: unknown }).value
+      : raw
+    const parsed = analyzeContextSchema.safeParse(unwrapped)
+    if (!parsed.success) {
+      return fail(agentError(
+        'INVALID_CONTEXT',
+        `context.json format is invalid: ${parsed.error.issues.map(i => i.message).join('; ')}`,
+        { contextPath }
+      ))
+    }
+    context = parsed.data
+  }
+
+  const warnings = collectValidationWarnings(result.value, profile, context)
+
+  // --strict: blockedChart violations become hard errors (T26)
+  if (args.flags['strict'] === true && context) {
+    for (const chart of result.value.charts) {
+      const blocked = context.catalog.blockedCharts.find(b => b.type === chart.type)
+      if (blocked) {
+        const err = agentError(
+          'BLOCKED_CHART_STRICT',
+          `Strict mode: chart '${chart.id ?? chart.type}' uses blocked type '${chart.type}' (${blocked.reason})`,
+          { chartId: chart.id ?? chart.type, chartType: chart.type, reason: blocked.reason }
+        )
+        if (args.flags['patch-hints'] === true) {
+          return fail({ ...err, patches: generatePatchHints(err, result.value, context.catalog.charts) })
+        }
+        return fail(err)
+      }
+    }
+  }
+
+  // T38: $evidence path validation — hard fail when --context is provided
+  if (context) {
+    const evResult = validateEvidencePaths(result.value, context)
+    if (isAgentError(evResult)) {
+      const err = evResult
+      if (args.flags['patch-hints'] === true) {
+        return fail({ ...err, patches: generatePatchHints(err, result.value) })
+      }
+      return fail(err)
+    }
+  }
+
+  if (args.flags['verify'] === true) {
+    const verifyWarnings = collectVerifyWarnings(result.value, context)
+    warnings.push(...verifyWarnings)
+  }
+
+  return { ok: true, value: result.value, warnings }
 }
 
 function runRender(args: CliArgs): unknown {
@@ -222,28 +294,73 @@ function runQuery(args: CliArgs): unknown {
   return { ok: true, value: result }
 }
 
-function runArticle(args: CliArgs): unknown {
+async function runAnalyze(args: CliArgs): Promise<void> {
   const file = args.positional[0]
   if (!file) {
-    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz article <file> --output <file> [--style editorial|executive|minimal] [--format html|json|markdown]'))
+    printJson(fail(agentError('MISSING_INPUT', 'Usage: miao-viz analyze <file> [--intent "..."] [--output context.json] [--extra-query "..."] [--correct-assumption "primary_measure=col"] [--sheet <name>] [--limit <n>]')))
+    return
   }
+
+  const dataset = loadDataset(file, {
+    sheet: stringFlag(args, 'sheet'),
+    limit: numberFlag(args, 'limit')
+  })
+  if (isAgentError(dataset)) { printJson(fail(dataset)); return }
+
+  const context = analyzeDataset(dataset.value, {
+    intent: stringFlag(args, 'intent'),
+    extraQuery: stringFlag(args, 'extra-query'),
+    correctAssumption: stringFlag(args, 'correct-assumption')
+  })
+
+  const result = { ok: true, value: context }
+  const outputPath = stringFlag(args, 'output')
+  if (outputPath) {
+    writeOutput(outputPath, `${JSON.stringify(result, null, 2)}\n`)
+    process.stdout.write(`${JSON.stringify({ ok: true, value: { output: outputPath } }, null, 2)}\n`)
+  } else {
+    printJson(result)
+  }
+}
+
+function runArticle(args: CliArgs): unknown {
+  const specInputPath = stringFlag(args, 'spec-input')
 
   const output = requiredFlag(args, 'output')
   if (isAgentError(output)) return fail(output)
-
-  const styleFlag = stringFlag(args, 'style')
-  const style = parseArticleStyle(styleFlag)
-  if (!style) {
-    return fail(agentError('UNSUPPORTED_ARTICLE_STYLE', `Unsupported article style: ${styleFlag}`, {
-      supportedStyles: ['editorial', 'executive', 'minimal']
-    }))
-  }
 
   const formatFlag = stringFlag(args, 'format')
   const format = parseArticleFormat(formatFlag)
   if (!format) {
     return fail(agentError('UNSUPPORTED_ARTICLE_FORMAT', `Unsupported article output format: ${formatFlag}`, {
       supportedFormats: ['html', 'json', 'markdown']
+    }))
+  }
+
+  if (specInputPath) {
+    const loaded = loadInfographicSpec(specInputPath)
+    if (isAgentError(loaded)) return fail(loaded)
+    const spec = loaded.value
+    if (format === 'json') {
+      writeOutput(output, `${JSON.stringify(spec, null, 2)}\n`)
+    } else if (format === 'markdown') {
+      writeOutput(output, renderInfographicMarkdown(spec))
+    } else {
+      writeOutput(output, renderInfographicHtml(spec))
+    }
+    return { ok: true, value: { output, format, style: spec.style, sections: spec.sections.map(s => s.type) } }
+  }
+
+  const file = args.positional[0]
+  if (!file) {
+    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz article <file> --output <file> [--style editorial|executive|minimal] [--format html|json|markdown]\n       miao-viz article --spec-input <spec.json> --output <file> [--format html|json|markdown]'))
+  }
+
+  const styleFlag = stringFlag(args, 'style')
+  const style = parseArticleStyle(styleFlag)
+  if (!style) {
+    return fail(agentError('UNSUPPORTED_ARTICLE_STYLE', `Unsupported article style: ${styleFlag}`, {
+      supportedStyles: ['editorial', 'executive', 'minimal']
     }))
   }
 
@@ -267,220 +384,6 @@ function runArticle(args: CliArgs): unknown {
       sections: generated.value.spec.sections.map(section => section.type)
     }
   }
-}
-
-function normalizeSpec(spec: unknown): AgentReportSpec | AgentError {
-  const parsed = singleOrReportSpecSchema.safeParse(spec)
-  if (!parsed.success) {
-    return agentError('INVALID_SPEC', parsed.error.issues.map(issue => issue.message).join('; '))
-  }
-  return parsed.data
-}
-
-function parseFormats(value: string | undefined): AgentOutputFormat[] | AgentError {
-  try {
-    return parseOutputFormats(value)
-  } catch (error) {
-    return agentError('UNSUPPORTED_OUTPUT_FORMAT', error instanceof Error ? error.message : 'Unsupported output format.')
-  }
-}
-
-function readSpec(file: string): unknown {
-  const text = readFileSync(file, 'utf8')
-  if (file.endsWith('.json')) return JSON.parse(text)
-  return YAML.parse(text)
-}
-
-function readJson<T>(file: string): T {
-  return JSON.parse(readFileSync(file, 'utf8')) as T
-}
-
-function readProfile(file: string): DataProfile {
-  const parsed = readJson<DataProfile | { ok: true; value: DataProfile }>(file)
-  if ((parsed as { ok?: unknown }).ok === true) {
-    return (parsed as { value: DataProfile }).value
-  }
-  return parsed as DataProfile
-}
-
-function parseArgs(argv: string[]): CliArgs {
-  const [command, ...rest] = argv
-  const positional: string[] = []
-  const flags: Record<string, string | boolean> = {}
-
-  for (let i = 0; i < rest.length; i += 1) {
-    const value = rest[i]
-    if (value.startsWith('--')) {
-      const key = value.slice(2)
-      if (BOOLEAN_FLAGS.has(key)) {
-        flags[key] = true
-        continue
-      }
-
-      const next = rest[i + 1]
-      if (!next || next.startsWith('--')) {
-        flags[key] = true
-      } else {
-        flags[key] = next
-        i += 1
-      }
-    } else {
-      positional.push(value)
-    }
-  }
-
-  return { command, positional, flags }
-}
-
-function requiredFlag(args: CliArgs, name: string): string | AgentError {
-  const value = stringFlag(args, name)
-  if (!value) return agentError('MISSING_FLAG', `Missing required flag --${name}.`)
-  return value
-}
-
-function stringFlag(args: CliArgs, name: string): string | undefined {
-  const value = args.flags[name]
-  return typeof value === 'string' ? value : undefined
-}
-
-function numberFlag(args: CliArgs, name: string): number | undefined {
-  const value = stringFlag(args, name)
-  if (!value) return undefined
-  const parsed = Number(value)
-  return Number.isFinite(parsed) ? parsed : undefined
-}
-
-function formatOutputPath(output: string, ext: string, multiple: boolean): string {
-  if (!multiple && output.endsWith(`.${ext}`)) return output
-  if (multiple) return output.replace(/\.[a-z0-9]+$/i, '') + `.${ext}`
-  return output
-}
-
-function writeOutput(file: string, content: string): void {
-  mkdirSync(dirname(file), { recursive: true })
-  writeFileSync(file, content, 'utf8')
-}
-
-function fail(error: AgentError): AgentError {
-  process.exitCode = 1
-  return error
-}
-
-function printJson(value: unknown): void {
-  process.stdout.write(`${JSON.stringify(value, null, 2)}\n`)
-}
-
-const COMMAND_HELP: Record<string, string> = {
-  profile: `Usage: miao-viz profile <file> [options]
-
-Profile a data file and output column statistics.
-
-Arguments:
-  file                  Path to CSV, Excel (.xlsx/.xls), or JSON file
-
-Options:
-  --summary             Return only file, row count, and column names+types (~200 tokens)
-  --columns col1,col2   Deep-profile only the specified columns (comma-separated)
-  --reliable-only       Suppress statistics where sample size is too small to be reliable
-  --sheet <name>        Sheet name (Excel only)
-  --limit <n>           Max rows to read
-
-Reliability thresholds:
-  skewness              rows >= 30
-  correlation           n  >= 10 (paired non-null values)
-  outlierCount          rows >= 20
-  histogram             rows >= 20
-`,
-  validate: `Usage: miao-viz validate --spec <file> --profile <file>
-
-Validate a vizspec against a data profile.
-
-Options:
-  --spec <file>     Path to vizspec YAML/JSON
-  --profile <file>  Path to profile JSON (output of "profile")
-`,
-  catalog: `Usage: miao-viz catalog
-
-List all available chart types and their required fields.
-`,
-  render: `Usage: miao-viz render --input <file> --spec <file> --output <file> [options]
-
-Render a vizspec to HTML or SVG.
-
-Options:
-  --input <file>    Path to data file
-  --spec <file>     Path to vizspec YAML/JSON
-  --output <file>   Output file path
-  --format <fmt>    Output format: html, svg (default: html)
-  --theme <name>    Theme: default, editorial, dark, minimal
-  --interactive     Force lightweight interactive runtime for HTML output
-  --no-interactive  Force static HTML output even when interaction spec exists
-  --sheet <name>    Sheet name (Excel only)
-  --limit <n>       Max rows to read
-`,
-  deck: `Usage: miao-viz deck --input <file> --spec <file> --output <file> [options]
-
-Render a deck spec to HTML slides.
-
-Options:
-  --input <file>    Path to data file
-  --spec <file>     Path to deck spec YAML/JSON
-  --output <file>   Output file path
-  --theme <name>    Theme: default, editorial, dark, minimal
-  --sheet <name>    Sheet name (Excel only)
-  --limit <n>       Max rows to read
-`,
-  article: `Usage: miao-viz article <file> --output <file> [options]
-
-Convert a local Markdown or plain-text article into a static infographic artifact.
-URL fetching is intentionally handled by the agent/skill layer; this command only reads local files.
-
-Arguments:
-  file              Path to a .md, .markdown, or .txt article file
-
-Options:
-  --output <file>   Output file path
-  --format <fmt>    Output format: html, json, markdown (default: html)
-  --style <name>    Style: editorial, executive, minimal (default: editorial)
-`,
-  query: `Usage: miao-viz query <file> [options]
-
-Run an aggregation query against a data file and return JSON results.
-Use this to get real computed values before writing chart insights.
-
-Supported aggregate functions: sum, count, avg, min, max
-
-Options:
-  --groupby <cols>      Comma-separated column names to group by
-  --measure <exprs>     Aggregate expressions, e.g. "sum(sales) as total, count(*) as cnt"
-  --filter <col=val>    Simple equality filter (one condition only)
-  --orderby <col dir>   Sort column and direction, e.g. "total_sales desc"
-  --limit <n>           Max rows to return
-  --sheet <name>        Sheet name (Excel only)
-`,
-}
-
-function printHelp(command?: string): void {
-  if (command && COMMAND_HELP[command]) {
-    process.stdout.write(COMMAND_HELP[command])
-    return
-  }
-  process.stdout.write(`miao-viz — local data visualization CLI
-
-Usage:
-  miao-viz <command> [options]
-
-Commands:
-  profile   Profile a data file (CSV, Excel, JSON)
-  query     Run an aggregation query to get real computed values
-  validate  Validate a vizspec against a data profile
-  catalog   List all available chart types
-  render    Render a vizspec to HTML or SVG
-  deck      Render a deck spec to HTML slides
-  article   Convert a local article to an infographic artifact
-
-Run "miao-viz <command> --help" for command-specific options.
-`)
 }
 
 main()
