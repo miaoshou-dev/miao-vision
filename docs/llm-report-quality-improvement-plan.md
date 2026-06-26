@@ -1,7 +1,10 @@
 # LLM 报告质量改进方案：通用指标、证据洞察与小样本警告
 
+> ✅ **已归档（2026-06-26）**：阶段 1（Skill）、阶段 2（analyze + sampleWarnings）已实现。
+> 阶段 3（metricCandidates）、阶段 4（结构化 insight）未实现，已迁入 `docs/cli-backlog-v3.md`（P2-A、P2-B）。本文档仅供设计参考。
+>
 > 日期：2026-06-25  
-> 状态：规划稿  
+> 状态：规划稿（归档）  
 > 关联模块：`packages/miao-viz-cli`, `packages/miao-vision-skill/SKILL.md`  
 > 目标：让 `miao-viz` 面向任意结构化数据生成的报告既保持可复现，又具备更强的解释力，同时避免小样本下的过度解读。
 

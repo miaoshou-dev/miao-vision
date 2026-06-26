@@ -1,5 +1,8 @@
 # Catalog 产品化 PRD v2 — 三层 Catalog 架构
 
+> ✅ **已归档（2026-06-26）**：本 PRD 全部实现，commit `0044cd2`，77 个测试通过。
+> 待完成的遗留项已迁入 `docs/cli-backlog-v3.md`。本文档仅供设计参考，不再追踪任务状态。
+>
 > 综合 HyperFrames、json-render 竞品分析及 v1 实施经验的升级版本
 > 日期：2026-06-26
 > 关联：`docs/catalog-productization-prd.md`（v1，已被本文档取代）

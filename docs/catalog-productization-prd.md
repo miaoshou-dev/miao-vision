@@ -1,5 +1,8 @@
 # Catalog Productization PRD
 
+> ✅ **已归档**：本文档为 v1，已被 `catalog-productization-prd-v2.md` 取代，后者已全部实现。
+> 当前待完成项请看 `docs/cli-backlog-v3.md`。
+>
 > 基于 Codex/HyperFrames 竞品分析的 miao-viz 报告生成优化方案
 > 日期：2026-06-26
 > 关联：`docs/cli-llm-improvement-proposal.md`
