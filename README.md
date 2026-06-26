@@ -46,6 +46,30 @@ Read https://miaoshou.dev/SKILL.md and follow the instructions to install or upg
 
 The agent installs the CLI and skill in one shot, then you can immediately ask it to analyze your data and generate reports. No manual steps.
 
+Once installed, just describe what you want:
+
+| What you say | What you get |
+|---|---|
+| "analyze sales.csv and make a report" | Self-contained HTML data report |
+| "turn this into a deck for Monday's meeting" | Browser slide deck |
+| "make an infographic from this article" | Static infographic HTML |
+
+**Or install the skill manually** — download the ZIP from [GitHub Releases](../../releases):
+
+For Claude Code:
+```bash
+npm install -g @miao-vision/cli
+mkdir -p ~/.claude/skills
+unzip miao-vision-skill.zip -d ~/.claude/skills/
+```
+
+For Codex:
+```bash
+npm install -g @miao-vision/cli
+mkdir -p ~/.codex/skills
+unzip miao-vision-skill.zip -d ~/.codex/skills/
+```
+
 ---
 
 ### Option B — Manual install
@@ -208,54 +232,6 @@ miao-viz article ./my-article.md --style editorial --output ./infographic.html
 ```
 
 You get: a static, shareable infographic you can embed or send directly.
-
----
-
-## Agent skill
-
-Miao Vision ships with a skill for Claude and Codex. Once installed, your agent knows how to profile data, pick the right chart types, write the spec, validate, and render — you just describe what you want.
-
-**The quickest way — ask your agent:**
-
-```
-Read https://miaoshou.dev/SKILL.md and follow the instructions to install or upgrade miao-viz for your AI agent.
-```
-
-Your agent installs the CLI and skill in one shot, no manual steps.
-
----
-
-**Or install manually:**
-
-**Step 1 — Install the CLI:**
-```bash
-npm install -g @miao-vision/cli
-miao-viz catalog   # confirm it's working
-```
-
-**Step 2 — Install the skill:**
-
-For Claude Code:
-```bash
-mkdir -p ~/.claude/skills
-unzip miao-vision-skill.zip -d ~/.claude/skills/
-```
-
-For Codex:
-```bash
-mkdir -p ~/.codex/skills
-cp -R packages/miao-vision-skill ~/.codex/skills/miao-vision
-```
-
-Then restart your agent and ask naturally:
-
-| What you say | What you get |
-|---|---|
-| "analyze sales.csv and make a report" | Self-contained HTML data report |
-| "turn this into a deck for Monday's meeting" | Browser slide deck |
-| "make an infographic from this article" | Static infographic HTML |
-
-Download the latest skill ZIP from [GitHub Releases](../../releases) or see [Agent Install Guide](./docs/miao-vision-agent-install.md).
 
 ---
 
