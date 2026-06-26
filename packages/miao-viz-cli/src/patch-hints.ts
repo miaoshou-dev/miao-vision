@@ -1,5 +1,6 @@
-import type { AgentError, AgentChartSpec, AgentReportSpec } from './types'
+import type { AgentError, AgentReportSpec } from './types'
 import { getCatalogItem } from './chart-catalog'
+import { findChartIndex, findLastChartIndexById } from './spec-utils'
 
 export interface JsonPatch {
   op: 'add' | 'remove' | 'replace'
@@ -19,7 +20,7 @@ export function generatePatchHints(
   switch (error.code) {
     case 'UNSUPPORTED_TRANSFORM': {
       const chartId = detail?.['chartId'] as string | undefined
-      const chartIndex = spec.charts.findIndex(c => (c.id ?? c.type) === chartId)
+      const chartIndex = findChartIndex(spec, chartId)
       if (chartIndex < 0) return undefined
       const transforms = spec.charts[chartIndex].data?.transform ?? []
       const tIdx = transforms.findIndex(t => t.type === 'filter')
@@ -29,7 +30,7 @@ export function generatePatchHints(
 
     case 'BLOCKED_CHART_STRICT': {
       const chartType = detail?.['chartType'] as string | undefined
-      const chartIdx = spec.charts.findIndex(c => c.type === chartType)
+      const chartIdx = findChartIndex(spec, chartType)
       if (chartIdx < 0 || !catalogCharts?.length) return undefined
       const suggestion = catalogCharts[0]
       return [{ op: 'replace', path: `/charts/${chartIdx}/type`, value: suggestion }]
@@ -38,10 +39,7 @@ export function generatePatchHints(
     case 'DUPLICATE_CHART_ID': {
       const dupId = detail?.['chartId'] as string | undefined
       if (!dupId) return undefined
-      let lastIdx = -1
-      for (let i = spec.charts.length - 1; i >= 0; i--) {
-        if (spec.charts[i].id === dupId) { lastIdx = i; break }
-      }
+      const lastIdx = findLastChartIndexById(spec, dupId)
       if (lastIdx < 0) return undefined
       return [{ op: 'replace', path: `/charts/${lastIdx}/id`, value: `${dupId}_2` }]
     }
@@ -49,7 +47,7 @@ export function generatePatchHints(
     case 'MISSING_ENCODING': {
       const chartType = detail?.['chartType'] as string | undefined
       const required = detail?.['requiredEncodings'] as string[] | undefined
-      const chartIdx = spec.charts.findIndex(c => c.type === chartType)
+      const chartIdx = findChartIndex(spec, chartType)
       if (chartIdx < 0 || !required?.length) return undefined
       const existing = Object.keys(spec.charts[chartIdx].encoding ?? {})
       const missing = required.filter(enc => !existing.includes(enc))
@@ -102,12 +100,4 @@ export function collectWarningPatches(spec: AgentReportSpec): JsonPatch[] {
     }
   }
   return patches
-}
-
-function findChartIndex(spec: AgentReportSpec, chartId: string | undefined): number {
-  if (!chartId) return spec.charts.length === 1 ? 0 : -1
-  const byId = spec.charts.findIndex(c => c.id === chartId)
-  if (byId >= 0) return byId
-  // fallback: match by type if id looks like a type name
-  return spec.charts.findIndex(c => c.type === chartId)
 }

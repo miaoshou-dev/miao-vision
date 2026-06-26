@@ -51,6 +51,7 @@ Options:
   --output <file>   Output file path
   --format <fmt>    Output format: html, svg (default: html)
   --theme <name>    Theme: default, editorial, dark, minimal
+  --context <file>  Path to context.json (output of "analyze") — resolves $evidence: directives in insights[]
   --interactive     Force interactive runtime for HTML output
   --no-interactive  Force static HTML output
   --sheet <name>    Sheet name (Excel only)

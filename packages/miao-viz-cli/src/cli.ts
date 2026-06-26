@@ -21,6 +21,7 @@ import {
   formatOutputPath, writeOutput, fail, printJson,
   readSpec, readJson, readProfile, normalizeSpec, parseFormats
 } from './cli-utils'
+import { resolveDirectives } from './directive-resolver'
 import type { CliArgs } from './cli-utils'
 import type { AnalyzeContext } from './context-schema'
 import type { AgentError, AgentOutputFormat, AgentReportSpec, DataProfile } from './types'
@@ -224,6 +225,21 @@ function runRender(args: CliArgs): unknown {
 
   const validation = validateReportSpec(normalized, profile, formats)
   if (isAgentError(validation)) return fail(validation)
+
+  // Resolve $evidence: directives in insights[] when --context is provided
+  const contextPath = stringFlag(args, 'context')
+  if (contextPath && validation.value.insights && validation.value.insights.length > 0) {
+    const raw = readJson<unknown>(contextPath)
+    const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true
+      ? (raw as { value: unknown }).value
+      : raw
+    const parsed = analyzeContextSchema.safeParse(unwrapped)
+    if (parsed.success) {
+      validation.value.insights = validation.value.insights.map(s =>
+        resolveDirectives(s, parsed.data.evidence)
+      )
+    }
+  }
 
   const themeFlag = stringFlag(args, 'theme') as 'default' | 'editorial' | 'dark' | 'minimal' | undefined
   const interactive = args.flags['interactive'] === true

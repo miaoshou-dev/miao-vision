@@ -2,6 +2,7 @@ import { agentError, isAgentError, ok } from './errors'
 import { MVP_CHART_TYPES, OUTPUT_FORMATS, reportSpecSchema } from './spec-schema'
 import { parseEvidenceRefs, resolveEvidencePath } from './directive-resolver'
 import { getCatalogItem } from './chart-catalog'
+import { countChartsByType } from './spec-utils'
 import type { AnalyzeContext } from './context-schema'
 import type { AgentChartSpec, AgentOutputFormat, AgentResult, AgentReportSpec, DataProfile } from './types'
 
@@ -112,7 +113,7 @@ export function collectValidationWarnings(
   }
 
   // V02: too many bigvalue cards
-  const bigvalueCount = spec.charts.filter(c => c.type === 'bigvalue').length
+  const bigvalueCount = countChartsByType(spec, 'bigvalue')
   if (bigvalueCount > 4) {
     warnings.push(
       `Report has ${bigvalueCount} bigvalue cards (>4). Use kpigrid for 5+ KPI cards to avoid visual clutter.`
