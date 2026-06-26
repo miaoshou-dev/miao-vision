@@ -6,7 +6,7 @@ import type {
   AnalyzeField,
   AnalyzeSampleWarning
 } from './context-schema'
-import { profileDataset, buildCatalogHints } from './data-profiler'
+import { profileDataset } from './data-profiler'
 import { queryDataset } from './data-query'
 import { BLOCK_REGISTRY, toCatalogBlockEntry } from './report-block-registry'
 import type { BlockMatchContext } from './report-block-registry'
@@ -30,8 +30,7 @@ export function analyzeDataset(dataset: LoadedDataset, options: AnalyzerOptions 
     if (extra) evidence.push(extra)
   }
 
-  const hints = buildCatalogHints(profile.columns, profile.correlations ?? [])
-  const catalog = buildCatalog(fields, sampleWarnings, hints, profile.rows, evidence)
+  const catalog = buildCatalog(fields, sampleWarnings, profile.rows, evidence)
   const promptRules = buildPromptRules(catalog.charts, sampleWarnings)
 
   return { intent, fields, evidence, catalog, sampleWarnings, promptRules }
@@ -279,7 +278,6 @@ function buildSampleWarnings(rowCount: number, fields: AnalyzeField[]): AnalyzeS
 function buildCatalog(
   fields: AnalyzeField[],
   warnings: AnalyzeSampleWarning[],
-  _hints: ReturnType<typeof buildCatalogHints>,
   rowCount: number,
   evidence: AnalyzeEvidence[]
 ): AnalyzeCatalog {

@@ -11,7 +11,7 @@ import { renderStaticHtml } from './html-export'
 import { applyInteractiveFilters, selectDetailRows, shouldEnableInteractiveRuntime } from './interactive-runtime'
 import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
 import { parseEvidenceRefs, resolveEvidencePath, resolveDirectives } from './directive-resolver'
-import { generatePatchHints } from './patch-hints'
+import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { generateInfographicFromFile } from './article-infographic'
 import { renderInfographicHtml } from './article-html'
 import type { AgentReportSpec } from './types'
@@ -1113,6 +1113,54 @@ describe('generatePatchHints (T40)', () => {
     const spec: AgentReportSpec = { charts: [] }
     const err = { ok: false as const, code: 'FIELD_NOT_FOUND', message: '', detail: {} }
     expect(generatePatchHints(err, spec)).toBeUndefined()
+  })
+
+  it('generates replace patch for X_MUST_BE_TEMPORAL (line x.type=nominal)', () => {
+    const spec: AgentReportSpec = {
+      charts: [{ id: 'trend', type: 'line', encoding: { x: { field: 'month', type: 'nominal' }, y: { field: 'sales' } } }]
+    }
+    const err = { ok: false as const, code: 'X_MUST_BE_TEMPORAL', message: '', detail: { chartId: 'trend' } }
+    const patches = generatePatchHints(err, spec)
+    expect(patches).toBeDefined()
+    expect(patches![0]).toMatchObject({ op: 'replace', path: '/charts/0/encoding/x/type', value: 'temporal' })
+  })
+
+  it('generates replace patch for X_MUST_BE_DIMENSION (bar x.type=temporal)', () => {
+    const spec: AgentReportSpec = {
+      charts: [{ id: 'rank', type: 'bar', encoding: { x: { field: 'date', type: 'temporal' }, y: { field: 'sales' } } }]
+    }
+    const err = { ok: false as const, code: 'X_MUST_BE_DIMENSION', message: '', detail: { chartId: 'rank' } }
+    const patches = generatePatchHints(err, spec)
+    expect(patches).toBeDefined()
+    expect(patches![0]).toMatchObject({ op: 'replace', path: '/charts/0/encoding/x/type', value: 'nominal' })
+  })
+})
+
+describe('collectWarningPatches (T41)', () => {
+  it('generates add patch for MISSING_SORT_TRANSFORM on line chart', () => {
+    const spec: AgentReportSpec = {
+      charts: [{
+        id: 'trend',
+        type: 'line',
+        data: { transform: [{ type: 'aggregate', groupBy: ['month'], measures: [{ field: 'sales', op: 'sum', as: 'total' }] }] },
+        encoding: { x: { field: 'month', type: 'temporal' }, y: { field: 'total', type: 'quantitative' } }
+      }]
+    }
+    const patches = collectWarningPatches(spec)
+    expect(patches.length).toBeGreaterThan(0)
+    expect(patches[0]).toMatchObject({ op: 'add', path: '/charts/0/data/transform/-' })
+    expect(patches[0].value).toMatchObject({ type: 'sort', field: 'month', order: 'asc' })
+  })
+
+  it('returns no patches when sort already present', () => {
+    const spec: AgentReportSpec = {
+      charts: [{
+        type: 'line',
+        data: { transform: [{ type: 'sort', field: 'month', order: 'asc' }] },
+        encoding: { x: { field: 'month', type: 'temporal' }, y: { field: 'sales', type: 'quantitative' } }
+      }]
+    }
+    expect(collectWarningPatches(spec)).toHaveLength(0)
   })
 })
 

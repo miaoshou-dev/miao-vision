@@ -38,35 +38,25 @@
 
 ## P1：本迭代优先（Quick wins）
 
-### P1-A：patch-hints 补齐 3 个新 case
+### ✅ P1-A：patch-hints 补齐新 case（2026-06-26 完成，commit `TBD`）
 
-**文件：** `patch-hints.ts`（现 69 行，加完仍 < 120 行）  
-**工作量：** 半天
+实现了 3 个新 patch case，4 个新测试（共 81 个，全部通过）：
 
-PRD v2 列明但未实现的 3 个 patch case：
+| 场景 | 实现方式 | 文件 |
+|------|---------|------|
+| `X_MUST_BE_TEMPORAL`（line/area x.type=nominal，hard error） | `replace /charts/{i}/encoding/x/type` → `'temporal'` | `patch-hints.ts` |
+| `X_MUST_BE_DIMENSION`（bar x.type=temporal，hard error） | `replace /charts/{i}/encoding/x/type` → `'nominal'` | `patch-hints.ts` |
+| `MISSING_SORT_TRANSFORM`（line/area 缺 sort，warning） | `collectWarningPatches(spec)` → `add /charts/{i}/data/transform/-` | `patch-hints.ts` |
 
-| 错误场景 | 期望 patch | 触发条件 |
-|---------|-----------|---------|
-| line/area 缺 sort transform | `add /charts/{i}/data/transform/-` 插入 sort | 当 chart type 是 `line` 或 `area` 且 transforms 里没有 `sort` |
-| `encoding.x.type` 与字段 role 不符 | `replace /charts/{i}/encoding/x/type` 修正为正确 type | validate 报 `INVALID_X_TYPE`（需先在 spec-validator 加此错误码） |
-| `bigvalue count > 4` | `replace /charts/{i}/encoding/value/field` 提示 merge | validate 报 `BIGVALUE_COUNT_EXCEEDED`（需先在 spec-validator 加此错误码） |
-
-实现顺序：先在 `spec-validator.ts` 加两个新错误码，再在 `patch-hints.ts` 加对应 case。
+CLI：`validate --patch-hints` 现在额外输出 `warningPatches` 字段（当 sort 缺失时）。  
+bigvalue > 4 patch 判断为改动复杂/收益低，不做。
 
 ---
 
-### P1-B：清理 `buildCatalogHints` 死代码
+### ✅ P1-B：清理 `buildCatalogHints` 死代码（2026-06-26 完成）
 
-**文件：** `analyzer.ts:33`、`analyzer.ts:282`  
-**工作量：** 1 小时
-
-`buildCatalogHints()` 在 `analyzeDataset()` 中被调用并赋值给 `hints`，又传入 `buildCatalog()` 的第三参数 `_hints`（参数名前缀 `_` 表明未被使用）。
-
-两个选项：
-1. **删除**：从 `analyzeDataset()` 移除 `buildCatalogHints` 调用和 `buildCatalog` 的第三参数
-2. **接入**：把 hints 用于 `buildCatalog()` 内的图表推荐逻辑（若短期有价值）
-
-推荐选项 1：当前 block registry 已覆盖推荐逻辑，hints 不再需要单独输出。
+移除了 `analyzer.ts` 中的 `buildCatalogHints` 调用和 `buildCatalog()` 的 `_hints` 参数。
+Block registry 已覆盖推荐逻辑，hints 不再需要。
 
 ---
 

@@ -13,7 +13,7 @@ import { parseDeckSpec, validateDeckFields } from './deck-validator'
 import { generateInfographicFromFile, loadInfographicSpec, parseArticleFormat, parseArticleStyle, renderInfographicMarkdown } from './article-infographic'
 import { renderInfographicHtml } from './article-html'
 import { analyzeDataset } from './analyzer'
-import { generatePatchHints } from './patch-hints'
+import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { printHelp } from './cli-help'
 import { runCatalog, runBlock } from './cli-block'
 import {
@@ -188,6 +188,13 @@ function runValidate(args: CliArgs): unknown {
   if (args.flags['verify'] === true) {
     const verifyWarnings = collectVerifyWarnings(result.value, context)
     warnings.push(...verifyWarnings)
+  }
+
+  if (args.flags['patch-hints'] === true) {
+    const warningPatches = collectWarningPatches(result.value)
+    if (warningPatches.length > 0) {
+      return { ok: true, value: result.value, warnings, warningPatches }
+    }
   }
 
   return { ok: true, value: result.value, warnings }
