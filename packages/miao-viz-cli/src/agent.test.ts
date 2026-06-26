@@ -14,7 +14,8 @@ import { parseEvidenceRefs, resolveEvidencePath, resolveDirectives } from './dir
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { generateInfographicFromFile } from './article-infographic'
 import { renderInfographicHtml } from './article-html'
-import type { AgentReportSpec } from './types'
+import { analyzeDataset } from './analyzer'
+import type { AgentReportSpec, LoadedDataset } from './types'
 
 const csvPath = 'test_data/agent-sales.csv'
 const tsvPath = 'test_data/agent-sales.tsv'
@@ -1161,6 +1162,68 @@ describe('collectWarningPatches (T41)', () => {
       }]
     }
     expect(collectWarningPatches(spec)).toHaveLength(0)
+  })
+})
+
+describe('analyzeDataset metricCandidates (P2-A)', () => {
+  it('produces unit_average candidate when sum and count measures both exist', () => {
+    const dataset = loadDataset(csvPath)
+    expect(dataset.ok).toBe(true)
+    if (!dataset.ok) return
+
+    const ctx = analyzeDataset(dataset.value)
+    const unitAvg = ctx.metricCandidates?.find(c => c.type === 'unit_average')
+    expect(unitAvg).toBeDefined()
+    expect(unitAvg!.id).toBe('unit_avg_sales_per_orders')
+    expect(unitAvg!.formula).toBe('sum(sales) / sum(orders)')
+    // 100+120+140+90=450 sales, 4+5+6+3=18 orders → 25 per order
+    expect(unitAvg!.value).toBe(25)
+    expect(unitAvg!.confidence).toBe('high')
+  })
+
+  it('produces share candidate from top dimension entry', () => {
+    const dataset = loadDataset(csvPath)
+    expect(dataset.ok).toBe(true)
+    if (!dataset.ok) return
+
+    const ctx = analyzeDataset(dataset.value)
+    const share = ctx.metricCandidates?.find(c => c.type === 'share')
+    expect(share).toBeDefined()
+    expect(share!.id).toContain('share_top_')
+    expect(typeof share!.value).toBe('number')
+    expect(share!.confidence).toBe('high')
+  })
+
+  it('produces period_change candidate when 3+ time periods exist', () => {
+    const dataset: LoadedDataset = {
+      file: 'inline',
+      columns: ['month', 'sales', 'orders'],
+      rows: [
+        { month: '2025-01-01', sales: 100, orders: 4 },
+        { month: '2025-02-01', sales: 120, orders: 5 },
+        { month: '2025-03-01', sales: 150, orders: 6 }
+      ]
+    }
+    const ctx = analyzeDataset(dataset)
+    const change = ctx.metricCandidates?.find(c => c.type === 'period_change')
+    expect(change).toBeDefined()
+    expect(change!.id).toBe('period_change_sales')
+    // (150 - 120) / 120 = 0.25
+    expect(change!.value).toBe(0.25)
+    expect(change!.confidence).toBe('high')
+  })
+
+  it('returns empty metricCandidates when no measures exist', () => {
+    const dataset: LoadedDataset = {
+      file: 'inline',
+      columns: ['region', 'category'],
+      rows: [
+        { region: 'East', category: 'A' },
+        { region: 'West', category: 'B' }
+      ]
+    }
+    const ctx = analyzeDataset(dataset)
+    expect(ctx.metricCandidates).toEqual([])
   })
 })
 

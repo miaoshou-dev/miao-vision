@@ -229,6 +229,7 @@ miao-viz analyze /path/to/data.csv \
 | `catalog.blocks[]` | Available report blocks sorted by score — pick the one matching your Step 0 routing |
 | `catalog.blockedBlocks[]` | Excluded blocks with machine-readable reasons — read reason if a block seems relevant |
 | `catalog.recommendedPlan` | Suggested starting combination — use as fallback when no block matches |
+| `metricCandidates[]` | Pre-computed derived metrics (unit averages, shares, period changes) — prefer these over constructing formulas from raw evidence |
 | `sampleWarnings[]` | Sample size limitations — must appear as caveats in related insights |
 | `promptRules[]` | Dataset-specific generation rules — read and follow all |
 

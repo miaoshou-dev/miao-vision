@@ -4,7 +4,8 @@ import type {
   AnalyzeCatalog,
   AnalyzeEvidence,
   AnalyzeField,
-  AnalyzeSampleWarning
+  AnalyzeSampleWarning,
+  MetricCandidate
 } from './context-schema'
 import { profileDataset } from './data-profiler'
 import { queryDataset } from './data-query'
@@ -32,8 +33,9 @@ export function analyzeDataset(dataset: LoadedDataset, options: AnalyzerOptions 
 
   const catalog = buildCatalog(fields, sampleWarnings, profile.rows, evidence)
   const promptRules = buildPromptRules(catalog.charts, sampleWarnings)
+  const metricCandidates = buildMetricCandidates(fields, evidence)
 
-  return { intent, fields, evidence, catalog, sampleWarnings, promptRules }
+  return { intent, fields, evidence, catalog, sampleWarnings, promptRules, metricCandidates }
 }
 
 // ---- Field role identification ----
@@ -378,6 +380,78 @@ function buildRecommendedPlan(
   }
 
   return plan.slice(0, 3)
+}
+
+// ---- Metric candidates ----
+
+function buildMetricCandidates(fields: AnalyzeField[], evidence: AnalyzeEvidence[]): MetricCandidate[] {
+  const candidates: MetricCandidate[] = []
+  const measures = fields.filter(f => f.role === 'measure' || f.role === 'score')
+  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status')
+
+  const totalEvidence = evidence.find(e => e.id === 'total')
+  const byDimEvidence = evidence.find(e => e.id === 'by_dimension')
+  const byTimeEvidence = evidence.find(e => e.id === 'by_time')
+
+  // unit_average: sum-type measure / count-type measure
+  const sumMeasures = measures.filter(m => !isCountLike(m.name))
+  const countMeasures = measures.filter(m => isCountLike(m.name))
+  if (sumMeasures.length > 0 && countMeasures.length > 0 && totalEvidence?.values) {
+    const sm = sumMeasures[0]
+    const cm = countMeasures[0]
+    const sumVal = Number(totalEvidence.values[`total_${sm.name}`] ?? 0)
+    const cntVal = Number(totalEvidence.values[`total_${cm.name}`] ?? 0)
+    const value = cntVal > 0 ? Math.round(sumVal / cntVal * 100) / 100 : undefined
+    candidates.push({
+      id: `unit_avg_${sm.name}_per_${cm.name}`,
+      type: 'unit_average',
+      label: `${sm.name} per ${cm.name}`,
+      formula: `sum(${sm.name}) / sum(${cm.name})`,
+      value,
+      confidence: 'high'
+    })
+  }
+
+  // share: top dimension entry's fraction of total measure
+  if (byDimEvidence?.rows && byDimEvidence.rows.length > 0 && dimensions[0] && measures[0]) {
+    const topRow = byDimEvidence.rows[0]
+    const dimName = dimensions[0].name
+    const mName = measures[0].name
+    const dimVal = String(topRow[dimName] ?? '')
+    const share = typeof topRow['share'] === 'number' ? topRow['share'] : undefined
+    candidates.push({
+      id: `share_top_${dimName}`,
+      type: 'share',
+      label: `Top ${dimName} share of ${mName}`,
+      formula: `sum(${mName} where ${dimName}='${dimVal}') / sum(${mName})`,
+      value: share,
+      confidence: 'high'
+    })
+  }
+
+  // period_change: (latest - prev) / prev from by_time evidence (only generated when periods >= 3)
+  if (byTimeEvidence?.rows && byTimeEvidence.rows.length >= 2 && measures[0]) {
+    const rows = byTimeEvidence.rows
+    const mName = measures[0].name
+    const key = `total_${mName}`
+    const latest = Number(rows[rows.length - 1][key] ?? 0)
+    const prev = Number(rows[rows.length - 2][key] ?? 0)
+    const value = prev !== 0 ? Math.round((latest - prev) / prev * 10000) / 10000 : undefined
+    candidates.push({
+      id: `period_change_${mName}`,
+      type: 'period_change',
+      label: `${mName} period-over-period change`,
+      formula: `(latest ${mName} - previous ${mName}) / previous ${mName}`,
+      value,
+      confidence: 'high'
+    })
+  }
+
+  return candidates
+}
+
+function isCountLike(name: string): boolean {
+  return /\b(count|order|orders|unit|units|qty|quantity|item|items|transaction|transactions|ticket|tickets|visit|visits|click|clicks|session|sessions)\b/.test(name.toLowerCase())
 }
 
 // ---- Prompt rules ----

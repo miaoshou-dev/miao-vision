@@ -62,12 +62,22 @@ Block registry 已覆盖推荐逻辑，hints 不再需要。
 
 ## P2：下一迭代（质量强化）
 
-### P2-A：`analyze` 输出 metricCandidates
+### ✅ P2-A：`analyze` 输出 metricCandidates（2026-06-26 完成）
 
-**文件：** `analyzer.ts`、`context-schema.ts`、`data-profiler.ts`（可选）  
-**工作量：** 2 天
+**文件：** `analyzer.ts`、`context-schema.ts`  
+**工作量：** 2 天 → 实际 1 小时
 
 在 `analyzeDataset()` 输出的 context.json 里增加 `metricCandidates` 字段，让 LLM 直接读取可计算的派生指标，而不是自行发明公式。
+
+实现了 3 类高置信指标，4 个新测试（共 85 个，全部通过）：
+
+| 类型 | 触发条件 | 计算来源 |
+|------|---------|---------|
+| `unit_average` | 同时有 sum 型和 count 型 measure | `total` evidence |
+| `share` | `by_dimension` evidence 存在 | top row 的 `share` 字段 |
+| `period_change` | `by_time` evidence ≥ 2 行（即 timePeriods ≥ 3） | 最后两行之差 / 前值 |
+
+SKILL.md Phase 2 表格新增 `metricCandidates[]` 行。
 
 字段角色组合 → 候选指标类型（只支持高置信规则）：
 

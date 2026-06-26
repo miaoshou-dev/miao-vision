@@ -64,6 +64,16 @@ export interface AnalyzeSampleWarning {
   message: string       // human-readable, suitable for caveat in insights
 }
 
+export interface MetricCandidate {
+  id: string
+  type: 'unit_average' | 'rate' | 'share' | 'period_change' | 'difference'
+  label: string
+  formula: string
+  value?: number        // pre-computed result (decimal; share = 0.533 means 53.3%)
+  confidence: 'high' | 'medium'
+  caveat?: string
+}
+
 export interface AnalyzeIntent {
   raw: string
   coverage: 'full' | 'partial'
@@ -77,6 +87,7 @@ export interface AnalyzeContext {
   catalog: AnalyzeCatalog
   sampleWarnings: AnalyzeSampleWarning[]
   promptRules: string[]
+  metricCandidates?: MetricCandidate[]
 }
 
 // Zod runtime schema — used by validate --context to verify the file format
@@ -140,6 +151,16 @@ const analyzeCatalogSchema = z.object({
   blockedBlocks: z.array(blockedBlockEntrySchema).optional()
 })
 
+const metricCandidateSchema = z.object({
+  id: z.string().min(1),
+  type: z.enum(['unit_average', 'rate', 'share', 'period_change', 'difference']),
+  label: z.string(),
+  formula: z.string(),
+  value: z.number().optional(),
+  confidence: z.enum(['high', 'medium']),
+  caveat: z.string().optional()
+})
+
 const analyzeIntentSchema = z.object({
   raw: z.string().min(1),
   coverage: z.enum(['full', 'partial']),
@@ -157,5 +178,6 @@ export const analyzeContextSchema: z.ZodType<AnalyzeContext> = z.object({
   evidence: z.array(analyzeEvidenceSchema),
   catalog: analyzeCatalogSchema,
   sampleWarnings: z.array(analyzeSampleWarningSchema),
-  promptRules: z.array(z.string())
+  promptRules: z.array(z.string()),
+  metricCandidates: z.array(metricCandidateSchema).optional()
 })
