@@ -1,199 +1,192 @@
 # Miao Vision
 
-> AI-first local visualization artifacts from data files and documents.
+> Turn your data files and articles into shareable visual reports — with one command or one prompt to your AI agent.
 
+[![npm](https://img.shields.io/npm/v/@miao-vision/cli)](https://www.npmjs.com/package/@miao-vision/cli)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
-[![Svelte 5](https://img.shields.io/badge/Svelte-5-orange)](https://svelte.dev/)
 
-Miao Vision is a local-first visualization toolkit centered on `miao-viz`, a CLI designed for AI agents and developers. It turns local data files into polished chart reports and browser-presentable slide decks, and turns local article Markdown/text into static infographic artifacts.
+<table>
+<tr>
+<td><img src="docs/assets/demo-report.png" alt="Data report — KPI cards, charts, and AI-written insights" width="480"/></td>
+<td><img src="docs/assets/demo-deck.png" alt="Presentation deck — editorial slides with keyboard navigation" width="480"/></td>
+</tr>
+<tr>
+<td align="center"><em>Data report</em></td>
+<td align="center"><em>Presentation deck</em></td>
+</tr>
+</table>
 
-It is not a full BI workspace. The product is focused on static, shareable, high-quality visual artifacts that are easy for AI to generate and easy for users to like.
+Give Miao Vision a CSV, spreadsheet, or article. You get a self-contained HTML file — KPI cards, charts, tables, insights — ready to open, share, or email. No server. No login. No expiry.
 
-The recommended user experience is agent-led: install the `miao-vision` skill in Codex or Claude, then ask the agent to create a report, infographic, or deck. The skill decides when to call `miao-viz profile`, `catalog`, `validate`, `render`, `article`, or `deck`.
+Built for **analysts and developers** who want a polished output in minutes, not a dashboard to maintain forever.
 
-## Vision
+---
 
-Miao Vision is the visual artifact engine for AI agents, turning local data and documents into polished reports, infographics, and presentation decks.
+## What you get
 
-The long-term goal is for every AI agent to work like a capable data designer: understand the source material, choose the right visual form, generate a compact spec, and produce an artifact that is clear, credible, and ready to share.
+**Data report** — KPI cards, bar charts, line trends, tables, and written insights, all in one HTML file.
 
-## Product Tracks
+**Presentation deck** — browser slides with keyboard navigation, fullscreen, and print-to-PDF. No PowerPoint required.
 
-### 1. Data Display
+**Article infographic** — paste in an article URL or Markdown file; get back a static visual summary you can drop into any document.
 
-Turn local data files into KPI, chart, table, annotation, and insight artifacts.
+All outputs are a single `.html` file. Open it anywhere, share it with anyone, archive it forever.
 
-```text
-CSV / TSV / XLSX / JSON
-  -> miao-viz profile
-  -> AI writes VizSpec
-  -> miao-viz validate
-  -> miao-viz render
-  -> self-contained HTML report
-```
+---
 
-### 2. Article-to-Infographic
+## Get started in 3 steps
 
-Turn article URLs, Markdown files, or long-form text into static infographic artifacts through an agent-led workflow.
-
-```text
-article URL / Markdown
-  -> agent reads and normalizes content
-  -> miao-viz article
-  -> infographic artifact
-```
-
-`miao-viz article` accepts local Markdown/text input. URL fetching stays in the agent or skill layer, which normalizes the page into a local Markdown file before calling the CLI.
-
-### 3. Presentation Deck
-
-Turn local data files into browser-presentable slide decks.
-
-```text
-CSV / TSV / XLSX / JSON
-  -> miao-viz profile
-  -> AI writes DeckSpec
-  -> miao-viz deck
-  -> browser slide deck
-```
-
-## Why Miao Vision
-
-- **Agent skill included**: `packages/miao-vision-skill` teaches Codex or Claude how to choose the right workflow and call the CLI.
-- **Agent-friendly specs**: YAML/JSON VizSpec and DeckSpec are small, explicit, and easy for AI to repair.
-- **Local-first data**: input data stays on the machine by default.
-- **Static-first output**: generated HTML can be opened, shared, archived, and printed without a backend.
-- **Rich data display**: KPI cards, charts, tables, annotations, insights, and editorial layouts.
-- **Presentation-ready decks**: browser slides with keyboard navigation, fullscreen, and print-to-PDF.
-- **Pure visual runtime**: charts are rendered with Svelte/SVG instead of a heavy BI workspace runtime.
-
-## Quick Start
-
-```bash
-npm install
-npm run build:cli
-```
-
-Inspect a data file:
-
-```bash
-npm run miao-viz -- profile ./packages/miao-viz-cli/examples/sales.csv
-```
-
-List supported chart types:
-
-```bash
-npm run miao-viz -- catalog
-```
-
-Validate a report spec:
-
-```bash
-npm run miao-viz -- validate \
-  --spec ./packages/miao-viz-cli/examples/sales-dashboard.yaml \
-  --profile ./profile.json
-```
-
-Render a data display report:
-
-```bash
-npm run miao-viz -- render \
-  --input ./packages/miao-viz-cli/examples/sales.csv \
-  --spec ./packages/miao-viz-cli/examples/sales-dashboard.yaml \
-  --theme editorial \
-  --output /tmp/miao-report.html
-```
-
-Generate a presentation deck:
-
-```bash
-npm run miao-viz -- deck \
-  --input ./packages/miao-viz-cli/examples/sales.csv \
-  --spec ./packages/miao-viz-cli/examples/sales-deck.yaml \
-  --theme editorial \
-  --output /tmp/miao-deck.html
-```
-
-Open the generated HTML file in a browser. Deck output supports arrow-key navigation, fullscreen, and browser print/PDF export.
-
-Generate an article infographic:
-
-```bash
-npm run miao-viz -- article ./test_data/article-editorial.md \
-  --style editorial \
-  --format html \
-  --output /tmp/miao-infographic.html
-```
-
-Additional deck examples:
-
-```bash
-npm run miao-viz -- deck \
-  --input ./packages/miao-viz-cli/examples/product-metrics.csv \
-  --spec ./packages/miao-viz-cli/examples/product-metrics-deck.yaml \
-  --theme editorial \
-  --output /tmp/product-metrics-deck.html
-
-npm run miao-viz -- deck \
-  --input ./packages/miao-viz-cli/examples/finance-review.csv \
-  --spec ./packages/miao-viz-cli/examples/finance-review-deck.yaml \
-  --theme editorial \
-  --output /tmp/finance-review-deck.html
-
-npm run miao-viz -- deck \
-  --input ./packages/miao-viz-cli/examples/ops-update.csv \
-  --spec ./packages/miao-viz-cli/examples/ops-update-deck.yaml \
-  --theme editorial \
-  --output /tmp/ops-update-deck.html
-```
-
-## Agent Skill
-
-Miao Vision ships with an agent skill for Codex and Claude-style local coding agents. The skill is the product layer above the CLI: it reads the user request, profiles local data when needed, writes VizSpec or DeckSpec, runs the correct `miao-viz` command, and returns the generated artifact path.
-
-Install the CLI first:
+**Step 1 — Install the CLI**
 
 ```bash
 npm install -g @miao-vision/cli
-miao-viz catalog
 ```
 
-Install the skill for Codex from a local checkout:
+**Step 2 — Run on your data**
 
+```bash
+miao-viz render \
+  --input ./sales.csv \
+  --spec ./sales-dashboard.yaml \
+  --output ./report.html
+```
+
+**Step 3 — Open the result**
+
+```bash
+open ./report.html
+```
+
+That's it. No config files, no accounts, no backend.
+
+> **Shortcut:** If you use Claude or Codex, skip the YAML entirely — [install the agent skill](#agent-skill) and just ask in plain English.
+
+---
+
+## Three ways to use it
+
+### 1. Data report
+
+You have a CSV, TSV, XLSX, or JSON file. You want a chart report to share with your team.
+
+Ask your AI agent:
+```
+Use miao-vision to analyze ~/data/sales.csv and generate an editorial HTML report.
+```
+
+Or run the CLI yourself:
+```bash
+# Let the CLI inspect your data first
+miao-viz profile ./sales.csv
+
+# Then render
+miao-viz render --input ./sales.csv --spec ./sales-dashboard.yaml --output ./report.html
+```
+
+You get: KPI cards, bar charts, trend lines, and data tables — styled and ready to share.
+
+---
+
+### 2. Presentation deck
+
+You have data and you need slides for a meeting — not a chart dump, but an actual narrative deck.
+
+Ask your AI agent:
+```
+Use miao-vision to turn ~/data/sales.csv into a presentation deck for an executive review.
+```
+
+Or use the CLI:
+```bash
+miao-viz deck --input ./sales.csv --spec ./sales-deck.yaml --output ./deck.html
+```
+
+You get: a browser-based slide deck with cover, metrics, charts, and an ending slide. Arrow-key navigation, fullscreen, and print-to-PDF built in.
+
+---
+
+### 3. Article infographic
+
+You have an article URL or a Markdown file and you want a visual summary — not just a wall of text.
+
+Ask your AI agent:
+```
+Use miao-vision to turn this article Markdown file into an infographic.
+```
+
+Or use the CLI with a local file:
+```bash
+miao-viz article ./my-article.md --style editorial --output ./infographic.html
+```
+
+You get: a static, shareable infographic you can embed or send directly.
+
+---
+
+## Why Miao Vision
+
+| | |
+|---|---|
+| **Your data stays local** | Nothing leaves your machine. No upload, no API call with your data. |
+| **One file to share** | Every output is a self-contained `.html` file — open it, email it, archive it. No viewer needed. |
+| **Ask in plain English** | Install the agent skill and describe what you want. The agent profiles your data, writes the spec, and runs the CLI. |
+| **Not a dashboard** | No database to connect, no tiles to arrange, no filter panel to maintain. You get an artifact, not a workspace. |
+| **Looks good by default** | The editorial theme is designed to be clear and credible out of the box. |
+
+---
+
+## Agent skill
+
+Miao Vision ships with a skill for Claude and Codex. Once installed, your agent knows how to profile data, pick the right chart types, write the spec, and call the CLI — you just describe what you want.
+
+**The quickest way — ask your agent:**
+
+```
+Read https://miaoshou.dev/SKILL.md and follow the instructions to install or upgrade miao-viz for your AI agent.
+```
+
+Your agent installs the CLI and skill in one shot, no manual steps.
+
+---
+
+**Or install manually:**
+
+**Step 1 — Install the CLI:**
+```bash
+npm install -g @miao-vision/cli
+miao-viz catalog   # confirm it's working
+```
+
+**Step 2 — Install the skill for Claude Code:**
+```bash
+mkdir -p ~/.claude/skills
+unzip miao-vision-skill.zip -d ~/.claude/skills/
+```
+
+**Step 2 — Install the skill for Codex:**
 ```bash
 mkdir -p ~/.codex/skills
 cp -R packages/miao-vision-skill ~/.codex/skills/miao-vision
 ```
 
-Then restart Codex and ask for an artifact:
+Then restart your agent and ask naturally:
 
-```text
-Use miao-vision to analyze ~/data/sales.csv and generate an editorial HTML report.
-```
+| What you say | What you get |
+|---|---|
+| "analyze sales.csv and make a report" | Self-contained HTML data report |
+| "turn this into a deck for Monday's meeting" | Browser slide deck |
+| "make an infographic from this article" | Static infographic HTML |
 
-```text
-Use miao-vision to turn ~/data/sales.csv into a presentation deck for an executive review.
-```
+Download the latest skill ZIP from [GitHub Releases](../../releases) or see [Agent Install Guide](./docs/miao-vision-agent-install.md).
 
-```text
-Use miao-vision to turn this article Markdown file into an infographic.
-```
+---
 
-The skill uses this decision framework:
+## VizSpec example
 
-| User intent | Skill workflow | CLI command |
-| --- | --- | --- |
-| report, analysis, chart, dashboard-like artifact | Data Display | `miao-viz profile` -> `validate` -> `render` |
-| slides, presentation, PPT, deck, executive briefing | Presentation Deck | `miao-viz profile` -> `deck` |
-| article URL, Markdown, long-form text, infographic | Article-to-Infographic | agent normalizes text -> `miao-viz article` |
-
-See [packages/miao-vision-skill](./packages/miao-vision-skill) and [Agent Install Guide](./docs/miao-vision-agent-install.md) for details.
-
-## VizSpec Example
+If you prefer writing specs yourself, here's what a simple one looks like:
 
 ```yaml
 title: Sales Dashboard
-description: Local sales report generated by Miao Viz
 theme: editorial
 charts:
   - type: bigvalue
@@ -229,7 +222,11 @@ charts:
         field: total_sales
 ```
 
-## DeckSpec Example
+Run `miao-viz catalog` to see all supported chart types. Run `miao-viz validate --spec ./your-spec.yaml` to catch errors before rendering.
+
+---
+
+## DeckSpec example
 
 ```yaml
 title: Sales Review
@@ -277,67 +274,44 @@ slides:
             field: total_sales
 ```
 
-Supported deck layouts include `cover`, `title-only`, `text-points`, `text-chart`, `metrics-chart`, `chart-full`, `table-full`, and `ending`.
+Supported layouts: `cover`, `title-only`, `text-points`, `text-chart`, `metrics-chart`, `chart-full`, `table-full`, `ending`.
 
-DeckSpec validation returns structured repair information. `INVALID_DECK_SPEC` includes an `errors` array with `path`, `message`, and `hint`; `DECK_FIELD_NOT_FOUND` points to the slide/chart/metric field that is missing from the input profile or transform chain.
+---
 
-## CLI Commands
+## CLI reference
 
-| Command | Purpose |
-| --- | --- |
-| `profile` | Inspect fields, types, quality, distributions, temporal spans, and chart hints. |
-| `catalog` | List chart types and AI-readable usage guidance. |
-| `validate` | Validate VizSpec fields, encodings, chart types, and transforms. |
-| `render` | Render a self-contained HTML data display report. |
-| `deck` | Render a browser-presentable slide deck from DeckSpec. |
-| `article` | Convert local Markdown/text into a static infographic artifact. |
+| Command | What it does |
+|---|---|
+| `miao-viz profile <file>` | Inspect fields, types, distributions, and get chart suggestions |
+| `miao-viz catalog` | List all chart types with AI-readable usage guidance |
+| `miao-viz validate` | Check your VizSpec or DeckSpec before rendering |
+| `miao-viz render` | Render a self-contained HTML data report |
+| `miao-viz deck` | Render a browser slide deck |
+| `miao-viz article` | Convert a local Markdown/text file into a static infographic |
 
-## Repository Layout
+---
 
-```text
-apps/web/src/              Landing page and lightweight web surface
-packages/miao-viz-cli/src/ CLI profiling, validation, rendering, and deck generation
-packages/miao-viz-cli/src/themes/
-                           Report and deck themes
-packages/shared/src/types/ Shared type definitions retained from the old app
-packages/miao-viz-cli/     CLI package wrapper and examples
-packages/miao-vision-skill/
-                           Agent skill instructions for using miao-viz
-docs/                      Product, architecture, roadmap, and agent documentation
-```
+## Documentation
+
+- [Product Overview](./docs/PRODUCT_OVERVIEW.md)
+- [Agent Install Guide](./docs/miao-vision-agent-install.md)
+- [Feature Roadmap](./docs/roadmap/FEATURE_ROADMAP.md)
+- [All docs](./docs/README.md)
+
+---
 
 ## Development
 
 ```bash
-npm run dev          # Start the Svelte preview app
-npm run build        # Build the web app
+npm run dev          # Start the Svelte preview app (http://localhost:5173)
 npm run build:cli    # Build the miao-viz CLI package
 npm run check        # TypeScript and Svelte diagnostics
 npm run test         # Run unit tests
-npm run check:size   # Check 500-line file limit
 ```
 
-The web app is a preview, gallery, and debugging surface. The main product path is CLI plus agent-generated specs.
+The web app is a preview and debugging surface. The main product path is the CLI, optionally driven by an agent skill.
 
-## Documentation
-
-- [Documentation Index](./docs/README.md)
-- [Product Overview](./docs/PRODUCT_OVERVIEW.md)
-- [Product Restructure Direction](./docs/miao-viz-product-restructure-direction.md)
-- [Evidence-Grounded Visualization Generation](./docs/evidence-grounded-visualization-generation.md)
-- [Feature Roadmap](./docs/roadmap/FEATURE_ROADMAP.md)
-- [Backlog Disposition](./docs/backlog-disposition.md)
-
-## Non-Goals
-
-Miao Vision is intentionally not investing in these as primary product paths:
-
-- Full SQL Workspace.
-- Manual SQL authoring with query tabs and snippets.
-- General BI dashboard builder.
-- Database connector management as the default workflow.
-- Global CrossFilter or Drilldown runtime.
-- Mosaic/vgplot compatibility runtime.
+---
 
 ## License
 
