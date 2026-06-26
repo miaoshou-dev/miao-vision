@@ -148,9 +148,9 @@ function renderInsights(insights: string[]): string {
 
 function buildCaption(chart: AgentChartSpec): string {
   const parts: string[] = []
-  if (chart.encoding.x?.field) parts.push(`x: ${chart.encoding.x.field}`)
-  if (chart.encoding.y?.field) parts.push(`y: ${chart.encoding.y.field}`)
-  if (chart.encoding.value?.field) parts.push(`value: ${chart.encoding.value.field}`)
+  if (chart.encoding?.x?.field) parts.push(`x: ${chart.encoding.x.field}`)
+  if (chart.encoding?.y?.field) parts.push(`y: ${chart.encoding.y.field}`)
+  if (chart.encoding?.value?.field) parts.push(`value: ${chart.encoding.value.field}`)
 
   const transforms = chart.data?.transform ?? []
   const agg = transforms.find(t => t.type === 'aggregate')

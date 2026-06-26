@@ -66,7 +66,7 @@ export const infographicSpecSchema = z.object({
     inputFile: z.string().default(''),
     generatedAt: z.string().default(() => new Date().toISOString()),
     wordCount: z.number().int().min(0).default(0)
-  }).default({})
+  }).default(() => ({ inputFile: '', generatedAt: new Date().toISOString(), wordCount: 0 }))
 })
 
 export function loadInfographicSpec(file: string): AgentResult<InfographicSpec> {

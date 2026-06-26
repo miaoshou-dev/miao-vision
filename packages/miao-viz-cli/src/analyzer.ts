@@ -9,6 +9,7 @@ import type {
 } from './context-schema'
 import { profileDataset } from './data-profiler'
 import { queryDataset } from './data-query'
+import { isAgentError } from './errors'
 import { BLOCK_REGISTRY, toCatalogBlockEntry } from './report-block-registry'
 import type { BlockMatchContext } from './report-block-registry'
 
@@ -74,7 +75,6 @@ function refineRole(col: ColumnProfile): AnalyzeField['role'] {
     const name = col.name.toLowerCase()
     if (/\b(status|state|phase|stage|flag|type|category|tier)\b/.test(name) &&
         col.distinctCount <= 10) return 'status'
-    if (col.role === 'id') return 'id'
     return 'dimension'
   }
   return 'unknown'
@@ -164,7 +164,7 @@ function runStandardQueries(
       .concat(['count(*) as row_count'])
       .join(', ')
     const result = queryDataset(dataset.rows, { measure: measureExpr })
-    if (result && 'rows' in result && result.rows.length > 0) {
+    if (!isAgentError(result) && result.rows.length > 0) {
       evidence.push({
         id: 'total',
         query: `Total aggregates: ${measureExpr}`,
@@ -181,7 +181,7 @@ function runStandardQueries(
       measure: measureExpr,
       orderby: `total_${primaryMeasure.name} desc`
     })
-    if (result && 'rows' in result && result.rows.length > 0) {
+    if (!isAgentError(result) && result.rows.length > 0) {
       // Compute share
       const totalVal = result.rows.reduce((s, r) => s + Number(r[`total_${primaryMeasure.name}`] ?? 0), 0)
       const rows = result.rows.map(r => {
@@ -205,7 +205,7 @@ function runStandardQueries(
       measure: measureExpr,
       orderby: `${primaryTime.name} asc`
     })
-    if (result && 'rows' in result && result.rows.length > 0) {
+    if (!isAgentError(result) && result.rows.length > 0) {
       evidence.push({
         id: 'by_time',
         query: `${primaryMeasure.name} by ${primaryTime.name} (ascending)`,
@@ -236,7 +236,7 @@ function runExtraQuery(
     orderby: parts.orderby,
     limit: parts.limit ? Number(parts.limit) : undefined
   })
-  if (!result || !('rows' in result)) return null
+  if (isAgentError(result)) return null
   return {
     id: `extra_${existingCount + 1}`,
     query: `Custom query: ${extraQuery}`,

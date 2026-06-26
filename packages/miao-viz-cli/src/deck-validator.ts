@@ -122,7 +122,7 @@ function validateChartFields(
   }
 
   for (const encoding of REQUIRED_ENCODINGS[chart.type] ?? []) {
-    if (!chart.encoding[encoding]?.field) {
+    if (!chart.encoding?.[encoding]?.field) {
       return deckFieldError(`${path}.encoding.${encoding}`, encoding, `Chart type '${chart.type}' requires encoding '${encoding}'.`)
     }
   }
@@ -130,7 +130,7 @@ function validateChartFields(
   const available = applyTransforms(chart.data?.transform ?? [], sourceFields, path)
   if (isAgentError(available)) return available
 
-  for (const [encoding, spec] of Object.entries(chart.encoding)) {
+  for (const [encoding, spec] of Object.entries(chart.encoding ?? {})) {
     if (spec?.field && !available.value.has(spec.field)) {
       return deckFieldError(`${path}.encoding.${encoding}.field`, spec.field, `Field '${spec.field}' is not available for this chart encoding.`)
     }

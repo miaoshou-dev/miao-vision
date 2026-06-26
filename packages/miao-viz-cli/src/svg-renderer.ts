@@ -30,8 +30,8 @@ export function renderChartSvg(
 }
 
 function renderBarChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: RenderOptions): string {
-  const xField = chart.encoding.x?.field ?? ''
-  const yField = chart.encoding.y?.field ?? ''
+  const xField = chart.encoding?.x?.field ?? ''
+  const yField = chart.encoding?.y?.field ?? ''
   const width = numberStyle(chart, 'width', 720)
   const height = numberStyle(chart, 'height', 420)
   const margin = { top: 24, right: 24, bottom: 48, left: 72 }
@@ -64,8 +64,8 @@ function renderBarChart(chart: AgentChartSpec, rows: Record<string, unknown>[], 
 }
 
 function renderLineChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: RenderOptions): string {
-  const xField = chart.encoding.x?.field ?? ''
-  const yField = chart.encoding.y?.field ?? ''
+  const xField = chart.encoding?.x?.field ?? ''
+  const yField = chart.encoding?.y?.field ?? ''
   const width = numberStyle(chart, 'width', 720)
   const height = numberStyle(chart, 'height', 420)
   const margin = { top: 24, right: 24, bottom: 64, left: 72 }
@@ -101,8 +101,8 @@ function renderLineChart(chart: AgentChartSpec, rows: Record<string, unknown>[],
 }
 
 function renderPieChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: RenderOptions): string {
-  const labelField = chart.encoding.label?.field ?? ''
-  const valueField = chart.encoding.value?.field ?? ''
+  const labelField = chart.encoding?.label?.field ?? ''
+  const valueField = chart.encoding?.value?.field ?? ''
   const width = numberStyle(chart, 'width', 720)
   const height = numberStyle(chart, 'height', 420)
   const cx = width / 2 - 80
@@ -145,7 +145,7 @@ function renderTable(chart: AgentChartSpec, rows: Record<string, unknown>[], opt
 }
 
 function renderBigValue(chart: AgentChartSpec, rows: Record<string, unknown>[]): string {
-  const valueField = chart.encoding.value?.field ?? ''
+  const valueField = chart.encoding?.value?.field ?? ''
   const value = rows[0]?.[valueField] ?? ''
   return `<div class="miao-bigvalue"><div class="miao-bigvalue-label">${escapeHtml(chart.title ?? valueField)}</div><div class="miao-bigvalue-number">${escapeHtml(String(value))}</div></div>`
 }

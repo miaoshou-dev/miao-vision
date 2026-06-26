@@ -5,7 +5,7 @@ import { loadDataset } from './data-loader'
 import { profileDataset, profileSummary } from './data-profiler'
 import { queryDataset } from './data-query'
 import { renderStaticHtml } from './html-export'
-import { getCatalogEntries, validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
+import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
 import { analyzeContextSchema } from './context-schema'
 import { renderChartSvg } from './svg-renderer'
 import { renderDeckHtml } from './deck-renderer'
@@ -17,14 +17,14 @@ import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { printHelp } from './cli-help'
 import { runCatalog, runBlock } from './cli-block'
 import {
-  BOOLEAN_FLAGS, parseArgs, requiredFlag, stringFlag, numberFlag,
+  parseArgs, requiredFlag, stringFlag, numberFlag,
   formatOutputPath, writeOutput, fail, printJson,
   readSpec, readJson, readProfile, normalizeSpec, parseFormats
 } from './cli-utils'
 import { resolveDirectives } from './directive-resolver'
 import type { CliArgs } from './cli-utils'
 import type { AnalyzeContext } from './context-schema'
-import type { AgentError, AgentOutputFormat, AgentReportSpec, DataProfile } from './types'
+import type { AgentReportSpec } from './types'
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
