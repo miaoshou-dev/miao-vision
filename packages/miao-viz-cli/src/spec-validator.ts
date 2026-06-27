@@ -75,6 +75,9 @@ export function validateReportSpec(
         })
       }
     }
+
+    const finalSchemaResult = validateEncodingFieldsInFinalSchema(chart)
+    if (isAgentError(finalSchemaResult)) return finalSchemaResult
   }
 
   return ok(parsed.data)
@@ -325,6 +328,52 @@ function validateTransforms(chart: AgentChartSpec): AgentResult<AgentChartSpec> 
       )
     }
   }
+  return ok(chart)
+}
+
+// Simulate the output field set after all transforms run.
+// Returns null when no aggregate transform exists (no schema narrowing — skip the check).
+// When aggregate is present, output is ONLY groupBy fields + measures[*].as fields;
+// all source columns that are not explicitly carried through disappear.
+function simulateFinalSchema(chart: AgentChartSpec): Set<string> | null {
+  let schema: Set<string> | null = null
+
+  for (const transform of chart.data?.transform ?? []) {
+    if (transform.type === 'aggregate') {
+      const next = new Set<string>()
+      for (const field of transform.groupBy ?? []) next.add(field)
+      for (const measure of transform.measures ?? []) next.add(measure.as)
+      schema = next
+    } else if (transform.type === 'derive-month' && transform.as && schema !== null) {
+      // derive-month after an aggregate adds a new column to the current narrowed schema
+      schema.add(transform.as)
+    }
+    // sort and limit leave the field set unchanged
+  }
+
+  return schema
+}
+
+function validateEncodingFieldsInFinalSchema(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
+  const finalSchema = simulateFinalSchema(chart)
+  if (!finalSchema) return ok(chart)
+
+  const chartLabel = chart.id ? `chart '${chart.id}'` : `${chart.type} chart`
+  const available = [...finalSchema].join(', ') || '(none)'
+
+  for (const [channel, encoding] of Object.entries(chart.encoding ?? {})) {
+    const field = (encoding as { field?: string } | undefined)?.field
+    if (!field) continue
+    if (!finalSchema.has(field)) {
+      return agentError(
+        'ENCODING_FIELD_NOT_IN_FINAL_ROWS',
+        `${chartLabel}: encoding.${channel}.field '${field}' does not exist in rows after transforms. ` +
+        `Available fields after transforms: ${available}`,
+        { chartId: chart.id, channel, field, availableAfterTransforms: [...finalSchema] }
+      )
+    }
+  }
+
   return ok(chart)
 }
 

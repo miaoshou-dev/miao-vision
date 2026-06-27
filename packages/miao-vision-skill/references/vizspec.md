@@ -28,8 +28,8 @@ charts:
 | `scatter` | `x`, `y` | numeric relationship |
 | `histogram` | `x` | distribution |
 | `heatmap` | `x`, `y`, `value` | matrix intensity |
-| `table` | none | row-level preview |
-| `bigvalue` | `value` | KPI |
+| `table` | none | ranked or filtered row view — always pair with `aggregate + sort + limit` transforms |
+| `bigvalue` | `value` | KPI — **must** include `aggregate + sort + limit: 1` transforms to select one row |
 
 ## Encodings
 
@@ -44,6 +44,21 @@ encoding:
     field: total_sales
     type: quantitative
 ```
+
+## Transform requirement (applies to all chart types)
+
+**A chart with no `data.transform` receives all raw rows from the input file.** The renderer does not aggregate, sort, or filter data on its own. Always add the transforms needed to produce the exact rows and columns you intend to show.
+
+| Chart type | What happens without transforms | Required transforms |
+|------------|--------------------------------|---------------------|
+| `bigvalue` | Shows first raw row's field value (wrong) | `aggregate` → `sort` → `limit: 1` |
+| `bar` | Shows one bar per raw row (unsorted, unaggregated) | `aggregate` → `sort` → `limit` |
+| `pie` | Shows one slice per raw row (too many slices, wrong values) | `aggregate` → `sort` → `limit` |
+| `line` / `area` | Points may be out of order; multiple rows per time period | `aggregate` → `sort order: asc` |
+| `scatter` | All raw rows plotted — acceptable only when each row is one data point |  optional |
+| `histogram` | Computes buckets from raw values automatically | not needed |
+| `table` | Raw rows in file order, all columns — always wrong for ranked views | `aggregate` → `sort` → `limit` |
+| `heatmap` | Builds matrix from raw rows — acceptable only when each row is one cell | optional |
 
 ## Transforms
 
@@ -75,6 +90,62 @@ Sort and limit:
 - type: limit
   value: 10
 ```
+
+### BigValue transforms (required)
+
+A `bigvalue` without transforms shows the first raw row's field value — almost always wrong. Always reduce to the single row you intend:
+
+```yaml
+# Show the city with the highest population
+- type: bigvalue
+  title: Most Populous City
+  encoding:
+    value:
+      field: avg_population
+  data:
+    transform:
+      - type: aggregate
+        groupBy: [city_name]
+        measures:
+          - field: population
+            op: avg
+            as: avg_population
+      - type: sort
+        field: avg_population
+        order: desc
+      - type: limit
+        value: 1
+```
+
+### Table transforms (required)
+
+A `table` chart without transforms renders raw data — always add `aggregate + sort + limit` so the table shows only the columns and rows you intend:
+
+```yaml
+- type: table
+  title: Top 10 Cities by Population
+  data:
+    transform:
+      - type: aggregate
+        groupBy: [city_name, country]
+        measures:
+          - field: population
+            op: avg
+            as: avg_population
+          - field: population_density
+            op: avg
+            as: avg_density
+          - field: gdp_total_billion_usd
+            op: avg
+            as: avg_gdp
+      - type: sort
+        field: avg_population
+        order: desc
+      - type: limit
+        value: 10
+```
+
+The renderer displays **all columns produced by the transform** in the order they appear. The `groupBy` fields come first, followed by the `measures` fields in declaration order. Never write `encoding: {}` for a table — the transform output defines both the columns and the rows shown.
 
 ## Theme
 

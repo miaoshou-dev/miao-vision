@@ -353,6 +353,7 @@ To apply a patch entry: `op: "replace"` sets a value; `op: "add"` inserts (path 
 miao-viz render \
   --input /path/to/data.csv \
   --spec /tmp/miao-vision/report.yaml \
+  --context /tmp/miao-vision/context.json \
   --theme editorial \
   --format html \
   --output /tmp/miao-vision/report.html

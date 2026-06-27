@@ -8,6 +8,9 @@ import { loadDataset } from './data-loader'
 import { profileDataset, profileSummary } from './data-profiler'
 import { queryDataset } from './data-query'
 import { renderStaticHtml } from './html-export'
+import { renderChartSvg } from './svg-renderer'
+import { MVP_CHART_TYPES } from './spec-schema'
+import { applyEncodingAggregates } from './data-transform'
 import { applyInteractiveFilters, selectDetailRows, shouldEnableInteractiveRuntime } from './interactive-runtime'
 import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
 import { parseEvidenceRefs, resolveEvidencePath, resolveDirectives } from './directive-resolver'
@@ -234,6 +237,97 @@ describe('agent spec validation and HTML rendering', () => {
       expect(validation.code).toBe('FIELD_NOT_FOUND')
       expect(validation.availableFields).toContain('sales')
     }
+  })
+
+  it('ENCODING_FIELD_NOT_IN_FINAL_ROWS: flags encoding that references source field dropped by aggregate', () => {
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const profile = profileDataset(dataset.value)
+
+    // aggregate outputs { region, total_sales }; encoding.y still points to raw 'sales'
+    const result = validateReportSpec({
+      title: 'Bad',
+      charts: [{
+        type: 'bar',
+        data: {
+          transform: [
+            { type: 'aggregate', groupBy: ['region'], measures: [{ field: 'sales', op: 'sum', as: 'total_sales' }] }
+          ]
+        },
+        encoding: { x: { field: 'region' }, y: { field: 'sales' } }
+      }]
+    }, profile)
+
+    expect(result.ok).toBe(false)
+    if (!result.ok) {
+      expect(result.code).toBe('ENCODING_FIELD_NOT_IN_FINAL_ROWS')
+      expect(result.channel).toBe('y')
+      expect(result.field).toBe('sales')
+      expect(result.availableAfterTransforms).toContain('total_sales')
+    }
+  })
+
+  it('ENCODING_FIELD_NOT_IN_FINAL_ROWS: passes when encoding references aggregate output field', () => {
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const profile = profileDataset(dataset.value)
+
+    const result = validateReportSpec({
+      title: 'OK',
+      charts: [{
+        type: 'bar',
+        data: {
+          transform: [
+            { type: 'aggregate', groupBy: ['region'], measures: [{ field: 'sales', op: 'sum', as: 'total_sales' }] },
+            { type: 'sort', field: 'total_sales', order: 'desc' }
+          ]
+        },
+        encoding: { x: { field: 'region' }, y: { field: 'total_sales' } }
+      }]
+    }, profile)
+
+    expect(result.ok).toBe(true)
+  })
+
+  it('ENCODING_FIELD_NOT_IN_FINAL_ROWS: passes when no aggregate transform (source fields remain available)', () => {
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const profile = profileDataset(dataset.value)
+
+    const result = validateReportSpec({
+      title: 'Raw',
+      charts: [{
+        type: 'scatter',
+        data: { transform: [{ type: 'sort', field: 'sales', order: 'desc' }] },
+        encoding: { x: { field: 'sales' }, y: { field: 'orders' } }
+      }]
+    }, profile)
+
+    expect(result.ok).toBe(true)
+  })
+
+  it('ENCODING_FIELD_NOT_IN_FINAL_ROWS: passes when encoding references derive-month field used as groupBy', () => {
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const profile = profileDataset(dataset.value)
+
+    // derive-month → aggregate; encoding.x = 'order_month' which is the groupBy output
+    const result = validateReportSpec({
+      title: 'Trend',
+      charts: [{
+        type: 'line',
+        data: {
+          transform: [
+            { type: 'derive-month', field: 'order_date', as: 'order_month' },
+            { type: 'aggregate', groupBy: ['order_month'], measures: [{ field: 'sales', op: 'sum', as: 'total_sales' }] },
+            { type: 'sort', field: 'order_month', order: 'asc' }
+          ]
+        },
+        encoding: { x: { field: 'order_month' }, y: { field: 'total_sales' } }
+      }]
+    }, profile)
+
+    expect(result.ok).toBe(true)
   })
 
   it('validates interactive specs and injects runtime data for HTML output', () => {
@@ -885,6 +979,71 @@ describe('validate semantic warnings (T24–T28)', () => {
   })
 })
 
+describe('aggregation intent warnings (BIGVALUE_NO_REDUCTION, BAR_NO_AGGREGATE, PIE_NO_AGGREGATE)', () => {
+  const dataset = loadDataset(csvPath)
+  const profile = dataset.ok ? profileDataset(dataset.value) : ({} as ReturnType<typeof profileDataset>)
+
+  it('BIGVALUE_NO_REDUCTION: warns when bigvalue has no aggregation', () => {
+    if (!dataset.ok) return
+    const warnings = collectValidationWarnings({
+      charts: [{ id: 'kpi', type: 'bigvalue', encoding: { value: { field: 'sales' } } }]
+    }, profile)
+    expect(warnings.some(w => w.includes('BIGVALUE_NO_REDUCTION') || w.includes('rows[0]'))).toBe(true)
+  })
+
+  it('BIGVALUE_NO_REDUCTION: no warning when encoding.value.aggregate is set', () => {
+    if (!dataset.ok) return
+    const warnings = collectValidationWarnings({
+      charts: [{ type: 'bigvalue', encoding: { value: { field: 'sales', aggregate: 'sum' } } }]
+    }, profile)
+    expect(warnings.some(w => w.includes('BIGVALUE_NO_REDUCTION'))).toBe(false)
+  })
+
+  it('BIGVALUE_NO_REDUCTION: no warning when data.transform has aggregate', () => {
+    if (!dataset.ok) return
+    const warnings = collectValidationWarnings({
+      charts: [{
+        type: 'bigvalue',
+        data: { transform: [{ type: 'aggregate', measures: [{ field: 'sales', op: 'sum', as: 'total' }] }, { type: 'limit', value: 1 }] },
+        encoding: { value: { field: 'total' } }
+      }]
+    }, profile)
+    expect(warnings.some(w => w.includes('BIGVALUE_NO_REDUCTION'))).toBe(false)
+  })
+
+  it('BAR_NO_AGGREGATE: warns when bar has no aggregation', () => {
+    if (!dataset.ok) return
+    const warnings = collectValidationWarnings({
+      charts: [{ type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'sales' } } }]
+    }, profile)
+    expect(warnings.some(w => w.includes('BAR_NO_AGGREGATE') || w.includes('one bar per raw row'))).toBe(true)
+  })
+
+  it('BAR_NO_AGGREGATE: no warning when encoding.y.aggregate is set', () => {
+    if (!dataset.ok) return
+    const warnings = collectValidationWarnings({
+      charts: [{ type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'sales', aggregate: 'sum' } } }]
+    }, profile)
+    expect(warnings.some(w => w.includes('BAR_NO_AGGREGATE'))).toBe(false)
+  })
+
+  it('PIE_NO_AGGREGATE: warns when pie has no aggregation', () => {
+    if (!dataset.ok) return
+    const warnings = collectValidationWarnings({
+      charts: [{ type: 'pie', encoding: { label: { field: 'region' }, value: { field: 'sales' } } }]
+    }, profile)
+    expect(warnings.some(w => w.includes('PIE_NO_AGGREGATE') || w.includes('one slice per raw row'))).toBe(true)
+  })
+
+  it('PIE_NO_AGGREGATE: no warning when encoding.value.aggregate is set', () => {
+    if (!dataset.ok) return
+    const warnings = collectValidationWarnings({
+      charts: [{ type: 'pie', encoding: { label: { field: 'region' }, value: { field: 'sales', aggregate: 'sum' } } }]
+    }, profile)
+    expect(warnings.some(w => w.includes('PIE_NO_AGGREGATE'))).toBe(false)
+  })
+})
+
 describe('directive-resolver (T37)', () => {
   const evidence = [
     {
@@ -1224,6 +1383,159 @@ describe('analyzeDataset metricCandidates (P2-A)', () => {
     }
     const ctx = analyzeDataset(dataset)
     expect(ctx.metricCandidates).toEqual([])
+  })
+})
+
+describe('renderChartSvg — all MVP_CHART_TYPES have a renderer (no renderUnsupported)', () => {
+  // Minimal rows covering every encoding channel used across all chart types
+  const rows = [
+    { dim_x: 'A', dim_y: 'P', num_x: 10, num_y: 100, label: 'Alpha' },
+    { dim_x: 'B', dim_y: 'Q', num_x: 20, num_y: 200, label: 'Beta' },
+    { dim_x: 'A', dim_y: 'Q', num_x: 15, num_y: 150, label: 'Gamma' },
+    { dim_x: 'B', dim_y: 'P', num_x: 25, num_y: 250, label: 'Delta' }
+  ]
+
+  const MINIMAL_SPECS: Record<typeof MVP_CHART_TYPES[number], Parameters<typeof renderChartSvg>[0]> = {
+    bar:       { type: 'bar',       encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    line:      { type: 'line',      encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    area:      { type: 'area',      encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    pie:       { type: 'pie',       encoding: { label: { field: 'dim_x' }, value: { field: 'num_x' } } },
+    scatter:   { type: 'scatter',   encoding: { x: { field: 'num_x' }, y: { field: 'num_y' } } },
+    histogram: { type: 'histogram', encoding: { x: { field: 'num_x' } } },
+    heatmap:   { type: 'heatmap',   encoding: { x: { field: 'dim_x' }, y: { field: 'dim_y' }, value: { field: 'num_x' } } },
+    table:     { type: 'table',     encoding: {} },
+    bigvalue:  { type: 'bigvalue',  encoding: { value: { field: 'num_x' } } }
+  }
+
+  for (const chartType of MVP_CHART_TYPES) {
+    it(`renders ${chartType} without falling back to renderUnsupported`, () => {
+      const output = renderChartSvg(MINIMAL_SPECS[chartType], rows)
+      expect(output).not.toContain('not implemented yet')
+    })
+  }
+})
+
+describe('applyEncodingAggregates', () => {
+  const rows = [
+    { region: 'East', category: 'A', sales: 100, orders: 3 },
+    { region: 'East', category: 'B', sales: 200, orders: 5 },
+    { region: 'West', category: 'A', sales: 150, orders: 4 },
+    { region: 'West', category: 'C', sales:  80, orders: 2 }
+  ]
+
+  it('bigvalue: reduces to single row with max', () => {
+    const result = applyEncodingAggregates(rows, {
+      type: 'bigvalue',
+      encoding: { value: { field: 'sales', aggregate: 'max' } }
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].sales).toBe(200)
+  })
+
+  it('bigvalue: sum', () => {
+    const result = applyEncodingAggregates(rows, {
+      type: 'bigvalue',
+      encoding: { value: { field: 'sales', aggregate: 'sum' } }
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].sales).toBe(530)
+  })
+
+  it('bigvalue: avg', () => {
+    const result = applyEncodingAggregates(rows, {
+      type: 'bigvalue',
+      encoding: { value: { field: 'sales', aggregate: 'avg' } }
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].sales).toBeCloseTo(132.5)
+  })
+
+  it('bigvalue: count', () => {
+    const result = applyEncodingAggregates(rows, {
+      type: 'bigvalue',
+      encoding: { value: { field: 'sales', aggregate: 'count' } }
+    })
+    expect(result).toHaveLength(1)
+    expect(result[0].sales).toBe(4)
+  })
+
+  it('bar: groups by x field and aggregates y', () => {
+    const result = applyEncodingAggregates(rows, {
+      type: 'bar',
+      encoding: {
+        x: { field: 'region' },
+        y: { field: 'sales', aggregate: 'sum' }
+      }
+    })
+    expect(result).toHaveLength(2)
+    const east = result.find(r => r.region === 'East')
+    const west = result.find(r => r.region === 'West')
+    expect(east?.sales).toBe(300)
+    expect(west?.sales).toBe(230)
+  })
+
+  it('pie: groups by label field and aggregates value', () => {
+    const result = applyEncodingAggregates(rows, {
+      type: 'pie',
+      encoding: {
+        label: { field: 'region' },
+        value: { field: 'orders', aggregate: 'sum' }
+      }
+    })
+    expect(result).toHaveLength(2)
+    const east = result.find(r => r.region === 'East')
+    expect(east?.orders).toBe(8)
+  })
+
+  it('line: groups by x and aggregates y', () => {
+    const result = applyEncodingAggregates(rows, {
+      type: 'line',
+      encoding: {
+        x: { field: 'region' },
+        y: { field: 'sales', aggregate: 'avg' }
+      }
+    })
+    expect(result).toHaveLength(2)
+    const east = result.find(r => r.region === 'East')
+    expect(east?.sales).toBe(150)
+  })
+
+  it('no-op when aggregate is absent: rows pass through unchanged', () => {
+    const result = applyEncodingAggregates(rows, {
+      type: 'bar',
+      encoding: { x: { field: 'region' }, y: { field: 'sales' } }
+    })
+    expect(result).toHaveLength(4)
+    expect(result).toEqual(rows)
+  })
+
+  it('composes with prior transform: aggregate runs on transform output', () => {
+    // After a sort+limit transform, encoding aggregate should apply to remaining rows only
+    const limited = rows.slice(0, 2)  // East×A, East×B
+    const result = applyEncodingAggregates(limited, {
+      type: 'bigvalue',
+      encoding: { value: { field: 'sales', aggregate: 'sum' } }
+    })
+    expect(result[0].sales).toBe(300)   // 100 + 200, not 530
+  })
+
+  it('end-to-end: renderStaticHtml uses encoding aggregate via prepareChartData', () => {
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const html = renderStaticHtml(
+      {
+        title: 'Test',
+        charts: [{
+          type: 'bigvalue',
+          title: 'Total Sales',
+          encoding: { value: { field: 'sales', aggregate: 'sum' } }
+        }]
+      },
+      profileDataset(dataset.value),
+      dataset.value.rows
+    )
+    // sum of sales in agent-sales.csv: 100+120+140+90 = 450
+    expect(html).toContain('450')
   })
 })
 

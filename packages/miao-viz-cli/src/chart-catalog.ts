@@ -57,6 +57,25 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
         }
       },
       {
+        code: 'BAR_NO_AGGREGATE',
+        severity: 'warning',
+        expression: 'encoding.y.aggregate not set and no aggregate transform',
+        message: "bar will plot one bar per raw row — unsorted and unaggregated. Add encoding.y.aggregate or data.transform aggregate + sort + limit.",
+        validate: (chart) => {
+          const hasAggTransform = (chart.data?.transform ?? []).some(t => t.type === 'aggregate')
+          const hasEncodingAgg = !!chart.encoding?.y?.aggregate
+          if (!hasAggTransform && !hasEncodingAgg) {
+            return {
+              code: 'BAR_NO_AGGREGATE',
+              severity: 'warning',
+              message: `bar${chart.id ? ` '${chart.id}'` : ''}: no aggregation — will plot one bar per raw row (unsorted, unaggregated). Add encoding.y.aggregate (sum/avg/count) or data.transform: aggregate + sort + limit.`,
+              chartId: chart.id
+            }
+          }
+          return null
+        }
+      },
+      {
         code: 'TOO_MANY_CATEGORIES',
         severity: 'warning',
         expression: 'ctx.fields[encoding.x.field].distinctCount > 12',
@@ -189,6 +208,25 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
     antiPatterns: ['more than 7 slices (use bar)', 'values that do not sum to a meaningful whole'],
     rules: [
       {
+        code: 'PIE_NO_AGGREGATE',
+        severity: 'warning',
+        expression: 'encoding.value.aggregate not set and no aggregate transform',
+        message: "pie will show one slice per raw row. Add encoding.value.aggregate or data.transform aggregate + sort + limit.",
+        validate: (chart) => {
+          const hasAggTransform = (chart.data?.transform ?? []).some(t => t.type === 'aggregate')
+          const hasEncodingAgg = !!chart.encoding?.value?.aggregate
+          if (!hasAggTransform && !hasEncodingAgg) {
+            return {
+              code: 'PIE_NO_AGGREGATE',
+              severity: 'warning',
+              message: `pie${chart.id ? ` '${chart.id}'` : ''}: no aggregation — will show one slice per raw row (too many slices, wrong values). Add encoding.value.aggregate (sum/avg/count) or data.transform: aggregate + sort + limit.`,
+              chartId: chart.id
+            }
+          }
+          return null
+        }
+      },
+      {
         code: 'TOO_MANY_SLICES',
         severity: 'warning',
         expression: 'ctx.fields[encoding.label.field].distinctCount > 7',
@@ -260,7 +298,28 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
     allowedTransforms: ['aggregate'],
     bestFor: ['single top-level KPI', 'summary metric with optional delta'],
     antiPatterns: ['more than 4 bigvalue cards per report (use kpigrid)', 'showing a dimension value without a measure'],
-    rules: []
+    rules: [
+      {
+        code: 'BIGVALUE_NO_REDUCTION',
+        severity: 'warning',
+        expression: 'no aggregate transform and encoding.value.aggregate not set',
+        message: "bigvalue will show rows[0] raw value. Add encoding.value.aggregate or data.transform aggregate + limit: 1.",
+        validate: (chart) => {
+          const hasAggTransform = (chart.data?.transform ?? []).some(t => t.type === 'aggregate')
+          const hasEncodingAgg = !!chart.encoding?.value?.aggregate
+          if (!hasAggTransform && !hasEncodingAgg) {
+            const field = chart.encoding?.value?.field ?? 'value'
+            return {
+              code: 'BIGVALUE_NO_REDUCTION',
+              severity: 'warning',
+              message: `bigvalue${chart.id ? ` '${chart.id}'` : ''}: no aggregation — will display rows[0].${field} (a raw row value, almost always wrong). Add encoding.value.aggregate (max/sum/avg/min/count) or data.transform: aggregate + limit: 1.`,
+              chartId: chart.id
+            }
+          }
+          return null
+        }
+      }
+    ]
   }
 ]
 
