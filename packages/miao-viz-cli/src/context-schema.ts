@@ -129,10 +129,10 @@ export interface AnalyzeContext {
 export interface CompactAnalyzeContext {
   format: 'compact-v1'
   intent: { raw: string; coverage: 'full' | 'partial' }
-  assumptions: Array<[AnalyzeAssumption['key'], string, number, string[]?]>
-  fields: Array<[string, AnalyzeField['role'], AnalyzeField['type'], number?, number?]>
+  assumptions: Array<[AnalyzeAssumption['key'], string, number, (string[] | null)?]>
+  fields: Array<[string, AnalyzeField['role'], AnalyzeField['type'], (number | null)?, (number | null)?]>
   evidence: Array<[string, Record<string, unknown> | Record<string, unknown>[]]>
-  metricCandidates: Array<[string, MetricCandidate['type'], string, number?]>
+  metricCandidates: Array<[string, MetricCandidate['type'], string, (number | null)?]>
   catalog: {
     charts: string[]
     blockedCharts: Array<[string, string]>
