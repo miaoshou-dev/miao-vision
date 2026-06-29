@@ -5,8 +5,8 @@ import { loadDataset } from './data-loader'
 import { profileDataset, profileSummary } from './data-profiler'
 import { queryDataset } from './data-query'
 import { renderStaticHtml } from './html-export'
-import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
-import { analyzeContextSchema } from './context-schema'
+import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings, strictVerifyError } from './spec-validator'
+import { parseAnalyzeContext, toCompactAnalyzeContext } from './context-schema'
 import { renderChartSvg } from './svg-renderer'
 import { renderDeckHtml } from './deck-renderer'
 import { parseDeckSpec, validateDeckFields } from './deck-validator'
@@ -16,12 +16,15 @@ import { analyzeDataset } from './analyzer'
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { printHelp } from './cli-help'
 import { runCatalog, runBlock } from './cli-block'
+import { runTemplate } from './cli-template'
+import { runInspect } from './cli-inspect'
 import {
   parseArgs, requiredFlag, stringFlag, numberFlag,
   formatOutputPath, writeOutput, fail, printJson,
   readSpec, readJson, readProfile, normalizeSpec, parseFormats
 } from './cli-utils'
 import { resolveDirectives } from './directive-resolver'
+import { mapInsightText } from './insight-utils'
 import type { CliArgs } from './cli-utils'
 import type { AnalyzeContext } from './context-schema'
 import type { AgentReportSpec } from './types'
@@ -60,6 +63,16 @@ async function main(): Promise<void> {
       return
     }
 
+    if (args.command === 'template') {
+      printJson(runTemplate(args))
+      return
+    }
+
+    if (args.command === 'inspect') {
+      printJson(runInspect(args))
+      return
+    }
+
     if (args.command === 'render') {
       printJson(runRender(args))
       return
@@ -86,7 +99,7 @@ async function main(): Promise<void> {
     }
 
     printJson(agentError('UNKNOWN_COMMAND', `Unknown command: ${args.command ?? '(none)'}`, {
-      commands: ['profile', 'validate', 'catalog', 'block', 'render', 'deck', 'article', 'query', 'analyze']
+      commands: ['profile', 'validate', 'catalog', 'block', 'template', 'inspect', 'render', 'deck', 'article', 'query', 'analyze']
     }))
     process.exitCode = 1
   } catch (error) {
@@ -143,15 +156,15 @@ function runValidate(args: CliArgs): unknown {
     const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true
       ? (raw as { value: unknown }).value
       : raw
-    const parsed = analyzeContextSchema.safeParse(unwrapped)
-    if (!parsed.success) {
+    const parsed = parseAnalyzeContext(unwrapped)
+    if (!parsed) {
       return fail(agentError(
         'INVALID_CONTEXT',
-        `context.json format is invalid: ${parsed.error.issues.map(i => i.message).join('; ')}`,
+        'context.json format is invalid.',
         { contextPath }
       ))
     }
-    context = parsed.data
+    context = parsed
   }
 
   const warnings = collectValidationWarnings(result.value, profile, context)
@@ -189,6 +202,10 @@ function runValidate(args: CliArgs): unknown {
   if (args.flags['verify'] === true) {
     const verifyWarnings = collectVerifyWarnings(result.value, context)
     warnings.push(...verifyWarnings)
+    if (args.flags['strict'] === true) {
+      const strictResult = strictVerifyError(verifyWarnings)
+      if (isAgentError(strictResult)) return fail(strictResult)
+    }
   }
 
   if (args.flags['patch-hints'] === true) {
@@ -233,10 +250,10 @@ function runRender(args: CliArgs): unknown {
     const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true
       ? (raw as { value: unknown }).value
       : raw
-    const parsed = analyzeContextSchema.safeParse(unwrapped)
-    if (parsed.success) {
-      validation.value.insights = validation.value.insights.map(s =>
-        resolveDirectives(s, parsed.data.evidence)
+    const parsed = parseAnalyzeContext(unwrapped)
+    if (parsed) {
+      validation.value.insights = validation.value.insights.map(insight =>
+        mapInsightText(insight, text => resolveDirectives(text, parsed.evidence))
       )
     }
   }
@@ -336,7 +353,8 @@ async function runAnalyze(args: CliArgs): Promise<void> {
     correctAssumption: stringFlag(args, 'correct-assumption')
   })
 
-  const result = { ok: true, value: context }
+  const value = args.flags['compact'] === true ? toCompactAnalyzeContext(context) : context
+  const result = { ok: true, value }
   const outputPath = stringFlag(args, 'output')
   if (outputPath) {
     writeOutput(outputPath, `${JSON.stringify(result, null, 2)}\n`)

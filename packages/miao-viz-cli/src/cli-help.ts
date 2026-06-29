@@ -7,8 +7,10 @@ Outputs context.json: intent, fields, evidence, catalog (blockedCharts), sampleW
 Options:
   --intent <text>               Natural language description of the report goal
   --output <file>               Write context.json to this path (default: stdout)
+  --compact                     Output compact context for agent consumption
+  --verbose                     Keep full context output explicitly for debugging
   --extra-query <expr>          Custom query: "groupby=col;measure=sum(x) as y;filter=col>=val"
-  --correct-assumption <expr>   Override an assumption: "primary_measure=orders"
+  --correct-assumption <expr>   Override an assumption: "primary_measure=orders", "primary_dimension=region", or "time_field=date"
   --sheet <name>                Sheet name (Excel only)
   --limit <n>                   Max rows to read
 `,
@@ -33,13 +35,28 @@ Options:
   --profile <file>    Path to profile JSON (output of "profile")
   --context <file>    Path to context.json (output of "analyze") for catalog compliance and
                       $evidence path checks
-  --strict            Treat blockedChart violations as hard errors (requires --context)
+  --strict            With --verify, treat verify warnings as hard errors; also hard-fails blockedChart violations
   --verify            Also check for forbidden words and missing sampleWarning caveats
   --patch-hints       Attach machine-readable JSON Patch hints to fixable errors
 `,
   catalog: `Usage: miao-viz catalog
 
 List all available chart types and their required fields.
+`,
+  block: `Usage: miao-viz block instantiate <block-id> --context <context.json> [--output <file>]
+
+Instantiate a report block using full or compact analyze context.
+`,
+  template: `Usage:
+  miao-viz template list
+  miao-viz template inspect <template-id>
+  miao-viz template instantiate <template-id> --context <context.json> [--output <file>]
+
+List, inspect, or instantiate report templates using full or compact analyze context.
+`,
+  inspect: `Usage: miao-viz inspect --input <file> --spec <file> --context <context.json> --output <file>
+
+Inspect chart transform pipelines and evidence usage for debugging.
 `,
   render: `Usage: miao-viz render --input <file> --spec <file> --output <file> [options]
 
@@ -112,6 +129,9 @@ Commands:
   query     Run an aggregation query to get real computed values
   validate  Validate a vizspec against a data profile
   catalog   List all available chart types
+  block     Instantiate report blocks from analyze context
+  template  List, inspect, or instantiate report templates
+  inspect   Inspect chart transforms and evidence usage
   render    Render a vizspec to HTML or SVG
   deck      Render a deck spec to HTML slides
   article   Convert a local article to an infographic artifact

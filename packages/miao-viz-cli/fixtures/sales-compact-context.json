@@ -1,0 +1,40 @@
+{
+  "format": "compact-v1",
+  "intent": {
+    "raw": "sales by region",
+    "coverage": "full"
+  },
+  "assumptions": [
+    ["primary_measure", "sales", 0.62, ["orders"]],
+    ["primary_dimension", "region", 0.72, ["category"]],
+    ["time_field", "order_date", 0.9, []]
+  ],
+  "fields": [
+    ["order_date", "time", "date", 4, 4],
+    ["region", "dimension", "string", 3, null],
+    ["sales", "measure", "number", 4, null],
+    ["orders", "measure", "number", 4, null]
+  ],
+  "evidence": [
+    ["total", { "total_sales": 450, "total_orders": 18, "row_count": 4 }],
+    ["by_dimension", [
+      { "region": "East", "total_sales": 240, "row_count": 2, "share": 0.5333 }
+    ]]
+  ],
+  "metricCandidates": [
+    ["unit_avg_sales_per_orders", "unit_average", "sum(sales) / sum(orders)", 25],
+    ["share_top_region", "share", "sum(sales where region='East') / sum(sales)", 0.5333]
+  ],
+  "catalog": {
+    "charts": ["bigvalue", "table", "bar", "line", "area", "pie", "scatter"],
+    "blockedCharts": [["histogram", "rows=4 < 20; distribution is unreliable"]],
+    "blocks": [["snapshot-ranking", 0.9, "compact", ["bigvalue", "bar"]]],
+    "templates": [["snapshot-overview", 0.85, "compact", ["kpi-summary", "snapshot-ranking"]]]
+  },
+  "warnings": [
+    ["extreme_small_sample", "Only 4 rows. Rankings and comparisons are descriptive only; do not generalize."]
+  ],
+  "clarificationQuestions": [
+    ["primary_measure", "This dataset has multiple measures. Analyze sales, orders?", ["sales", "orders"], false, "measure"]
+  ]
+}

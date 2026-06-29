@@ -1,0 +1,45 @@
+{
+  "intent": {
+    "raw": "performance report",
+    "coverage": "full",
+    "assumptions": [
+      {
+        "key": "primary_measure",
+        "value": "sales",
+        "confidence": 0.62,
+        "alternatives": ["orders", "profit"],
+        "reason": "multiple numeric measures detected"
+      }
+    ]
+  },
+  "fields": [
+    { "name": "region", "role": "dimension", "type": "string", "distinctCount": 3 },
+    { "name": "sales", "role": "measure", "type": "number", "distinctCount": 4 },
+    { "name": "orders", "role": "measure", "type": "number", "distinctCount": 4 },
+    { "name": "profit", "role": "measure", "type": "number", "distinctCount": 4 }
+  ],
+  "evidence": [
+    { "id": "total", "query": "Total aggregates", "values": { "total_sales": 450, "total_orders": 18, "total_profit": 90, "row_count": 4 } }
+  ],
+  "catalog": {
+    "charts": ["bigvalue", "table", "bar"],
+    "blockedCharts": [],
+    "recommendedPlan": [],
+    "blocks": [],
+    "blockedBlocks": []
+  },
+  "sampleWarnings": [
+    { "code": "extreme_small_sample", "message": "Only 4 rows. Rankings and comparisons are descriptive only; do not generalize." }
+  ],
+  "promptRules": [],
+  "metricCandidates": [],
+  "clarificationQuestions": [
+    {
+      "id": "primary_measure",
+      "question": "This dataset has multiple measures. Analyze sales, orders, profit?",
+      "options": ["sales", "orders", "profit"],
+      "blocking": false,
+      "appliesTo": "measure"
+    }
+  ]
+}

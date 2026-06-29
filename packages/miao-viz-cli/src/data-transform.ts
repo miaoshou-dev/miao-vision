@@ -1,5 +1,13 @@
 import type { AgentChartSpec, AgentDataTransform } from './types'
 
+export interface TransformTraceStep {
+  step: number
+  type: AgentDataTransform['type'] | 'encoding-aggregate'
+  inputRows: number
+  outputRows: number
+  preview: Record<string, unknown>[]
+}
+
 export function prepareChartData(rows: Record<string, unknown>[], chart: AgentChartSpec): Record<string, unknown>[] {
   let current = [...rows]
   for (const transform of chart.data?.transform ?? []) {
@@ -7,6 +15,38 @@ export function prepareChartData(rows: Record<string, unknown>[], chart: AgentCh
   }
   current = applyEncodingAggregates(current, chart)
   return current
+}
+
+export function inspectChartTransforms(
+  rows: Record<string, unknown>[],
+  chart: AgentChartSpec
+): { rows: Record<string, unknown>[]; transforms: TransformTraceStep[] } {
+  let current = [...rows]
+  const transforms: TransformTraceStep[] = []
+  let step = 1
+  for (const transform of chart.data?.transform ?? []) {
+    const inputRows = current.length
+    current = applyTransform(current, transform)
+    transforms.push({
+      step: step++,
+      type: transform.type,
+      inputRows,
+      outputRows: current.length,
+      preview: current.slice(0, 3)
+    })
+  }
+  const beforeEncoding = current
+  current = applyEncodingAggregates(current, chart)
+  if (current !== beforeEncoding) {
+    transforms.push({
+      step,
+      type: 'encoding-aggregate',
+      inputRows: beforeEncoding.length,
+      outputRows: current.length,
+      preview: current.slice(0, 3)
+    })
+  }
+  return { rows: current, transforms }
 }
 
 // Apply encoding-level aggregation when encoding.*.aggregate is set.

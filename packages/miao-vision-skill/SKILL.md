@@ -194,6 +194,7 @@ Run two commands. The analyze output is what you read; the profile is only neede
 # Evidence pack + catalog (read this before writing spec)
 miao-viz analyze /path/to/data.csv \
   --intent "..." \
+  --compact \
   --output /tmp/miao-vision/context.json
 
 # Profile for validate (you do not need to read this)
@@ -206,6 +207,7 @@ If the auto-detected primary measure or dimension in `context.json` is wrong, re
 miao-viz analyze /path/to/data.csv \
   --intent "..." \
   --correct-assumption "primary_measure=orders" \
+  --compact \
   --output /tmp/miao-vision/context.json
 ```
 
@@ -215,8 +217,13 @@ To add a non-standard query (cross-dimensional, conditional sub-group) not cover
 miao-viz analyze /path/to/data.csv \
   --intent "..." \
   --extra-query "groupby=region,month;measure=sum(revenue) as total;filter=year>=2024" \
+  --compact \
   --output /tmp/miao-vision/context.json
 ```
+
+Use `--verbose` instead of `--compact` only when debugging full block/template metadata. Use `miao-viz catalog --for-llm` only when the compact context does not explain a chart rule clearly enough.
+
+Compact context uses tuple fields to reduce tokens. The important tuple meanings are documented in `docs/compact-analyze-context.md`: `fields`, `catalog.blocks`, `catalog.templates`, `warnings`, and `clarificationQuestions`.
 
 **Read `context.json` and use these fields before writing the spec:**
 
@@ -227,7 +234,10 @@ miao-viz analyze /path/to/data.csv \
 | `catalog.charts` | Allowed chart types — **only use types listed here** |
 | `catalog.blockedCharts` | Blocked types with reasons — do not use these |
 | `catalog.blocks[]` | Available report blocks sorted by score — pick the one matching your Step 0 routing |
+| `catalog.templates[]` | Available report templates sorted by score — prefer a matching template for full reports |
 | `catalog.blockedBlocks[]` | Excluded blocks with machine-readable reasons — read reason if a block seems relevant |
+| `assumptions[]` | Default field assumptions — proceed with them unless a blocking clarification question is present |
+| `clarificationQuestions[]` | Ask at most one blocking question; for non-blocking questions proceed unless the user requested precision |
 | `catalog.recommendedPlan` | Suggested starting combination — use as fallback when no block matches |
 | `metricCandidates[]` | Pre-computed derived metrics (unit averages, shares, period changes) — prefer these over constructing formulas from raw evidence |
 | `sampleWarnings[]` | Sample size limitations — must appear as caveats in related insights |
@@ -237,10 +247,12 @@ miao-viz analyze /path/to/data.csv \
 
 Write the report spec based solely on `context.json`. Follow all `promptRules[]`.
 
-**Block selection (preferred path):**
+If `clarificationQuestions[]` contains a blocking question, ask exactly one before continuing. If questions are non-blocking, proceed with `assumptions[]` and mention the assumption in the report description or caveat when it affects interpretation.
 
-1. Read `catalog.blocks` (sorted by score). Find the block whose `bestFor` matches your Step 0 routing intent.
-2. Run `miao-viz block instantiate <id> --context /tmp/miao-vision/context.json` to get a draft YAML with real field names pre-filled and transforms already structured.
+**Template/block selection (preferred path):**
+
+1. Read `catalog.templates` first. If a template matches the Step 0 routing intent, run `miao-viz template instantiate <id> --context /tmp/miao-vision/context.json`.
+2. If no template matches, read `catalog.blocks` and run `miao-viz block instantiate <id> --context /tmp/miao-vision/context.json` to get a draft YAML with real field names pre-filled and transforms already structured.
 
    The draft has this shape — the `# [ ] ...` lines are a quality checklist to complete, not YAML content:
 
@@ -273,11 +285,14 @@ If a seemingly relevant block appears in `catalog.blockedBlocks`: read its `reas
 
 **Insights:** Cite evidence ids for every claim. Do not compute new percentages or totals — use values from `evidence[].values` or `evidence[].rows` directly.
 
-Use `$evidence:<id>.<path>` directives to embed precomputed values inline:
+Prefer structured insights. Use `$evidence:<id>.<path>` directives to embed precomputed values inline:
 
 ```yaml
 insights:
-  - "East contributed $evidence:by_dimension.rows[0].total out of $evidence:total.values.total_sales total (based on 4 rows only)."
+  - text: "East contributed $evidence:by_dimension.rows[0].total out of $evidence:total.values.total_sales total."
+    evidence: [by_dimension, total]
+    caveat: "Based on limited rows only."
+    severity: info
 ```
 
 Path formats:
@@ -304,10 +319,11 @@ miao-viz validate \
   --spec /tmp/miao-vision/report.yaml \
   --profile /tmp/miao-vision/profile.json \
   --context /tmp/miao-vision/context.json \
-  --verify
+  --verify \
+  --strict
 ```
 
-`--verify` adds two extra checks beyond structural validation: (1) forbidden words in insights (`trend/drive/significant/strong correlation/should`) without statistical backing, and (2) `sampleWarnings` present but no insight contains a required caveat.
+`--verify --strict` is the final gate. It upgrades forbidden words, missing sample caveats, blocked charts, and unresolved evidence references to hard errors.
 
 2. Read the `warnings[]` array in the output. Fix every warning before rendering.
 

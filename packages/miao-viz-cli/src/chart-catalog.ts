@@ -21,6 +21,11 @@ export interface ChartRule {
 export interface ChartCatalogItem {
   id: string
   displayName: string
+  compactFor?: string
+  requires?: string
+  transformRecipe?: string
+  avoid?: string
+  insightPattern?: string
   requiredEncodings: string[]
   // filter is excluded from all charts — renderer has no executor (spec-validator.ts:288)
   allowedTransforms: string[]
@@ -34,6 +39,11 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'bar',
     displayName: 'Bar Chart',
+    compactFor: 'rank,compare',
+    requires: 'dim(2-30)+measure',
+    transformRecipe: 'agg>sort(desc)>limit(10)',
+    avoid: 'dim>30,time>=3',
+    insightPattern: 'top {dimension} by {measure}',
     requiredEncodings: ['x', 'y'],
     allowedTransforms: ['aggregate', 'sort', 'limit', 'derive-month'],
     bestFor: ['ranking by category', 'comparison across dimensions', 'top-N with limit'],
@@ -102,6 +112,11 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'line',
     displayName: 'Line Chart',
+    compactFor: 'trend',
+    requires: 'time(>=3)+measure',
+    transformRecipe: 'agg(time)>sort(asc)',
+    avoid: 'time<3,nominal_x',
+    insightPattern: '{measure} over {time}',
     requiredEncodings: ['x', 'y'],
     allowedTransforms: ['aggregate', 'sort', 'derive-month'],
     bestFor: ['time series trends', 'continuous data over ordered axis'],
@@ -152,6 +167,10 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'area',
     displayName: 'Area Chart',
+    compactFor: 'trend,magnitude',
+    requires: 'time(>=3)+measure',
+    transformRecipe: 'agg(time)>sort(asc)',
+    avoid: 'time<3,negative_values,nominal_x',
     requiredEncodings: ['x', 'y'],
     allowedTransforms: ['aggregate', 'sort', 'derive-month'],
     bestFor: ['cumulative trends', 'filled time series with visual mass'],
@@ -202,6 +221,11 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'pie',
     displayName: 'Pie Chart',
+    compactFor: 'share,composition',
+    requires: 'dim(2-7)+measure',
+    transformRecipe: 'agg>sort(desc)>limit(7)',
+    avoid: 'dim>7,non_whole_values',
+    insightPattern: '{dimension} share of {measure}',
     requiredEncodings: ['label', 'value'],
     allowedTransforms: ['aggregate', 'sort', 'limit'],
     bestFor: ['part-to-whole proportions', 'share distribution with ≤7 categories'],
@@ -253,6 +277,10 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'scatter',
     displayName: 'Scatter Chart',
+    compactFor: 'relationship,correlation',
+    requires: 'measure+measure',
+    transformRecipe: 'raw_or_limit',
+    avoid: 'single_measure,categorical_axis',
     requiredEncodings: ['x', 'y'],
     allowedTransforms: ['sort', 'limit'],
     bestFor: ['correlation between two measures', 'distribution of two quantitative variables'],
@@ -263,6 +291,11 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'histogram',
     displayName: 'Histogram',
+    compactFor: 'distribution',
+    requires: 'measure+rows(>=20)',
+    transformRecipe: 'bin(numeric)>count',
+    avoid: 'rows<20,categorical_field',
+    insightPattern: '{measure} distribution',
     requiredEncodings: ['x'],
     allowedTransforms: ['derive-month'],
     bestFor: ['distribution of a single numeric field', 'frequency across value bins'],
@@ -274,6 +307,11 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'heatmap',
     displayName: 'Heatmap',
+    compactFor: 'matrix,density',
+    requires: 'dim+dim+measure',
+    transformRecipe: 'agg(dim,dim)>encode(value)',
+    avoid: 'single_dimension,sparse_matrix',
+    insightPattern: '{measure} by {x_dimension} and {y_dimension}',
     requiredEncodings: ['x', 'y', 'value'],
     allowedTransforms: ['aggregate'],
     bestFor: ['matrix of two dimensions vs one measure', 'calendar-style density maps'],
@@ -284,6 +322,10 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'table',
     displayName: 'Data Table',
+    compactFor: 'detail,high-cardinality,export',
+    requires: 'any_fields',
+    transformRecipe: 'sort_or_limit_optional',
+    avoid: 'too_many_columns_without_selection',
     requiredEncodings: [],
     allowedTransforms: ['aggregate', 'sort', 'limit', 'derive-month'],
     bestFor: ['high-cardinality dimension detail', 'multi-measure comparison', 'data export'],
@@ -294,6 +336,11 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'bigvalue',
     displayName: 'Big Value (KPI Card)',
+    compactFor: 'kpi,summary',
+    requires: 'measure',
+    transformRecipe: 'agg(measure)>single_value',
+    avoid: 'raw_row_value,too_many_cards',
+    insightPattern: 'total {measure}',
     requiredEncodings: ['value'],
     allowedTransforms: ['aggregate'],
     bestFor: ['single top-level KPI', 'summary metric with optional delta'],

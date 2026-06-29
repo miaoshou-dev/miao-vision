@@ -1,14 +1,17 @@
 import { renderChartSvg, escapeHtml } from './svg-renderer'
 import { getTheme } from './themes/index'
 import { renderInteractiveAssets, shouldEnableInteractiveRuntime, type InteractiveHtmlOptions } from './interactive-runtime'
+import { normalizeInsights } from './insight-utils'
 import type { ThemeName, ReportTheme } from './themes/types'
-import type { AgentChartSpec, AgentReportSpec, DataProfile } from './types'
+import type { AgentChartSpec, AgentInsight, AgentReportSpec, DataProfile } from './types'
 
 const INSIGHTS_CSS = `
   .report-insights { margin: 0 0 32px; padding: 16px 20px 14px; border-radius: 4px; border: 1px solid rgba(128,128,128,0.18); background: rgba(128,128,128,0.04); }
   .insights-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.45; margin: 0 0 8px; }
   .insights-list { margin: 0; padding: 0 0 0 18px; }
   .insights-list li { margin: 5px 0; font-size: 13px; line-height: 1.55; opacity: 0.75; }
+  .insight-warning { color: #8a4b00; }
+  .insight-caveat { display: block; margin-top: 2px; font-size: 11px; opacity: 0.58; }
 `
 
 export function renderStaticHtml(
@@ -136,8 +139,14 @@ function chartIdFor(chart: AgentChartSpec, index: number): string {
   return chart.id ?? `chart-${index + 1}`
 }
 
-function renderInsights(insights: string[]): string {
-  const items = insights.map(s => `<li>${escapeHtml(s)}</li>`).join('\n      ')
+function renderInsights(insights: AgentInsight[]): string {
+  const items = normalizeInsights(insights).map(insight => {
+    const className = insight.severity === 'warning' ? ' class="insight-warning"' : ''
+    const caveat = insight.caveat
+      ? `<span class="insight-caveat">${escapeHtml(insight.caveat)}</span>`
+      : ''
+    return `<li${className}>${escapeHtml(insight.text)}${caveat}</li>`
+  }).join('\n      ')
   return `<section class="report-insights">
     <p class="insights-label">Key Observations</p>
     <ul class="insights-list">

@@ -1,455 +1,219 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file provides guidance to Codex and other coding agents when working in this repository.
 
 ## Project Overview
 
-**Miaoshou Vision** is a local-first BI analytics platform with two core product engines:
+Miao Vision is an AI-first, local-first static visualization system. The primary engine is the `miao-viz` CLI in `packages/miao-viz-cli`, which turns local files into shareable HTML artifacts.
 
-### Product Engines
+Primary outputs:
 
-| Engine | Purpose | Status |
-|--------|---------|--------|
-| **SQL Workspace** | Interactive SQL query & analysis | ✅ Production |
-| **BI Report** | Data-driven documents (Manual + AI) | ✅ Production |
+- Data reports with KPI cards, charts, tables, and evidence-backed insights.
+- Browser decks with keyboard navigation and print/PDF support.
+- Article infographics from normalized local Markdown or text.
 
-### Technology Stack
+The web app is a lightweight landing, preview, packaging, and distribution surface. It is not the main SQL workspace, and it should not own report/deck/article generation logic.
 
-- **DuckDB-WASM v1.29** - Browser SQL engine with OPFS persistence
-- **Svelte 5 + SVG** - Primary visualization (27 chart types, pure SVG)
-- **AI Report Generation** - LLM-powered report creation
-- **Markdown Report System** - Evidence.dev-style documents
-- **43+ Plugin Components** - Extensible component architecture
+## Current Repository Shape
 
-### Key Features
+```text
+packages/miao-viz-cli/       Primary CLI implementation, specs, validation, and renderers
+packages/miao-vision-skill/  Source agent skill instructions, references, and install docs
+packages/shared/             Shared type packages
+apps/web/                    Svelte landing/distribution app
+skills/miao-vision/          Installed/local skill copy
+docs/                        Product, architecture, and implementation plans
+tests/                       E2E tests and helpers
+test_data/                   CLI and renderer fixtures
+videos/miaoshou-promo/       Standalone HyperFrames promo video project
+```
 
-- 🔒 **Privacy-first**: All processing in browser, zero backend
-- ⚡ **High Performance**: WebAssembly SQL, pure SVG charts
-- 💾 **Persistent Storage**: OPFS cross-session data retention
-- 🤖 **AI Report**: Auto-generate reports from data + prompts
-- 📝 **Template Syntax**: Variables, conditionals, loops in Markdown
+Do not edit generated output as source. In particular, avoid source edits under `packages/miao-viz-cli/dist/` and `apps/web/dist/`.
 
 ## Development Commands
 
 ```bash
-npm run dev          # Start dev server (http://localhost:5173)
-npm run build        # Production build
-npm run check        # TypeScript/Svelte type checking
-npm run check:size   # Check for files exceeding 500 lines
-npm run test         # Run tests
-npm run test:coverage # Test coverage report
+npm run dev                # Start the web app dev server
+npm run build              # Build the web app and public skill copy
+npm run build:cli          # Bundle packages/miao-viz-cli
+npm run miao-viz -- ...    # Run the local CLI wrapper
+npm run test:run           # Run Vitest once
+npm run check              # Svelte/TypeScript checks for the web app
+npm run check:size         # Enforce source file size limits
+npm run test:e2e           # Playwright E2E tests
+npm run pack:skill         # Package the Miao Vision skill
 ```
 
-**⚠️ Critical:** Always use `npm run dev` - requires CORS headers for DuckDB-WASM SharedArrayBuffer.
+For CLI development, prefer `npm run miao-viz -- <command>` so the local wrapper exercises the repository version.
 
-## Architecture
+## Primary Workflows
 
-### Layered Architecture
+### Data Report
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Layer 4: Application Entry (main.ts, App.svelte)              │
-│                              │                                   │
-│                              ▼                                   │
-│  Layer 3: Bootstrap (Composition Root)                          │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ bootstrap/  - Wires all dependencies (DI)                   ││
-│  │   ├── init-services.ts  (DI adapters)                       ││
-│  │   └── init-plugins.ts   (plugin registration)               ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              │                                   │
-│              ┌───────────────┼───────────────┐                  │
-│              ▼               ▼               ▼                  │
-│  Layer 2: Features                                               │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐                │
-│  │  plugins/   │ │    app/     │ │ components/ │                │
-│  │  (43 comp)  │ │  (stores)   │ │  (UI)       │                │
-│  └─────────────┘ └─────────────┘ └─────────────┘                │
-│              │               │               │                   │
-│              └───────────────┼───────────────┘                  │
-│                              ▼                                   │
-│  Layer 1: Core (Pure logic, interface-only dependencies)        │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ core/  - connectors, database, markdown, engine, ai, shared ││
-│  └─────────────────────────────────────────────────────────────┘│
-│                              │                                   │
-│                              ▼                                   │
-│  Layer 0: Types / Contracts                                      │
-│  ┌─────────────────────────────────────────────────────────────┐│
-│  │ types/  - interfaces, type definitions                      ││
-│  └─────────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
+Use the deterministic CLI pipeline for report generation and for testing report-related code changes:
+
+```bash
+npm run miao-viz -- analyze /path/to/data.csv \
+  --intent "user intent" \
+  --output /tmp/miao-vision/context.json
+
+npm run miao-viz -- profile /path/to/data.csv \
+  > /tmp/miao-vision/profile.json
+
+npm run miao-viz -- block instantiate <block-id> \
+  --context /tmp/miao-vision/context.json \
+  --output /tmp/miao-vision/report.yaml
+
+npm run miao-viz -- validate \
+  --spec /tmp/miao-vision/report.yaml \
+  --profile /tmp/miao-vision/profile.json \
+  --context /tmp/miao-vision/context.json \
+  --verify
+
+npm run miao-viz -- render \
+  --input /path/to/data.csv \
+  --spec /tmp/miao-vision/report.yaml \
+  --context /tmp/miao-vision/context.json \
+  --output /tmp/miao-vision/report.html
 ```
 
-### Directory Structure
+When changing evidence, validation, chart selection, or rendering behavior, test the full `analyze -> instantiate/spec -> validate -> render` path.
 
-```
-src/
-├── bootstrap/         # Composition Root
-│   ├── index.ts           # initializeApp()
-│   ├── init-services.ts   # DI adapters
-│   └── init-plugins.ts    # Plugin registration
-│
-├── core/              # Core engine
-│   ├── ai/            # AI Report Generation
-│   │   ├── report-planner.ts    # Report planning
-│   │   ├── report-generator.ts  # Markdown generation
-│   │   ├── prompts/             # LLM prompts
-│   │   └── types.ts             # AI types
-│   ├── connectors/    # Data connectors (WASM, MotherDuck, HTTP)
-│   ├── database/      # DuckDB-WASM, table loading
-│   ├── engine/        # Report execution engine
-│   ├── markdown/      # Markdown processing
-│   ├── registry/      # Component registry
-│   └── shared/        # Utilities, DI, format
-│
-├── plugins/           # Pluggable components (43+)
-│   ├── inputs/        # 8 input components
-│   │   ├── dropdown/
-│   │   ├── buttongroup/
-│   │   ├── slider/
-│   │   ├── daterange/
-│   │   └── ...
-│   ├── data-display/  # 27 data display components (ALL pure SVG)
-│   │   ├── bigvalue/       # KPI card
-│   │   ├── datatable/      # Data table
-│   │   ├── bar-chart/      # Bar chart (Svelte + SVG)
-│   │   ├── line-chart/     # Line chart (Svelte + SVG)
-│   │   ├── pie-chart/      # Pie chart (Svelte + SVG)
-│   │   ├── area-chart/     # Area chart (Svelte + SVG)
-│   │   ├── scatter-chart/  # Scatter (Svelte + SVG)
-│   │   ├── histogram/      # Histogram
-│   │   ├── sankey/         # Sankey diagram (Svelte + SVG)
-│   │   ├── treemap/        # Treemap
-│   │   ├── radar/          # Radar chart (Svelte + SVG)
-│   │   ├── gauge/          # Gauge (Svelte + SVG)
-│   │   ├── heatmap/        # Heatmap (Svelte + SVG)
-│   │   ├── funnel/         # Funnel chart
-│   │   ├── waterfall/      # Waterfall chart
-│   │   └── ...
-│   ├── ui/            # UI components (alert, tabs, modal...)
-│   └── layout/        # Layout components (grid)
-│
-├── components/        # Application UI
-│   ├── ai-report/     # AI Report Generator UI
-│   │   ├── ReportGeneratorWizard.svelte
-│   │   ├── DataSourceSelector.svelte
-│   │   ├── PlanPreview.svelte
-│   │   └── GenerationProgress.svelte
-│   ├── sql-workspace/ # SQL Editor UI
-│   └── ...
-│
-├── app/               # Application state
-│   └── stores/        # Svelte 5 stores (Runes)
-│
-└── types/             # Type definitions
+### Article Infographic
+
+Agents fetch URLs and normalize article content themselves. The CLI accepts local Markdown/text only:
+
+```bash
+npm run miao-viz -- article /tmp/miao-vision/article.md \
+  --style editorial \
+  --format html \
+  --output /tmp/miao-vision/article-infographic.html
 ```
 
-### Dependency Rules (CRITICAL)
+### Browser Deck
 
-| From Layer | Can Depend On | FORBIDDEN |
-|------------|---------------|-----------|
-| **plugins/** | core, types | ❌ app, components, other plugins |
-| **core/** | types ONLY | ❌ plugins, app, components |
-| **types/** | NOTHING | ❌ everything |
+Use `miao-viz deck` for presentation artifacts:
 
-## Visualization Architecture
-
-### Chart Rendering: Pure Svelte + SVG
-
-**All 27 chart types in `plugins/data-display/` use pure Svelte + SVG rendering:**
-
-```svelte
-<!-- Example: BarChart.svelte -->
-<script lang="ts">
-  interface Props {
-    data: BarChartData
-  }
-  let { data }: Props = $props()
-
-  let bars = $derived(data.bars)
-  let maxValue = $derived(data.maxValue)
-</script>
-
-<svg viewBox="0 0 {width} {height}">
-  {#each bars as bar, i}
-    <rect
-      x={bar.x}
-      y={bar.y}
-      width={bar.width}
-      height={bar.height}
-      fill={bar.color}
-    />
-  {/each}
-</svg>
+```bash
+npm run miao-viz -- deck \
+  --input /path/to/data.csv \
+  --spec /path/to/deck.yaml \
+  --output /tmp/miao-vision/deck.html
 ```
 
-**Benefits:**
-- ✅ Zero external dependencies
-- ✅ Full Svelte reactivity with `$derived`
-- ✅ Excellent performance
-- ✅ Easy to customize and extend
+Deck validation should keep returning structured field and spec repair information.
 
-### Chart Types Summary
+## CLI Architecture
 
-| Category | Components | Rendering |
-|----------|------------|-----------|
-| **Basic Charts** | bar, line, area, pie, scatter | Svelte + SVG |
-| **Statistical** | histogram, boxplot, bubble | Svelte + SVG |
-| **Flow/Hierarchy** | sankey, treemap, funnel | Svelte + SVG |
-| **Metrics** | gauge, progress, sparkline, delta | Svelte + SVG |
-| **Heatmaps** | heatmap, calendar-heatmap | Svelte + SVG |
-| **Comparison** | radar, bullet, waterfall | Svelte + SVG |
-| **KPI** | bigvalue, value, kpigrid | Svelte + HTML |
-| **Table** | datatable | Svelte + HTML |
+The CLI source is in `packages/miao-viz-cli/src/`.
 
-## AI Report System
+Core responsibilities:
 
-### Architecture
+- Data loading/profiling: `data-loader.ts`, `data-profiler.ts`, `data-query.ts`, `data-transform.ts`.
+- Analyze context and evidence: `analyzer.ts`, `context-schema.ts`.
+- Public contracts and schemas: `types.ts`, `spec-schema.ts`.
+- Spec validation and patch hints: `spec-validator.ts`, `patch-hints.ts`, `directive-resolver.ts`.
+- Chart catalog rules: `chart-catalog.ts`.
+- Block instantiate workflow: `report-block-registry.ts`, `cli-block.ts`.
+- Static report rendering: `html-export.ts`, `svg-renderer.ts`, `themes/`.
+- Deck rendering: `deck-types.ts`, `deck-schema.ts`, `deck-validator.ts`, `deck-layouts.ts`, `deck-renderer.ts`.
+- Article infographic rendering: `article-infographic.ts`, `article-html.ts`.
+- CLI entrypoint and command utilities: `cli.ts`, `cli-utils.ts`, `cli-help.ts`.
 
-```
-User Prompt + Data Sources
-         │
-         ▼
-┌─────────────────────────────┐
-│      ReportPlanner          │
-│  (LLM: analyze data →       │
-│   generate ReportPlan)      │
-└──────────────┬──────────────┘
-               │
-               ▼
-        ReportPlan {
-          title: string
-          sections: [
-            { type: 'kpi', ... },
-            { type: 'trend', ... },
-            { type: 'ranking', ... },
-            { type: 'insight', ... }
-          ]
-        }
-               │
-               ▼
-┌─────────────────────────────┐
-│     ReportGenerator         │
-│  (Generate Markdown per     │
-│   section, stream output)   │
-└──────────────┬──────────────┘
-               │
-               ▼
-        Markdown Output
-        (with SQL blocks,
-         chart blocks)
-               │
-               ▼
-┌─────────────────────────────┐
-│     ReportRenderer          │
-│  (Parse → Execute SQL →     │
-│   Mount components)         │
-└─────────────────────────────┘
+CLI commands should preserve structured, machine-readable output using the existing result style:
+
+```ts
+{ ok: true, value: ... }
+{ ok: false, code: string, message: string, ... }
 ```
 
-### Section Types
+For evidence-related work, do not degrade machine-readable `ok/value` responses, structured errors, evidence ids, `$evidence:` path validation, or patch-hint behavior.
 
-| Type | Output | Visualization |
-|------|--------|---------------|
-| `kpi` | BigValue cards | bigvalue component |
-| `trend` | Time series | line-chart / area-chart |
-| `ranking` | Top N | bar-chart |
-| `comparison` | Categories | bar-chart / pie-chart |
-| `distribution` | Histogram | histogram |
-| `table` | Data table | datatable |
-| `insight` | AI text | Markdown paragraphs |
+## Agent Skill Architecture
 
-### AI Report Files
+The source skill lives at:
 
-```
-src/core/ai/
-├── types.ts              # ReportPlan, ReportSection types
-├── report-planner.ts     # Generate ReportPlan from data + prompt
-├── report-generator.ts   # Generate Markdown from plan
-└── prompts/
-    ├── report-planner.ts # Planner system/user prompts
-    ├── section-generator.ts # Section markdown templates
-    └── index.ts
+```text
+packages/miao-vision-skill/SKILL.md
 ```
 
-## Technology Stack
+Skill references live under:
 
-### Core Technologies
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Svelte 5** | ^5.15 | UI Framework (Runes mode) |
-| **TypeScript** | ^5.7 | Type safety |
-| **DuckDB-WASM** | ^1.29 | SQL engine |
-| **Monaco Editor** | ^0.52 | SQL editor |
-| **Unified/Remark** | ^11.0 | Markdown |
-| **Vite** | ^6.0 | Build tool |
-
-### Key Patterns
-
-**1. Svelte 5 Runes**
-```typescript
-let count = $state(0)
-let doubled = $derived(count * 2)
-$effect(() => { console.log(count) })
+```text
+packages/miao-vision-skill/references/
 ```
 
-**2. Result Pattern**
-```typescript
-const result = await connector.query(sql)
-if (!result.ok) {
-  handleError(result.error)
-  return
-}
-const data = result.value
+Packaged or copied skill files, including `apps/web/public/SKILL.md`, `apps/web/dist/SKILL.md`, and `skills/miao-vision/SKILL.md`, are not the primary source of truth. Update the source skill and use the existing build/pack flow to refresh generated copies when needed.
+
+Skill docs should describe CLI workflows and agent behavior. They should not duplicate renderer internals or become a second implementation spec for CLI logic.
+
+## Web App Scope
+
+The Svelte app in `apps/web/` supports the website, install/distribution flow, and public assets. Keep generation, validation, profiling, catalog, and rendering logic in `packages/miao-viz-cli`.
+
+Use normal Svelte 5 patterns in `apps/web/src`. Do not import browser-only app modules into CLI code.
+
+## Dependency Boundaries
+
+- CLI code must not depend on browser-only Svelte app code.
+- Web app code should not own CLI/product generation logic.
+- `packages/shared/` should remain type/schema focused.
+- Skill docs should describe workflows rather than duplicate CLI internals.
+- Generated and dist files should not be edited as source.
+- `videos/miaoshou-promo/` is a standalone HyperFrames project and should stay separate from main CLI architecture.
+
+## Testing Expectations
+
+For documentation-only changes:
+
+```bash
+npm run check:size
 ```
 
-**3. Component Data Flow**
-```typescript
-// Plugin component receives resolved data
-interface Props {
-  data: ChartData  // Already resolved from SQL
-}
-let { data }: Props = $props()
-let bars = $derived(data.bars)  // Reactive derivation
+For CLI behavior changes:
+
+```bash
+npm run test:run
+npm run build:cli
 ```
 
-## Adding New Chart Types
+For web app changes:
 
-### Step 1: Create Plugin Directory
-
-```
-src/plugins/data-display/my-chart/
-├── index.ts
-├── MyChart.svelte
-├── definition.ts
-├── types.ts
-└── data-resolver.ts
+```bash
+npm run check
+npm run build
 ```
 
-### Step 2: Create Svelte Component
+For deck/browser behavior changes:
 
-```svelte
-<!-- MyChart.svelte -->
-<script lang="ts">
-  import type { MyChartData } from './types'
-
-  interface Props {
-    data: MyChartData
-  }
-
-  let { data }: Props = $props()
-
-  // Use $derived for reactive computations
-  let processedData = $derived(
-    data.items.map(item => ({
-      ...item,
-      scaled: item.value / data.maxValue * 100
-    }))
-  )
-</script>
-
-<div class="my-chart">
-  <svg viewBox="0 0 400 300">
-    {#each processedData as item}
-      <!-- Render SVG elements -->
-    {/each}
-  </svg>
-</div>
-
-<style>
-  .my-chart {
-    width: 100%;
-  }
-</style>
+```bash
+npm run test:e2e
 ```
 
-### Step 3: Register Component
+For report generation changes, include a workflow-level smoke test that covers `analyze`, block instantiate or spec authoring, `validate --context --verify`, and `render`.
 
-```typescript
-// definition.ts
-import { defineComponent } from '@core/registry'
-import { z } from 'zod'
-import MyChart from './MyChart.svelte'
+## Code Quality Rules
 
-export const myChartRegistration = defineComponent({
-  metadata: {
-    type: 'data-viz',
-    language: 'mychart',
-    displayName: 'My Chart',
-    // ...
-  },
-  schema: z.object({
-    data: z.string(),
-    // ...
-  }),
-  component: MyChart
-})
-```
+- Keep non-test `.ts` and `.svelte` files under 500 lines. `npm run check:size` fails over the limit.
+- Files over 400 lines are warnings; avoid pushing them closer to the hard limit.
+- Split large CLI modules by responsibility instead of extending oversized files.
+- Prefer existing schemas, parsers, and structured APIs over ad hoc string manipulation.
+- Keep CLI output stable and machine-readable.
+- Add focused tests for changes to CLI behavior, schemas, validation, rendering, deck generation, article generation, or skill workflow assumptions.
 
-## Code Quality
+## Common Pitfalls
 
-### File Size Limits
+- Do not revive old SQL Workspace, Monaco, DuckDB-WASM OPFS, or plugin-heavy browser architecture assumptions in root guidance.
+- Do not add URL fetching to the CLI article command; agents should fetch and normalize web content before calling the CLI.
+- Do not invent metrics in generated reports. Use `context.evidence`, `$evidence:` directives, and `metricCandidates`.
+- Do not use blocked chart types from `context.catalog.blockedCharts`.
+- Do not edit packaged skill copies without also updating the source skill.
+- Do not treat the web app as the owner of report/deck/article generation.
 
-- **Maximum:** 500 lines per file
-- **Check:** `npm run check:size`
+## Current Priorities
 
-### TypeScript Strict Mode
-
-```json
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true
-  }
-}
-```
-
-## Troubleshooting
-
-### Common Issues
-
-**1. DuckDB-WASM fails**
-```
-Error: SharedArrayBuffer is not defined
-```
-**Fix:** Use `npm run dev`, check CORS headers
-
-**2. Component not rendering**
-```
-Component 'xxx' not found in registry
-```
-**Fix:** Check registration in `bootstrap/init-plugins.ts`
-
-**3. Chart data not updating**
-```
-// ❌ Wrong: Direct mutation
-data.items.push(newItem)
-
-// ✅ Correct: Create new reference
-data = { ...data, items: [...data.items, newItem] }
-```
-
-## Summary
-
-**Key Takeaways:**
-
-1. **Charts use pure Svelte + SVG** - No vgplot/D3 in plugins
-2. **AI Report generates Markdown** - ReportPlan → Markdown → Render
-3. **Svelte 5 Runes for reactivity** - `$state`, `$derived`, `$effect`
-4. **Strict layer dependencies** - Core never imports plugins
-5. **All charts are plugins** - Easy to add new chart types
-
-**When Adding Features:**
-
-- ✅ Check existing chart patterns in `plugins/data-display/`
-- ✅ Use pure SVG for new visualizations
-- ✅ Follow plugin structure conventions
-- ✅ Run `npm run check` before commit
-
----
-
-**Last Updated:** 2025-01-04
-**Architecture Version:** v1.1 (Pure Svelte + SVG Charts)
+- Improve reliability of `miao-viz analyze -> instantiate/spec -> validate -> render`.
+- Keep report insights evidence-grounded and machine-verifiable.
+- Move deterministic chart, block, template, and validation knowledge into the CLI to reduce agent token cost.
+- Preserve local-first operation: no backend, no data upload, no required API key.
+- Keep generated artifacts self-contained and easy to share.

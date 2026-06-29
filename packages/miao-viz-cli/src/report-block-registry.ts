@@ -1,5 +1,5 @@
 import type { AnalyzeContext, AnalyzeField, CatalogBlockEntry } from './context-schema'
-import type { AgentChartSpec } from './types'
+import type { AgentChartSpec, AgentInsight } from './types'
 
 // Subset of AnalyzeContext available when block matching runs (catalog is being built)
 export interface BlockMatchContext {
@@ -38,7 +38,7 @@ export interface ReportBlockResolver {
 
   canUse(ctx: BlockMatchContext): BlockDecision
   defaultVariables(ctx: BlockMatchContext): Record<string, unknown>
-  compile(variables: Record<string, unknown>, ctx: BlockMatchContext): { charts: AgentChartSpec[]; insights?: string[] }
+  compile(variables: Record<string, unknown>, ctx: BlockMatchContext): { charts: AgentChartSpec[]; insights?: AgentInsight[] }
 }
 
 // ---- Scoring helpers ----

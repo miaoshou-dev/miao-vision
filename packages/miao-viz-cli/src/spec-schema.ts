@@ -46,6 +46,16 @@ const chartInteractionSchema = z.object({
   select: z.enum(['filter', 'detail']).optional()
 })
 
+const insightSchema = z.union([
+  z.string(),
+  z.object({
+    text: z.string().min(1),
+    evidence: z.array(z.string().min(1)).optional(),
+    caveat: z.string().optional(),
+    severity: z.enum(['info', 'warning']).optional()
+  })
+])
+
 export const chartSpecSchema: z.ZodType<AgentChartSpec> = z.object({
   id: z.string().min(1).optional(),
   type: z.enum(MVP_CHART_TYPES),
@@ -74,7 +84,7 @@ export const reportSpecSchema: z.ZodType<AgentReportSpec> = z.object({
   interactions: z.object({
     globalFilters: z.array(globalFilterSchema).optional()
   }).optional(),
-  insights: z.array(z.string()).optional(),
+  insights: z.array(insightSchema).optional(),
   charts: z.array(chartSpecSchema).min(1)
 })
 

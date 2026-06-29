@@ -13,7 +13,7 @@ export interface CliArgs {
 
 export const BOOLEAN_FLAGS = new Set([
   'h', 'help', 'summary', 'reliable-only', 'interactive', 'no-interactive',
-  'strict', 'patch-hints', 'verify', 'for-llm'
+  'strict', 'patch-hints', 'verify', 'for-llm', 'compact', 'verbose'
 ])
 
 export function parseArgs(argv: string[]): CliArgs {

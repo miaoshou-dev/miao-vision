@@ -12,6 +12,8 @@ import { queryDataset } from './data-query'
 import { isAgentError } from './errors'
 import { BLOCK_REGISTRY, toCatalogBlockEntry } from './report-block-registry'
 import type { BlockMatchContext } from './report-block-registry'
+import { buildTemplateCatalog } from './report-template-registry'
+import { buildClarificationQuestions } from './analyze-clarifications'
 
 export interface AnalyzerOptions {
   intent?: string
@@ -35,8 +37,9 @@ export function analyzeDataset(dataset: LoadedDataset, options: AnalyzerOptions 
   const catalog = buildCatalog(fields, sampleWarnings, profile.rows, evidence)
   const promptRules = buildPromptRules(catalog.charts, sampleWarnings)
   const metricCandidates = buildMetricCandidates(fields, evidence)
+  const clarificationQuestions = buildClarificationQuestions(fields, options.intent ?? '')
 
-  return { intent, fields, evidence, catalog, sampleWarnings, promptRules, metricCandidates }
+  return { intent, fields, evidence, catalog, sampleWarnings, promptRules, metricCandidates, clarificationQuestions }
 }
 
 // ---- Field role identification ----
@@ -107,30 +110,53 @@ function parseIntent(
 
   let primaryMeasure = measures[0]?.name
   let primaryDimension = dimensions[0]?.name
+  let timeField = times[0]?.name
 
   // Apply user corrections
   if (correctAssumption) {
-    const m = correctAssumption.match(/^primary_measure=(\w+)$/)
-    const d = correctAssumption.match(/^primary_dimension=(\w+)$/)
+    const m = correctAssumption.match(/^primary_measure=([\w-]+)$/)
+    const d = correctAssumption.match(/^primary_dimension=([\w-]+)$/)
+    const t = correctAssumption.match(/^time_field=([\w-]+)$/)
     if (m) primaryMeasure = m[1]
     if (d) primaryDimension = d[1]
+    if (t) timeField = t[1]
   }
 
-  const assumptions: string[] = []
+  const assumptions: AnalyzeContext['intent']['assumptions'] = []
   if (primaryMeasure) {
-    const verify = measures.length > 1 ? ` (verify: ${measures.map(f => f.name).join(', ')} — choose with --correct-assumption primary_measure=<name>)` : ''
-    assumptions.push(`primary measure is "${primaryMeasure}"${verify}`)
+    assumptions.push({
+      key: 'primary_measure',
+      value: primaryMeasure,
+      confidence: measures.length > 1 ? 0.62 : 0.9,
+      alternatives: measures.filter(f => f.name !== primaryMeasure).map(f => f.name),
+      reason: measures.length > 1 ? 'multiple numeric measures detected' : 'single clear numeric measure'
+    })
   }
   if (primaryDimension) {
-    assumptions.push(`primary dimension is "${primaryDimension}"`)
+    assumptions.push({
+      key: 'primary_dimension',
+      value: primaryDimension,
+      confidence: dimensions.length > 1 ? 0.72 : 0.9,
+      alternatives: dimensions.filter(f => f.name !== primaryDimension).map(f => f.name),
+      reason: dimensions.length > 1 ? 'multiple dimensions detected' : 'single clear dimension'
+    })
   }
   if (times.length > 0) {
-    const t = times[0]
-    const verify = times.length > 1 ? ` (verify: ${times.map(f => f.name).join(', ')})` : ''
-    assumptions.push(`time field is "${t.name}"${verify}`)
+    assumptions.push({
+      key: 'time_field',
+      value: timeField ?? times[0].name,
+      confidence: times.length > 1 ? 0.7 : 0.9,
+      alternatives: times.filter(f => f.name !== timeField).map(f => f.name),
+      reason: times.length > 1 ? 'multiple time fields detected' : 'single clear time field'
+    })
   }
   if (measures.length === 0) {
-    assumptions.push('no numeric measure detected — use --correct-assumption primary_measure=<col>')
+    assumptions.push({
+      key: 'primary_measure',
+      value: '',
+      confidence: 0,
+      reason: 'no numeric measure detected'
+    })
   }
 
   const rawLower = raw.toLowerCase()
@@ -354,8 +380,9 @@ function buildCatalog(
     }
   }
   blocks.sort((a, b) => b.score - a.score)
+  const templateCatalog = buildTemplateCatalog(matchCtx)
 
-  return { charts, blockedCharts, recommendedPlan, blocks, blockedBlocks }
+  return { charts, blockedCharts, recommendedPlan, blocks, blockedBlocks, ...templateCatalog }
 }
 
 function buildRecommendedPlan(

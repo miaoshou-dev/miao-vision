@@ -178,6 +178,15 @@ export interface AgentReportInteractions {
   globalFilters?: AgentGlobalFilter[]
 }
 
+export type AgentInsight =
+  | string
+  | {
+      text: string
+      evidence?: string[]
+      caveat?: string
+      severity?: 'info' | 'warning'
+    }
+
 export interface AgentChartSpec {
   id?: string
   type: VizType
@@ -205,7 +214,7 @@ export interface AgentReportSpec {
   description?: string
   theme?: 'default' | 'editorial' | 'dark' | 'minimal'
   interactions?: AgentReportInteractions
-  insights?: string[]
+  insights?: AgentInsight[]
   charts: AgentChartSpec[]
 }
 

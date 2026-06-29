@@ -3,6 +3,7 @@ import { MVP_CHART_TYPES, OUTPUT_FORMATS, reportSpecSchema } from './spec-schema
 import { parseEvidenceRefs, resolveEvidencePath } from './directive-resolver'
 import { getCatalogItem } from './chart-catalog'
 import { countChartsByType } from './spec-utils'
+import { insightPreview, normalizeInsights } from './insight-utils'
 import type { AnalyzeContext } from './context-schema'
 import type { AgentChartSpec, AgentOutputFormat, AgentResult, AgentReportSpec, DataProfile } from './types'
 
@@ -15,6 +16,11 @@ const FORBIDDEN_WORDS: Array<{ pattern: RegExp; word: string }> = [
 ]
 
 const DRILLDOWN_CHART_TYPES = ['bar', 'pie', 'table'] as const
+
+export interface VerifyIssue {
+  code: 'INSIGHT_FORBIDDEN_WORD_STRICT' | 'INSIGHT_MISSING_CAVEAT_STRICT' | 'INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE_STRICT'
+  message: string
+}
 
 export function validateReportSpec(
   spec: unknown,
@@ -171,8 +177,21 @@ export function validateEvidencePaths(
   spec: AgentReportSpec,
   context: AnalyzeContext
 ): AgentResult<void> {
+  const availableIds = context.evidence.map(e => e.id)
+  for (const insight of normalizeInsights(spec.insights)) {
+    for (const evidenceId of insight.evidence) {
+      if (!availableIds.includes(evidenceId)) {
+        return agentError(
+          'INSIGHT_EVIDENCE_NOT_FOUND',
+          `insight.evidence id '${evidenceId}' not found in context.evidence. Available ids: ${availableIds.join(', ') || '(none)'}`,
+          { evidenceId, availableIds }
+        )
+      }
+    }
+  }
+
   const texts: string[] = [
-    ...(spec.insights ?? []),
+    ...normalizeInsights(spec.insights).map(insight => insight.text),
     ...spec.charts.map(c => c.title).filter((t): t is string => Boolean(t))
   ]
   for (const text of texts) {
@@ -197,17 +216,23 @@ export function collectVerifyWarnings(
   context?: AnalyzeContext
 ): string[] {
   const warnings: string[] = []
-  const insights = spec.insights ?? []
+  const insights = normalizeInsights(spec.insights)
 
   // T49: forbidden word detection in insights
-  for (const text of insights) {
+  for (const insight of insights) {
     for (const { pattern, word } of FORBIDDEN_WORDS) {
-      if (pattern.test(text)) {
+      if (pattern.test(insight.text)) {
         warnings.push(
-          `insight contains forbidden word '${word}': "${text.slice(0, 80)}${text.length > 80 ? '...' : ''}" — ` +
+          `insight contains forbidden word '${word}': ${insightPreview(insight.text)} — ` +
           'use only when backed by statistical evidence in context.evidence[]'
         )
       }
+    }
+
+    if (typeof insight.original !== 'string' && /\d/.test(insight.text) && insight.evidence.length === 0) {
+      warnings.push(
+        `insight contains numeric claim without structured evidence: ${insightPreview(insight.text)}`
+      )
     }
   }
 
@@ -217,7 +242,9 @@ export function collectVerifyWarnings(
       /仅供参考|样本量|有限数据|based on.*rows?|N-row sample|limited data|small sample/i,
       /环比变化|period.over.period/i
     ]
-    const hasCaveat = insights.some(text => CAVEAT_PATTERNS.some(p => p.test(text)))
+    const hasCaveat = insights.some(insight =>
+      Boolean(insight.caveat) || CAVEAT_PATTERNS.some(p => p.test(insight.text))
+    )
     if (insights.length > 0 && !hasCaveat) {
       const codes = context.sampleWarnings.map(w => w.code).join(', ')
       warnings.push(
@@ -228,6 +255,26 @@ export function collectVerifyWarnings(
   }
 
   return warnings
+}
+
+export function strictVerifyError(warnings: string[]): AgentResult<void> {
+  if (warnings.length === 0) return ok(undefined)
+  const issues = warnings.map(warningToVerifyIssue)
+  return agentError(
+    'STRICT_VERIFY_FAILED',
+    `Strict verify failed with ${warnings.length} warning(s).`,
+    { warnings, issues }
+  )
+}
+
+function warningToVerifyIssue(message: string): VerifyIssue {
+  if (message.includes('forbidden word')) {
+    return { code: 'INSIGHT_FORBIDDEN_WORD_STRICT', message }
+  }
+  if (message.includes('numeric claim without structured evidence')) {
+    return { code: 'INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE_STRICT', message }
+  }
+  return { code: 'INSIGHT_MISSING_CAVEAT_STRICT', message }
 }
 
 function validateChartType(chart: AgentChartSpec): AgentResult<AgentChartSpec> {

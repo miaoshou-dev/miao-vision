@@ -1,11 +1,11 @@
 import * as YAML from 'yaml'
 import { agentError, isAgentError } from './errors'
 import { getCatalogEntries } from './spec-validator'
-import { analyzeContextSchema } from './context-schema'
+import { parseAnalyzeContext } from './context-schema'
 import { CHART_CATALOG } from './chart-catalog'
 import { BLOCK_REGISTRY, getBlockById } from './report-block-registry'
 import type { BlockMatchContext, ReportBlockResolver } from './report-block-registry'
-import type { AgentChartSpec } from './types'
+import type { AgentChartSpec, AgentInsight } from './types'
 import { stringFlag, requiredFlag, writeOutput, fail, readJson } from './cli-utils'
 import type { CliArgs } from './cli-utils'
 
@@ -14,6 +14,11 @@ export function runCatalog(args: CliArgs): unknown {
     const catalog = {
       charts: CHART_CATALOG.map(c => ({
         id: c.id,
+        compactFor: c.compactFor,
+        requires: c.requires,
+        transformRecipe: c.transformRecipe,
+        avoid: c.avoid,
+        insightPattern: c.insightPattern,
         requiredEncodings: c.requiredEncodings,
         allowedTransforms: c.allowedTransforms,
         rules: c.rules.map(r => r.expression),
@@ -50,11 +55,11 @@ export function runBlock(args: CliArgs): unknown {
   const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true
     ? (raw as { value: unknown }).value
     : raw
-  const parsed = analyzeContextSchema.safeParse(unwrapped)
-  if (!parsed.success) {
-    return fail(agentError('INVALID_CONTEXT', `context.json format is invalid: ${parsed.error.issues.map(i => i.message).join('; ')}`, { contextPath }))
+  const parsed = parseAnalyzeContext(unwrapped)
+  if (!parsed) {
+    return fail(agentError('INVALID_CONTEXT', 'context.json format is invalid.', { contextPath }))
   }
-  const ctx = parsed.data
+  const ctx = parsed
 
   const resolver = getBlockById(blockId)
   if (!resolver) {
@@ -89,7 +94,7 @@ function buildBlockDraft(
   resolver: ReportBlockResolver,
   variables: Record<string, unknown>,
   score: number,
-  compiled: { charts: AgentChartSpec[]; insights?: string[] }
+  compiled: { charts: AgentChartSpec[]; insights?: AgentInsight[] }
 ): string {
   const varSummary = Object.entries(variables).map(([k, v]) => `${k}=${v}`).join(', ')
   const yamlBody = YAML.stringify({ charts: compiled.charts, insights: compiled.insights ?? [] })

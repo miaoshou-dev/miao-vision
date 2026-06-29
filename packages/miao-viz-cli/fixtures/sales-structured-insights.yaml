@@ -1,0 +1,22 @@
+title: Sales Structured Insights
+insights:
+  - text: "East contributed $evidence:by_dimension.rows[0].total_sales sales out of $evidence:total.values.total_sales total sales."
+    evidence:
+      - by_dimension
+      - total
+    caveat: "Only 4 rows; rankings and comparisons are descriptive only."
+    severity: info
+charts:
+  - id: kpi_total_sales
+    type: bigvalue
+    data:
+      transform:
+        - type: aggregate
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+    encoding:
+      value:
+        field: total_sales
+        type: quantitative

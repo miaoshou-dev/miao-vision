@@ -18,6 +18,9 @@ import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { generateInfographicFromFile } from './article-infographic'
 import { renderInfographicHtml } from './article-html'
 import { analyzeDataset } from './analyzer'
+import { CHART_CATALOG } from './chart-catalog'
+import { parseAnalyzeContext } from './context-schema'
+import { readSpec } from './cli-utils'
 import type { AgentReportSpec, LoadedDataset } from './types'
 
 const csvPath = 'test_data/agent-sales.csv'
@@ -1539,6 +1542,278 @@ describe('applyEncodingAggregates', () => {
   })
 })
 
+describe('report stability features', () => {
+  it('validates and renders structured object insights', () => {
+    const dataset = loadDataset(csvPath)
+    expect(dataset.ok).toBe(true)
+    if (!dataset.ok) return
+    const profile = profileDataset(dataset.value)
+    const context = analyzeDataset(dataset.value)
+    const spec: AgentReportSpec = {
+      title: 'Structured Insights',
+      insights: [{
+        text: 'East contributed $evidence:by_dimension.rows[0].total_sales sales.',
+        evidence: ['by_dimension'],
+        caveat: 'Based on limited rows only.',
+        severity: 'info'
+      }],
+      charts: [{ type: 'bigvalue', encoding: { value: { field: 'sales', aggregate: 'sum' } } }]
+    }
+
+    expect(validateReportSpec(spec, profile).ok).toBe(true)
+    expect(validateEvidencePaths(spec, context).ok).toBe(true)
+    const html = renderStaticHtml(spec, profile, dataset.value.rows)
+    expect(html).toContain('Based on limited rows only.')
+  })
+
+  it('fails when object insight evidence id is missing', () => {
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const context = analyzeDataset(dataset.value)
+    const spec: AgentReportSpec = {
+      insights: [{ text: 'Missing evidence.', evidence: ['missing'] }],
+      charts: [{ type: 'bigvalue', encoding: { value: { field: 'sales' } } }]
+    }
+    const result = validateEvidencePaths(spec, context)
+    expect(result.ok).toBe(false)
+    if (!result.ok) expect(result.code).toBe('INSIGHT_EVIDENCE_NOT_FOUND')
+  })
+
+  it('prints compact analyze context and block instantiate accepts it', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-compact-'))
+    const contextPath = join(dir, 'context.json')
+    const analyzeOut = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--', 'analyze', csvPath,
+      '--intent', 'sales by region',
+      '--compact',
+      '--output', contextPath
+    ], { encoding: 'utf8' })
+    expect(JSON.parse(analyzeOut).ok).toBe(true)
+    const context = JSON.parse(readFileSync(contextPath, 'utf8'))
+    expect(context.value.format).toBe('compact-v1')
+    expect(context.value.catalog.blocks.length).toBeGreaterThan(0)
+
+    const blockOut = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--', 'block', 'instantiate', 'snapshot-ranking',
+      '--context', contextPath
+    ], { encoding: 'utf8' })
+    const parsed = JSON.parse(blockOut)
+    expect(parsed.ok).toBe(true)
+    expect(parsed.value.yaml).toContain('ranking_by_region')
+  })
+
+  it('analyze --verbose is full context and --compact is tuple summary only', () => {
+    const verboseOut = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--', 'analyze', csvPath,
+      '--intent', 'sales by region',
+      '--verbose'
+    ], { encoding: 'utf8' })
+    const compactOut = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--', 'analyze', csvPath,
+      '--intent', 'sales by region',
+      '--compact'
+    ], { encoding: 'utf8' })
+    const verbose = JSON.parse(verboseOut)
+    const compact = JSON.parse(compactOut)
+    expect(verbose.ok).toBe(true)
+    expect(verbose.value.catalog.blocks[0].variables).toBeDefined()
+    expect(verbose.value.catalog.blocks[0].qualityChecks).toBeDefined()
+    expect(compact.value.format).toBe('compact-v1')
+    expect(Array.isArray(compact.value.catalog.blocks[0])).toBe(true)
+    expect(compact.value.catalog.blocks[0].variables).toBeUndefined()
+  })
+
+  it('catalog --for-llm exposes compact knowledge for all MVP chart types', () => {
+    const out = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'catalog', '--for-llm'], { encoding: 'utf8' })
+    const parsed = JSON.parse(out)
+    expect(parsed.ok).toBe(true)
+    for (const item of parsed.value.charts) {
+      expect(item.compactFor).toBeTruthy()
+      expect(item.requires).toBeTruthy()
+      expect(item.transformRecipe).toBeTruthy()
+      expect(item.avoid).toBeTruthy()
+    }
+    expect(parsed.value.charts.map((c: { id: string }) => c.id).sort()).toEqual(CHART_CATALOG.map(c => c.id).sort())
+  })
+
+  it('strict verify returns classified issues for each strict warning type', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-strict-issues-'))
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const profilePath = writeProfileFixture(dir, dataset.value)
+    const contextPath = join(dir, 'context.json')
+    writeFileSync(contextPath, JSON.stringify(analyzeDataset(dataset.value), null, 2))
+
+    const cases = [
+      {
+        code: 'INSIGHT_FORBIDDEN_WORD_STRICT',
+        yaml: ['insights:', '  - "Sales should improve."', 'charts:', '  - type: bigvalue', '    encoding: { value: { field: sales } }'].join('\n')
+      },
+      {
+        code: 'INSIGHT_MISSING_CAVEAT_STRICT',
+        yaml: ['insights:', '  - "East leads sales."', 'charts:', '  - type: bigvalue', '    encoding: { value: { field: sales } }'].join('\n')
+      },
+      {
+        code: 'INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE_STRICT',
+        yaml: ['insights:', '  - text: "Sales were 100."', 'charts:', '  - type: bigvalue', '    encoding: { value: { field: sales } }'].join('\n')
+      }
+    ]
+
+    for (const testCase of cases) {
+      const specPath = join(dir, `${testCase.code}.yaml`)
+      writeFileSync(specPath, testCase.yaml)
+      const output = runCliExpectFailure([
+        'validate',
+        '--spec', specPath,
+        '--profile', profilePath,
+        '--context', contextPath,
+        '--verify',
+        '--strict'
+      ])
+      const parsed = JSON.parse(output)
+      expect(parsed.code).toBe('STRICT_VERIFY_FAILED')
+      expect(parsed.issues.some((issue: { code: string }) => issue.code === testCase.code)).toBe(true)
+    }
+  })
+
+  it('template list and inspect return structured template info', () => {
+    const list = JSON.parse(execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'template', 'list'], { encoding: 'utf8' }))
+    expect(list.ok).toBe(true)
+    expect(list.value.some((template: { id: string }) => template.id === 'snapshot-overview')).toBe(true)
+
+    const inspect = JSON.parse(execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--', 'template', 'inspect', 'snapshot-overview'
+    ], { encoding: 'utf8' }))
+    expect(inspect.ok).toBe(true)
+    expect(inspect.value.id).toBe('snapshot-overview')
+    expect(inspect.value.qualityNotes.length).toBeGreaterThan(0)
+    expect(inspect.value.canUse).toBeUndefined()
+  })
+
+  it('analyze catalog includes specific template blocked reasons', () => {
+    const dataset: LoadedDataset = {
+      file: 'no-time.csv',
+      columns: ['region', 'sales'],
+      rows: [
+        { region: 'East', sales: 10 },
+        { region: 'West', sales: 20 }
+      ]
+    }
+    const context = analyzeDataset(dataset, { intent: 'trend report' })
+    expect(context.catalog.blockedTemplates?.some(t =>
+      t.id === 'trend-ranking-overview' && t.reason === 'missing required time'
+    )).toBe(true)
+  })
+
+  it('precision intent makes multi-measure clarification blocking', () => {
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const normal = analyzeDataset(dataset.value, { intent: 'sales report' })
+    const precise = analyzeDataset(dataset.value, { intent: 'executive decision report' })
+    expect(normal.clarificationQuestions?.find(q => q.id === 'primary_measure')?.blocking).toBe(false)
+    expect(precise.clarificationQuestions?.find(q => q.id === 'primary_measure')?.blocking).toBe(true)
+  })
+
+  it('template instantiate creates a valid report spec', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-template-'))
+    const contextPath = join(dir, 'context.json')
+    const specPath = join(dir, 'report.yaml')
+    execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--', 'analyze', csvPath,
+      '--intent', 'sales overview',
+      '--output', contextPath
+    ], { encoding: 'utf8' })
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--', 'template', 'instantiate', 'snapshot-overview',
+      '--context', contextPath,
+      '--output', specPath
+    ], { encoding: 'utf8' })
+    expect(JSON.parse(out).ok).toBe(true)
+    expect(readFileSync(specPath, 'utf8')).toContain('charts:')
+
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const validation = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--', 'validate',
+      '--spec', specPath,
+      '--profile', writeProfileFixture(dir, dataset.value),
+      '--context', contextPath
+    ], { encoding: 'utf8' })
+    expect(JSON.parse(validation).ok).toBe(true)
+  })
+
+  it('inspect outputs transform steps and evidence usage', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-inspect-'))
+    const contextPath = join(dir, 'context.json')
+    const specPath = join(dir, 'report.yaml')
+    const inspectPath = join(dir, 'inspect.json')
+    execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'analyze', csvPath, '--output', contextPath], { encoding: 'utf8' })
+    writeFileSync(specPath, [
+      'insights:',
+      '  - text: "East is $evidence:by_dimension.rows[0].region."',
+      '    evidence: [by_dimension]',
+      'charts:',
+      '  - id: ranking',
+      '    type: bar',
+      '    data:',
+      '      transform:',
+      '        - type: aggregate',
+      '          groupBy: [region]',
+      '          measures:',
+      '            - field: sales',
+      '              op: sum',
+      '              as: total_sales',
+      '    encoding:',
+      '      x: { field: region }',
+      '      y: { field: total_sales }'
+    ].join('\n'))
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--', 'inspect',
+      '--input', csvPath,
+      '--spec', specPath,
+      '--context', contextPath,
+      '--output', inspectPath
+    ], { encoding: 'utf8' })
+    expect(JSON.parse(out).ok).toBe(true)
+    const inspect = JSON.parse(readFileSync(inspectPath, 'utf8'))
+    expect(inspect.charts[0].transforms[0].type).toBe('aggregate')
+    expect(inspect.charts[0].encoding.y.sourceFieldMatch).toBe(false)
+    expect(inspect.charts[0].encoding.y.finalRowsMatch).toBe(true)
+    expect(inspect.charts[0].encoding.y.resolvedType).toBe('number')
+    expect(inspect.evidence.referenced).toContain('by_dimension')
+  })
+
+  it('golden fixtures parse and validate through supported entry points', () => {
+    const dataset = loadDataset(csvPath)
+    if (!dataset.ok) return
+    const profile = profileDataset(dataset.value)
+    const context = analyzeDataset(dataset.value)
+
+    const structured = readSpec('packages/miao-viz-cli/fixtures/sales-structured-insights.yaml')
+    const structuredSpec = structured as AgentReportSpec
+    expect(validateReportSpec(structuredSpec, profile).ok).toBe(true)
+    expect(validateEvidencePaths(structuredSpec, context).ok).toBe(true)
+    expect(renderStaticHtml(structuredSpec, profile, dataset.value.rows)).toContain('Only 4 rows')
+
+    const compactContext = JSON.parse(readFileSync('packages/miao-viz-cli/fixtures/sales-compact-context.json', 'utf8'))
+    expect(parseAnalyzeContext(compactContext)?.intent.raw).toBe('sales by region')
+
+    const templateSpec = readSpec('packages/miao-viz-cli/fixtures/sales-template-overview.yaml')
+    expect(validateReportSpec(templateSpec, profile).ok).toBe(true)
+
+    const clarificationContext = JSON.parse(readFileSync('packages/miao-viz-cli/fixtures/multi-measure-clarification-context.json', 'utf8'))
+    expect(parseAnalyzeContext(clarificationContext)?.clarificationQuestions?.[0].blocking).toBe(false)
+  })
+
+  it('compact context documentation names tuple fields', () => {
+    const doc = readFileSync('docs/compact-analyze-context.md', 'utf8')
+    expect(doc).toContain('compact-v1')
+    expect(doc).toContain('fields')
+    expect(doc).toContain('catalog.blocks')
+    expect(doc).toContain('clarificationQuestions')
+  })
+})
+
 function createXlsxFixture(): string {
   const dir = mkdtempSync(join(tmpdir(), 'miao-agent-test-'))
   const file = join(dir, 'sales.xlsx')
@@ -1552,6 +1827,12 @@ function createXlsxFixture(): string {
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders')
   XLSX.writeFile(workbook, file)
   return file
+}
+
+function writeProfileFixture(dir: string, dataset: LoadedDataset): string {
+  const profilePath = join(dir, 'profile.json')
+  writeFileSync(profilePath, JSON.stringify(profileDataset(dataset), null, 2))
+  return profilePath
 }
 
 function runCliExpectFailure(args: string[]): string {
