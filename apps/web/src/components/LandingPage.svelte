@@ -208,53 +208,16 @@
       </div>
     </div>
 
-    <div class="artifact-stage" aria-label="Miao Vision artifact workflow">
-      <div class="pipeline-panel">
-        <div class="panel-header">
-          <span>agent workflow</span>
-          <span>miao-viz</span>
-        </div>
-        <div class="pipeline-list">
-          <span>sales.csv</span>
-          <span>profile.json</span>
-          <span>report.yaml</span>
-          <span>validate: ok</span>
-          <strong>sales-report.html</strong>
-        </div>
-      </div>
-
-      <div class="report-artifact">
-        <div class="report-topline">
-          <span>Editorial Report</span>
-          <span>self-contained HTML</span>
-        </div>
-        <h2>Regional sales momentum is concentrated in three markets</h2>
-        <div class="metric-row">
-          <div>
-            <span>Total sales</span>
-            <strong>$1.28M</strong>
-          </div>
-          <div>
-            <span>Growth</span>
-            <strong>24%</strong>
-          </div>
-          <div>
-            <span>Top region</span>
-            <strong>West</strong>
-          </div>
-        </div>
-        <div class="artifact-chart" aria-hidden="true">
-          <span style="height: 58%"></span>
-          <span style="height: 82%"></span>
-          <span style="height: 46%"></span>
-          <span style="height: 72%"></span>
-          <span style="height: 91%"></span>
-          <span style="height: 64%"></span>
-        </div>
-        <p>
-          Revenue growth is strongest where repeat orders and regional coverage overlap.
-        </p>
-      </div>
+    <div class="artifact-stage" aria-label="Miao Vision product demo">
+      <video
+        class="hero-video"
+        src="/promo.mp4"
+        autoplay
+        muted
+        loop
+        playsinline
+        aria-hidden="true"
+      ></video>
     </div>
   </header>
 

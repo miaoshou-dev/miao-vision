@@ -102,73 +102,23 @@
   display: inline-flex; align-items: center; gap: 0.35rem; color: var(--muted); font-size: 0.88rem;
 }
 
-.artifact-stage { position: relative; min-height: 38rem; }
+.artifact-stage {
+  display: flex; align-items: center; justify-content: center;
+  position: relative; min-height: 38rem;
+}
 
-.pipeline-panel, .report-artifact, .track-card, .command-card, .workflow-step, .artifact-card, .proof-card {
+.hero-video {
+  width: 100%; max-width: 36rem; height: auto; border-radius: 20px;
+  box-shadow: var(--shadow); display: block;
+}
+
+.track-card, .command-card, .workflow-step, .artifact-card, .proof-card {
   background: var(--surface); border: 1px solid rgba(223, 228, 238, 0.92);
   border-radius: 24px; box-shadow: var(--shadow);
 }
 
-.pipeline-panel {
-  position: absolute; top: 1rem; left: 0; width: 17rem; padding: 1rem; transform: rotate(-2deg);
-}
-
-.panel-header, .report-topline {
-  display: flex; justify-content: space-between; gap: 1rem; color: var(--muted);
-  font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
-}
-
-.pipeline-list {
-  display: grid; gap: 0.55rem; margin-top: 1rem;
-  font-family: Menlo, Consolas, monospace; font-size: 0.82rem;
-}
-
-.pipeline-list span, .pipeline-list strong {
-  padding: 0.55rem 0.65rem; background: #f2f5fa; color: #202124; border-radius: 999px;
-}
-
-.pipeline-list strong { color: var(--green); }
-
-.report-artifact {
-  position: absolute; right: 0; bottom: 0; width: min(34rem, 86%);
-  padding: clamp(1.25rem, 3vw, 2rem);
-}
-
-.report-artifact h2 {
-  margin: 1rem 0 1.25rem;
-  font-size: clamp(1.65rem, 3vw, 2.45rem); line-height: 1.08;
-}
-
-.metric-row {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; margin-bottom: 1.25rem;
-}
-
-.metric-row div {
-  padding: 0.8rem; background: #f7f9fc; border: 1px solid var(--line); border-radius: 16px;
-}
-
-.metric-row span, .artifact-card p, .track-card dt, .track-card dd, .workflow-step span, .report-artifact p {
+.artifact-card p, .track-card dt, .track-card dd, .workflow-step span {
   color: var(--muted);
-}
-
-.metric-row span { display: block; font-size: 0.72rem; text-transform: uppercase; }
-.metric-row strong { display: block; margin-top: 0.25rem; font-size: 1.2rem; }
-
-.artifact-chart {
-  display: flex; align-items: end; gap: 0.55rem; height: 11rem;
-  padding: 1rem 0.9rem 0.75rem;
-  background: repeating-linear-gradient(to top, #e8eef9 0 1px, transparent 1px 25%), #fff;
-  border: 1px solid var(--line); border-radius: 18px;
-}
-
-.artifact-chart span {
-  flex: 1; min-width: 1rem; background: linear-gradient(180deg, var(--blue), var(--violet));
-  border-radius: 999px 999px 6px 6px; animation: growBar 0.9s ease both;
-}
-
-@keyframes growBar {
-  from { transform: scaleY(0.2); transform-origin: bottom; }
-  to { transform: scaleY(1); transform-origin: bottom; }
 }
 
 .landing-main { display: grid; gap: clamp(3rem, 7vw, 6rem); padding-bottom: 4rem; }
@@ -418,8 +368,7 @@
   .hero { padding-top: 2rem; }
   .hero h1 { font-size: clamp(3.7rem, 18vw, 4.8rem); }
   .hero-actions, .btn-primary, .btn-secondary { width: 100%; }
-  .artifact-stage { min-height: auto; display: grid; gap: 1rem; }
-  .pipeline-panel, .report-artifact { position: static; width: auto; transform: none; }
+  .artifact-stage { min-height: auto; }
   .metric-row, .install-grid, .track-grid, .workflow-steps, .artifact-grid, .proof-grid { grid-template-columns: 1fr; }
   .install-section, .tracks-section, .workflow-section, .gallery-section, .why-section {
     padding-inline: 1.25rem;
