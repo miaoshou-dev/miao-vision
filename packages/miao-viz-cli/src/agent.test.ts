@@ -15,7 +15,8 @@ import { applyInteractiveFilters, selectDetailRows, shouldEnableInteractiveRunti
 import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
 import { parseEvidenceRefs, resolveEvidencePath, resolveDirectives } from './directive-resolver'
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
-import { generateInfographicFromFile } from './article-infographic'
+import { generateInfographicFromFile, infographicSpecSchema } from './article-infographic'
+import { assessInfographicQuality } from './infographic-quality'
 import { renderInfographicHtml } from './article-html'
 import { analyzeDataset } from './analyzer'
 import { CHART_CATALOG } from './chart-catalog'
@@ -636,9 +637,9 @@ charts:
       'article',
       articlePath,
       '--format',
-      'pdf',
+      'svg',
       '--output',
-      join(dir, 'out.pdf')
+      join(dir, 'out.svg')
     ])
     expect(JSON.parse(badFormat).code).toBe('UNSUPPORTED_ARTICLE_FORMAT')
 
@@ -759,6 +760,29 @@ describe('article --spec-input (T30–T33)', () => {
     expect(JSON.parse(out).ok).toBe(true)
     expect(readFileSync(htmlOutput, 'utf8')).toContain('<style>')
   })
+
+  it('renders the agent-authored spec fixture from test_data/article-spec-quality.json', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-agent-spec-'))
+    const htmlOutput = join(dir, 'out.html')
+
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', 'test_data/article-spec-quality.json',
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { sections: string[] } }
+    expect(result.ok).toBe(true)
+    expect(result.value.sections).toEqual(['hero', 'facts', 'timeline', 'comparison', 'quote', 'takeaways'])
+
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('The Future of Renewable Energy')
+    expect(html).toContain('<span>01</span><h2>Key Metrics</h2>')
+    expect(html).toContain('<span>02</span><h2>The Road to 2025</h2>')
+    expect(html).toContain('<span>03</span><h2>Solar vs Wind</h2>')
+    expect(html).toContain('<span>04</span><h2>Implications</h2>')
+  })
 })
 
 describe('article infographic generation', () => {
@@ -775,6 +799,274 @@ describe('article infographic generation', () => {
     expect(html).toContain('<style>')
     expect(html).toContain('mv-fact-grid')
     expect(html).toContain('miao-infographic-spec')
+  })
+
+  it('uses dynamic section numbering regardless of which section types are present', () => {
+    const spec = {
+      title: 'Numbering Test',
+      style: 'editorial' as const,
+      summary: 'Testing dynamic section numbering.',
+      sections: [
+        { type: 'hero' as const, title: 'Numbering Test', emphasis: 'Lead.', items: [{ text: 'Lead.' }] },
+        { type: 'takeaways' as const, title: 'First', items: [{ text: 'Item 1' }] },
+        { type: 'facts' as const, title: 'Second', items: [{ value: '42%', text: 'Growth.' }] },
+        { type: 'quote' as const, title: 'A Quote', items: [{ text: 'Quote text.' }] },
+        { type: 'timeline' as const, title: 'Third', items: [{ label: '2025', text: 'Event.' }] },
+        { type: 'comparison' as const, title: 'Fourth', items: [{ label: 'A', text: 'Side A.' }, { label: 'B', text: 'Side B.' }] }
+      ],
+      metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
+    }
+    const html = renderInfographicHtml(spec)
+    expect(html).toContain('<span>01</span><h2>First</h2>')
+    expect(html).toContain('<span>02</span><h2>Second</h2>')
+    expect(html).toContain('<span>03</span><h2>Third</h2>')
+    expect(html).toContain('<span>04</span><h2>Fourth</h2>')
+  })
+
+  it('renders Chinese article with correct structure', () => {
+    const result = generateInfographicFromFile('test_data/article-chinese.md', 'editorial')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.spec.title).toContain('AI')
+    expect(result.value.spec.sections.map(s => s.type)).toContain('facts')
+    expect(result.value.spec.sections.map(s => s.type)).toContain('quote')
+    const html = renderInfographicHtml(result.value.spec)
+    expect(html).toContain('<style>')
+    expect(html).toContain('miao-infographic-spec')
+  })
+
+  it('renders all new P2 template types from fixture', () => {
+    const specFile = 'test_data/article-spec-templates.json'
+    const raw = JSON.parse(readFileSync(specFile, 'utf8'))
+    const html = renderInfographicHtml(raw)
+    expect(html).toContain('mv-process-steps')
+    expect(html).toContain('mv-pros-cons-grid')
+    expect(html).toContain('mv-stat-grid-items')
+    expect(html).toContain('mv-risk-matrix-grid')
+    expect(html).toContain('mv-checklist-items')
+    expect(html).toContain('<span>01</span><h2>Launch Stages</h2>')
+    expect(html).toContain('<span>02</span><h2>Aggressive vs Cautious Launch</h2>')
+    expect(html).toContain('<span>03</span><h2>Readiness Metrics</h2>')
+    expect(html).toContain('<span>04</span><h2>Risk Assessment</h2>')
+    expect(html).toContain('<span>05</span><h2>Launch Day Checklist</h2>')
+  })
+
+  it('renders all P2 templates via CLI --spec-input', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-p2-templates-'))
+    const htmlOutput = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', 'test_data/article-spec-templates.json',
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { sections: string[] } }
+    expect(result.ok).toBe(true)
+    expect(result.value.sections).toEqual(['hero', 'process', 'pros-cons', 'stat-grid', 'risk-matrix', 'checklist'])
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('mv-process-steps')
+    expect(html).toContain('mv-pros-cons-grid')
+    expect(html).toContain('mv-stat-grid-items')
+    expect(html).toContain('mv-risk-matrix-grid')
+    expect(html).toContain('mv-checklist-items')
+  })
+
+  it('accepts visual field in InfographicSection schema', () => {
+    const spec = {
+      title: 'Visual Test', style: 'editorial' as const,
+      summary: 'Testing visual field.',
+      sections: [{
+        type: 'facts' as const, title: 'Metrics', items: [{ text: 'Test item.' }],
+        visual: { type: 'kpi-strip' as const, data: { items: [{ label: 'CPU', value: 4 }] }, caption: 'A test KPI' }
+      }],
+      metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
+    }
+    const html = renderInfographicHtml(spec)
+    expect(html).toContain('mv-visual-card')
+    expect(html).toContain('mv-visual-svg')
+    expect(html).toContain('mv-visual-caption')
+  })
+
+  it('rejects unknown visual type via schema', () => {
+    const badSpec = {
+      title: 'Bad Visual', style: 'editorial' as const,
+      summary: 'Bad visual type.',
+      sections: [{
+        type: 'facts' as const, title: 'X', items: [{ text: 'x' }],
+        visual: { type: 'nonexistent', data: {} }
+      }],
+      metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
+    }
+    const parsed = infographicSpecSchema.safeParse(badSpec)
+    expect(parsed.success).toBe(false)
+  })
+
+  it('accepts notes as string or string[]', () => {
+    const spec = (notes: string | string[]) => ({
+      title: 'Notes Test', style: 'editorial' as const,
+      summary: 'Testing notes field.',
+      sections: [{ type: 'facts' as const, title: 'Metrics', items: [{ text: 'Item 1' }], notes }],
+      metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
+    })
+    expect(infographicSpecSchema.safeParse(spec('single note')).success).toBe(true)
+    expect(infographicSpecSchema.safeParse(spec(['note 1', 'note 2'])).success).toBe(true)
+  })
+
+  it('renders all 5 P0 visual components from fixture', () => {
+    const specFile = 'test_data/article-spec-visuals.json'
+    const raw = JSON.parse(readFileSync(specFile, 'utf8'))
+    const html = renderInfographicHtml(raw)
+    expect(html).toContain('mv-visual-kpi-strip')
+    expect(html).toContain('mv-visual-kpi')
+    expect(html).toContain('metric-bars')
+    expect(html).toContain('process-flow')
+    expect(html).toContain('concept-contrast')
+    expect(html).toContain('timeline-path')
+    expect(html).toContain('mv-visual-svg')
+    expect(html).toContain('mv-visual-card')
+    expect(html).toContain('mv-visual-caption')
+    expect(html).toContain('mv-visual-notes')
+  })
+
+  it('renders all 5 P0 visuals via CLI --spec-input', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-visual-cli-'))
+    const htmlOutput = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', 'test_data/article-spec-visuals.json',
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { sections: string[] } }
+    expect(result.ok).toBe(true)
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('mv-visual-kpi-strip')
+    expect(html).toContain('metric-bars')
+    expect(html).toContain('process-flow')
+    expect(html).toContain('concept-contrast')
+    expect(html).toContain('timeline-path')
+  })
+
+  it('each P0 visual component renders SVG elements', () => {
+    const specFile = 'test_data/article-spec-visuals.json'
+    const raw = JSON.parse(readFileSync(specFile, 'utf8'))
+    const html = renderInfographicHtml(raw)
+    const svgCount = (html.match(/<svg /g) || []).length
+    const rectCount = (html.match(/<rect /g) || []).length
+    const textCount = (html.match(/<text[ >]/g) || []).length
+    expect(svgCount).toBeGreaterThanOrEqual(8)
+    expect(rectCount).toBeGreaterThanOrEqual(8)
+    expect(textCount).toBeGreaterThanOrEqual(20)
+  })
+
+  it('quality: visual-rich spec with P0+P1 passes without warnings', () => {
+    const specFile = 'test_data/article-spec-visuals.json'
+    const raw = JSON.parse(readFileSync(specFile, 'utf8'))
+    const report = assessInfographicQuality(raw)
+    expect(report.warnings.length).toBe(0)
+    expect(report.visualComponentCount).toBeGreaterThanOrEqual(8)
+    expect(report.svgVisualCount).toBeGreaterThanOrEqual(8)
+    expect(report.quantifiedVisualCount).toBeGreaterThanOrEqual(2)
+  })
+
+  it('quality: text-only spec emits warnings', () => {
+    const spec = {
+      title: 'Text Only', style: 'editorial' as const,
+      summary: 'A text-heavy article with no visual components.',
+      sections: [
+        { type: 'hero' as const, title: 'Text Only', emphasis: 'No visuals.', items: [{ text: 'No visuals.' }] },
+        { type: 'facts' as const, title: 'Facts', items: [{ value: '42%', text: 'Growth rate.' }, { value: '100', text: 'Total items count.' }] },
+        { type: 'timeline' as const, title: 'History', items: [{ label: '2024', text: 'Event A.' }, { label: '2025', text: 'Event B.' }] },
+        { type: 'comparison' as const, title: 'Options', items: [{ label: 'A', text: 'Option A.' }, { label: 'B', text: 'Option B.' }] },
+        { type: 'takeaways' as const, title: 'Lessons', items: [{ text: 'Takeaway 1.' }, { text: 'Takeaway 2.' }, { text: 'Takeaway 3.' }, { text: 'Takeaway 4.' }] }
+      ],
+      metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
+    }
+    const report = assessInfographicQuality(spec)
+    expect(report.warnings.length).toBeGreaterThan(0)
+    expect(report.warnings.some(w => w.code === 'low_visual_density')).toBe(true)
+    expect(report.warnings.some(w => w.code === 'numeric_claims_not_visualized')).toBe(true)
+    expect(report.warnings.some(w => w.code === 'timeline_rendered_as_text')).toBe(true)
+    expect(report.warnings.some(w => w.code === 'comparison_rendered_as_text')).toBe(true)
+  })
+
+  it('quality: CLI output includes warnings in value', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-quality-cli-'))
+    const htmlOutput = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', 'test_data/article-spec-templates.json',
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { warnings: Array<{ code: string }> } }
+    expect(result.ok).toBe(true)
+    expect(Array.isArray(result.value.warnings)).toBe(true)
+    // Template spec has no visuals → should have warnings
+    expect(result.value.warnings.length).toBeGreaterThan(0)
+  })
+
+  it('renders all 4 P1 visual components from fixture', () => {
+    const specFile = 'test_data/article-spec-visuals.json'
+    const raw = JSON.parse(readFileSync(specFile, 'utf8'))
+    const html = renderInfographicHtml(raw)
+    expect(html).toContain('part-to-whole')
+    expect(html).toContain('before-after')
+    expect(html).toContain('tradeoff-matrix')
+    expect(html).toContain('ranked-list-chart')
+    expect(html).toContain('mv-visual-svg')
+    expect(html).toContain('mv-visual-card')
+  })
+
+  it('renders all 4 P1 visuals via CLI --spec-input', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-p1-cli-'))
+    const htmlOutput = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', 'test_data/article-spec-visuals.json',
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean }
+    expect(result.ok).toBe(true)
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('part-to-whole')
+    expect(html).toContain('before-after')
+    expect(html).toContain('tradeoff-matrix')
+    expect(html).toContain('ranked-list-chart')
+  })
+
+  it('renders all 3 P2 visual components from fixture', () => {
+    const specFile = 'test_data/article-spec-visuals.json'
+    const raw = JSON.parse(readFileSync(specFile, 'utf8'))
+    const html = renderInfographicHtml(raw)
+    expect(html).toContain('system-diagram')
+    expect(html).toContain('callout-diagram')
+    expect(html).toContain('icon-cluster')
+    expect(html).toContain('mv-visual-svg')
+    expect(html).toContain('mv-visual-card')
+  })
+
+  it('renders all 3 P2 visuals via CLI --spec-input', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-p2-cli-'))
+    const htmlOutput = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', 'test_data/article-spec-visuals.json',
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean }
+    expect(result.ok).toBe(true)
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('system-diagram')
+    expect(html).toContain('callout-diagram')
+    expect(html).toContain('icon-cluster')
   })
 })
 

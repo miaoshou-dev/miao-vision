@@ -5,11 +5,11 @@ import { agentError, ok } from './errors'
 import type { AgentResult } from './types'
 
 export const ARTICLE_STYLES = ['editorial', 'executive', 'minimal'] as const
-export const ARTICLE_FORMATS = ['html', 'json', 'markdown'] as const
+export const ARTICLE_FORMATS = ['html', 'json', 'markdown', 'png', 'pdf'] as const
 
 export type InfographicStyle = (typeof ARTICLE_STYLES)[number]
 export type ArticleOutputFormat = (typeof ARTICLE_FORMATS)[number]
-export type InfographicSectionType = 'hero' | 'facts' | 'timeline' | 'comparison' | 'quote' | 'takeaways'
+export type InfographicSectionType = 'hero' | 'facts' | 'timeline' | 'comparison' | 'quote' | 'takeaways' | 'process' | 'pros-cons' | 'stat-grid' | 'risk-matrix' | 'checklist'
 
 export interface InfographicSectionItem {
   label?: string
@@ -18,12 +18,33 @@ export interface InfographicSectionItem {
   detail?: string
 }
 
+export type InfographicVisualType =
+  | 'kpi-strip'
+  | 'metric-bars'
+  | 'process-flow'
+  | 'concept-contrast'
+  | 'timeline-path'
+  | 'part-to-whole'
+  | 'before-after'
+  | 'tradeoff-matrix'
+  | 'ranked-list-chart'
+  | 'system-diagram'
+  | 'callout-diagram'
+  | 'icon-cluster'
+
+export interface InfographicVisual {
+  type: InfographicVisualType
+  data: Record<string, unknown>
+  caption?: string
+}
+
 export interface InfographicSection {
   type: InfographicSectionType
   title: string
   items: InfographicSectionItem[]
   emphasis?: string
-  notes?: string
+  notes?: string | string[]
+  visual?: InfographicVisual
 }
 
 export interface InfographicSpec {
@@ -47,12 +68,19 @@ const infographicSectionItemSchema = z.object({
   detail: z.string().optional()
 })
 
+const infographicVisualSchema = z.object({
+  type: z.enum(['kpi-strip', 'metric-bars', 'process-flow', 'concept-contrast', 'timeline-path', 'part-to-whole', 'before-after', 'tradeoff-matrix', 'ranked-list-chart', 'system-diagram', 'callout-diagram', 'icon-cluster']),
+  data: z.record(z.unknown()),
+  caption: z.string().optional()
+})
+
 const infographicSectionSchema = z.object({
-  type: z.enum(['hero', 'facts', 'timeline', 'comparison', 'quote', 'takeaways']),
+  type: z.enum(['hero', 'facts', 'timeline', 'comparison', 'quote', 'takeaways', 'process', 'pros-cons', 'stat-grid', 'risk-matrix', 'checklist']),
   title: z.string().min(1, 'section.title must not be empty'),
   items: z.array(infographicSectionItemSchema).min(1, 'section.items must have at least one item'),
   emphasis: z.string().optional(),
-  notes: z.string().optional()
+  notes: z.union([z.string(), z.array(z.string())]).optional(),
+  visual: infographicVisualSchema.optional()
 })
 
 export const infographicSpecSchema = z.object({
@@ -152,11 +180,12 @@ function normalizeArticleText(raw: string): string {
 
 function parseArticle(text: string, file: string): ParsedArticle {
   const lines = text.split('\n')
+  const bodyLines = stripFrontmatter(lines)
   const metadata = extractMetadata(lines)
-  const title = findTitle(lines) ?? titleFromFilename(file)
-  const contentLines = lines.filter(line => {
+  const title = findTitle(bodyLines, metadata.title) ?? titleFromFilename(file)
+  const contentLines = bodyLines.filter(line => {
     const trimmed = line.trim()
-    return trimmed !== title && !trimmed.match(/^#\s+/) && !trimmed.match(/^(source|url|author|date):\s*/i)
+    return trimmed !== title && !trimmed.match(/^#\s+/) && !trimmed.match(/^(source|url|author|date|title|published|created|tags?|description):\s*/i)
   })
 
   const quotes = contentLines
@@ -187,6 +216,27 @@ function parseArticle(text: string, file: string): ParsedArticle {
   }
 }
 
+function buildFactsVisual(facts: InfographicSectionItem[]): InfographicVisual | undefined {
+  const numeric = facts.filter(f => f.value && /[\d]/.test(f.value))
+  if (numeric.length >= 2) {
+    return {
+      type: 'kpi-strip',
+      data: { items: numeric.slice(0, 6).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, unit: f.value!.replace(/[0-9.\-]/g, '').trim() || undefined })) }
+    }
+  }
+  return undefined
+}
+
+function buildTimelineVisual(timeline: InfographicSectionItem[]): InfographicVisual | undefined {
+  if (timeline.length >= 2) {
+    return {
+      type: 'timeline-path',
+      data: { items: timeline.slice(0, 6).map(f => ({ label: f.label || '', text: f.text })) }
+    }
+  }
+  return undefined
+}
+
 function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, file: string): InfographicSpec {
   const evidence = [...parsed.listItems, ...sentences(parsed.paragraphs.join(' '))]
   const facts = collectFacts(evidence)
@@ -204,9 +254,17 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
     }
   ]
 
-  if (facts.length > 0) sections.push({ type: 'facts', title: 'Key Facts', items: facts.slice(0, 6) })
-  if (timeline.length > 1) sections.push({ type: 'timeline', title: 'Timeline', items: timeline.slice(0, 6) })
-  if (comparison.length > 1) sections.push({ type: 'comparison', title: 'Comparison', items: comparison.slice(0, 6) })
+  if (facts.length > 0) {
+    const v = buildFactsVisual(facts)
+    sections.push({ type: 'facts', title: 'Key Facts', items: facts.slice(0, 6), ...(v ? { visual: v } : {}) })
+  }
+  if (timeline.length > 1) {
+    const v = buildTimelineVisual(timeline)
+    sections.push({ type: 'timeline', title: 'Timeline', items: timeline.slice(0, 6), ...(v ? { visual: v } : {}) })
+  }
+  if (comparison.length > 1) {
+    sections.push({ type: 'comparison', title: 'Comparison', items: comparison.slice(0, 6), visual: { type: 'concept-contrast', data: { items: comparison.slice(0, 4).map(i => ({ label: i.label || '', text: i.text })) } } })
+  }
   if (parsed.quotes.length > 0) {
     sections.push({
       type: 'quote',
@@ -248,19 +306,30 @@ export function renderInfographicMarkdown(spec: InfographicSpec): string {
   return lines.join('\n').trimEnd() + '\n'
 }
 
-function extractMetadata(lines: string[]): { source?: string; subtitle?: string } {
+function stripFrontmatter(lines: string[]): string[] {
+  if (lines.length > 0 && lines[0].trim() === '---') {
+    const end = lines.findIndex((l, i) => i > 0 && l.trim() === '---')
+    if (end > 0) return lines.slice(end + 1)
+  }
+  return lines
+}
+
+function extractMetadata(lines: string[]): { source?: string; subtitle?: string; title?: string } {
   const sourceLine = lines.find(line => line.match(/^(source|url):\s*/i))
   const subtitleLine = lines.find(line => line.match(/^subtitle:\s*/i))
+  const titleLine = lines.find(line => line.match(/^title:\s*/i))
   return {
-    source: sourceLine?.replace(/^(source|url):\s*/i, '').trim(),
-    subtitle: subtitleLine?.replace(/^subtitle:\s*/i, '').trim()
+    source: sourceLine?.replace(/^(source|url):\s*/i, '').replace(/^["\s]+|["\s]+$/g, '').trim(),
+    subtitle: subtitleLine?.replace(/^subtitle:\s*/i, '').replace(/^["\s]+|["\s]+$/g, '').trim(),
+    title: titleLine?.replace(/^title:\s*/i, '').replace(/^["\s]+|["\s]+$/g, '').trim()
   }
 }
 
-function findTitle(lines: string[]): string | undefined {
+function findTitle(lines: string[], frontmatterTitle?: string): string | undefined {
+  if (frontmatterTitle) return frontmatterTitle
   const heading = lines.find(line => line.trim().match(/^#\s+\S/))
   if (heading) return cleanMarkdown(heading.replace(/^#\s+/, ''))
-  const first = lines.find(line => line.trim() && !line.match(/^(source|url|author|date):\s*/i))
+  const first = lines.find(line => line.trim() && !line.match(/^(source|url|author|date|title|published|created|tags?|description):\s*/i))
   return first ? cleanMarkdown(first).slice(0, 120) : undefined
 }
 

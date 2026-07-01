@@ -12,6 +12,8 @@ import { renderDeckHtml } from './deck-renderer'
 import { parseDeckSpec, validateDeckFields } from './deck-validator'
 import { generateInfographicFromFile, loadInfographicSpec, parseArticleFormat, parseArticleStyle, renderInfographicMarkdown } from './article-infographic'
 import { renderInfographicHtml } from './article-html'
+import { exportInfographicToFile } from './article-export'
+import { assessInfographicQuality } from './infographic-quality'
 import { analyzeDataset } from './analyzer'
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { printHelp } from './cli-help'
@@ -84,7 +86,7 @@ async function main(): Promise<void> {
     }
 
     if (args.command === 'article') {
-      printJson(runArticle(args))
+      printJson(await runArticle(args))
       return
     }
 
@@ -364,7 +366,7 @@ async function runAnalyze(args: CliArgs): Promise<void> {
   }
 }
 
-function runArticle(args: CliArgs): unknown {
+async function runArticle(args: CliArgs): Promise<unknown> {
   const specInputPath = stringFlag(args, 'spec-input')
 
   const output = requiredFlag(args, 'output')
@@ -374,7 +376,7 @@ function runArticle(args: CliArgs): unknown {
   const format = parseArticleFormat(formatFlag)
   if (!format) {
     return fail(agentError('UNSUPPORTED_ARTICLE_FORMAT', `Unsupported article output format: ${formatFlag}`, {
-      supportedFormats: ['html', 'json', 'markdown']
+      supportedFormats: ['html', 'json', 'markdown', 'png', 'pdf']
     }))
   }
 
@@ -382,19 +384,24 @@ function runArticle(args: CliArgs): unknown {
     const loaded = loadInfographicSpec(specInputPath)
     if (isAgentError(loaded)) return fail(loaded)
     const spec = loaded.value
+    const quality = assessInfographicQuality(spec)
     if (format === 'json') {
       writeOutput(output, `${JSON.stringify(spec, null, 2)}\n`)
     } else if (format === 'markdown') {
       writeOutput(output, renderInfographicMarkdown(spec))
+    } else if (format === 'png' || format === 'pdf') {
+      const html = renderInfographicHtml(spec)
+      const exported = await exportInfographicToFile(html, format, output)
+      if (isAgentError(exported)) return fail(exported)
     } else {
       writeOutput(output, renderInfographicHtml(spec))
     }
-    return { ok: true, value: { output, format, style: spec.style, sections: spec.sections.map(s => s.type) } }
+    return { ok: true, value: { output, format, style: spec.style, sections: spec.sections.map(s => s.type), warnings: quality.warnings } }
   }
 
   const file = args.positional[0]
   if (!file) {
-    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz article <file> --output <file> [--style editorial|executive|minimal] [--format html|json|markdown]\n       miao-viz article --spec-input <spec.json> --output <file> [--format html|json|markdown]'))
+    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz article <file> --output <file> [--style editorial|executive|minimal] [--format html|json|markdown|png|pdf]\n       miao-viz article --spec-input <spec.json> --output <file> [--format html|json|markdown|png|pdf]'))
   }
 
   const styleFlag = stringFlag(args, 'style')
@@ -412,17 +419,23 @@ function runArticle(args: CliArgs): unknown {
     writeOutput(output, `${JSON.stringify(generated.value.spec, null, 2)}\n`)
   } else if (format === 'markdown') {
     writeOutput(output, generated.value.markdown)
+  } else if (format === 'png' || format === 'pdf') {
+    const html = renderInfographicHtml(generated.value.spec)
+    const exported = await exportInfographicToFile(html, format, output)
+    if (isAgentError(exported)) return fail(exported)
   } else {
     writeOutput(output, renderInfographicHtml(generated.value.spec))
   }
 
+  const quality = assessInfographicQuality(generated.value.spec)
   return {
     ok: true,
     value: {
       output,
       format,
       style,
-      sections: generated.value.spec.sections.map(section => section.type)
+      sections: generated.value.spec.sections.map(section => section.type),
+      warnings: quality.warnings
     }
   }
 }

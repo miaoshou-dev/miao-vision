@@ -1,0 +1,61 @@
+{
+  "title": "The Future of Renewable Energy",
+  "subtitle": "How solar, wind, and battery storage are reshaping global power markets",
+  "source": "https://example.com/renewable-energy-2025",
+  "style": "editorial",
+  "summary": "Renewable energy capacity grew 24% in 2025, with solar accounting for more than half of all new installations worldwide. Battery storage costs fell below $80/kWh for the first time, making round-the-clock renewable power economically viable.",
+  "sections": [
+    {
+      "type": "hero",
+      "title": "The Future of Renewable Energy",
+      "emphasis": "Renewable energy capacity grew 24% in 2025, with solar accounting for more than half of all new installations worldwide.",
+      "items": [{ "text": "Renewable energy capacity grew 24% in 2025, with solar accounting for more than half of all new installations worldwide." }]
+    },
+    {
+      "type": "facts",
+      "title": "Key Metrics",
+      "items": [
+        { "value": "24%", "text": "Global renewable capacity growth in 2025." },
+        { "value": "52%", "text": "Solar's share of new installations." },
+        { "value": "$79/kWh", "text": "Battery storage cost, below the $80 threshold for the first time." },
+        { "value": "1.2 TW", "text": "Total installed renewable capacity globally." }
+      ]
+    },
+    {
+      "type": "timeline",
+      "title": "The Road to 2025",
+      "items": [
+        { "label": "2020", "text": "Solar LCOE reaches parity with coal in most markets." },
+        { "label": "2022", "text": "Battery storage costs fall below $120/kWh, enabling 4-hour storage." },
+        { "label": "2024", "text": "Global renewable investment surpasses $1 trillion annually." },
+        { "label": "2025", "text": "Battery costs cross the $80/kWh threshold; round-the-clock renewables become viable." }
+      ]
+    },
+    {
+      "type": "comparison",
+      "title": "Solar vs Wind",
+      "items": [
+        { "label": "Solar", "text": "Dominates new installations; fastest declining cost curve." },
+        { "label": "Wind", "text": "Higher capacity factor but longer permitting timelines and higher upfront costs." }
+      ]
+    },
+    {
+      "type": "quote",
+      "title": "Industry View",
+      "emphasis": "The era of fossil fuels as the baseload default is ending. The question is not if, but how fast.",
+      "items": [
+        { "text": "The era of fossil fuels as the baseload default is ending. The question is not if, but how fast." }
+      ]
+    },
+    {
+      "type": "takeaways",
+      "title": "Implications",
+      "items": [
+        { "text": "Grid operators must accelerate storage deployment to absorb variable supply." },
+        { "text": "Policy should focus on permitting reform and grid interconnection, not subsidies." },
+        { "text": "Emerging markets will leapfrog legacy grid infrastructure with distributed solar plus storage." }
+      ]
+    }
+  ],
+  "metadata": { "inputFile": "", "generatedAt": "2025-07-01T00:00:00.000Z", "wordCount": 280 }
+}

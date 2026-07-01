@@ -95,9 +95,12 @@ pre-built InfographicSpec JSON directly.
 
 Options:
   --output <file>         Output file path (required)
-  --format <fmt>          Output format: html, json, markdown (default: html)
+  --format <fmt>          Output format: html, json, markdown, png, pdf (default: html)
   --style <name>          Style: editorial, executive, minimal (default: editorial; ignored with --spec-input)
   --spec-input <file>     Path to a pre-built InfographicSpec JSON file
+
+Note: png and pdf export requires Playwright. Install with:
+  npm install --save-dev @playwright/test && npx playwright install chromium
 `,
   query: `Usage: miao-viz query <file> [options]
 

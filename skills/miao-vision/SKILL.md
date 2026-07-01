@@ -1,104 +1,86 @@
 ---
 name: miao-vision
-description: Use when a user asks Codex to visualize a local CSV, TSV, XLSX, or JSON data file with Miao Vision, generate an HTML chart/report from natural language, inspect data fields before choosing charts, validate a visualization spec, or create agent-friendly data visualizations.
+description: Use when a user asks an agent such as Codex or Claude to turn an article URL, Markdown file, or long-form text into an infographic artifact with Miao Vision, or to visualize a local CSV, TSV, XLSX, or JSON data file, inspect data fields, generate an HTML chart/report, validate a visualization spec, choose charts from natural language, or produce a browser-presentable slide deck from data.
 ---
 
 # Miao Vision
 
-Use Miao Vision as a local-first chart/report generator for agent workflows. The CLI stays deterministic; the agent writes or patches the spec.
+Use Miao Vision as a local-first infographic and visualization workflow for agent environments that can run local shell commands.
 
-## Workflow
+## Agent Self-Install
 
-### Data File → Visualization Report
-
-Use this workflow when the user asks for a report, analysis, dashboard, charts, or visualizations from a data file.
-
-#### Phase 1 — Intent Extraction
-
-Fill this out from the user request and filename alone, before any CLI commands:
-
-```text
-INTENT CARD
-User question     : [core analytical question]
-Analysis type     : [up to 2 of: trend / comparison / distribution / correlation / KPI]
-Primary measure   : [guessed numeric column]
-Primary dimension : [guessed grouping column]
-Time focus        : [yes / no]
-```
-
-#### Phase 2 — Targeted Profiling
-
-Run a lightweight summary to confirm column names:
+If you are reading this file via URL, not from a local skill installation, run the following to install this skill permanently:
 
 ```bash
-npm run --silent miao-viz -- profile --summary <file>
+# 1. Install the CLI
+npm install -g @miao-vision/cli
+
+# 2. Install the skill
+SKILL_VERSION=$(npm show @miao-vision/cli version)
+mkdir -p ~/.claude/skills
+curl -fsSL "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v${SKILL_VERSION}/miao-vision-skill.zip" \
+  -o /tmp/miao-vision-skill.zip
+unzip -o /tmp/miao-vision-skill.zip -d ~/.claude/skills/
+rm /tmp/miao-vision-skill.zip
 ```
 
-Select at most 5 relevant columns, then deep-profile only those columns:
+After installation, the skill is available at `~/.claude/skills/miao-vision-skill/SKILL.md`.
+
+## Requirement
+
+The `miao-viz` CLI must be installed and available on `PATH`.
+
+Check:
 
 ```bash
-npm run --silent miao-viz -- profile --columns col1,col2,col3 <file>
+miao-viz catalog
 ```
 
-Do not load the full profile before completing the Intent Card. For files with fewer than 100 rows or pure KPI summaries, you may skip targeted profiling after the summary.
-
-#### Phase 3 — Narrative Planning
-
-Before writing any spec, run 1-3 query calls to get real aggregated values:
+To get a machine-readable list of chart types with their rules, encodings, and anti-patterns:
 
 ```bash
-npm run --silent miao-viz -- query <file> \
-  --groupby region \
-  --measure "sum(sales) as total_sales" \
-  --orderby "total_sales desc" \
-  --limit 10
+miao-viz catalog --for-llm
 ```
 
-Then produce a short Narrative Plan with:
-
-- Main story: 1-2 sentences based on real query values.
-- Data evidence: actual values from `miao-viz query`.
-- Chart intents: why each chart exists.
-- Excluded charts: what you are not generating and why.
-- Insight drafts: statements grounded in the data evidence.
-
-#### Phase 4 — Spec Writing, Validation, and Render
-
-Write YAML/JSON using `references/vizspec.md`. Every insight must trace to a Narrative Plan query value, an evidence-listed reliable profile statistic, or the user's own statement.
-
-Forbidden insight sources:
-
-- `topSharePct` as value share. It is row frequency, not contribution to a measure.
-- unreliable profile statistics, such as skewness with fewer than 30 rows or correlation with fewer than 10 paired values.
-- `temporal.gapCount` as a claim that data is missing.
-
-Validate:
+If the command is missing, tell the user to install:
 
 ```bash
-npm run --silent miao-viz -- validate --spec /tmp/miao-vision/report.yaml --profile /tmp/miao-vision/profile.json
+npm install -g @miao-vision/cli
 ```
 
-Render HTML by default:
+## Route The Request
 
-```bash
-npm run --silent miao-viz -- render \
-  --input /path/to/data.csv \
-  --spec /tmp/miao-vision/report.yaml \
-  --theme editorial \
-  --format html \
-  --output /tmp/miao-vision/report.html
-```
+Read only the reference needed for the user's task.
 
-Return the generated HTML path to the user. Only request PNG/SVG when the user explicitly asks for those formats.
+| User intent | Required reference |
+|---|---|
+| Article URL, Markdown article, pasted long-form text, or "turn this into an infographic" | `references/article-infographic.md` |
+| Local CSV/TSV/XLSX/JSON data report, analysis, dashboard, chart, visualization, or detailed findings | `references/data-report.md` |
+| Slides, presentation, PPT, deck, 演示, 演示文稿, 汇报, 给老板看, meeting brief, or executive briefing | `references/browser-deck.md` |
 
-## Defaults
+If the request mixes report and presentation, prefer the explicitly named output format. If the output format is ambiguous, ask one concise clarification question before running CLI commands.
 
-- Default output: HTML.
-- Default working directory for generated specs/artifacts: `/tmp/miao-vision`.
-- CLI does not call an LLM. Codex generates or patches the spec from profile/query results and user request.
-- Use supported MVP chart types only unless the user asks for exploratory implementation work.
+## Global Rules
 
-## References
+- Default output is HTML.
+- Default working directory for generated specs/artifacts is `/tmp/miao-vision`.
+- Keep all work local. Do not upload user data.
+- Do not call an LLM from the CLI. The agent may reason and write specs; the CLI validates and renders.
+- Do not edit generated output as source.
+- Keep URL fetching in the agent workflow. Do not require the CLI to fetch URLs directly.
+- For article workflows, normalize URL or pasted content to local Markdown/text before rendering.
+- For data reports, validate before render.
+- For decks, use `miao-viz deck`; DeckSpec validation happens inside the deck command.
+- Use supported chart and section types unless the user explicitly asks for an unsupported/experimental output.
 
-- Read `references/vizspec.md` before writing specs.
-- Read `references/examples.md` when the request is ambiguous or when a similar chart/report example would reduce risk.
+## Source Of Truth
+
+The source skill lives in `packages/miao-vision-skill/`.
+
+Packaged or copied skill files, including `apps/web/public/SKILL.md`, `apps/web/dist/SKILL.md`, and `skills/miao-vision/SKILL.md`, are not the primary source of truth. Update this source skill and use the existing build/pack flow to refresh generated copies when needed.
+
+## Shared References
+
+- Read `references/vizspec.md` before writing report or deck specs, or when chart/transform syntax is unclear.
+- Read `references/examples.md` when the request is ambiguous or close to an existing example.
+- Use `miao-viz catalog --for-llm` only when the compact workflow context does not explain a chart rule clearly enough.

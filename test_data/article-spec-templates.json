@@ -1,0 +1,71 @@
+{
+  "title": "Product Launch Playbook",
+  "subtitle": "A structured guide to shipping your next feature",
+  "source": "https://example.com/launch-playbook",
+  "style": "editorial",
+  "summary": "Launching a product feature requires coordinating engineering, marketing, and support across six clear stages. The pros and cons of an aggressive vs cautious approach, key readiness metrics, risk factors, and a launch-day checklist.",
+  "sections": [
+    {
+      "type": "hero",
+      "title": "Product Launch Playbook",
+      "emphasis": "Launching a product feature requires coordinating engineering, marketing, and support across six clear stages.",
+      "items": [{ "text": "Launching a product feature requires coordinating engineering, marketing, and support across six clear stages." }]
+    },
+    {
+      "type": "process",
+      "title": "Launch Stages",
+      "items": [
+        { "label": "Ideation", "text": "Define the problem, target users, and success metrics." },
+        { "label": "Development", "text": "Build the feature with test coverage and feature flags." },
+        { "label": "Internal Review", "text": "Dogfood the feature with the team and collect feedback." },
+        { "label": "Beta", "text": "Release to a 10% cohort and monitor usage metrics." },
+        { "label": "Marketing", "text": "Prepare docs, changelog, and announcement materials." },
+        { "label": "Ship", "text": "Gradual roll-out with monitoring dashboards and a rollback plan." }
+      ]
+    },
+    {
+      "type": "pros-cons",
+      "title": "Aggressive vs Cautious Launch",
+      "items": [
+        { "label": "Pro", "text": "Faster user feedback and earlier revenue recognition." },
+        { "label": "Pro", "text": "Builds momentum and internal motivation." },
+        { "label": "Con", "text": "Higher risk of public-facing bugs and user churn." },
+        { "label": "Con", "text": "Less time for documentation and support preparation." }
+      ]
+    },
+    {
+      "type": "stat-grid",
+      "title": "Readiness Metrics",
+      "items": [
+        { "value": "95%", "text": "Test coverage target" },
+        { "value": "0", "text": "P0 bugs at ship time" },
+        { "value": "48h", "text": "Support response SLA" },
+        { "value": "3", "text": "Beta cohort cycles" },
+        { "value": "100%", "text": "Docs completeness" }
+      ]
+    },
+    {
+      "type": "risk-matrix",
+      "title": "Risk Assessment",
+      "items": [
+        { "label": "Critical", "text": "Data migration bug causes data loss.", "detail": "Mitigation: rollback script + backup verification." },
+        { "label": "Warning", "text": "UI regression in legacy browser.", "detail": "Mitigation: automated visual diff in CI." },
+        { "label": "Minor", "text": "Copy error in settings page.", "detail": "Mitigation: doc string review in PR template." },
+        { "label": "Notice", "text": "Slight perf regression on large accounts.", "detail": "Mitigation: benchmark gate in CI pipeline." }
+      ]
+    },
+    {
+      "type": "checklist",
+      "title": "Launch Day Checklist",
+      "items": [
+        { "text": "Feature flag turned on for internal team", "label": "done" },
+        { "text": "Monitoring dashboards reviewed and green", "label": "done" },
+        { "text": "Changelog published and announcement queued" },
+        { "text": "Support team briefed on known issues" },
+        { "text": "Rollback procedure verified" },
+        { "text": "Post-launch review meeting scheduled" }
+      ]
+    }
+  ],
+  "metadata": { "inputFile": "", "generatedAt": "2025-07-01T00:00:00.000Z", "wordCount": 180 }
+}

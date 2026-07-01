@@ -1,0 +1,245 @@
+{
+  "title": "Performance Benchmark Results",
+  "subtitle": "Latency, throughput, and cost comparison across three configurations",
+  "source": "https://example.com/benchmark-2025",
+  "style": "editorial",
+  "summary": "Reservoir sampling reduces recording size from 250MiB to 6MiB while preserving trace utility. Increasing heap from 1GiB to 6GiB eliminated allocation stalls but did not reduce latency — vCPUs had to increase from 2 to 10.",
+  "sections": [
+    {
+      "type": "hero",
+      "title": "Performance Benchmark Results",
+      "emphasis": "Reservoir sampling reduces recording size 40× while preserving trace utility.",
+      "items": [{ "text": "Reservoir sampling reduces recording size 40× while preserving trace utility." }]
+    },
+    {
+      "type": "facts",
+      "title": "Key Metrics",
+      "visual": {
+        "type": "kpi-strip",
+        "data": {
+          "items": [
+            { "label": "Default recording", "value": 250, "unit": "MiB", "delta": "40× larger" },
+            { "label": "Reservoir sampling", "value": 6, "unit": "MiB", "delta": "-97.6%" },
+            { "label": "Heap before", "value": 1, "unit": "GiB" },
+            { "label": "Heap after", "value": 6, "unit": "GiB", "delta": "+500%" },
+            { "label": "vCPUs before", "value": 2, "unit": "cores" },
+            { "label": "vCPUs after", "value": 10, "unit": "cores", "delta": "+400%" }
+          ]
+        },
+        "caption": "Key resource dimensions before and after optimisation."
+      },
+      "items": [
+        { "text": "Recording size dropped from 250MiB to 6MiB with reservoir sampling." },
+        { "text": "Heap increase eliminated allocation stalls but did not reduce latency." }
+      ]
+    },
+    {
+      "type": "facts",
+      "title": "Recording Size Comparison",
+      "visual": {
+        "type": "metric-bars",
+        "data": {
+          "items": [
+            { "label": "Default wallclock", "value": 250, "unit": "MiB" },
+            { "label": "Reservoir 16 thr", "value": 6, "unit": "MiB" },
+            { "label": "CPU profile only", "value": 2, "unit": "MiB" }
+          ]
+        },
+        "caption": "Reservoir sampling bounds recording size while preserving trace utility."
+      },
+      "items": [{ "text": "Recording size comparison metric-bars visual." }]
+    },
+    {
+      "type": "takeaways",
+      "title": "Investigation Flow",
+      "visual": {
+        "type": "process-flow",
+        "data": {
+          "items": [
+            { "label": "JFR CPU", "text": "RNG bottleneck" },
+            { "label": "async-profiler", "text": "Native stacks" },
+            { "label": "Wallclock", "text": "Alloc stalls" },
+            { "label": "Heap 6GiB", "text": "Stalls gone" },
+            { "label": "vCPU 10", "text": "Latency fixed" }
+          ]
+        },
+        "caption": "Five-step investigation from JFR to root cause."
+      },
+      "items": [
+        { "text": "CPU profiling alone missed 50% of samples under allocation stalls." },
+        { "text": "Heap increase removed stalls but didn't fix latency — CPU contention was the real bottleneck." }
+      ]
+    },
+    {
+      "type": "comparison",
+      "title": "CPU vs Wallclock Profiler",
+      "visual": {
+        "type": "concept-contrast",
+        "data": {
+          "items": [
+            { "label": "CPU Profiler", "Thread states": "RUNNABLE only", "Overhead": "∝ cores", "Native stacks": "JFR: no", "Latency insight": "Partial" },
+            { "label": "Wallclock", "Thread states": "All states", "Overhead": "∝ threads", "Native stacks": "async: yes", "Latency insight": "Full" }
+          ]
+        },
+        "caption": "Wallclock profiler captures blocking and off-CPU time that CPU profiling misses."
+      },
+      "items": [
+        { "text": "Wallclock profiling revealed allocation stalls as the primary off-CPU bottleneck." },
+        { "text": "Tracer-managed thread filtering focuses sampling on latency-critical paths." }
+      ]
+    },
+    {
+      "type": "timeline",
+      "title": "Optimisation Timeline",
+      "visual": {
+        "type": "timeline-path",
+        "data": {
+          "items": [
+            { "label": "Initial", "text": "3–4s latency, 2 vCPUs, 1GiB heap" },
+            { "label": "Heap +500%", "text": "Allocation stalls gone, latency unchanged" },
+            { "label": "vCPU +400%", "text": "RUNNABLE time converged with CPU time" },
+            { "label": "Final", "text": "< 500ms latency with 10 vCPUs, 6GiB heap" }
+          ]
+        },
+        "caption": "The fix was resource right-sizing, not code changes."
+      },
+      "items": [{ "text": "Timeline-path visual of the optimisation journey." }]
+    },
+    {
+      "type": "facts",
+      "title": "Thread State Distribution",
+      "visual": {
+        "type": "part-to-whole",
+        "data": {
+          "items": [
+            { "label": "RUNNABLE", "value": 48, "text": "Executing on CPU" },
+            { "label": "PARKED stall", "value": 48, "text": "Allocation stall off-CPU" },
+            { "label": "Other", "value": 4, "text": "Miscellaneous states" }
+          ]
+        },
+        "caption": "Wallclock profiler revealed 48% of time spent off-CPU in allocation stalls."
+      },
+      "items": [{ "text": "CPU profiling alone would miss the PARKED state entirely." }]
+    },
+    {
+      "type": "facts",
+      "title": "Resource Scaling Impact",
+      "visual": {
+        "type": "before-after",
+        "data": {
+          "beforeLabel": "Initial",
+          "afterLabel": "Optimised",
+          "before": [{ "value": "3–4s" }, { "value": "1 GiB" }, { "value": "2 vCPU" }],
+          "after": [{ "value": "< 500ms" }, { "value": "6 GiB" }, { "value": "10 vCPU" }],
+          "items": [
+            { "label": "Latency", "value": "3–4s" },
+            { "label": "Heap", "value": "1 GiB" },
+            { "label": "vCPU", "value": "2" }
+          ]
+        },
+        "caption": "The fix was resource right-sizing, not code changes."
+      },
+      "items": [{ "text": "Three dimensions improved simultaneously: latency, heap, and CPU." }]
+    },
+    {
+      "type": "facts",
+      "title": "Optimisation Tradeoffs",
+      "visual": {
+        "type": "tradeoff-matrix",
+        "data": {
+          "xLabel": "Implementation Effort →",
+          "yLabel": "Performance Impact →",
+          "items": [
+            { "label": "Allocate heap", "text": "Easy, no latency gain", "detail": "Stalls gone" },
+            { "label": "Add vCPUs", "text": "Effective, more cost", "detail": "Latency fixed" },
+            { "label": "Pool buffers", "text": "Hard, may regress", "detail": "Pool contention" },
+            { "label": "Optimise RNG", "text": "Impractical", "detail": "Needs renegotiation" }
+          ]
+        },
+        "caption": "2x2 tradeoff: performance impact vs implementation effort."
+      },
+      "items": [{ "text": "The most effective fix (vCPUs) also had the highest cost impact." }]
+    },
+    {
+      "type": "facts",
+      "title": "Top Optimisation Wins",
+      "visual": {
+        "type": "ranked-list-chart",
+        "data": {
+          "items": [
+            { "label": "Increase vCPUs", "value": 10, "text": "Latency ↓ 87%" },
+            { "label": "Increase heap", "value": 6, "text": "Stalls eliminated" },
+            { "label": "Reservoir sampling", "value": 250, "text": "Recording size ↓ 97.6%" },
+            { "label": "Tracer filter", "value": 50, "text": "Sample relevance ↑" }
+          ]
+        },
+        "caption": "Ranked by overall impact on system performance."
+      },
+      "items": [{ "text": "Top 4 optimisations ordered by net benefit." }]
+    },
+    {
+      "type": "facts",
+      "title": "System Architecture",
+      "visual": {
+        "type": "system-diagram",
+        "data": {
+          "nodes": [
+            { "label": "CLI", "zone": "Entry" },
+            { "label": "Profile", "zone": "Core" },
+            { "label": "Catalog", "zone": "Core" },
+            { "label": "Validate", "zone": "Core" },
+            { "label": "Render", "zone": "Export" },
+            { "label": "HTML", "zone": "Export" }
+          ],
+          "edges": [
+            { "from": 0, "to": 1 },
+            { "from": 0, "to": 2 },
+            { "from": 1, "to": 3 },
+            { "from": 2, "to": 3 },
+            { "from": 3, "to": 4 },
+            { "from": 4, "to": 5 }
+          ]
+        },
+        "caption": "CLI pipeline: Data → Profile/Catalog → Validate → Render → HTML."
+      },
+      "items": [{ "text": "Six components across three zones with six data flow edges." }]
+    },
+    {
+      "type": "facts",
+      "title": "Architecture Callouts",
+      "visual": {
+        "type": "callout-diagram",
+        "data": {
+          "items": [
+            { "label": "1. CLI Entry", "text": "Parses args, dispatches commands", "detail": "main.ts" },
+            { "label": "2. Profiler", "text": "Analyses data fields and types", "detail": "data-profiler.ts" },
+            { "label": "3. Validator", "text": "Checks spec against profile", "detail": "spec-validator.ts" },
+            { "label": "4. Renderer", "text": "Generates HTML/SVG output", "detail": "html-export.ts" }
+          ]
+        },
+        "caption": "Four key callouts in the Miao Vision pipeline."
+      },
+      "items": [{ "text": "Each callout maps to a source module." }]
+    },
+    {
+      "type": "facts",
+      "title": "Key Roles",
+      "visual": {
+        "type": "icon-cluster",
+        "data": {
+          "items": [
+            { "label": "CLI", "text": "Deterministic" },
+            { "label": "Agent", "text": "Spec authoring" },
+            { "label": "Catalog", "text": "Chart rules" },
+            { "label": "Web", "text": "Preview / debug" },
+            { "label": "Themes", "text": "Visual language" },
+            { "label": "Export", "text": "HTML / PNG / PDF" }
+          ]
+        },
+        "caption": "Six product roles in Miao Vision."
+      },
+      "items": [{ "text": "Each role corresponds to a module group in the codebase." }]
+    }
+  ],
+  "metadata": { "inputFile": "", "generatedAt": "", "wordCount": 520 }
+}
