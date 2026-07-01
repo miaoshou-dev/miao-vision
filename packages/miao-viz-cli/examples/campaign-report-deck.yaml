@@ -1,0 +1,115 @@
+title: Campaign Performance Report
+theme: dark
+slides:
+  - layout: cover
+    eyebrow: "2025 · Q1 Campaigns"
+    title: "Campaign Performance"
+    claim: "Social and Search channels drove 74% of conversions with improving efficiency."
+
+  - layout: metrics-chart
+    eyebrow: "01 · CAMPAIGN SNAPSHOT"
+    title: "Scale Improved While Efficiency Stayed Strong"
+    metrics:
+      - label: Total Impressions
+        format: ".0s"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: impressions
+                  op: sum
+                  as: v
+      - label: Total Clicks
+        format: ".0s"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: clicks
+                  op: sum
+                  as: v
+      - label: Total Spend
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: spend
+                  op: sum
+                  as: v
+    charts:
+      - type: line
+        title: Weekly Clicks
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [week]
+              measures:
+                - field: clicks
+                  op: sum
+                  as: total
+            - type: sort
+              field: week
+              order: asc
+        encoding:
+          x: { field: week }
+          y: { field: total }
+
+  - layout: text-chart
+    eyebrow: "02 · CHANNEL EFFICIENCY"
+    title: "Social Scales While Email Converts"
+    annotation: "Social drives the most volume; Email has the best conversion rate per impression."
+    bullets:
+      - "Social: 41% of conversions, CPA trending down over the campaign."
+      - "Search: consistent volume with stable CPA."
+      - "Display: lowest CTR at 2.2%, but useful for top-of-funnel reach."
+    charts:
+      - type: scatter
+        title: Spend vs Conversions
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [channel]
+              measures:
+                - field: spend
+                  op: sum
+                  as: total_spend
+                - field: conversions
+                  op: sum
+                  as: total_conversions
+        encoding:
+          x: { field: total_spend }
+          y: { field: total_conversions }
+
+  - layout: title-only
+    title: "03 · Channel Performance"
+
+  - layout: chart-full
+    eyebrow: "04 · DISTRIBUTION"
+    title: "Impression Distribution"
+    charts:
+      - type: histogram
+        title: Impression Distribution
+        encoding:
+          x: { field: impressions }
+
+  - layout: table-full
+    eyebrow: "05 · TOP CAMPAIGNS"
+    title: "Top Campaigns by Conversions"
+    charts:
+      - type: table
+        title: Top Campaigns
+        data:
+          transform:
+            - type: sort
+              field: conversions
+              order: desc
+            - type: limit
+              value: 10
+        encoding:
+          x: { field: channel }
+          y: { field: conversions }
+
+  - layout: ending
+    title: "Scale Social, protect Search, test Email retargeting"
+    claim: "Increase Social budget 15% and test Display retargeting in Q2."

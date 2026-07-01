@@ -10,6 +10,46 @@ function withSize(chart: AgentChartSpec, width: number, height: number): AgentCh
   return { ...chart, style: { ...chart.style, width, height } }
 }
 
+export function formatMetricValue(num: number, fmt: string): string {
+  const hasCurrency = fmt.includes('$')
+  const hasPercent = fmt.includes('%')
+  const hasThousands = fmt.includes(',')
+  const hasSiPrefix = fmt.includes('s')
+
+  const precisionMatch = fmt.match(/\.(\d+)/)
+  let precision = precisionMatch ? parseInt(precisionMatch[1], 10) : undefined
+
+  let value = num
+  let suffix = ''
+
+  if (hasPercent) {
+    value = num < 2 ? num * 100 : num
+    suffix = '%'
+    if (precision === undefined) precision = 1
+  }
+
+  if (hasSiPrefix) {
+    const abs = Math.abs(value)
+    if (abs >= 1e9) { value /= 1e9; suffix = 'B' + suffix }
+    else if (abs >= 1e6) { value /= 1e6; suffix = 'M' + suffix }
+    else if (abs >= 1e3) { value /= 1e3; suffix = 'K' + suffix }
+    if (precision === undefined) precision = 0
+  }
+
+  if (precision === undefined && hasThousands) precision = 0
+
+  const fixed = precision !== undefined ? value.toFixed(precision) : Math.round(value).toString()
+  const [intPart, decPart] = fixed.split('.')
+
+  const formattedInt = hasThousands
+    ? intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+    : intPart
+
+  const formatted = decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt
+  const prefix = hasCurrency ? '$' : ''
+  return prefix + formatted + suffix
+}
+
 function resolveMetricValue(metric: SlideMetric, rows: Record<string, unknown>[]): string {
   let raw: unknown = metric.value
   if (raw === undefined && metric.data?.transform?.length) {
@@ -19,10 +59,7 @@ function resolveMetricValue(metric: SlideMetric, rows: Record<string, unknown>[]
   }
   const num = Number(raw)
   if (!Number.isFinite(num)) return String(raw ?? '—')
-  const fmt = metric.format ?? ''
-  if (fmt.includes('$')) return '$' + Math.round(num).toLocaleString()
-  if (fmt.includes('%')) return (num < 2 ? (num * 100).toFixed(1) : num.toFixed(1)) + '%'
-  return Math.round(num).toLocaleString()
+  return formatMetricValue(num, metric.format ?? '')
 }
 
 function renderEyebrow(text: string): string {
@@ -54,24 +91,25 @@ function pageFooter(index: number, _total: number, mark?: string): string {
 }
 
 const COVER_DECO = `<svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" style="width:260px;opacity:0.9">
-  <circle cx="160" cy="160" r="140" fill="none" stroke="#e5e3d8" stroke-width="1"/>
-  <circle cx="160" cy="160" r="100" fill="none" stroke="#e5e3d8" stroke-width="1"/>
-  <circle cx="160" cy="160" r="60" fill="#eef2f7" stroke="#1b365d" stroke-width="1.2"/>
-  <path d="M160 20 A140 140 0 0 1 300 160" fill="none" stroke="#1b365d" stroke-width="2.2" stroke-linecap="round"/>
-  <path d="M300 160 A140 140 0 0 1 160 300" fill="none" stroke="#6b6a64" stroke-width="1" stroke-linecap="round"/>
-  <path d="M160 300 A140 140 0 0 1 20 160" fill="none" stroke="#6b6a64" stroke-width="1" stroke-linecap="round"/>
-  <path d="M20 160 A140 140 0 0 1 160 20" fill="none" stroke="#6b6a64" stroke-width="1" stroke-linecap="round"/>
+  <circle cx="160" cy="160" r="140" fill="none" stroke="var(--mv-border, #e5e3d8)" stroke-width="1"/>
+  <circle cx="160" cy="160" r="100" fill="none" stroke="var(--mv-border, #e5e3d8)" stroke-width="1"/>
+  <circle cx="160" cy="160" r="60" fill="var(--mv-surface, #eef2f7)" stroke="var(--mv-brand, #1b365d)" stroke-width="1.2"/>
+  <path d="M160 20 A140 140 0 0 1 300 160" fill="none" stroke="var(--mv-brand, #1b365d)" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M300 160 A140 140 0 0 1 160 300" fill="none" stroke="var(--mv-muted, #6b6a64)" stroke-width="1" stroke-linecap="round"/>
+  <path d="M160 300 A140 140 0 0 1 20 160" fill="none" stroke="var(--mv-muted, #6b6a64)" stroke-width="1" stroke-linecap="round"/>
+  <path d="M20 160 A140 140 0 0 1 160 20" fill="none" stroke="var(--mv-muted, #6b6a64)" stroke-width="1" stroke-linecap="round"/>
 </svg>`
 
 // ── Layout renderers ────────────────────────────────────────────────────────
 
-export function renderCoverSlide(slide: SlideSpec, _rows: Record<string, unknown>[], _svg: SvgTheme, index: number, total: number): string {
+export function renderCoverSlide(slide: SlideSpec, _rows: Record<string, unknown>[], _svg: SvgTheme, index: number, total: number, deckDescription?: string): string {
+  const subtitle = slide.claim ?? deckDescription
   return `<div class="slide">
   <div class="slide-cover">
     <div class="slide-cover-left">
       <div class="slide-mark">miao-vision</div>
       <h1>${escapeHtml(slide.title ?? 'Presentation')}</h1>
-      ${slide.claim ? `<div class="sub">${escapeHtml(slide.claim)}</div>` : ''}
+      ${subtitle ? `<div class="sub">${escapeHtml(subtitle)}</div>` : ''}
       <div class="line"></div>
       <div class="meta">${escapeHtml(slide.eyebrow ?? new Date().toISOString().slice(0, 10))}</div>
     </div>

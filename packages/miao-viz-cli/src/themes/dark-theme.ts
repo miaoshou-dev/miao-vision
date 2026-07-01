@@ -17,6 +17,7 @@ export const darkTheme: ReportTheme = {
       --mv-ink: #e2e0d8;
       --mv-muted: #737069;
       --mv-soft-text: #a8a69f;
+      --mv-soft: #a8a69f;
       --mv-brand: #7eb8f7;
       --mv-mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
       --mv-serif: Charter, Georgia, "Times New Roman", serif;

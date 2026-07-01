@@ -10,7 +10,19 @@ export const defaultTheme: ReportTheme = {
     labelColor: '#475569'
   },
   css: `
-    :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --mv-paper: #f8fafc;
+      --mv-surface: #ffffff;
+      --mv-border: #e2e8f0;
+      --mv-ink: #0f172a;
+      --mv-muted: #64748b;
+      --mv-soft: #475569;
+      --mv-brand: #2563eb;
+      --mv-serif: Georgia, "Times New Roman", serif;
+      --mv-mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
+    }
     body { margin: 0; background: #f8fafc; color: #0f172a; }
     .miao-viz-report { max-width: 1120px; margin: 0 auto; padding: 40px 24px 56px; }
     header { margin-bottom: 28px; }

@@ -14,18 +14,6 @@ import {
 } from './deck-layouts'
 
 const SLIDE_CSS = `
-  :root {
-    --mv-paper:   #f5f4ed;
-    --mv-surface: #faf9f5;
-    --mv-brand:   #1b365d;
-    --mv-ink:     #141413;
-    --mv-muted:   #6b6a64;
-    --mv-soft:    #504e49;
-    --mv-border:  #e5e3d8;
-    --mv-serif:   Charter, Georgia, "Times New Roman", serif;
-    --mv-mono:    "SF Mono", "JetBrains Mono", Consolas, monospace;
-    --slide-scale: 1;
-  }
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: var(--mv-serif); -webkit-font-smoothing: antialiased; }
 
@@ -117,7 +105,7 @@ const SLIDE_CSS = `
     .slide:last-child { break-after: auto; page-break-after: auto; }
     .slide-nav { display: none !important; }
   }
-  @page { size: A4 landscape; margin: 0; background: #f5f4ed; }
+  @page { size: A4 landscape; margin: 0; background: var(--mv-paper, #f5f4ed); }
 `
 
 const SLIDE_JS = `
@@ -171,15 +159,21 @@ const SLIDE_JS = `
 })();
 `
 
+function extractRootVars(css: string): string {
+  const match = css.match(/:root\s*\{([\s\S]*?)\}/)
+  return match ? `:root {${match[1]}}` : ''
+}
+
 function renderSlide(
   slide: SlideSpec,
   rows: Record<string, unknown>[],
   svgTheme: ReturnType<typeof getTheme>['svg'],
   index: number,
-  total: number
+  total: number,
+  deckDescription?: string
 ): string {
   switch (slide.layout) {
-    case 'cover':          return renderCoverSlide(slide, rows, svgTheme, index, total)
+    case 'cover':          return renderCoverSlide(slide, rows, svgTheme, index, total, deckDescription)
     case 'title-only':     return renderTitleOnlySlide(slide, rows, svgTheme, index, total)
     case 'text-points':    return renderTextPointsSlide(slide, rows, svgTheme, index, total)
     case 'text-chart':     return renderTextChartSlide(slide, rows, svgTheme, index, total)
@@ -196,11 +190,12 @@ export function renderDeckHtml(
   themeOverride?: ThemeName
 ): string {
   const theme = getTheme(themeOverride ?? spec.theme ?? 'editorial')
+  const themeRootVars = extractRootVars(theme.css)
   const title = spec.title ?? 'Presentation'
   const total = spec.slides.length
 
   const slidesHtml = spec.slides
-    .map((slide, i) => renderSlide(slide, rows, theme.svg, i, total))
+    .map((slide, i) => renderSlide(slide, rows, theme.svg, i, total, spec.description))
     .join('\n')
 
   return `<!doctype html>
@@ -208,8 +203,10 @@ export function renderDeckHtml(
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  ${spec.description ? `<meta name="description" content="${escapeHtml(spec.description)}" />` : ''}
   <title>${escapeHtml(title)}</title>
   <style>${SLIDE_CSS}</style>
+  ${themeRootVars ? `<style id="miao-deck-theme">${themeRootVars}</style>` : ''}
 </head>
 <body class="present-mode">
   <div class="slide-viewport">

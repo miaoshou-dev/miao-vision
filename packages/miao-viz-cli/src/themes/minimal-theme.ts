@@ -10,7 +10,19 @@ export const minimalTheme: ReportTheme = {
     labelColor: '#6b7280'
   },
   css: `
-    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+    :root {
+      color-scheme: light;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --mv-paper: #ffffff;
+      --mv-surface: #ffffff;
+      --mv-border: #e5e7eb;
+      --mv-ink: #111111;
+      --mv-muted: #6b7280;
+      --mv-soft: #374151;
+      --mv-brand: #1d4ed8;
+      --mv-serif: Georgia, "Times New Roman", serif;
+      --mv-mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
+    }
     body { margin: 0; background: #fff; color: #111; }
     .miao-viz-report { max-width: 960px; margin: 0 auto; padding: 48px 24px 64px; }
     header { margin-bottom: 32px; }

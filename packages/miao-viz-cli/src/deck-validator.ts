@@ -67,6 +67,15 @@ function validateDeckSpecSemantics(spec: DeckSpec): DeckValidationIssue[] {
       })
     }
 
+    if (slide.charts && slide.charts.length > 1) {
+      const path = `slides[${index}].charts`
+      errors.push({
+        path,
+        message: `${path}: A slide can include at most 1 chart.`,
+        hint: hintForIssue(path, 'at most 1 chart')
+      })
+    }
+
     if (slide.layout === 'table-full' && slide.charts?.[0] && slide.charts[0].type !== 'table') {
       const path = `slides[${index}].charts[0].type`
       errors.push({
@@ -217,6 +226,7 @@ function hintForIssue(path: string, message: string): string {
   if (message.includes('requires at least one chart')) return `Add a chart under ${path}.`
   if (message.includes('requires at least one metric')) return `Add one to four metrics under ${path}.`
   if (message.includes('at most 4 metrics')) return `Reduce ${path} to four metrics or split them across multiple slides.`
+  if (message.includes('at most 1 chart')) return `Reduce ${path} to a single chart or spread multiple charts across separate slides.`
   if (message.includes('only accepts a table chart')) return `Change ${path} to 'table' or use a chart-focused layout.`
   return `Check ${path} in the DeckSpec.`
 }

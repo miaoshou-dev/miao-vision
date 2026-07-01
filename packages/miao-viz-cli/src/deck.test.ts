@@ -8,6 +8,7 @@ import { parseDeckSpec, validateDeckFields } from './deck-validator'
 import { renderDeckHtml } from './deck-renderer'
 import { loadDataset } from './data-loader'
 import { profileDataset } from './data-profiler'
+import { formatMetricValue } from './deck-layouts'
 import type { DeckSpec } from './deck-types'
 
 const SAMPLE_ROWS = [
@@ -93,6 +94,25 @@ describe('deckSpecSchema', () => {
     expect(result.message).toContain('slides[0].charts[0].type')
     expect(result.errors).toEqual(expect.arrayContaining([
       expect.objectContaining({ hint: expect.stringContaining('table') })
+    ]))
+  })
+
+  it('rejects more than 1 chart per slide', () => {
+    const result = parseDeckSpec({
+      slides: [{
+        layout: 'chart-full',
+        charts: [
+          { type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'sales' } } },
+          { type: 'line', encoding: { x: { field: 'region' }, y: { field: 'orders' } } }
+        ]
+      }]
+    })
+    expect(result.ok).toBe(false)
+    if (result.ok) return
+    expect(result.code).toBe('INVALID_DECK_SPEC')
+    expect(result.message).toContain('slides[0].charts')
+    expect(result.errors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: 'slides[0].charts', hint: expect.stringContaining('single chart') })
     ]))
   })
 
@@ -265,12 +285,153 @@ describe('renderDeckHtml', () => {
   })
 })
 
+describe('formatMetricValue', () => {
+  it('formats plain number with no format string', () => {
+    expect(formatMetricValue(1234, '')).toBe('1234')
+  })
+
+  it('formats with thousands separator', () => {
+    expect(formatMetricValue(1234567, ',')).toBe('1,234,567')
+    expect(formatMetricValue(1234567, ',.0f')).toBe('1,234,567')
+  })
+
+  it('formats with decimals', () => {
+    expect(formatMetricValue(1234.567, ',.2f')).toBe('1,234.57')
+    expect(formatMetricValue(1234.5, ',.1f')).toBe('1,234.5')
+  })
+
+  it('formats currency', () => {
+    expect(formatMetricValue(1234, '$')).toBe('$1234')
+    expect(formatMetricValue(1234, '$,')).toBe('$1,234')
+    expect(formatMetricValue(1234.5, '$,.2f')).toBe('$1,234.50')
+  })
+
+  it('formats percentage', () => {
+    expect(formatMetricValue(0.153, '%')).toBe('15.3%')
+    expect(formatMetricValue(0.153, '.1%')).toBe('15.3%')
+    expect(formatMetricValue(0.15, '.0%')).toBe('15%')
+  })
+
+  it('formats large percentage as-is', () => {
+    expect(formatMetricValue(25, '%')).toBe('25.0%')
+    expect(formatMetricValue(25.5, '.1%')).toBe('25.5%')
+    expect(formatMetricValue(25, '.0%')).toBe('25%')
+  })
+
+  it('formats SI prefix', () => {
+    expect(formatMetricValue(1500000, '.0s')).toBe('2M')
+    expect(formatMetricValue(1500, '.0s')).toBe('2K')
+    expect(formatMetricValue(1500000000, '.1s')).toBe('1.5B')
+  })
+
+  it('formats with currency and SI prefix', () => {
+    expect(formatMetricValue(2500000, '$,.1s')).toBe('$2.5M')
+  })
+
+  it('handles zero', () => {
+    expect(formatMetricValue(0, '$,.2f')).toBe('$0.00')
+    expect(formatMetricValue(0, ',')).toBe('0')
+  })
+
+  it('handles negative numbers', () => {
+    expect(formatMetricValue(-1234, ',')).toBe('-1,234')
+    expect(formatMetricValue(-0.5, '.0%')).toBe('-50%')
+  })
+})
+
+describe('deck theme integration', () => {
+  it('injects theme root CSS variables into HTML', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'dark')
+    expect(html).toContain('id="miao-deck-theme"')
+    expect(html).toContain('--mv-paper')
+    expect(html).toContain('--mv-brand')
+  })
+
+  it('renders dark theme variables', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'dark')
+    expect(html).toContain('--mv-paper: #0f1117')
+    expect(html).toContain('--mv-brand: #7eb8f7')
+  })
+
+  it('renders editorial theme variables', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'editorial')
+    expect(html).toContain('--mv-paper: #f5f4ed')
+    expect(html).toContain('--mv-brand: #1b365d')
+  })
+
+  it('renders default theme variables', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'default')
+    expect(html).toContain('--mv-paper: #f8fafc')
+    expect(html).toContain('--mv-brand: #2563eb')
+  })
+
+  it('renders minimal theme variables', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'minimal')
+    expect(html).toContain('--mv-paper: #ffffff')
+    expect(html).toContain('--mv-brand: #1d4ed8')
+  })
+
+  it('cover SVG uses CSS variables instead of hardcoded colors', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS)
+    expect(html).toContain('stroke="var(--mv-brand')
+    expect(html).toContain('stroke="var(--mv-border')
+    expect(html).toContain('fill="var(--mv-surface')
+    expect(html).toContain('stroke="var(--mv-muted')
+  })
+
+  it('@page background uses var(--mv-paper)', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS)
+    expect(html).toContain('background: var(--mv-paper')
+  })
+
+  it('uses spec.theme when no themeOverride', () => {
+    const spec: DeckSpec = { ...MINIMAL_DECK, theme: 'dark' }
+    const html = renderDeckHtml(spec, SAMPLE_ROWS)
+    expect(html).toContain('--mv-paper: #0f1117')
+  })
+
+  it('includes meta description when spec has description', () => {
+    const spec: DeckSpec = { ...MINIMAL_DECK, description: 'A test presentation' }
+    const html = renderDeckHtml(spec, SAMPLE_ROWS)
+    expect(html).toContain('<meta name="description" content="A test presentation"')
+  })
+
+  it('omits meta description when spec has no description', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS)
+    expect(html).not.toContain('<meta name="description"')
+  })
+
+  it('uses description as cover subtitle when cover has no claim', () => {
+    const spec: DeckSpec = {
+      title: 'Test',
+      description: 'A deck description',
+      slides: [{ layout: 'cover', title: 'Hello' }]
+    }
+    const html = renderDeckHtml(spec, SAMPLE_ROWS)
+    expect(html).toContain('A deck description')
+    expect(html).toContain('class="sub"')
+  })
+
+  it('prefers slide claim over deck description on cover', () => {
+    const spec: DeckSpec = {
+      title: 'Test',
+      description: 'Deck description',
+      slides: [{ layout: 'cover', title: 'Hello', claim: 'Slide claim' }]
+    }
+    const html = renderDeckHtml(spec, SAMPLE_ROWS)
+    expect(html).toContain('class="sub">Slide claim')
+    expect(html).not.toContain('class="sub">Deck description')
+  })
+})
+
 describe('deck example smoke tests', () => {
   const examples = [
     { input: 'packages/miao-viz-cli/examples/sales.csv', spec: 'packages/miao-viz-cli/examples/sales-deck.yaml', slides: 6 },
     { input: 'packages/miao-viz-cli/examples/product-metrics.csv', spec: 'packages/miao-viz-cli/examples/product-metrics-deck.yaml', slides: 5 },
     { input: 'packages/miao-viz-cli/examples/finance-review.csv', spec: 'packages/miao-viz-cli/examples/finance-review-deck.yaml', slides: 5 },
-    { input: 'packages/miao-viz-cli/examples/ops-update.csv', spec: 'packages/miao-viz-cli/examples/ops-update-deck.yaml', slides: 5 }
+    { input: 'packages/miao-viz-cli/examples/ops-update.csv', spec: 'packages/miao-viz-cli/examples/ops-update-deck.yaml', slides: 5 },
+    { input: 'packages/miao-viz-cli/examples/executive-overview.csv', spec: 'packages/miao-viz-cli/examples/executive-overview-deck.yaml', slides: 8 },
+    { input: 'packages/miao-viz-cli/examples/campaign-data.csv', spec: 'packages/miao-viz-cli/examples/campaign-report-deck.yaml', slides: 7 }
   ]
 
   for (const example of examples) {

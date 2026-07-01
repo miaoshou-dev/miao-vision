@@ -1,0 +1,137 @@
+title: Executive Overview
+description: Revenue grew 22% QoQ driven by Alpha product adoption in East and South regions.
+theme: editorial
+slides:
+  - layout: cover
+    eyebrow: "2025 · Q1 Review"
+    title: "Executive Overview"
+    claim: "Revenue grew 22% QoQ driven by strong Enterprise product adoption."
+
+  - layout: title-only
+    title: "01 · Performance Highlights"
+
+  - layout: metrics-chart
+    eyebrow: "01 · PERFORMANCE HIGHLIGHTS"
+    title: "Revenue Growth Accelerated While Margins Held"
+    metrics:
+      - label: Total Revenue
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: revenue
+                  op: sum
+                  as: v
+      - label: Total Units
+        format: ",.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: units
+                  op: sum
+                  as: v
+      - label: Total Profit
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: profit
+                  op: sum
+                  as: v
+      - label: Avg Revenue
+        format: "$,.0f"
+        data:
+          transform:
+            - type: aggregate
+              measures:
+                - field: revenue
+                  op: avg
+                  as: v
+    charts:
+      - type: area
+        title: Monthly Revenue
+        data:
+          transform:
+            - type: derive-month
+              field: date
+              as: month
+            - type: aggregate
+              groupBy: [month]
+              measures:
+                - field: revenue
+                  op: sum
+                  as: total
+            - type: sort
+              field: month
+              order: asc
+        encoding:
+          x: { field: month }
+          y: { field: total }
+
+  - layout: text-points
+    eyebrow: "02 · KEY INSIGHTS"
+    title: "Revenue Drivers"
+    claim: "Three trends shaped the quarter: Enterprise expansion, regional balance, and product mix."
+    bullets:
+      - "Enterprise segment (Alpha + Gamma) contributed 68% of total revenue across all regions."
+      - "East region grew 29% QoQ, the fastest among all four regions."
+      - "Product Alpha leads with 42% revenue share, up from 40% in January."
+    callout: "Recommendation: Expand Alpha capacity in North region to capture untapped demand."
+
+  - layout: title-only
+    title: "02 · Revenue Breakdown"
+
+  - layout: text-chart
+    eyebrow: "03 · PRODUCT MIX"
+    title: "Product Revenue Is Concentrated in Alpha"
+    annotation: "Alpha is the top revenue product across every region."
+    bullets:
+      - "Alpha: 42% share, driven by Enterprise accounts."
+      - "Beta: 31% share, strongest in East and South."
+      - "Gamma: 27% share, growth opportunity in West."
+    charts:
+      - type: pie
+        title: Revenue by Product
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [product]
+              measures:
+                - field: revenue
+                  op: sum
+                  as: total
+            - type: sort
+              field: total
+              order: desc
+        encoding:
+          label: { field: product }
+          value: { field: total }
+
+  - layout: chart-full
+    eyebrow: "04 · REGIONAL"
+    title: "Revenue by Region"
+    charts:
+      - type: bar
+        title: Revenue by Region
+        data:
+          transform:
+            - type: aggregate
+              groupBy: [region]
+              measures:
+                - field: revenue
+                  op: sum
+                  as: total
+            - type: sort
+              field: total
+              order: desc
+        encoding:
+          x: { field: region }
+          y: { field: total }
+          color: { field: region }
+
+  - layout: ending
+    title: "Focus on North region growth"
+    claim: "Enterprise product expansion in North is the highest-ROI opportunity for Q2."
