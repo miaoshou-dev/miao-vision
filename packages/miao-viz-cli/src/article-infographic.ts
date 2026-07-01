@@ -216,15 +216,56 @@ function parseArticle(text: string, file: string): ParsedArticle {
   }
 }
 
-function buildFactsVisual(facts: InfographicSectionItem[]): InfographicVisual | undefined {
+function extractUnit(value: string): string {
+  return value.replace(/[0-9,.\-]/g, '').replace(/[^a-zA-Z%\/\u4e00-\u9fff]/g, '').trim()
+}
+
+function detectSameUnit(items: InfographicSectionItem[]): boolean {
+  const units = items
+    .filter(f => f.value)
+    .map(f => extractUnit(f.value!))
+    .filter(u => u.length > 0)
+  if (units.length < 2) return false
+  const first = units[0]
+  return units.every(u => u === first)
+}
+
+function buildFactsVisual(facts: InfographicSectionItem[], evidence: string[]): InfographicVisual | undefined {
   const numeric = facts.filter(f => f.value && /[\d]/.test(f.value))
-  if (numeric.length >= 2) {
+  if (numeric.length < 2) return undefined
+
+  const rankingPattern = /\b(top|rank|#1|#2|leading|biggest|largest|highest|most|best|领先|最大|最高|排名)\b/i
+  const pctItems = numeric.filter(f => f.value?.includes('%'))
+
+  if (pctItems.length >= 2) {
     return {
-      type: 'kpi-strip',
-      data: { items: numeric.slice(0, 6).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, unit: f.value!.replace(/[0-9.\-]/g, '').trim() || undefined })) }
+      type: 'part-to-whole',
+      data: { items: pctItems.slice(0, 6).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, text: f.text })) },
+      caption: 'Proportional breakdown of key metrics.'
     }
   }
-  return undefined
+
+  if (numeric.some(f => rankingPattern.test(f.text)) && numeric.length >= 3) {
+    return {
+      type: 'ranked-list-chart',
+      data: { items: numeric.slice(0, 8).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, text: f.text })) },
+      caption: 'Ranked metrics from the article.'
+    }
+  }
+
+  const sameUnit = detectSameUnit(numeric)
+  if (sameUnit && numeric.length >= 2 && numeric.length <= 8) {
+    return {
+      type: 'metric-bars',
+      data: { items: numeric.slice(0, 6).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, unit: extractUnit(f.value!) })) },
+      caption: 'Key metrics compared side by side.'
+    }
+  }
+
+  return {
+    type: 'kpi-strip',
+    data: { items: numeric.slice(0, 6).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, unit: extractUnit(f.value!) || undefined })) }
+  }
 }
 
 function buildTimelineVisual(timeline: InfographicSectionItem[]): InfographicVisual | undefined {
@@ -237,12 +278,21 @@ function buildTimelineVisual(timeline: InfographicSectionItem[]): InfographicVis
   return undefined
 }
 
+function detectProcess(listItems: string[], evidence: string[]): InfographicSectionItem[] {
+  const stepPattern = /\b(step|stage|phase|first|then|next|finally|步骤|阶段|首先|然后|最后)\b/i
+  const candidates = [...listItems, ...evidence]
+    .filter(text => stepPattern.test(text))
+    .map(text => ({ text: compactText(text, 150) }))
+  return uniqueItems(candidates)
+}
+
 function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, file: string): InfographicSpec {
   const evidence = [...parsed.listItems, ...sentences(parsed.paragraphs.join(' '))]
   const facts = collectFacts(evidence)
   const timeline = collectTimeline(evidence)
   const comparison = collectComparison(evidence, parsed.tableRows)
   const takeaways = collectTakeaways(evidence, facts)
+  const process = detectProcess(parsed.listItems, evidence)
   const summary = parsed.subtitle ?? takeaways[0]?.text ?? facts[0]?.text ?? 'A concise visual summary of the source article.'
 
   const sections: InfographicSection[] = [
@@ -254,8 +304,20 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
     }
   ]
 
+  if (process.length >= 3) {
+    sections.push({
+      type: 'process',
+      title: 'Process',
+      items: process.slice(0, 6),
+      visual: {
+        type: 'process-flow',
+        data: { items: process.slice(0, 6).map((item, i) => ({ label: `Step ${i + 1}`, text: item.text })) }
+      }
+    })
+  }
+
   if (facts.length > 0) {
-    const v = buildFactsVisual(facts)
+    const v = buildFactsVisual(facts, evidence)
     sections.push({ type: 'facts', title: 'Key Facts', items: facts.slice(0, 6), ...(v ? { visual: v } : {}) })
   }
   if (timeline.length > 1) {

@@ -368,6 +368,7 @@ async function runAnalyze(args: CliArgs): Promise<void> {
 
 async function runArticle(args: CliArgs): Promise<unknown> {
   const specInputPath = stringFlag(args, 'spec-input')
+  const strictVisuals = args.flags['strict-visuals'] === true
 
   const output = requiredFlag(args, 'output')
   if (isAgentError(output)) return fail(output)
@@ -385,6 +386,11 @@ async function runArticle(args: CliArgs): Promise<unknown> {
     if (isAgentError(loaded)) return fail(loaded)
     const spec = loaded.value
     const quality = assessInfographicQuality(spec)
+    if (strictVisuals && quality.warnings.length > 0) {
+      return fail(agentError('STRICT_VISUALS_FAILED', 'Visual density check failed. Fix warnings or remove --strict-visuals.', {
+        warnings: quality.warnings
+      }))
+    }
     if (format === 'json') {
       writeOutput(output, `${JSON.stringify(spec, null, 2)}\n`)
     } else if (format === 'markdown') {
@@ -428,6 +434,11 @@ async function runArticle(args: CliArgs): Promise<unknown> {
   }
 
   const quality = assessInfographicQuality(generated.value.spec)
+  if (strictVisuals && quality.warnings.length > 0) {
+    return fail(agentError('STRICT_VISUALS_FAILED', 'Visual density check failed. Fix warnings or remove --strict-visuals.', {
+      warnings: quality.warnings
+    }))
+  }
   return {
     ok: true,
     value: {

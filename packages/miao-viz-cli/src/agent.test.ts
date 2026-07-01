@@ -1070,6 +1070,129 @@ describe('article infographic generation', () => {
   })
 })
 
+describe('article auto-extraction visual inference', () => {
+  it('renders list-heavy article with process-flow visual', () => {
+    const result = generateInfographicFromFile('test_data/article-list-heavy.md', 'editorial')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const types = result.value.spec.sections.map(s => s.type)
+    expect(types).toContain('process')
+    const processSec = result.value.spec.sections.find(s => s.type === 'process')
+    expect(processSec?.visual?.type).toBe('process-flow')
+  })
+
+  it('renders quote-heavy article with multiple quote sections', () => {
+    const result = generateInfographicFromFile('test_data/article-quote-heavy.md', 'editorial')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const types = result.value.spec.sections.map(s => s.type)
+    expect(types).toContain('quote')
+    expect(types).toContain('facts')
+  })
+
+  it('renders data-heavy article with quantified visual', () => {
+    const result = generateInfographicFromFile('test_data/article-data-heavy.md', 'editorial')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const factsSec = result.value.spec.sections.find(s => s.type === 'facts')
+    expect(['part-to-whole', 'ranked-list-chart', 'metric-bars', 'kpi-strip']).toContain(factsSec?.visual?.type)
+  })
+
+  it('data-heavy article has at least 4 visual component types', () => {
+    const result = generateInfographicFromFile('test_data/article-data-heavy.md', 'editorial')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const types = result.value.spec.sections.map(s => s.type)
+    expect(types.length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('renders list-heavy article via CLI --output', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-list-heavy-'))
+    const htmlOutput = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article', 'test_data/article-list-heavy.md',
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { sections: string[] } }
+    expect(result.ok).toBe(true)
+    expect(result.value.sections).toContain('process')
+    expect(result.value.sections).toContain('facts')
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('mv-process-steps')
+  })
+
+  it('renders quote-heavy article via CLI --output', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-quote-heavy-'))
+    const htmlOutput = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article', 'test_data/article-quote-heavy.md',
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { sections: string[] } }
+    expect(result.ok).toBe(true)
+    expect(result.value.sections).toContain('quote')
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('mv-quote')
+  })
+
+  it('renders data-heavy article via CLI --output', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-data-heavy-'))
+    const htmlOutput = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article', 'test_data/article-data-heavy.md',
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { sections: string[] } }
+    expect(result.ok).toBe(true)
+    expect(result.value.sections).toContain('facts')
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('mv-visual-card')
+  })
+
+  it('--strict-visuals fails when visual density is low', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-strict-visuals-'))
+    const htmlOutput = join(dir, 'out.html')
+    try {
+      execFileSync('npm', [
+        'run', '--silent', 'miao-viz', '--',
+        'article',
+        '--spec-input', 'test_data/article-spec-quality.json',
+        '--format', 'html',
+        '--output', htmlOutput,
+        '--strict-visuals'
+      ], { encoding: 'utf8' })
+    } catch (e) {
+      const out = (e as { stdout: string }).stdout
+      const parsed = JSON.parse(out)
+      expect(parsed.ok).toBe(false)
+      expect(parsed.code).toBe('STRICT_VISUALS_FAILED')
+      return
+    }
+    expect('should have thrown').toBe('but did not')
+  })
+
+  it('--strict-visuals passes when visual density is good', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-strict-visuals-pass-'))
+    const htmlOutput = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', 'test_data/article-spec-visuals.json',
+      '--format', 'html',
+      '--output', htmlOutput,
+      '--strict-visuals'
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean }
+    expect(result.ok).toBe(true)
+  })
+})
+
 describe('validate semantic warnings (T24–T28)', () => {
   const dataset = loadDataset(csvPath)
   const profile = dataset.ok ? profileDataset(dataset.value) : ({} as ReturnType<typeof profileDataset>)
