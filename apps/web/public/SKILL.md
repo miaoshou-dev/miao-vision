@@ -54,7 +54,7 @@ Read only the reference needed for the user's task.
 
 | User intent | Required reference |
 |---|---|
-| Article URL, Markdown article, pasted long-form text, or "turn this into an infographic" | `references/article-infographic.md` |
+| Article URL, Markdown article, pasted long-form text, or "turn this into an infographic" | `references/article-infographic.md` — **Use Path A (agent-written spec) as default for non-trivial articles. Auto-extract is for quick drafts only.** |
 | Local CSV/TSV/XLSX/JSON data report, analysis, dashboard, chart, visualization, or detailed findings | `references/data-report.md` |
 | Slides, presentation, PPT, deck, 演示, 演示文稿, 汇报, 给老板看, meeting brief, or executive briefing | `references/browser-deck.md` |
 
@@ -81,6 +81,6 @@ Packaged or copied skill files, including `apps/web/public/SKILL.md`, `apps/web/
 
 ## Shared References
 
-- Read `https://raw.githubusercontent.com/miaoshou-dev/miao-vision/main/packages/miao-vision-skill/references/vizspec.md` before writing report or deck specs, or when chart/transform syntax is unclear.
-- Read `https://raw.githubusercontent.com/miaoshou-dev/miao-vision/main/packages/miao-vision-skill/references/examples.md` when the request is ambiguous or close to an existing example.
+- Read `references/vizspec.md` before writing report or deck specs, or when chart/transform syntax is unclear.
+- Read `references/examples.md` when the request is ambiguous or close to an existing example.
 - Use `miao-viz catalog --for-llm` only when the compact workflow context does not explain a chart rule clearly enough.

@@ -89,12 +89,18 @@ Options:
   article: `Usage:
   miao-viz article <file> --output <file> [options]
   miao-viz article --spec-input <spec.json> --output <file> [options]
+  miao-viz article analyze <file> [--output <context.json>]
 
-Convert a local article into a static infographic artifact, or render a
-pre-built InfographicSpec JSON directly.
+Convert a local article into a static infographic artifact, render a
+pre-built InfographicSpec JSON directly, or analyze an article for
+LLM-driven spec generation.
+
+Subcommands:
+  analyze               Extract article structure (headings, sections,
+                        paragraphs, terms) for LLM consumption
 
 Options:
-  --output <file>         Output file path (required)
+  --output <file>         Output file path (required for render, optional for analyze)
   --format <fmt>          Output format: html, json, markdown, png, pdf (default: html)
   --style <name>          Style: editorial, executive, minimal (default: editorial; ignored with --spec-input)
   --spec-input <file>     Path to a pre-built InfographicSpec JSON file

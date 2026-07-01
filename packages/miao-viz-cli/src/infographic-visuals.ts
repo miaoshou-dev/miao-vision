@@ -1,7 +1,7 @@
 import type { SvgTheme } from './themes/types'
 import type { InfographicVisual, InfographicStyle } from './article-infographic'
 import { getTheme } from './themes'
-import { escapeHtml, svgFrame, bar, visualCard, getPalette } from './infographic-visual-primitives'
+import { escapeHtml, svgFrame, bar, visualCard, getPalette, svgTextBlock } from './infographic-visual-primitives'
 
 function articleStyleToTheme(style: InfographicStyle): SvgTheme {
   const map: Record<string, string> = { editorial: 'editorial', executive: 'minimal', minimal: 'minimal' }
@@ -77,24 +77,25 @@ function renderMetricBars(visual: InfographicVisual, theme: SvgTheme, palette: s
   const items = (visual.data.items as Record<string, unknown>[]) ?? []
   const values = items.map(itemValue)
   const max = Math.max(...values, 1)
-  const barH = 24
-  const gap = 12
-  const labelW = 130
-  const valW = 70
-  const w = labelW + 300 + valW
-  const h = items.length * (barH + gap) + 20
+  const barH = 22
+  const rowH = 50
+  const labelW = 190
+  const valueW = 78
+  const barW = 300
+  const w = labelW + barW + valueW + 24
+  const h = items.length * rowH + 14
   const defs = palette.map((c, i) => `<linearGradient id="mg-${i}" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${c}"/><stop offset="100%" stop-color="${c}" stop-opacity="0.6"/></linearGradient>`).join('')
 
   const bars = items.map((item, i) => {
-    const y = 10 + i * (barH + gap)
+    const y = 10 + i * rowH
     const v = values[i]
-    const bw = (v / max) * 280
-    const label = escapeHtml(itemLabel(item, ''))
+    const bw = (v / max) * barW
+    const label = itemLabel(item, '')
     const val = escapeHtml(v.toLocaleString())
     const unit = typeof item.unit === 'string' ? ` ${escapeHtml(item.unit)}` : ''
-    return `<text x="0" y="${y + 16}" font-size="12" fill="${theme.labelColor}">${label}</text>
+    return `${svgTextBlock({ x: 0, y: y + 13, width: labelW - 12, text: label, fontSize: 11, fill: theme.labelColor, maxLines: 2 })}
       ${bar(labelW, y, bw, barH, `url(#mg-${i % palette.length})`, `${label}: ${val}${unit}`)}
-      <text x="${labelW + 290}" y="${y + 16}" font-size="12" fill="${theme.labelColor}" text-anchor="end">${val}${unit}</text>`
+      <text x="${labelW + barW + valueW}" y="${y + 15}" font-size="11" fill="${theme.labelColor}" text-anchor="end">${val}${unit}</text>`
   }).join('\n')
 
   const svg = svgFrame(w, h, theme.background, `<defs>${defs}</defs>${bars}`)
@@ -105,55 +106,59 @@ function renderMetricBars(visual: InfographicVisual, theme: SvgTheme, palette: s
 
 function renderProcessFlow(visual: InfographicVisual, theme: SvgTheme, palette: string[]): string {
   const items = (visual.data.items as Record<string, unknown>[]) ?? []
-  const nodeW = 160
-  const nodeH = 50
-  const gap = 40
-  const arrowGap = 20
-  const totalW = items.length * nodeW + (items.length - 1) * gap
-  const h = nodeH + 40
-
-  let defs = `<marker id="pf-arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="${theme.axisColor}"/></marker>`
   const nodes = items.map((item, i) => {
-    const x = i * (nodeW + gap)
-    const label = escapeHtml(itemLabel(item, `Step ${i + 1}`))
-    const text = escapeHtml(itemText(item, ''))
+    const label = itemLabel(item, `Step ${i + 1}`)
+    const text = itemText(item, '')
     const color = palette[i % palette.length]
-    const arrow = i < items.length - 1 ? `<line x1="${x + nodeW + arrowGap - gap / 2}" y1="${nodeH / 2 + 10}" x2="${x + nodeW + gap - arrowGap + gap / 2}" y2="${nodeH / 2 + 10}" stroke="${theme.axisColor}" stroke-width="1.5" marker-end="url(#pf-arr)"/>` : ''
-    return `<g>
-      <rect x="${x}" y="10" width="${nodeW}" height="${nodeH}" rx="6" fill="${color}" opacity="0.12" stroke="${color}" stroke-width="1.5"/>
-      <text x="${x + nodeW / 2}" y="30" text-anchor="middle" font-size="12" font-weight="600" fill="${color}">${label}</text>
-      <text x="${x + nodeW / 2}" y="46" text-anchor="middle" font-size="10" fill="${theme.labelColor}">${text}</text>
-      ${arrow}
-    </g>`
+    return `<article class="mv-visual-process-node" style="--node-color:${color}">
+      <div class="mv-visual-process-head">
+        <span>${i + 1}</span>
+        <strong>${escapeHtml(label)}</strong>
+      </div>
+      <p>${escapeHtml(text)}</p>
+    </article>`
   }).join('\n')
 
-  const svg = svgFrame(totalW + 20, h, theme.background, `<defs>${defs}</defs>${nodes}`)
-  return visualCard('', svg, visual.caption)
+  return visualCard('', `<div class="mv-visual-process-grid">${nodes}</div>`, visual.caption)
 }
 
 /* ── concept-contrast ─────────────────────────────────────── */
 
+function requireVisualCriteria(visual: InfographicVisual): string[] {
+  const items = (visual.data.items as Record<string, unknown>[]) ?? []
+  const criteria = extractCriteria(items)
+  if (criteria.length === 0) {
+    const example = { label: 'Option A', text: 'Description', dimension1: 'value1', dimension2: 'value2' }
+    throw new Error(
+      `concept-contrast visual requires at least one comparison dimension per item beyond 'label' and 'text'. ` +
+      `Add shared keys (e.g., ${JSON.stringify(example)}) or use a different visual type.`
+    )
+  }
+  return criteria
+}
+
 function renderConceptContrast(visual: InfographicVisual, theme: SvgTheme, palette: string[]): string {
   const items = (visual.data.items as Record<string, unknown>[]) ?? []
+  const criteria = requireVisualCriteria(visual)
   const cols = items.length
-  const colW = 200
-  const rowH = 28
-  const headerH = 36
-  const criteria = extractCriteria(items)
-  const h = headerH + criteria.length * rowH + 20
+  const colW = 240
+  const rowH = 24
+  const headerH = 30
+  const rowCount = criteria.length
+  const h = headerH + rowCount * rowH + 16
   const w = cols * colW + 60
 
   const headers = items.map((item, i) =>
-    `<text x="${60 + i * colW + colW / 2}" y="22" text-anchor="middle" font-size="13" font-weight="700" fill="${palette[i % palette.length]}">${escapeHtml(itemLabel(item, `Item ${i + 1}`))}</text>`
+    `<text x="${60 + i * colW + colW / 2}" y="20" text-anchor="middle" font-size="11" font-weight="600" fill="${palette[i % palette.length]}">${escapeHtml(itemLabel(item, `Item ${i + 1}`))}</text>`
   ).join('\n')
 
   const rows = criteria.map((criterion, ri) => {
-    const y = headerH + ri * rowH + 16
-    const label = `<text x="0" y="${y}" font-size="11" fill="${theme.labelColor}">${escapeHtml(criterion)}</text>`
+    const y = headerH + ri * rowH + 15
+    const label = `<text x="0" y="${y}" font-size="10" fill="${theme.labelColor}">${escapeHtml(criterion)}</text>`
     const cells = items.map((item, ci) => {
       const val = extractValue(item, criterion)
       const x = 60 + ci * colW + colW / 2
-      return `<text x="${x}" y="${y}" text-anchor="middle" font-size="11" fill="${theme.axisColor}">${escapeHtml(val)}</text>`
+      return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="${theme.axisColor}">${escapeHtml(val)}</text>`
     }).join('\n')
     return `${label}${cells}`
   }).join('\n')
@@ -201,8 +206,8 @@ function renderTimelinePath(visual: InfographicVisual, theme: SvgTheme, palette:
     return `<g>
       <circle cx="${lineX}" cy="${y + dotR}" r="${dotR}" fill="${color}"/>
       ${line}
-      <text x="${lineX + 18}" y="${y + 4}" font-size="12" font-weight="600" fill="${color}">${label}</text>
-      <text x="${lineX + 18}" y="${y + 20}" font-size="11" fill="${theme.labelColor}">${text}</text>
+      ${svgTextBlock({ x: lineX + 18, y: y + 4, width: 320, text: label, fontSize: 12, fontWeight: 600, fill: color, maxLines: 1 })}
+      ${svgTextBlock({ x: lineX + 18, y: y + 20, width: 340, text, fontSize: 11, fill: theme.labelColor, maxLines: 2 })}
     </g>`
   }).join('\n')
 
@@ -327,30 +332,23 @@ function renderRankedListChart(visual: InfographicVisual, theme: SvgTheme, palet
   const items = (visual.data.items as Record<string, unknown>[]) ?? []
   const values = items.map(itemValue)
   const max = Math.max(...values, 1)
-  const barH = 22
-  const gap = 6
-  const rankW = 24
-  const labelW = 140
-  const valW = 50
-  const w = rankW + labelW + 200 + valW
-  const h = items.length * (barH + gap) + 24
 
   const rows = items.map((item, i) => {
-    const y = 16 + i * (barH + gap)
     const v = values[i]
-    const bw = (v / max) * 180
+    const pct = Math.max((v / max) * 100, 1)
     const color = palette[i % palette.length]
-    const label = escapeHtml(itemLabel(item, ''))
+    const label = itemLabel(item, '')
     const val = escapeHtml(v.toLocaleString())
     const rank = i + 1
-    return `<text x="${rankW / 2}" y="${y + 15}" text-anchor="middle" font-size="11" font-weight="700" fill="${theme.axisColor}">${rank}</text>
-      <text x="${rankW + 6}" y="${y + 15}" font-size="11" fill="${theme.labelColor}">${label}</text>
-      ${bar(rankW + labelW + 10, y + 1, bw, barH - 2, color, `${label}: ${val}`)}
-      <text x="${w - 6}" y="${y + 15}" font-size="11" fill="${theme.labelColor}" text-anchor="end">${val}</text>`
+    return `<div class="mv-visual-ranked-row">
+      <span class="mv-visual-ranked-rank">${rank}</span>
+      <p>${escapeHtml(label)}</p>
+      <div class="mv-visual-ranked-track"><span style="width:${pct.toFixed(2)}%;background:${color}"></span></div>
+      <strong>${val}</strong>
+    </div>`
   }).join('\n')
 
-  const svg = svgFrame(w, h, theme.background, rows)
-  return visualCard('', svg, visual.caption)
+  return visualCard('', `<div class="mv-visual-ranked">${rows}</div>`, visual.caption)
 }
 
 /* ── system-diagram ───────────────────────────────────────── */
@@ -422,8 +420,8 @@ function renderCalloutDiagram(visual: InfographicVisual, theme: SvgTheme, palett
     return `<g>
       <circle cx="${calloutX}" cy="${y + 6}" r="${dotR}" fill="${color}"/>
       <line x1="${calloutX + dotR + 2}" y1="${y + 6}" x2="${lineX - 4}" y2="${y + 6}" stroke="${theme.axisColor}" stroke-width="1" marker-end="url(#cd-arr)"/>
-      <text x="${textX}" y="${y + 4}" font-size="12" font-weight="600" fill="${color}">${label}</text>
-      <text x="${textX}" y="${y + 18}" font-size="11" fill="${theme.labelColor}">${text}${detail ? ` — ${detail}` : ''}</text>
+      ${svgTextBlock({ x: textX, y: y + 4, width: 320, text: label, fontSize: 12, fontWeight: 600, fill: color, maxLines: 1 })}
+      ${svgTextBlock({ x: textX, y: y + 18, width: 320, text: `${text}${detail ? ` - ${detail}` : ''}`, fontSize: 11, fill: theme.labelColor, maxLines: 2 })}
     </g>`
   }).join('\n')
 
@@ -456,8 +454,8 @@ function renderIconCluster(visual: InfographicVisual, theme: SvgTheme, palette: 
     return `<g>
       <circle cx="${cx}" cy="${cy}" r="${iconR}" fill="${color}" opacity="0.15" stroke="${color}" stroke-width="1.5"/>
       <text x="${cx}" y="${cy + 5}" text-anchor="middle" font-size="16" font-weight="700" fill="${color}">${initial}</text>
-      <text x="${cx}" y="${cy + iconR + 14}" text-anchor="middle" font-size="11" font-weight="600" fill="${color}">${label}</text>
-      <text x="${cx}" y="${cy + iconR + 28}" text-anchor="middle" font-size="10" fill="${theme.labelColor}">${text}</text>
+      ${svgTextBlock({ x: cx, y: cy + iconR + 14, width: cellW - 10, text: label, fontSize: 11, fontWeight: 600, fill: color, anchor: 'middle', maxLines: 1 })}
+      ${svgTextBlock({ x: cx, y: cy + iconR + 30, width: cellW - 10, text, fontSize: 10, fill: theme.labelColor, anchor: 'middle', maxLines: 2 })}
     </g>`
   }).join('\n')
 

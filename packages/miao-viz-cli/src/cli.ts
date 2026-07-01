@@ -10,6 +10,7 @@ import { parseAnalyzeContext, toCompactAnalyzeContext } from './context-schema'
 import { renderChartSvg } from './svg-renderer'
 import { renderDeckHtml } from './deck-renderer'
 import { parseDeckSpec, validateDeckFields } from './deck-validator'
+import { analyzeArticle } from './article-analyzer'
 import { generateInfographicFromFile, loadInfographicSpec, parseArticleFormat, parseArticleStyle, renderInfographicMarkdown } from './article-infographic'
 import { renderInfographicHtml } from './article-html'
 import { exportInfographicToFile } from './article-export'
@@ -367,6 +368,23 @@ async function runAnalyze(args: CliArgs): Promise<void> {
 }
 
 async function runArticle(args: CliArgs): Promise<unknown> {
+  const firstPos = args.positional[0]
+
+  if (firstPos === 'analyze') {
+    const file = args.positional[1]
+    if (!file) {
+      return fail(agentError('MISSING_INPUT', 'Usage: miao-viz article analyze <file> [--output <context.json>]'))
+    }
+    const result = analyzeArticle(file)
+    if (isAgentError(result)) return fail(result)
+    const outputPath = stringFlag(args, 'output')
+    if (outputPath) {
+      writeOutput(outputPath, `${JSON.stringify({ ok: true, value: result.value }, null, 2)}\n`)
+      return { ok: true, value: { output: outputPath } }
+    }
+    return { ok: true, value: result.value }
+  }
+
   const specInputPath = stringFlag(args, 'spec-input')
   const strictVisuals = args.flags['strict-visuals'] === true
 

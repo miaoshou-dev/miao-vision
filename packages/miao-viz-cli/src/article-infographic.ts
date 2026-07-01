@@ -325,7 +325,7 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
     sections.push({ type: 'timeline', title: 'Timeline', items: timeline.slice(0, 6), ...(v ? { visual: v } : {}) })
   }
   if (comparison.length > 1) {
-    sections.push({ type: 'comparison', title: 'Comparison', items: comparison.slice(0, 6), visual: { type: 'concept-contrast', data: { items: comparison.slice(0, 4).map(i => ({ label: i.label || '', text: i.text })) } } })
+    sections.push({ type: 'comparison', title: 'Comparison', items: comparison.slice(0, 6) })
   }
   if (parsed.quotes.length > 0) {
     sections.push({
