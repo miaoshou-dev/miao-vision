@@ -1,97 +1,188 @@
 # Article-to-Infographic Implementation Plan
 
-This document defines the product implementation plan for the `infographics` track. It is written from a product-management perspective: scope, user promise, phased delivery, and acceptance criteria.
+This document defines the implementation plan for the `infographics` track. It reflects the current repository state: `miao-viz article` already exists, produces static HTML/JSON/Markdown from local article input, and can render a pre-built `InfographicSpec` through `--spec-input`.
+
+The next goal is not merely to add more templates. The next goal is to make article-to-infographic reliable enough for user-facing agent workflows.
 
 ## Product Positioning
 
 Article-to-Infographic is a first-class product workflow, not another chart type.
 
-The user gives an agent an article URL, Markdown file, or long-form text. The agent normalizes the source into local Markdown, calls `miao-viz article`, and returns a polished static infographic artifact.
+The user gives an agent an article URL, Markdown file, or long-form text. The agent normalizes the source, understands the article, writes or requests an `InfographicSpec`, calls `miao-viz article`, and returns a polished static artifact.
 
-The first product promise should be narrow and reliable:
+The product promise should stay narrow:
 
 ```text
-local Markdown/text
+article URL / Markdown / pasted text
+  -> agent extraction and article understanding
+  -> InfographicSpec
   -> miao-viz article
   -> single-file HTML infographic
 ```
 
-URL fetching remains in the agent or skill layer for the first release. The CLI should accept deterministic local input and should not own browser extraction, redirects, login flows, or dynamic-page handling.
+URL fetching remains in the agent or skill layer. The CLI should accept deterministic local input and should not own browser extraction, redirects, login flows, or dynamic-page handling.
 
-## Implementation Baseline
+## Current Baseline
 
-The repository presents Article-to-Infographic as a product track and now has a deterministic CLI baseline.
+The repository already has the deterministic MVP foundation.
 
 - The skill workflow instructs agents to call `miao-viz article`.
 - The CLI accepts local Markdown/text input and writes HTML, JSON, or Markdown output.
+- The CLI accepts `--spec-input` for agent-authored `InfographicSpec` JSON.
 - The product uses a dedicated `InfographicSpec` instead of forcing article sections into chart specs.
 - The first renderer is static HTML with inline CSS and no browser runtime dependency.
 - URL fetching remains outside the CLI and belongs to the agent/skill layer.
 
-The next product gap is visual depth: expand templates and export options after the baseline HTML artifact is stable.
+The main product gap is quality of understanding and structure. Regex-based auto extraction is useful for quick drafts, but a user-facing article infographic needs an agent-led structured reading path.
 
-## MVP Scope
+## User-Facing Modes
 
-### Inputs
+### Fast Mode
 
-- Local Markdown file.
-- Local plain-text file.
-- Markdown normalized by an agent from an article URL.
-
-### Outputs
-
-- `html`: single-file static infographic artifact.
-- `json`: structured `InfographicSpec` for debugging and automation.
-- `markdown`: normalized narrative output for inspection and fallback.
-
-### Styles
-
-MVP styles:
-
-- `editorial`: default user-facing style.
-- `executive`: concise, business-review oriented.
-- `minimal`: plain, low-decoration output.
-
-Deferred styles:
-
-- `analytical`
-- `storytelling`
-
-### First Templates
-
-The MVP should support a small set of strong, reusable section templates:
-
-- Hero summary: title, source, subtitle, and primary conclusion.
-- Key facts: 3-6 important numbers, claims, or facts.
-- Timeline: chronological sequence when dates or milestones are present.
-- Comparison: side-by-side contrast between entities, options, or periods.
-- Quote or callout: highlighted quote, warning, implication, or insight.
-- Takeaways: final recommendations, lessons, or implications.
-
-## Target Workflow
+Use when the article is short, the user asks for a quick draft, or token budget is tight.
 
 ```text
-User request
-  -> Agent reads URL or local file
-  -> Agent normalizes content into Markdown
-  -> miao-viz article <markdown-file> --style editorial --format html --output <artifact.html>
-  -> Agent returns the generated artifact path
+article.md
+  -> miao-viz article article.md --format html
 ```
 
-Example CLI shape:
+This mode relies on deterministic CLI extraction. It is acceptable as a fast fallback, but it should not be treated as the highest-quality path.
+
+### Quality Mode
+
+Use by default for user-facing article URL, Markdown, or pasted long-form text requests.
+
+```text
+article
+  -> compact claims
+  -> section outline
+  -> InfographicSpec
+  -> miao-viz article --spec-input
+```
+
+The agent owns article understanding. The CLI owns schema validation and deterministic rendering.
+
+### Long Article Mode
+
+Use when the article is long enough that carrying the full text through every step would waste context.
+
+```text
+article chunks
+  -> top claims per chunk
+  -> merged claims
+  -> section outline
+  -> InfographicSpec
+  -> miao-viz article --spec-input
+```
+
+Intermediate claims and outlines should be stored in temporary files when useful. Do not keep replaying full source text into every subsequent generation step.
+
+## Token Budget Rules
+
+The quality path increases tokens, but it should reduce rework and hallucinated structure. Keep the intermediate representation compact.
+
+- Keep `claims[]` to 12-20 items for ordinary articles.
+- Keep each claim under 160 characters when possible.
+- Keep the section outline to 4-6 sections.
+- Keep each section to 3-6 items.
+- Do not include the full article when generating the final `InfographicSpec`; include compact claims and the selected outline.
+- For long articles, chunk first and keep only top claims from each chunk.
+- Skip the outline step for short articles and generate `claims -> InfographicSpec` directly.
+
+## Article Understanding Model
+
+The agent should not write `InfographicSpec` directly from raw article text in one step. Use a small structured reading pipeline.
+
+### Step 1: Normalize Source
+
+Extract and preserve:
+
+- title
+- source URL or file path
+- author/date when available
+- headings
+- paragraphs with stable paragraph ids
+- lists
+- tables
+- direct quotes
+
+### Step 2: Extract Compact Claims
+
+Claims are the bridge between article understanding and infographic structure.
+
+```json
+{
+  "claims": [
+    {
+      "id": "c1",
+      "kind": "stat",
+      "text": "Revenue grew 42% in 2025.",
+      "source": "p4",
+      "confidence": "high"
+    }
+  ]
+}
+```
+
+Allowed claim kinds:
+
+- `stat`
+- `claim`
+- `quote`
+- `event`
+- `risk`
+- `recommendation`
+- `contrast`
+- `process`
+- `definition`
+
+Rules:
+
+- Every number, date, quote, and strong conclusion must come from a claim.
+- Claims should be source-grounded, not invented.
+- If the article is mostly opinion, preserve the author's argument and avoid fabricating metrics.
+
+### Step 3: Build A Section Outline
+
+Group claims into infographic sections before writing the final spec.
+
+```json
+{
+  "thesis": "The article's central message in one sentence.",
+  "sections": [
+    { "type": "facts", "title": "Key Facts", "claimIds": ["c1", "c3"] },
+    { "type": "timeline", "title": "What Changed", "claimIds": ["c2", "c5"] },
+    { "type": "takeaways", "title": "Takeaways", "claimIds": ["c8"] }
+  ]
+}
+```
+
+Selection rules:
+
+- Numbers or quantitative claims -> `facts` or future `stat-grid`.
+- Dates, milestones, releases, or history -> `timeline`.
+- Two entities, options, sides, or periods -> `comparison`.
+- Explicit quote or distinctive sentence -> `quote`.
+- Recommendations, implications, or lessons -> `takeaways`.
+- Steps, stages, or ordered process -> future `process`.
+- Risks, likelihood, impact, or mitigation -> future `risk-matrix`.
+
+### Step 4: Write InfographicSpec
+
+The agent writes a valid `InfographicSpec` and renders it through `--spec-input`.
 
 ```bash
-miao-viz article ./article.md \
-  --style editorial \
+miao-viz article \
+  --spec-input /tmp/miao-vision/article-spec.json \
   --format html \
   --output /tmp/miao-vision/article-infographic.html
 ```
 
-The CLI should return structured JSON on failure, consistent with existing agent-oriented commands.
+The CLI validates structure. If validation fails, the agent should repair the JSON once using the structured error. It should not invent a separate rendering path.
 
 ## Product Model
 
-Article infographics should use a dedicated `InfographicSpec`. They should not be forced into the existing `AgentReportSpec.charts[]` model.
+Article infographics use a dedicated `InfographicSpec`. They must not be forced into the existing `AgentReportSpec.charts[]` model.
 
 Reasoning:
 
@@ -99,7 +190,7 @@ Reasoning:
 - Article infographics are narrative-section driven.
 - Validation, template selection, and agent instructions are clearer when the product model matches the source material.
 
-Recommended high-level shape:
+Current high-level shape:
 
 ```text
 InfographicSpec
@@ -109,6 +200,7 @@ InfographicSpec
   style
   summary
   sections[]
+  metadata
 
 InfographicSection
   type
@@ -118,7 +210,7 @@ InfographicSection
   notes
 ```
 
-Initial section types:
+Current section types:
 
 - `hero`
 - `facts`
@@ -127,93 +219,113 @@ Initial section types:
 - `quote`
 - `takeaways`
 
-## Delivery Phases
+Near-term section types:
 
-### Phase 1: Command Contract
+- `process`
+- `pros-cons`
+- `stat-grid`
+- `risk-matrix`
+- `checklist`
 
-Goal: make `miao-viz article` a real, testable command.
+## Research Directions To Borrow
 
-Deliverables:
+These papers are useful as implementation guidance, not as required dependencies.
 
-- Add the `article` command to the CLI command surface.
-- Accept local Markdown and plain-text input.
-- Support `--style`.
-- Support `--format json,markdown`.
-- Emit structured errors for missing input, unsupported format, unreadable files, and empty content.
-- Add CLI help text and README command documentation.
+| Direction | Source | How Miao Vision should borrow it |
+|---|---|---|
+| Text-to-infographic metadata | [Infogen](https://arxiv.org/abs/2507.20046) | Treat `InfographicSpec` as the intermediate metadata layer; do not ask the agent to write HTML. |
+| Fact extraction and visual story organization | [Compendia](https://arxiv.org/abs/2602.07410) | Use `claims -> grouped story outline -> sections` as the agent workflow. |
+| Schema-guided decomposition | [Map&Make](https://arxiv.org/abs/2505.23174) | Break text into atomic/propositional claims before filling a schema. |
+| Long-document structure | [StrucSum](https://arxiv.org/abs/2505.22950) | For long articles, preserve structure and central claims instead of relying on lead paragraphs. |
+| Dense but readable summary | [Chain of Density](https://arxiv.org/abs/2309.04269) | Improve `summary`, `hero.emphasis`, and `takeaways` without making them verbose. |
+| Factuality checking | [FActScore](https://arxiv.org/abs/2305.14251), [OpenFActScore](https://arxiv.org/abs/2507.05965) | Every generated fact should be decomposable and supported by source claims. |
+| Structured JSON generation | [JSONSchemaBench](https://arxiv.org/abs/2501.10868) | Keep `InfographicSpec` schema-constrained and repair validation errors through the CLI. |
 
-Acceptance criteria:
+## Delivery Plan
 
-- A local Markdown file can be converted into a JSON `InfographicSpec`.
-- `miao-viz article --help` describes the command and supported formats.
-- The skill no longer points to a missing command.
+### P0: Make The Quality Path Official
 
-### Phase 2: Static HTML Artifact
-
-Goal: produce a useful single-file infographic that users can open and share.
-
-Deliverables:
-
-- Add a static HTML renderer for `InfographicSpec`.
-- Inline all CSS.
-- Implement the MVP section templates.
-- Implement `editorial` and `minimal` styles.
-- Include source/title metadata in the artifact.
-- Add sample article fixtures and golden output checks.
-
-Acceptance criteria:
-
-- `miao-viz article ./sample.md --format html --output out.html` succeeds.
-- The generated artifact has a clear infographic layout, not a generic report layout.
-- The output has no runtime backend dependency and can be opened directly in a browser.
-
-### Phase 3: Agent Experience
-
-Goal: make the Codex/Claude skill workflow reliable.
+Goal: make `--spec-input` the default high-quality agent path.
 
 Deliverables:
 
-- Update skill instructions to match the actual CLI behavior.
-- Keep URL fetching and article extraction in the agent layer.
-- Document Markdown normalization expectations.
-- Add examples for article URL, Markdown file, and pasted long-form text.
-- Define one repair attempt for common CLI errors.
+- Update skill instructions so Path B is not just a fallback; it is the preferred quality path.
+- Add a short `claims -> outline -> InfographicSpec` example.
+- Add one realistic fixture using an agent-authored spec.
+- Ensure `INVALID_INFOGRAPHIC_SPEC` errors remain structured and easy to repair.
+- Add guidance that the CLI auto extraction path is fast mode, not the highest-quality mode.
 
 Acceptance criteria:
 
-- Given a URL, the agent extracts article content, writes local Markdown, calls `miao-viz article`, and returns the HTML path.
-- Given a Markdown file, the agent can skip URL extraction and call the CLI directly.
-- If the CLI fails, the agent reports the structured error and does not manually invent an infographic pipeline.
+- Given an article URL, the agent can extract content, write compact claims, write an `InfographicSpec`, render with `--spec-input`, and return the HTML path.
+- Given malformed spec JSON, the agent can repair once from the CLI `issues` array.
+- The workflow does not require any LLM API inside the CLI.
 
-### Phase 4: Template Expansion
+### P1: Visual Reliability Of Current HTML
 
-Goal: increase coverage and visual quality after the MVP is stable.
+Goal: make generated HTML look usable across common article shapes before expanding many templates.
 
-Candidate templates:
+Deliverables:
 
-- Process or flow.
-- Problem-solution.
-- Pros and cons.
-- Stat grid.
-- Risk matrix.
-- Framework or 2x2 matrix.
-- Checklist.
-
-Template selection rules should be explicit and agent-readable:
-
-- Date or milestone sequence -> timeline.
-- Multiple metrics or evidence points -> key facts or stat grid.
-- Two entities, options, or periods -> comparison.
-- Process language -> flow.
-- Recommendations or risks -> takeaways or risk matrix.
+- Refactor dynamic section numbering; do not hardcode `01`, `02`, `03`, `04`.
+- Ensure long titles, long facts, and long quotes do not overflow on mobile.
+- Include source/title metadata visibly enough for a shared artifact.
+- Add realistic fixtures covering English, Chinese, list-heavy, quote-heavy, and data-heavy articles.
+- Add smoke checks that generated HTML includes expected section types and inline CSS.
 
 Acceptance criteria:
 
-- New templates can be selected by deterministic rules.
-- Each template has at least one realistic sample article.
+- HTML opens directly in a browser without backend or runtime dependencies.
+- Section numbers are correct regardless of which sections are present.
+- Mobile layout remains readable for long titles and long item text.
+
+### P2: Template Expansion
+
+Goal: increase coverage after the quality path and current renderer are reliable.
+
+Add the following section types to the `InfographicSectionType` union and schema.
+
+| Section Type | Selection Signal | Visual Format | Items Limit |
+|---|---|---|---|
+| `process` | Steps, phases, stages, first/then/finally, numbered steps | Connected step flow | 3-6 |
+| `pros-cons` | Pros/cons, advantages/disadvantages, upside/downside | Two-column grouped list | 2-8 |
+| `stat-grid` | 4+ quantitative claims | Compact metric grid | 4-8 |
+| `risk-matrix` | Risk, impact, likelihood, severity, mitigation | 2x2 likelihood/impact matrix | 2-8 |
+| `checklist` | Checkbox lines, readiness, requirements, prerequisites | Vertical checklist | 2-10 |
+
+Implementation notes:
+
+- `pros-cons` should use `item.label` values such as `Pro` and `Con`.
+- `risk-matrix` should use `item.label` as the quadrant.
+- Avoid JSON strings inside `notes` for grouped data.
+- Keep detection deterministic for the fast path.
+- Let the quality path select these templates from claims/outline.
+
+Acceptance criteria:
+
+- Each new template has at least one realistic fixture.
 - Template additions do not require changes to the data-report chart schema.
+- Agent-authored `--spec-input` can use the same section types as CLI auto extraction.
 
-### Phase 5: Export Formats
+### P3: Renderer Structure And File Size
+
+Goal: avoid crossing source file size limits while adding templates.
+
+Do not wait until files exceed the 500-line hard limit. Split renderer code once the new templates materially expand CSS and HTML.
+
+Recommended structure:
+
+```text
+packages/miao-viz-cli/src/
+  article-infographic.ts        # parsing, auto extraction, schemas
+  article-html.ts               # renderer shell
+  article-html-css.ts           # CSS builder
+  article-section-renderers.ts  # section render functions
+```
+
+If section behavior becomes more complex later, introduce an `article-templates/` registry. It is not needed for the first template expansion if the split above is enough.
+
+### P4: Export Formats
 
 Goal: support sharing and presentation use cases after HTML is stable.
 
@@ -223,45 +335,55 @@ Delivery order:
 2. PDF print export.
 3. Optional long-image or paginated output.
 
-PNG/PDF may use Playwright or a browser renderer, but this dependency should not block the Phase 1 and Phase 2 CLI contract.
+PNG/PDF may use Playwright or a browser renderer, but this dependency must not block the HTML product path.
 
-## Priority
+Implementation notes:
 
-### P0
+- Lazy-load Playwright only when `png` or `pdf` is requested.
+- Return a structured `MISSING_PLAYWRIGHT` error when unavailable.
+- Keep Playwright optional; do not make basic HTML generation depend on it.
 
-- `miao-viz article` command.
-- Dedicated `InfographicSpec`.
-- JSON and Markdown output.
-- HTML renderer.
-- Skill and CLI documentation alignment.
+## Non-Goals
 
-### P1
-
-- Editorial visual quality.
-- Sample article fixtures.
-- Structured validation and errors.
-- Tests for command, parser, spec generation, and renderer.
-
-### P2
-
-- More templates.
-- PNG/PDF export.
-- Web preview/gallery.
-- Style variants beyond `editorial`, `executive`, and `minimal`.
-
-## Non-Goals For The First Release
-
-- Do not restore the old Web demo as the primary product path.
-- Do not make the CLI fetch URLs directly.
+- Do not add URL fetching to the CLI.
 - Do not require an LLM API inside the CLI.
+- Do not ask the agent to write HTML directly.
 - Do not treat article infographics as ordinary chart specs.
-- Do not block the MVP on PNG/PDF export.
+- Do not block the usable product on PNG/PDF export.
+- Do not restore the old Web demo as the primary product path.
 - Do not rebuild the removed BI workspace or dashboard runtime.
+
+## Verification
+
+For documentation-only changes:
+
+```bash
+npm run check:size
+```
+
+For CLI behavior changes:
+
+```bash
+npm run test:run
+npm run build:cli
+npm run check:size
+```
+
+For article renderer changes, include at least one workflow-level smoke test:
+
+```bash
+npm run miao-viz -- article test_data/article-editorial.md \
+  --style editorial \
+  --format html \
+  --output /tmp/miao-vision/article-infographic.html
+```
+
+For `--spec-input` changes, include a fixture that renders a spec generated from compact claims and a section outline.
 
 ## Product Acceptance Standard
 
-The first complete release is accepted when:
+Article-to-Infographic becomes user-usable when:
 
-> A user gives an agent a Markdown file or article URL. The agent normalizes the content, calls `miao-viz article`, and returns a single-file HTML infographic with title, summary, key facts, structured sections, and clear visual hierarchy.
+> A user gives an agent a Markdown file, article URL, or pasted long-form text. The agent extracts and understands the article, writes a source-grounded `InfographicSpec`, calls `miao-viz article --spec-input`, and returns a single-file HTML infographic with title, summary, key facts, structured sections, and clear visual hierarchy.
 
-At that point, Article-to-Infographic moves from roadmap promise to usable product capability.
+Fast mode can remain available, but quality mode is the standard for polished user-facing output.
