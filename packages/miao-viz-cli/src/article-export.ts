@@ -5,16 +5,17 @@ import { tmpdir } from 'node:os'
 import { agentError } from './errors'
 import type { AgentResult } from './types'
 
-let playwrightModule: { chromium: import('playwright-core').BrowserType<import('playwright-core').Browser> } | null = null
+type PlaywrightModule = { chromium: import('playwright-core').BrowserType<import('playwright-core').Browser> }
+let playwrightModule: PlaywrightModule | null = null
 
-async function loadPlaywright(): Promise<AgentResult<typeof playwrightModule>> {
+async function loadPlaywright(): Promise<AgentResult<PlaywrightModule>> {
   if (playwrightModule) return { ok: true, value: playwrightModule }
 
   for (const mod of ['playwright', 'playwright-core', '@playwright/test']) {
     try {
       const pw = await import(mod)
-      playwrightModule = pw
-      return { ok: true, value: pw }
+      playwrightModule = pw as PlaywrightModule
+      return { ok: true, value: pw as PlaywrightModule }
     } catch {}
   }
 
@@ -32,7 +33,7 @@ export async function exportInfographicToFile(
 ): Promise<AgentResult<string>> {
   const loaded = await loadPlaywright()
   if (!loaded.ok) return loaded
-  const pw = loaded.value
+  const pw: PlaywrightModule = loaded.value
 
   const dir = mkdtempSync(join(tmpdir(), 'miao-viz-export-'))
   const tempHtml = join(dir, 'source.html')

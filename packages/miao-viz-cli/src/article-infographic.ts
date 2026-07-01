@@ -69,13 +69,23 @@ const infographicSectionItemSchema = z.object({
 })
 
 const infographicVisualSchema = z.object({
-  type: z.enum(['kpi-strip', 'metric-bars', 'process-flow', 'concept-contrast', 'timeline-path', 'part-to-whole', 'before-after', 'tradeoff-matrix', 'ranked-list-chart', 'system-diagram', 'callout-diagram', 'icon-cluster']),
-  data: z.record(z.unknown()),
+  type: z.union([
+    z.literal('kpi-strip'), z.literal('metric-bars'), z.literal('process-flow'),
+    z.literal('concept-contrast'), z.literal('timeline-path'), z.literal('part-to-whole'),
+    z.literal('before-after'), z.literal('tradeoff-matrix'), z.literal('ranked-list-chart'),
+    z.literal('system-diagram'), z.literal('callout-diagram'), z.literal('icon-cluster')
+  ]),
+  data: z.record(z.string(), z.unknown()),
   caption: z.string().optional()
 })
 
 const infographicSectionSchema = z.object({
-  type: z.enum(['hero', 'facts', 'timeline', 'comparison', 'quote', 'takeaways', 'process', 'pros-cons', 'stat-grid', 'risk-matrix', 'checklist']),
+  type: z.union([
+    z.literal('hero'), z.literal('facts'), z.literal('timeline'),
+    z.literal('comparison'), z.literal('quote'), z.literal('takeaways'),
+    z.literal('process'), z.literal('pros-cons'), z.literal('stat-grid'),
+    z.literal('risk-matrix'), z.literal('checklist')
+  ]),
   title: z.string().min(1, 'section.title must not be empty'),
   items: z.array(infographicSectionItemSchema).min(1, 'section.items must have at least one item'),
   emphasis: z.string().optional(),
@@ -87,7 +97,7 @@ export const infographicSpecSchema = z.object({
   title: z.string().min(1, 'title must not be empty'),
   subtitle: z.string().optional(),
   source: z.string().optional(),
-  style: z.enum(['editorial', 'executive', 'minimal']).default('editorial'),
+  style: z.union([z.literal('editorial'), z.literal('executive'), z.literal('minimal')]).default('editorial'),
   summary: z.string().min(1, 'summary must not be empty'),
   sections: z.array(infographicSectionSchema).min(1, 'sections must have at least one entry'),
   metadata: z.object({
@@ -230,7 +240,7 @@ function detectSameUnit(items: InfographicSectionItem[]): boolean {
   return units.every(u => u === first)
 }
 
-function buildFactsVisual(facts: InfographicSectionItem[], evidence: string[]): InfographicVisual | undefined {
+function buildFactsVisual(facts: InfographicSectionItem[]): InfographicVisual | undefined {
   const numeric = facts.filter(f => f.value && /[\d]/.test(f.value))
   if (numeric.length < 2) return undefined
 
@@ -317,7 +327,7 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
   }
 
   if (facts.length > 0) {
-    const v = buildFactsVisual(facts, evidence)
+    const v = buildFactsVisual(facts)
     sections.push({ type: 'facts', title: 'Key Facts', items: facts.slice(0, 6), ...(v ? { visual: v } : {}) })
   }
   if (timeline.length > 1) {

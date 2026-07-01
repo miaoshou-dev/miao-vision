@@ -55,7 +55,7 @@ function itemText(item: Record<string, unknown>, fallback: string = ''): string 
 
 /* ── kpi-strip ────────────────────────────────────────────── */
 
-function renderKpiStrip(visual: InfographicVisual, theme: SvgTheme, palette: string[]): string {
+function renderKpiStrip(visual: InfographicVisual, _theme: SvgTheme, palette: string[]): string {
   const items = (visual.data.items as Record<string, unknown>[]) ?? []
   const parts = items.map((item, i) => {
     const val = escapeHtml(itemValue(item).toLocaleString())
@@ -104,7 +104,7 @@ function renderMetricBars(visual: InfographicVisual, theme: SvgTheme, palette: s
 
 /* ── process-flow ─────────────────────────────────────────── */
 
-function renderProcessFlow(visual: InfographicVisual, theme: SvgTheme, palette: string[]): string {
+function renderProcessFlow(visual: InfographicVisual, _theme: SvgTheme, palette: string[]): string {
   const items = (visual.data.items as Record<string, unknown>[]) ?? []
   const nodes = items.map((item, i) => {
     const label = itemLabel(item, `Step ${i + 1}`)
@@ -328,7 +328,7 @@ function renderTradeoffMatrix(visual: InfographicVisual, theme: SvgTheme, palett
 
 /* ── ranked-list-chart ────────────────────────────────────── */
 
-function renderRankedListChart(visual: InfographicVisual, theme: SvgTheme, palette: string[]): string {
+function renderRankedListChart(visual: InfographicVisual, _theme: SvgTheme, palette: string[]): string {
   const items = (visual.data.items as Record<string, unknown>[]) ?? []
   const values = items.map(itemValue)
   const max = Math.max(...values, 1)
@@ -365,7 +365,7 @@ function renderSystemDiagram(visual: InfographicVisual, theme: SvgTheme, palette
   const w = cols * (nodeW + gap) + pad
   const h = rows * (nodeH + gap) + pad + 30
 
-  const defEdges = edges.map((edge, i) => {
+  const defEdges = edges.map((edge, _i) => {
     const from = Number(edge.from ?? 0)
     const to = Number(edge.to ?? 1)
     const fx = pad + (from % cols) * (nodeW + gap) + nodeW / 2
