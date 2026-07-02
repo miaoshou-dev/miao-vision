@@ -1329,7 +1329,7 @@ describe('article composition layer (P0)', () => {
         '--output', '/tmp/miao-lifecycle-strict-fail.html',
         '--strict-visuals'
       ], { encoding: 'utf8' })
-      fail('Expected strict mode to fail')
+      throw new Error('Expected strict mode to fail')
     } catch (e) {
       const output = (e as { stdout?: Buffer | string }).stdout
       const text = Buffer.isBuffer(output) ? output.toString('utf8') : String(output ?? '')

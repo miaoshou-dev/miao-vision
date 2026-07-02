@@ -90,7 +90,7 @@ export function renderLifecycleCurve(spec: InfographicSpec, style: InfographicSt
     ${points.length > 2 ? `<path d="${areaD}" fill="url(#lifecycle-area)" />` : ''}
     ${pathD ? `<path d="${pathD}" fill="none" stroke="${tokens.accent}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />` : ''}
 
-    ${coords.map((c, i) => `
+    ${coords.map(c => `
       <circle cx="${c.x}" cy="${c.y}" r="5" fill="${tokens.card}" stroke="${tokens.accent}" stroke-width="2.5" />
       <text x="${c.x}" y="${c.y - 14}" text-anchor="middle" fill="${tokens.ink}" font-size="13" font-weight="700" font-family="Inter, sans-serif">${escapeHtml(c.label)}</text>
       <text x="${c.x}" y="${c.y - 28}" text-anchor="middle" fill="${tokens.accent}" font-size="15" font-weight="800" font-family="Charter, Georgia, serif">${c.value}${c.unit ? escapeHtml(c.unit) : ''}</text>
