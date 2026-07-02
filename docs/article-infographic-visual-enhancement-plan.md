@@ -1,5 +1,8 @@
 # Article Infographic Visual Enhancement Plan
 
+> 关联文档：`docs/infographic-optimization-with-antv-and-data-report.md`
+> 本方案定方向和组件集，关联文档定执行细节（文件拆分、schema 强化、验收标准）
+
 ## Purpose
 
 `miao-viz article` already produces deterministic article infographic artifacts, but the current output is closer to an article summary layout than a true infographic. The main gap is not visual polish alone. The product lacks reusable graphic components that encode article meaning through proportion, position, flow, grouping, contrast, and structure.
@@ -447,15 +450,28 @@ This component should use simple inline SVG symbols, not external icon dependenc
 
 Add dedicated infographic visual modules instead of expanding `article-html.ts` indefinitely.
 
-Proposed structure:
+Proposed structure (同步自 `docs/infographic-optimization-with-antv-and-data-report.md` P0 方案):
 
 ```text
 packages/miao-viz-cli/src/
   article-html.ts
   article-infographic.ts
-  infographic-visuals.ts
-  infographic-visual-primitives.ts
-  infographic-quality.ts
+  infographic-planner.ts              # 从 article-infographic.ts 拆分
+  shared-svg.ts                       # 共享 primitives（从 svg-renderer.ts + infographic-visual-primitives.ts 提取）
+  infographic-visuals/
+    index.ts                          # Record 派发表 + renderSectionVisual
+    kpi-strip.ts
+    metric-bars.ts
+    process-flow.ts
+    concept-contrast.ts
+    timeline-path.ts
+    part-to-whole.ts
+    before-after.ts
+    tradeoff-matrix.ts
+    ranked-list-chart.ts
+    system-diagram.ts
+    callout-diagram.ts
+    icon-cluster.ts
 ```
 
 Responsibilities:
