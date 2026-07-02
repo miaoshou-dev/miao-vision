@@ -44,13 +44,6 @@ function detectSameUnit(items: { value?: string }[]): boolean {
   return units.every(u => u === first)
 }
 
-function sentences(text: string): string[] {
-  return text
-    .split(/(?<=[.!?。！？])\s+/)
-    .map(cleanMarkdown)
-    .filter(sentence => sentence.length > 20)
-}
-
 export function collectFacts(candidates: string[]): InfographicSectionItem[] {
   return uniqueItems(candidates
     .filter(text => NUMBER_PATTERN.test(text))

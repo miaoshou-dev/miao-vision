@@ -95,7 +95,7 @@ const visualSchemas = [
 
 const infographicVisualSchema = z.discriminatedUnion('type', visualSchemas.map(s =>
   z.object({ type: s.type, data: s.data, caption: z.string().optional() })
-) as [z.ZodTypeAny, ...z.ZodTypeAny[]])
+) as any)
 
 const infographicSectionSchema = z.object({
   type: z.union([

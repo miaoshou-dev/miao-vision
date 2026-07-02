@@ -1,7 +1,6 @@
 import type { SvgTheme } from '../../themes/types'
 import type { ConceptContrastData, ConceptContrastItemData } from '../types'
 import { escapeHtml, svgFrame } from '../primitives/svg'
-import { svgTextBlock } from '../primitives/text'
 
 function extractCriteria(items: ConceptContrastItemData[]): string[] {
   const keys = new Set<string>()
