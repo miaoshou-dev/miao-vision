@@ -1,6 +1,9 @@
 import { prepareChartData } from './data-transform'
 import type { AgentChartSpec } from './types'
 import type { SvgTheme } from './themes/types'
+import { escapeHtml } from './infographic/primitives/svg'
+import { formatTick } from './infographic/primitives/axis'
+export { escapeHtml }
 
 interface RenderOptions {
   chartId?: string
@@ -427,22 +430,9 @@ function buildAxis(
   `
 }
 
-function formatTick(value: number): string {
-  if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`
-  if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}K`
-  return value % 1 === 0 ? String(Math.round(value)) : value.toFixed(1)
-}
-
 function numberStyle(chart: AgentChartSpec, key: string, fallback: number): number {
   const value = chart.style?.[key]
   return typeof value === 'number' ? value : fallback
 }
 
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
+

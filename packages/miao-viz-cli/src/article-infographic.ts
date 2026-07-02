@@ -3,6 +3,10 @@ import { extname, basename } from 'node:path'
 import { z } from 'zod'
 import { agentError, ok } from './errors'
 import type { AgentResult } from './types'
+import {
+  collectFacts, collectTimeline, collectComparison, collectTakeaways,
+  detectProcessItems, selectFactsVisual, selectTimelineVisual, selectProcessVisual
+} from './infographic/planner'
 
 export const ARTICLE_STYLES = ['editorial', 'executive', 'minimal'] as const
 export const ARTICLE_FORMATS = ['html', 'json', 'markdown', 'png', 'pdf'] as const
@@ -135,8 +139,7 @@ interface ParsedArticle {
   tableRows: string[][]
 }
 
-const DATE_PATTERN = /\b(?:\d{4}(?:[-/]\d{1,2}(?:[-/]\d{1,2})?)?|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4})\b/i
-const NUMBER_PATTERN = /(?:[$¥€]\s?\d[\d,.]*|\b\d+(?:\.\d+)?%?\b)/
+
 
 export function parseArticleStyle(value: string | undefined): InfographicStyle | undefined {
   if (!value) return 'editorial'
@@ -226,83 +229,13 @@ function parseArticle(text: string, file: string): ParsedArticle {
   }
 }
 
-function extractUnit(value: string): string {
-  return value.replace(/[0-9,.\-]/g, '').replace(/[^a-zA-Z%\/\u4e00-\u9fff]/g, '').trim()
-}
-
-function detectSameUnit(items: InfographicSectionItem[]): boolean {
-  const units = items
-    .filter(f => f.value)
-    .map(f => extractUnit(f.value!))
-    .filter(u => u.length > 0)
-  if (units.length < 2) return false
-  const first = units[0]
-  return units.every(u => u === first)
-}
-
-function buildFactsVisual(facts: InfographicSectionItem[]): InfographicVisual | undefined {
-  const numeric = facts.filter(f => f.value && /[\d]/.test(f.value))
-  if (numeric.length < 2) return undefined
-
-  const rankingPattern = /\b(top|rank|#1|#2|leading|biggest|largest|highest|most|best|领先|最大|最高|排名)\b/i
-  const pctItems = numeric.filter(f => f.value?.includes('%'))
-
-  if (pctItems.length >= 2) {
-    return {
-      type: 'part-to-whole',
-      data: { items: pctItems.slice(0, 6).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, text: f.text })) },
-      caption: 'Proportional breakdown of key metrics.'
-    }
-  }
-
-  if (numeric.some(f => rankingPattern.test(f.text)) && numeric.length >= 3) {
-    return {
-      type: 'ranked-list-chart',
-      data: { items: numeric.slice(0, 8).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, text: f.text })) },
-      caption: 'Ranked metrics from the article.'
-    }
-  }
-
-  const sameUnit = detectSameUnit(numeric)
-  if (sameUnit && numeric.length >= 2 && numeric.length <= 8) {
-    return {
-      type: 'metric-bars',
-      data: { items: numeric.slice(0, 6).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, unit: extractUnit(f.value!) })) },
-      caption: 'Key metrics compared side by side.'
-    }
-  }
-
-  return {
-    type: 'kpi-strip',
-    data: { items: numeric.slice(0, 6).map(f => ({ label: f.text, value: Number.parseFloat(f.value!.replace(/[^0-9.\-]/g, '')) || 0, unit: extractUnit(f.value!) || undefined })) }
-  }
-}
-
-function buildTimelineVisual(timeline: InfographicSectionItem[]): InfographicVisual | undefined {
-  if (timeline.length >= 2) {
-    return {
-      type: 'timeline-path',
-      data: { items: timeline.slice(0, 6).map(f => ({ label: f.label || '', text: f.text })) }
-    }
-  }
-  return undefined
-}
-
-function detectProcess(listItems: string[], evidence: string[]): InfographicSectionItem[] {
-  const stepPattern = /\b(step|stage|phase|first|then|next|finally|步骤|阶段|首先|然后|最后)\b/i
-  const candidates = [...listItems, ...evidence]
-    .filter(text => stepPattern.test(text))
-    .map(text => ({ text: compactText(text, 150) }))
-  return uniqueItems(candidates)
-}
-
 function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, file: string): InfographicSpec {
   const evidence = [...parsed.listItems, ...sentences(parsed.paragraphs.join(' '))]
   const facts = collectFacts(evidence)
   const timeline = collectTimeline(evidence)
   const comparison = collectComparison(evidence, parsed.tableRows)
   const takeaways = collectTakeaways(evidence, facts)
-  const process = detectProcess(parsed.listItems, evidence)
+  const processItems = detectProcessItems(parsed.listItems, evidence)
   const summary = parsed.subtitle ?? takeaways[0]?.text ?? facts[0]?.text ?? 'A concise visual summary of the source article.'
 
   const sections: InfographicSection[] = [
@@ -314,24 +247,22 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
     }
   ]
 
-  if (process.length >= 3) {
+  const processVisual = selectProcessVisual(processItems)
+  if (processVisual) {
     sections.push({
       type: 'process',
       title: 'Process',
-      items: process.slice(0, 6),
-      visual: {
-        type: 'process-flow',
-        data: { items: process.slice(0, 6).map((item, i) => ({ label: `Step ${i + 1}`, text: item.text })) }
-      }
+      items: processItems.slice(0, 6),
+      visual: processVisual
     })
   }
 
   if (facts.length > 0) {
-    const v = buildFactsVisual(facts)
+    const v = selectFactsVisual(facts)
     sections.push({ type: 'facts', title: 'Key Facts', items: facts.slice(0, 6), ...(v ? { visual: v } : {}) })
   }
   if (timeline.length > 1) {
-    const v = buildTimelineVisual(timeline)
+    const v = selectTimelineVisual(timeline)
     sections.push({ type: 'timeline', title: 'Timeline', items: timeline.slice(0, 6), ...(v ? { visual: v } : {}) })
   }
   if (comparison.length > 1) {
@@ -416,43 +347,6 @@ function extractTableRows(lines: string[]): string[][] {
     .filter(row => row.length > 1)
 }
 
-function collectFacts(candidates: string[]): InfographicSectionItem[] {
-  return uniqueItems(candidates
-    .filter(text => NUMBER_PATTERN.test(text))
-    .map(text => ({
-      value: text.match(NUMBER_PATTERN)?.[0],
-      text: compactText(text, 150)
-    })))
-}
-
-function collectTimeline(candidates: string[]): InfographicSectionItem[] {
-  return uniqueItems(candidates
-    .filter(text => DATE_PATTERN.test(text))
-    .map(text => ({
-      label: text.match(DATE_PATTERN)?.[0],
-      text: compactText(text, 150)
-    })))
-}
-
-function collectComparison(candidates: string[], tableRows: string[][]): InfographicSectionItem[] {
-  const tableItems = tableRows.slice(1).map(row => ({
-    label: row[0],
-    text: row.slice(1).join(' — ')
-  }))
-  const textItems = candidates
-    .filter(text => /\b(vs\.?|versus|compared with|compared to|whereas|while)\b/i.test(text))
-    .map(text => ({ text: compactText(text, 160) }))
-  return uniqueItems([...tableItems, ...textItems])
-}
-
-function collectTakeaways(candidates: string[], facts: InfographicSectionItem[]): InfographicSectionItem[] {
-  const explicit = candidates
-    .filter(text => /\b(key|takeaway|therefore|recommend|should|must|need to|in summary|conclusion|next)\b/i.test(text))
-    .map(text => ({ text: compactText(text, 160) }))
-  if (explicit.length > 0) return uniqueItems(explicit)
-  return facts.slice(0, 3).map(item => ({ text: item.text }))
-}
-
 function sentences(text: string): string[] {
   return text
     .split(/(?<=[.!?。！？])\s+/)
@@ -462,21 +356,6 @@ function sentences(text: string): string[] {
 
 function firstUsefulParagraph(paragraphs: string[]): string | undefined {
   return paragraphs.find(paragraph => paragraph.length > 40)?.slice(0, 220)
-}
-
-function uniqueItems(items: InfographicSectionItem[]): InfographicSectionItem[] {
-  const seen = new Set<string>()
-  return items.filter(item => {
-    const key = item.text.toLowerCase()
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
-}
-
-function compactText(text: string, max: number): string {
-  const clean = cleanMarkdown(text)
-  return clean.length > max ? `${clean.slice(0, max - 1).trim()}...` : clean
 }
 
 function cleanMarkdown(value: string): string {

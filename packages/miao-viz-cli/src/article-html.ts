@@ -1,6 +1,7 @@
 import { escapeHtml } from './svg-renderer'
 import type { InfographicSection, InfographicSpec, InfographicStyle } from './article-infographic'
 import { renderSectionVisual } from './infographic-visuals'
+import { getInfographicTokens } from './infographic/primitives/theme'
 
 export function renderInfographicHtml(spec: InfographicSpec): string {
   let sectionIndex = 0
@@ -203,11 +204,7 @@ function renderVisualSection(section: InfographicSection, index: number, style: 
 }
 
 function buildCss(style: InfographicStyle): string {
-  const palette = style === 'minimal'
-    ? { bg: '#ffffff', ink: '#161616', muted: '#666666', card: '#ffffff', accent: '#111111', line: '#d8d8d8' }
-    : style === 'executive'
-      ? { bg: '#f4f0e8', ink: '#18212f', muted: '#667085', card: '#ffffff', accent: '#1f5d8c', line: '#d7c9b8' }
-      : { bg: '#f7efe2', ink: '#241b16', muted: '#75695d', card: '#fffaf2', accent: '#b64f2a', line: '#dfcdb7' }
+  const palette = getInfographicTokens(style)
 
   return `
     :root { color-scheme: light; --bg:${palette.bg}; --ink:${palette.ink}; --muted:${palette.muted}; --card:${palette.card}; --accent:${palette.accent}; --line:${palette.line}; }
@@ -241,7 +238,7 @@ function buildCss(style: InfographicStyle): string {
     .mv-visual-support-items { margin: 8px 0 0; padding-left: 18px; font-size: 14px; color: var(--muted); line-height: 1.55; }
     .mv-visual-kpi-strip { display: flex; gap: 14px; flex-wrap: wrap; }
     .mv-visual-kpi { flex: 1; min-width: 140px; background: var(--card); border: 1px solid var(--line); border-top: 3px solid; border-radius: 6px; padding: 14px 16px; }
-    .mv-visual-kpi strong { display: block; font-size: 26px; line-height: 1.1; color: var(--ink); }
+    .mv-visual-kpi strong { display: block; font-size: 48px; font-family: Charter, Georgia, "Times New Roman", serif; font-variant-numeric: tabular-nums; line-height: 1; color: var(--ink); }
     .mv-visual-kpi span { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
     .mv-visual-unit { font-size: 14px; font-weight: 400; color: var(--muted); }
     .mv-visual-delta { font-size: 13px; font-weight: 600; }
