@@ -13,6 +13,7 @@ import {
   beforeAfterDataSchema, tradeoffMatrixDataSchema, rankedListChartDataSchema,
   systemDiagramDataSchema, calloutDiagramDataSchema, iconClusterDataSchema
 } from './infographic/schemas'
+import { countOrderedPhasePoints, hasKpiVisual } from './infographic/compositions/helpers'
 
 export const ARTICLE_STYLES = ['editorial', 'executive', 'minimal'] as const
 export const ARTICLE_FORMATS = ['html', 'json', 'markdown', 'png', 'pdf'] as const
@@ -57,11 +58,25 @@ export interface InfographicSection {
   visual?: InfographicVisual
 }
 
+export type InfographicCompositionType =
+  | 'article-linear'
+  | 'lifecycle-curve'
+  | 'strategy-dashboard'
+  | 'explainer-map'
+  | 'comparison-matrix'
+
+export interface InfographicComposition {
+  type: InfographicCompositionType
+  density?: 'compact' | 'standard' | 'long'
+  emphasis?: 'narrative' | 'metrics' | 'actions' | 'structure'
+}
+
 export interface InfographicSpec {
   title: string
   subtitle?: string
   source?: string
   style: InfographicStyle
+  composition?: InfographicComposition
   summary: string
   sections: InfographicSection[]
   metadata: {
@@ -111,11 +126,18 @@ const infographicSectionSchema = z.object({
   visual: infographicVisualSchema.optional()
 })
 
-export const infographicSpecSchema = z.object({
+const infographicCompositionSchema = z.object({
+  type: z.enum(['article-linear', 'lifecycle-curve', 'strategy-dashboard', 'explainer-map', 'comparison-matrix']),
+  density: z.enum(['compact', 'standard', 'long']).optional(),
+  emphasis: z.enum(['narrative', 'metrics', 'actions', 'structure']).optional(),
+}).optional()
+
+const baseSpecSchema = z.object({
   title: z.string().min(1, 'title must not be empty'),
   subtitle: z.string().optional(),
   source: z.string().optional(),
-  style: z.union([z.literal('editorial'), z.literal('executive'), z.literal('minimal')]).default('editorial'),
+  style: z.enum(['editorial', 'executive', 'minimal']).default('editorial'),
+  composition: infographicCompositionSchema,
   summary: z.string().min(1, 'summary must not be empty'),
   sections: z.array(infographicSectionSchema).min(1, 'sections must have at least one entry'),
   metadata: z.object({
@@ -123,6 +145,30 @@ export const infographicSpecSchema = z.object({
     generatedAt: z.string().default(() => new Date().toISOString()),
     wordCount: z.number().int().min(0).default(0)
   }).default(() => ({ inputFile: '', generatedAt: new Date().toISOString(), wordCount: 0 }))
+})
+
+export const infographicSpecSchema = baseSpecSchema
+
+export const strictInfographicSpecSchema = baseSpecSchema.superRefine((spec, ctx) => {
+  if (spec.composition?.type === 'lifecycle-curve') {
+    const count = countOrderedPhasePoints(spec)
+    if (count < 3) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['composition', 'type'],
+        message: `lifecycle-curve requires at least 3 ordered phase points with numeric values, found ${count}`,
+      })
+    }
+  }
+  if (spec.composition?.type === 'strategy-dashboard') {
+    if (!hasKpiVisual(spec)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['composition', 'type'],
+        message: 'strategy-dashboard requires at least one kpi-strip visual in sections',
+      })
+    }
+  }
 })
 
 export function loadInfographicSpec(file: string): AgentResult<InfographicSpec> {

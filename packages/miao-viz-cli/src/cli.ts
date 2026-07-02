@@ -11,7 +11,7 @@ import { renderChartSvg } from './svg-renderer'
 import { renderDeckHtml } from './deck-renderer'
 import { parseDeckSpec, validateDeckFields } from './deck-validator'
 import { analyzeArticle } from './article-analyzer'
-import { generateInfographicFromFile, loadInfographicSpec, parseArticleFormat, parseArticleStyle, renderInfographicMarkdown } from './article-infographic'
+import { generateInfographicFromFile, loadInfographicSpec, parseArticleFormat, parseArticleStyle, renderInfographicMarkdown, strictInfographicSpecSchema } from './article-infographic'
 import { renderInfographicHtml } from './article-html'
 import { exportInfographicToFile } from './article-export'
 import { assessInfographicQuality } from './infographic-quality'
@@ -404,10 +404,18 @@ async function runArticle(args: CliArgs): Promise<unknown> {
     if (isAgentError(loaded)) return fail(loaded)
     const spec = loaded.value
     const quality = assessInfographicQuality(spec)
-    if (strictVisuals && quality.warnings.length > 0) {
-      return fail(agentError('STRICT_VISUALS_FAILED', 'Visual density check failed. Fix warnings or remove --strict-visuals.', {
-        warnings: quality.warnings
-      }))
+    if (strictVisuals) {
+      const strictParsed = strictInfographicSpecSchema.safeParse(spec)
+      if (!strictParsed.success) {
+        return fail(agentError('STRICT_VISUALS_FAILED', 'Strict composition validation failed.', {
+          issues: strictParsed.error.issues.map(i => ({ path: i.path.join('.'), message: i.message }))
+        }))
+      }
+      if (quality.warnings.length > 0) {
+        return fail(agentError('STRICT_VISUALS_FAILED', 'Visual density check failed. Fix warnings or remove --strict-visuals.', {
+          warnings: quality.warnings
+        }))
+      }
     }
     if (format === 'json') {
       writeOutput(output, `${JSON.stringify(spec, null, 2)}\n`)
@@ -452,10 +460,18 @@ async function runArticle(args: CliArgs): Promise<unknown> {
   }
 
   const quality = assessInfographicQuality(generated.value.spec)
-  if (strictVisuals && quality.warnings.length > 0) {
-    return fail(agentError('STRICT_VISUALS_FAILED', 'Visual density check failed. Fix warnings or remove --strict-visuals.', {
-      warnings: quality.warnings
-    }))
+  if (strictVisuals) {
+    const strictParsed = strictInfographicSpecSchema.safeParse(generated.value.spec)
+    if (!strictParsed.success) {
+      return fail(agentError('STRICT_VISUALS_FAILED', 'Strict composition validation failed.', {
+        issues: strictParsed.error.issues.map(i => ({ path: i.path.join('.'), message: i.message }))
+      }))
+    }
+    if (quality.warnings.length > 0) {
+      return fail(agentError('STRICT_VISUALS_FAILED', 'Visual density check failed. Fix warnings or remove --strict-visuals.', {
+        warnings: quality.warnings
+      }))
+    }
   }
   return {
     ok: true,

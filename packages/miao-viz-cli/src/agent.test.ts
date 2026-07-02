@@ -15,9 +15,10 @@ import { applyInteractiveFilters, selectDetailRows, shouldEnableInteractiveRunti
 import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
 import { parseEvidenceRefs, resolveEvidencePath, resolveDirectives } from './directive-resolver'
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
-import { generateInfographicFromFile, infographicSpecSchema } from './article-infographic'
+import { generateInfographicFromFile, infographicSpecSchema, strictInfographicSpecSchema } from './article-infographic'
 import { assessInfographicQuality } from './infographic-quality'
 import { renderInfographicHtml } from './article-html'
+import { extractLifecyclePoints, countOrderedPhasePoints } from './infographic/compositions/helpers'
 import { analyzeDataset } from './analyzer'
 import { CHART_CATALOG } from './chart-catalog'
 import { parseAnalyzeContext } from './context-schema'
@@ -1190,6 +1191,166 @@ describe('article auto-extraction visual inference', () => {
     ], { encoding: 'utf8' })
     const result = JSON.parse(out) as { ok: boolean }
     expect(result.ok).toBe(true)
+  })
+})
+
+describe('article composition layer (P0)', () => {
+  const validLifecycle = {
+    title: 'Lifecycle Test',
+    style: 'editorial' as const,
+    composition: { type: 'lifecycle-curve' as const, emphasis: 'metrics' as const },
+    summary: 'A test lifecycle summary.',
+    sections: [{
+      type: 'facts' as const,
+      title: 'Phases',
+      items: [{ text: 'Test' }],
+      visual: {
+        type: 'metric-bars' as const,
+        data: {
+          items: [
+            { label: 'Phase 1', value: 10, unit: '%' },
+            { label: 'Phase 2', value: 30, unit: '%' },
+            { label: 'Phase 3', value: 50, unit: '%' },
+          ]
+        }
+      }
+    }],
+    metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
+  }
+
+  it('Zod safeParse accepts valid composition', () => {
+    const parsed = infographicSpecSchema.safeParse(validLifecycle)
+    expect(parsed.success).toBe(true)
+  })
+
+  it('Zod safeParse rejects invalid composition type', () => {
+    const bad = { ...validLifecycle, composition: { type: 'unknown-type' } }
+    const parsed = infographicSpecSchema.safeParse(bad)
+    expect(parsed.success).toBe(false)
+  })
+
+  it('strictInfographicSpecSchema rejects lifecycle-curve with <3 phase points', () => {
+    const bad = {
+      ...validLifecycle,
+      sections: [{
+        type: 'facts' as const,
+        title: 'Two Only',
+        items: [{ text: 'x' }],
+        visual: {
+          type: 'metric-bars' as const,
+          data: { items: [{ label: 'A', value: 10 }, { label: 'B', value: 20 }] }
+        }
+      }]
+    }
+    const parsed = strictInfographicSpecSchema.safeParse(bad)
+    expect(parsed.success).toBe(false)
+    if (!parsed.success) {
+      expect(parsed.error.issues[0].path.join('.')).toContain('composition')
+    }
+  })
+
+  it('countOrderedPhasePoints returns correct count for metric-bars', () => {
+    const count = countOrderedPhasePoints(validLifecycle)
+    expect(count).toBe(3)
+  })
+
+  it('countOrderedPhasePoints returns 0 for no data', () => {
+    const empty = { ...validLifecycle, sections: [{ type: 'hero' as const, title: 'H', items: [{ text: 'x' }] }] }
+    expect(countOrderedPhasePoints(empty)).toBe(0)
+  })
+
+  it('extractLifecyclePoints extracts points from metric-bars', () => {
+    const points = extractLifecyclePoints(validLifecycle)
+    expect(points).toHaveLength(3)
+    expect(points[0].label).toBe('Phase 1')
+    expect(points[0].value).toBe(10)
+  })
+
+  it('extractLifecyclePoints returns empty array for no numeric data', () => {
+    const noData = { ...validLifecycle, sections: [{ type: 'hero' as const, title: 'H', items: [{ text: 'x' }] }] }
+    expect(extractLifecyclePoints(noData)).toHaveLength(0)
+  })
+
+  it('lifecycle fixture renders with data-composition-type and svg path', () => {
+    const html = renderInfographicHtml(validLifecycle)
+    expect(html).toContain('data-composition-type="lifecycle-curve"')
+    expect(html).toContain('<path')
+  })
+
+  it('lifecycle fixture renders via CLI without warnings', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-lifecycle-test-'))
+    const output = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', 'test_data/article-spec-lifecycle.json',
+      '--format', 'html',
+      '--output', output
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { warnings: Array<{ code: string }> } }
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value.warnings.some(w => w.code.startsWith('composition'))).toBe(false)
+    }
+  })
+
+  it('lifecycle fixture html contains expected elements', () => {
+    const html = renderInfographicHtml(validLifecycle)
+    expect(html).toContain('data-composition-type="lifecycle-curve"')
+    expect(html).toContain('mv-lifecycle-kpi')
+    expect(html).toContain('mv-lifecycle-curve-wrap')
+    expect(html).toContain('<circle')
+  })
+
+  it('invalid lifecycle warns under normal mode', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-lifecycle-invalid-'))
+    const output = join(dir, 'out.html')
+    const out = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--spec-input', 'test_data/article-spec-lifecycle-invalid.json',
+      '--format', 'html',
+      '--output', output
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(out) as { ok: boolean; value: { warnings: Array<{ code: string }> } }
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.value.warnings.some(w => w.code === 'lifecycle_requires_ordered_points')).toBe(true)
+    }
+  })
+
+  it('invalid lifecycle fails under strict mode', () => {
+    try {
+      execFileSync('npm', [
+        'run', '--silent', 'miao-viz', '--',
+        'article',
+        '--spec-input', 'test_data/article-spec-lifecycle-invalid.json',
+        '--format', 'html',
+        '--output', '/tmp/miao-lifecycle-strict-fail.html',
+        '--strict-visuals'
+      ], { encoding: 'utf8' })
+      fail('Expected strict mode to fail')
+    } catch (e) {
+      const output = (e as { stdout?: Buffer | string }).stdout
+      const text = Buffer.isBuffer(output) ? output.toString('utf8') : String(output ?? '')
+      const parsed = JSON.parse(text) as { ok: boolean; code?: string }
+      expect(parsed.ok).toBe(false)
+      expect(parsed.code).toBe('STRICT_VISUALS_FAILED')
+    }
+  })
+
+  it('existing article fixtures still pass with composition layer', () => {
+    const quality = readFileSync('test_data/article-spec-quality.json', 'utf8')
+    const parsed = infographicSpecSchema.safeParse(JSON.parse(quality))
+    expect(parsed.success).toBe(true)
+
+    const visuals = readFileSync('test_data/article-spec-visuals.json', 'utf8')
+    const parsed2 = infographicSpecSchema.safeParse(JSON.parse(visuals))
+    expect(parsed2.success).toBe(true)
+
+    const templates = readFileSync('test_data/article-spec-templates.json', 'utf8')
+    const parsed3 = infographicSpecSchema.safeParse(JSON.parse(templates))
+    expect(parsed3.success).toBe(true)
   })
 })
 

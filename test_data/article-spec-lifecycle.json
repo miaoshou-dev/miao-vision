@@ -1,0 +1,35 @@
+{
+  "title": "Product Lifecycle Analysis",
+  "subtitle": "Market share progression through four strategic phases",
+  "style": "editorial",
+  "composition": { "type": "lifecycle-curve", "emphasis": "metrics" },
+  "summary": "By adjusting strategy at each phase, the product achieved a 40% peak market share before a managed decline, laying groundwork for a renewal cycle.",
+  "sections": [
+    {
+      "type": "facts",
+      "title": "Market Share by Phase",
+      "visual": {
+        "type": "metric-bars",
+        "data": {
+          "items": [
+            { "label": "Introduction", "value": 5, "unit": "%" },
+            { "label": "Growth", "value": 25, "unit": "%" },
+            { "label": "Maturity", "value": 40, "unit": "%" },
+            { "label": "Decline", "value": 15, "unit": "%" }
+          ]
+        }
+      },
+      "items": [
+        { "label": "Introduction", "text": "Initial market entry with niche positioning and limited distribution." },
+        { "label": "Growth", "text": "Increase marketing investment to capture market share." },
+        { "label": "Maturity", "text": "Optimize cost structure and defend market position." },
+        { "label": "Decline", "text": "Launch upgraded products to seed the next cycle." }
+      ]
+    }
+  ],
+  "metadata": {
+    "inputFile": "test_data/article-spec-lifecycle.json",
+    "generatedAt": "2026-01-01T00:00:00.000Z",
+    "wordCount": 85
+  }
+}

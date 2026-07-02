@@ -1,21 +1,19 @@
 import { escapeHtml } from './svg-renderer'
-import type { InfographicSection, InfographicSpec, InfographicStyle } from './article-infographic'
-import { renderSectionVisual } from './infographic-visuals'
+import type { InfographicSpec, InfographicStyle } from './article-infographic'
 import { getInfographicTokens } from './infographic/primitives/theme'
+import { renderInfographicComposition } from './infographic/compositions/index'
+import { lifecycleCurveStyles } from './infographic/compositions/lifecycle-curve'
+
+const COMPOSITION_STYLES: Record<string, string> = {
+  'article-linear': '',
+  'lifecycle-curve': lifecycleCurveStyles,
+}
 
 export function renderInfographicHtml(spec: InfographicSpec): string {
-  let sectionIndex = 0
-  const renderedSections = spec.sections.map(section => {
-    if (section.visual) {
-      sectionIndex++
-      return renderVisualSection(section, sectionIndex, spec.style)
-    }
-    if (section.type === 'hero' || section.type === 'quote') {
-      return section.type === 'hero' ? renderHero(section) : renderQuote(section)
-    }
-    sectionIndex++
-    return renderSection(section, sectionIndex)
-  }).join('\n')
+  const style = spec.style
+  const compositionType = spec.composition?.type ?? 'article-linear'
+  const compositionHtml = renderInfographicComposition(spec, style)
+  const extraCss = COMPOSITION_STYLES[compositionType] ?? ''
 
   return `<!doctype html>
 <html lang="en">
@@ -25,182 +23,15 @@ export function renderInfographicHtml(spec: InfographicSpec): string {
   <title>${escapeHtml(spec.title)}</title>
   <meta name="generator" content="Miao Vision article infographic" />
   ${spec.source ? `<meta name="source" content="${escapeHtml(spec.source)}" />` : ''}
-  <style>${buildCss(spec.style)}</style>
+  <style>${buildCss(style)}${extraCss}</style>
 </head>
 <body>
-  <main class="mv-infographic mv-infographic-${spec.style}">
-    ${renderedSections}
+  <main class="mv-infographic mv-infographic-${style}" data-composition-type="${compositionType}">
+    ${compositionHtml}
   </main>
   <script type="application/json" id="miao-infographic-spec">${escapeHtml(JSON.stringify(spec, null, 2))}</script>
 </body>
 </html>`
-}
-
-function sectionNumber(index: number): string {
-  return String(index).padStart(2, '0')
-}
-
-function renderSection(section: InfographicSection, index: number): string {
-  if (section.type === 'facts') return renderFacts(section, index)
-  if (section.type === 'timeline') return renderTimeline(section, index)
-  if (section.type === 'comparison') return renderComparison(section, index)
-  if (section.type === 'process') return renderProcess(section, index)
-  if (section.type === 'pros-cons') return renderProsCons(section, index)
-  if (section.type === 'stat-grid') return renderStatGrid(section, index)
-  if (section.type === 'risk-matrix') return renderRiskMatrix(section, index)
-  if (section.type === 'checklist') return renderChecklist(section, index)
-  return renderTakeaways(section, index)
-}
-
-function renderHero(section: InfographicSection): string {
-  const lead = section.emphasis ?? section.items[0]?.text ?? ''
-  return `<section class="mv-hero">
-    <p class="mv-eyebrow">Miao Vision Infographic</p>
-    <h1>${escapeHtml(section.title)}</h1>
-    <p class="mv-lead">${escapeHtml(lead)}</p>
-  </section>`
-}
-
-function renderFacts(section: InfographicSection, index: number): string {
-  return `<section class="mv-section mv-facts">
-    <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-    <div class="mv-fact-grid">
-      ${section.items.map(item => `<article class="mv-fact">
-        ${item.value ? `<strong>${escapeHtml(item.value)}</strong>` : ''}
-        <p>${escapeHtml(item.text)}</p>
-      </article>`).join('\n')}
-    </div>
-  </section>`
-}
-
-function renderTimeline(section: InfographicSection, index: number): string {
-  return `<section class="mv-section mv-timeline">
-    <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-    <ol>
-      ${section.items.map(item => `<li><time>${escapeHtml(item.label ?? '')}</time><p>${escapeHtml(item.text)}</p></li>`).join('\n')}
-    </ol>
-  </section>`
-}
-
-function renderComparison(section: InfographicSection, index: number): string {
-  return `<section class="mv-section mv-comparison">
-    <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-    <div class="mv-comparison-grid">
-      ${section.items.map(item => `<article>
-        ${item.label ? `<h3>${escapeHtml(item.label)}</h3>` : ''}
-        <p>${escapeHtml(item.text)}</p>
-      </article>`).join('\n')}
-    </div>
-  </section>`
-}
-
-function renderQuote(section: InfographicSection): string {
-  const quote = section.emphasis ?? section.items[0]?.text ?? ''
-  return `<section class="mv-section mv-quote">
-    <blockquote>${escapeHtml(quote)}</blockquote>
-  </section>`
-}
-
-function renderTakeaways(section: InfographicSection, index: number): string {
-  return `<section class="mv-section mv-takeaways">
-    <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-    <ul>
-      ${section.items.map(item => `<li>${escapeHtml(item.text)}</li>`).join('\n')}
-    </ul>
-  </section>`
-}
-
-function renderProcess(section: InfographicSection, index: number): string {
-  return `<section class="mv-section mv-process">
-    <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-    <ol class="mv-process-steps">
-      ${section.items.map((item, i) => `<li>
-        <span class="mv-step-num">${i + 1}</span>
-        <div>
-          ${item.label ? `<strong>${escapeHtml(item.label)}</strong>` : ''}
-          <p>${escapeHtml(item.text)}</p>
-        </div>
-      </li>`).join('\n')}
-    </ol>
-  </section>`
-}
-
-function renderProsCons(section: InfographicSection, index: number): string {
-  const pros = section.items.filter(item => item.label?.toLowerCase() === 'pro' || item.label?.toLowerCase() === 'pros')
-  const cons = section.items.filter(item => item.label?.toLowerCase() === 'con' || item.label?.toLowerCase() === 'cons')
-  const unlabeled = section.items.filter(item => !item.label)
-  return `<section class="mv-section mv-pros-cons">
-    <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-    <div class="mv-pros-cons-grid">
-      <div class="mv-pros-col">
-        <h3>Pros</h3>
-        <ul>${[...pros, ...unlabeled].map(item => `<li>${escapeHtml(item.text)}</li>`).join('\n')}</ul>
-      </div>
-      <div class="mv-cons-col">
-        <h3>Cons</h3>
-        <ul>${cons.map(item => `<li>${escapeHtml(item.text)}</li>`).join('\n')}</ul>
-        ${cons.length === 0 ? '<p class="mv-muted">No cons listed</p>' : ''}
-      </div>
-    </div>
-  </section>`
-}
-
-function renderStatGrid(section: InfographicSection, index: number): string {
-  return `<section class="mv-section mv-stat-grid">
-    <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-    <div class="mv-stat-grid-items">
-      ${section.items.map(item => `<article class="mv-stat-card">
-        ${item.value ? `<strong>${escapeHtml(item.value)}</strong>` : ''}
-        <p>${escapeHtml(item.text)}</p>
-      </article>`).join('\n')}
-    </div>
-  </section>`
-}
-
-function renderRiskMatrix(section: InfographicSection, index: number): string {
-  const quadrants = section.items.slice(0, 4)
-  return `<section class="mv-section mv-risk-matrix">
-    <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-    <div class="mv-risk-matrix-grid">
-      <div class="mv-risk-header mv-risk-hl">Low Likelihood / High Impact</div>
-      <div class="mv-risk-header mv-risk-hh">High Likelihood / High Impact</div>
-      <div class="mv-risk-header mv-risk-ll">Low Likelihood / Low Impact</div>
-      <div class="mv-risk-header mv-risk-lh">High Likelihood / Low Impact</div>
-      ${quadrants.map(item => `<article class="mv-risk-cell">
-        ${item.label ? `<h3>${escapeHtml(item.label)}</h3>` : ''}
-        <p>${escapeHtml(item.text)}</p>
-        ${item.detail ? `<p class="mv-risk-detail">${escapeHtml(item.detail)}</p>` : ''}
-      </article>`).join('\n')}
-    </div>
-  </section>`
-}
-
-function renderChecklist(section: InfographicSection, index: number): string {
-  return `<section class="mv-section mv-checklist">
-    <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-    <ul class="mv-checklist-items">
-      ${section.items.map(item => `<li>
-        <span class="mv-check-icon">${item.label === 'done' ? '&#10003;' : '&#9744;'}</span>
-        <span>${escapeHtml(item.text)}</span>
-      </li>`).join('\n')}
-    </ul>
-  </section>`
-}
-
-function renderVisualSection(section: InfographicSection, index: number, style: InfographicStyle): string {
-  const visualHtml = renderSectionVisual(section.visual!, style)
-  const notes = section.notes
-    ? Array.isArray(section.notes)
-      ? section.notes.map(n => `<li>${escapeHtml(n)}</li>`).join('')
-      : `<li>${escapeHtml(section.notes)}</li>`
-    : ''
-  const notesBlock = notes ? `<ul class="mv-visual-notes">${notes}</ul>` : ''
-  const safeItems = section.items ?? []
-  const items = safeItems.length > 0
-    ? `<div class="mv-section-head" style="margin-top:12px"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-       <ul class="mv-visual-support-items">${safeItems.map(item => `<li>${escapeHtml(item.text)}</li>`).join('\n')}</ul>`
-    : ''
-  return `<section class="mv-section mv-visual-section">${visualHtml}${notesBlock}${items}</section>`
 }
 
 function buildCss(style: InfographicStyle): string {

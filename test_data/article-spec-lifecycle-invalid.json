@@ -1,0 +1,31 @@
+{
+  "title": "Incomplete Lifecycle",
+  "subtitle": "Only two phases — insufficient for lifecycle-curve",
+  "style": "editorial",
+  "composition": { "type": "lifecycle-curve", "emphasis": "metrics" },
+  "summary": "This spec has only two data points, which should trigger a fallback to article-linear.",
+  "sections": [
+    {
+      "type": "facts",
+      "title": "Two Phases Only",
+      "visual": {
+        "type": "metric-bars",
+        "data": {
+          "items": [
+            { "label": "Start", "value": 10, "unit": "%" },
+            { "label": "End", "value": 30, "unit": "%" }
+          ]
+        }
+      },
+      "items": [
+        { "label": "Start", "text": "Initial phase." },
+        { "label": "End", "text": "Later phase." }
+      ]
+    }
+  ],
+  "metadata": {
+    "inputFile": "test_data/article-spec-lifecycle-invalid.json",
+    "generatedAt": "2026-01-01T00:00:00.000Z",
+    "wordCount": 30
+  }
+}

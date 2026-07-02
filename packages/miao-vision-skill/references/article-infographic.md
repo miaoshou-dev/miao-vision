@@ -108,6 +108,32 @@ Rules:
 - **If this article's type matches the last infographic you wrote, force yourself to change at least 2 section types.** E.g., if you used `checklist` last time for a guide, use `pros-cons` this time.
 - After selecting the arc, map each claim to the section type that best serves the **narrative**, not the section type you used for similar claims in the previous infographic.
 
+## Composition Selection
+
+After choosing the narrative arc, select a **composition type** for the page-level layout. The composition determines how sections are arranged as a whole.
+
+**Do not force short structured business text into the default article-linear layout.**
+
+| Input characteristics | Recommended composition |
+|---|---|
+| Long editorial article, scientific narrative, text-heavy multi-section | `article-linear` (default) |
+| Stage progression with numeric values (growth → maturity → decline) | `lifecycle-curve` |
+| KPIs + recommendations + compact decision brief | `strategy-dashboard` |
+| Mechanism, system, cause-effect, how-it-works | `explainer-map` |
+| Option A vs B, tradeoffs, before/after alternatives | `comparison-matrix` |
+
+Add the composition to the spec:
+
+```json
+{
+  "composition": { "type": "lifecycle-curve", "emphasis": "metrics" }
+}
+```
+
+Allowed `emphasis` values: `narrative`, `metrics`, `actions`, `structure`.
+
+If no composition is set, the renderer defaults to `article-linear` (current behavior).
+
 ## Section Outline
 
 Group claims into infographic sections according to the chosen narrative arc.

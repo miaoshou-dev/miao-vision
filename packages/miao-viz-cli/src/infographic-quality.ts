@@ -1,4 +1,5 @@
 import type { InfographicSpec, InfographicVisualType } from './article-infographic'
+import { countOrderedPhasePoints, hasKpiVisual, hasCompositionType } from './infographic/compositions/helpers'
 
 export type InfographicWarningCode =
   | 'low_visual_density'
@@ -6,6 +7,12 @@ export type InfographicWarningCode =
   | 'timeline_rendered_as_text'
   | 'comparison_rendered_as_text'
   | 'text_heavy_infographic'
+  | 'composition_fallback_used'
+  | 'lifecycle_requires_ordered_points'
+  | 'lifecycle_requires_numeric_values'
+  | 'lifecycle_missing_actions'
+  | 'dashboard_missing_kpis'
+  | 'comparison_missing_criteria'
 
 export interface InfographicWarning {
   code: InfographicWarningCode
@@ -72,6 +79,31 @@ export function assessInfographicQuality(spec: InfographicSpec): InfographicQual
 
   if (averageWordsPerSection > 90) {
     warnings.push({ code: 'text_heavy_infographic', message: `Average ${averageWordsPerSection} words per section (recommended ≤ 90). Sections are too text-heavy.` })
+  }
+
+  if (hasCompositionType(spec, 'lifecycle-curve')) {
+    const phaseCount = countOrderedPhasePoints(spec)
+    if (phaseCount < 3) {
+      warnings.push({ code: 'lifecycle_requires_ordered_points', message: `lifecycle-curve requires at least 3 ordered phase points, found ${phaseCount}. Falling back to article-linear.` })
+    } else {
+      const hasNumeric = spec.sections.some(s =>
+        s.visual?.type === 'metric-bars' &&
+        (s.visual.data as { items?: Array<{ value?: number }> })?.items?.some(i => typeof i.value === 'number')
+      )
+      if (!hasNumeric) {
+        warnings.push({ code: 'lifecycle_requires_numeric_values', message: 'lifecycle-curve phase points should have numeric values for the curve rendering.' })
+      }
+      const actionCount = spec.sections.reduce((sum, s) =>
+        sum + s.items.filter(i => i.label && i.text).length, 0
+      )
+      if (actionCount < 2) {
+        warnings.push({ code: 'lifecycle_missing_actions', message: `lifecycle-curve has only ${actionCount} actionable items (recommended ≥ 2 per phase).` })
+      }
+    }
+  }
+
+  if (hasCompositionType(spec, 'strategy-dashboard') && !hasKpiVisual(spec)) {
+    warnings.push({ code: 'dashboard_missing_kpis', message: 'strategy-dashboard requires at least one kpi-strip visual for the KPI header.' })
   }
 
   return { visualComponentCount, svgVisualCount, textOnlySectionCount: textOnlySections.length, quantifiedVisualCount, averageWordsPerSection, warnings }
