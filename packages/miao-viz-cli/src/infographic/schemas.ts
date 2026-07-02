@@ -40,7 +40,7 @@ export const processFlowDataSchema = z.object({
 
 export const conceptContrastItemSchema = z.record(z.string(), z.string()).and(z.object({
   label: z.string().min(1),
-  text: z.string()
+  text: z.string().optional().default('')
 }))
 
 export const conceptContrastDataSchema = z.object({

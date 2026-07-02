@@ -7,6 +7,12 @@ import {
   collectFacts, collectTimeline, collectComparison, collectTakeaways,
   detectProcessItems, selectFactsVisual, selectTimelineVisual, selectProcessVisual
 } from './infographic/planner'
+import {
+  kpiStripDataSchema, metricBarsDataSchema, processFlowDataSchema,
+  conceptContrastDataSchema, timelinePathDataSchema, partToWholeDataSchema,
+  beforeAfterDataSchema, tradeoffMatrixDataSchema, rankedListChartDataSchema,
+  systemDiagramDataSchema, calloutDiagramDataSchema, iconClusterDataSchema
+} from './infographic/schemas'
 
 export const ARTICLE_STYLES = ['editorial', 'executive', 'minimal'] as const
 export const ARTICLE_FORMATS = ['html', 'json', 'markdown', 'png', 'pdf'] as const
@@ -72,16 +78,24 @@ const infographicSectionItemSchema = z.object({
   detail: z.string().optional()
 })
 
-const infographicVisualSchema = z.object({
-  type: z.union([
-    z.literal('kpi-strip'), z.literal('metric-bars'), z.literal('process-flow'),
-    z.literal('concept-contrast'), z.literal('timeline-path'), z.literal('part-to-whole'),
-    z.literal('before-after'), z.literal('tradeoff-matrix'), z.literal('ranked-list-chart'),
-    z.literal('system-diagram'), z.literal('callout-diagram'), z.literal('icon-cluster')
-  ]),
-  data: z.record(z.string(), z.unknown()),
-  caption: z.string().optional()
-})
+const visualSchemas = [
+  { type: z.literal('kpi-strip'), data: kpiStripDataSchema },
+  { type: z.literal('metric-bars'), data: metricBarsDataSchema },
+  { type: z.literal('process-flow'), data: processFlowDataSchema },
+  { type: z.literal('concept-contrast'), data: conceptContrastDataSchema },
+  { type: z.literal('timeline-path'), data: timelinePathDataSchema },
+  { type: z.literal('part-to-whole'), data: partToWholeDataSchema },
+  { type: z.literal('before-after'), data: beforeAfterDataSchema },
+  { type: z.literal('tradeoff-matrix'), data: tradeoffMatrixDataSchema },
+  { type: z.literal('ranked-list-chart'), data: rankedListChartDataSchema },
+  { type: z.literal('system-diagram'), data: systemDiagramDataSchema },
+  { type: z.literal('callout-diagram'), data: calloutDiagramDataSchema },
+  { type: z.literal('icon-cluster'), data: iconClusterDataSchema }
+] as const
+
+const infographicVisualSchema = z.discriminatedUnion('type', visualSchemas.map(s =>
+  z.object({ type: s.type, data: s.data, caption: z.string().optional() })
+) as [z.ZodTypeAny, ...z.ZodTypeAny[]])
 
 const infographicSectionSchema = z.object({
   type: z.union([
