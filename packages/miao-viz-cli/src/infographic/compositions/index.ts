@@ -2,6 +2,7 @@ import type { InfographicSpec, InfographicStyle } from '../../article-infographi
 import type { CompositionRenderer } from './types'
 import { renderArticleLinear } from './article-linear'
 import { renderLifecycleCurve } from './lifecycle-curve'
+import { countOrderedPhasePoints } from './helpers'
 
 const REGISTRY: Record<string, CompositionRenderer | undefined> = {}
 
@@ -16,5 +17,10 @@ export function renderInfographicComposition(spec: InfographicSpec, style: Infog
   const type = spec.composition?.type ?? 'article-linear'
   const render = REGISTRY[type]
   if (!render) return renderArticleLinear(spec, style)
+
+  if (type === 'lifecycle-curve' && countOrderedPhasePoints(spec) < 3) {
+    return renderArticleLinear(spec, style)
+  }
+
   return render(spec, style)
 }

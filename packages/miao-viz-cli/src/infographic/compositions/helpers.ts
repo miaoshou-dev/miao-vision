@@ -18,8 +18,8 @@ export function countOrderedPhasePoints(spec: InfographicSpec): number {
   }
   for (const section of spec.sections) {
     if (section.visual && section.visual.type === 'timeline-path') {
-      const items = (section.visual.data as { items?: Array<{ label?: string }> }).items
-      if (items && items.length >= 3) return items.length
+      const numeric = section.items.filter(i => i.value && !Number.isNaN(Number(i.value)))
+      if (numeric.length >= 3) return numeric.length
     }
   }
   for (const section of spec.sections) {
