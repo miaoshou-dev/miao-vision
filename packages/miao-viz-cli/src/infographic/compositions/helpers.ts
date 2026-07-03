@@ -1,4 +1,5 @@
-import type { InfographicSpec, InfographicCompositionType } from '../../article-infographic'
+import type { InfographicSpec } from '../../article-infographic'
+import type { InfographicCompositionType } from '../composition-decision'
 
 export interface LifecyclePoint {
   label: string

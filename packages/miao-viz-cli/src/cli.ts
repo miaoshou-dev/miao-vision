@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import packageJson from '../package.json'
 import { agentError, isAgentError } from './errors'
 import { loadDataset } from './data-loader'
 import { profileDataset, profileSummary } from './data-profiler'
@@ -36,6 +37,11 @@ import type { AgentReportSpec } from './types'
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
+
+  if (args.command === '--version' || args.command === '-v' || args.command === 'version') {
+    process.stdout.write(`${packageJson.version}\n`)
+    return
+  }
 
   if (args.command === '--help' || args.command === '-h' || args.command === 'help' || !args.command) {
     printHelp()

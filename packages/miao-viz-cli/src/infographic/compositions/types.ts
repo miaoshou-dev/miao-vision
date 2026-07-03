@@ -1,4 +1,5 @@
-import type { InfographicSpec, InfographicStyle, InfographicCompositionType } from '../../article-infographic'
+import type { InfographicSpec, InfographicStyle } from '../../article-infographic'
+import type { InfographicCompositionType } from '../composition-decision'
 
 export type CompositionRenderer = (spec: InfographicSpec, style: InfographicStyle) => string
 

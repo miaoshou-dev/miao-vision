@@ -132,6 +132,7 @@ export function printHelp(command?: string): void {
 
 Usage:
   miao-viz <command> [options]
+  miao-viz --version
 
 Commands:
   analyze   Compile evidence pack + catalog for LLM report generation (start here)
