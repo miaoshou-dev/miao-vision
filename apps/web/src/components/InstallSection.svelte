@@ -15,9 +15,9 @@
 
   let cliText = 'npm install -g @miao-vision/cli\nmiao-viz catalog'
   let claudeUrlText = $derived(`Read ${skillUrl} and follow the instructions\nto install or upgrade miao-viz for your AI agent`)
-  let claudeZipText = 'curl -L https://github.com/maishou-dev/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip\nmkdir -p ~/.claude/skills && unzip skill.zip -d ~/.claude/skills/'
+  let claudeZipText = 'curl -L https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip\nmkdir -p ~/.claude/skills && unzip skill.zip -d ~/.claude/skills/'
   let codexUrlText = $derived(`Read ${skillUrl} and follow the instructions\nto install or upgrade miao-viz for your AI agent`)
-  let codexZipText = 'curl -L https://github.com/maishou-dev/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip\nmkdir -p ~/.codex/skills && unzip skill.zip -d ~/.codex/skills/'
+  let codexZipText = 'curl -L https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip\nmkdir -p ~/.codex/skills && unzip skill.zip -d ~/.codex/skills/'
 </script>
 
 <section id="install" class="install-section" aria-labelledby="install-title">
