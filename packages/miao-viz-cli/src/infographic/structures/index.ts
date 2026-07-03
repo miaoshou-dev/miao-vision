@@ -16,6 +16,12 @@ import { renderRankedListChart } from './ranked-list-chart'
 import { renderSystemDiagram } from './system-diagram'
 import { renderCalloutDiagram } from './callout-diagram'
 import { renderIconCluster } from './icon-cluster'
+import { renderQuadrantPriority } from './quadrant-priority'
+import { renderRoadmapSequence } from './roadmap-sequence'
+import { renderHierarchyTree } from './hierarchy-tree'
+import { renderRelationFlow } from './relation-flow'
+import { renderPyramidList } from './pyramid-list'
+import { renderGridList } from './grid-list'
 
 function articleStyleToTheme(style: InfographicStyle): SvgTheme {
   const map: Record<string, string> = { editorial: 'editorial', executive: 'minimal', minimal: 'minimal' }
@@ -34,7 +40,13 @@ const STRUCTURES: { [K in InfographicVisualType]: (data: VisualDataMap[K], theme
   'ranked-list-chart': renderRankedListChart,
   'system-diagram': renderSystemDiagram,
   'callout-diagram': renderCalloutDiagram,
-  'icon-cluster': renderIconCluster
+  'icon-cluster': renderIconCluster,
+  'quadrant-priority': renderQuadrantPriority,
+  'roadmap-sequence': renderRoadmapSequence,
+  'hierarchy-tree': renderHierarchyTree,
+  'relation-flow': renderRelationFlow,
+  'pyramid-list': renderPyramidList,
+  'grid-list': renderGridList
 }
 
 export function renderVisual(visual: TypedInfographicVisual, style: InfographicStyle): string {

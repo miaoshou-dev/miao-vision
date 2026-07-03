@@ -10,6 +10,7 @@ import { getCompositionRenderIssue } from './infographic/compositions/index'
 import { compositionSelectionRequired } from './cli-article-composition'
 import { requiredFlag, stringFlag, writeOutput, fail } from './cli-utils'
 import type { CliArgs } from './cli-utils'
+import { ARTICLE_INFOGRAPHIC_TEMPLATES, compactArticleInfographicTemplates } from './infographic/catalog'
 
 export async function runArticle(args: CliArgs): Promise<unknown> {
   const firstPos = args.positional[0]
@@ -27,6 +28,15 @@ export async function runArticle(args: CliArgs): Promise<unknown> {
       return { ok: true, value: { output: outputPath } }
     }
     return { ok: true, value: result.value }
+  }
+
+  if (firstPos === 'catalog') {
+    return {
+      ok: true,
+      value: args.flags['for-llm'] === true
+        ? { templates: compactArticleInfographicTemplates() }
+        : { templates: ARTICLE_INFOGRAPHIC_TEMPLATES }
+    }
   }
 
   const specInputPath = stringFlag(args, 'spec-input')

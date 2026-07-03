@@ -11,6 +11,12 @@ export type InfographicVisualType =
   | 'system-diagram'
   | 'callout-diagram'
   | 'icon-cluster'
+  | 'quadrant-priority'
+  | 'roadmap-sequence'
+  | 'hierarchy-tree'
+  | 'relation-flow'
+  | 'pyramid-list'
+  | 'grid-list'
 
 export interface KpiItemData {
   label: string
@@ -122,6 +128,33 @@ export interface IconClusterData {
   }>
 }
 
+export interface QuadrantPriorityData {
+  items: Array<{ label: string; text: string; detail?: string }>
+  xLabel?: string
+  yLabel?: string
+}
+
+export interface RoadmapSequenceData {
+  items: Array<{ label?: string; text: string; detail?: string }>
+}
+
+export interface HierarchyTreeData {
+  items: Array<{ label: string; text?: string; parent?: number }>
+}
+
+export interface RelationFlowData {
+  nodes: Array<{ label: string; detail?: string }>
+  edges: Array<{ from: number; to: number; label?: string }>
+}
+
+export interface PyramidListData {
+  items: Array<{ label: string; text: string; detail?: string }>
+}
+
+export interface GridListData {
+  items: Array<{ label: string; text: string; detail?: string }>
+}
+
 export type VisualData =
   | KpiStripData
   | MetricBarsData
@@ -135,6 +168,12 @@ export type VisualData =
   | SystemDiagramData
   | CalloutDiagramData
   | IconClusterData
+  | QuadrantPriorityData
+  | RoadmapSequenceData
+  | HierarchyTreeData
+  | RelationFlowData
+  | PyramidListData
+  | GridListData
 
 export type VisualDataMap = {
   'kpi-strip': KpiStripData
@@ -149,6 +188,12 @@ export type VisualDataMap = {
   'system-diagram': SystemDiagramData
   'callout-diagram': CalloutDiagramData
   'icon-cluster': IconClusterData
+  'quadrant-priority': QuadrantPriorityData
+  'roadmap-sequence': RoadmapSequenceData
+  'hierarchy-tree': HierarchyTreeData
+  'relation-flow': RelationFlowData
+  'pyramid-list': PyramidListData
+  'grid-list': GridListData
 }
 
 export type TypedInfographicVisual = {

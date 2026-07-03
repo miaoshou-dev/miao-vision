@@ -207,3 +207,75 @@ export function selectProcessVisual(processItems: InfographicSectionItem[]): Inf
   }
   return undefined
 }
+
+export function selectSequenceVisual(items: InfographicSectionItem[], corpus: string): InfographicVisual | undefined {
+  if (items.length < 3) return undefined
+  if (/\b(roadmap|milestone|launch roadmap|rollout roadmap|路线图|里程碑)\b/i.test(corpus)) {
+    return {
+      type: 'roadmap-sequence',
+      data: { items: items.slice(0, 8).map((item, i) => ({ label: item.label ?? `Stage ${i + 1}`, text: item.text, detail: item.detail })) },
+      caption: 'Phased roadmap extracted from the article.'
+    }
+  }
+  return undefined
+}
+
+export function selectComparisonVisual(items: InfographicSectionItem[], corpus: string): InfographicVisual | undefined {
+  if (items.length < 2) return undefined
+  if (items.length >= 4 && /\b(priority|impact|effort|risk|likelihood|urgent|重要|优先级|风险|影响|紧急)\b/i.test(corpus)) {
+    return {
+      type: 'quadrant-priority',
+      data: {
+        items: items.slice(0, 4).map((item, i) => ({ label: item.label ?? `Option ${i + 1}`, text: item.text, detail: item.detail })),
+        xLabel: 'Lower effort to higher impact',
+        yLabel: 'Lower urgency to higher urgency'
+      },
+      caption: 'Priority matrix for article options.'
+    }
+  }
+  return undefined
+}
+
+export function selectListVisual(items: InfographicSectionItem[], corpus: string): InfographicVisual | undefined {
+  if (items.length < 2) return undefined
+  if (items.length >= 3 && /\b(pyramid|layer|level|foundation|maturity|capability|层级|金字塔|基础|能力|成熟度)\b/i.test(corpus)) {
+    return {
+      type: 'pyramid-list',
+      data: { items: items.slice(0, 6).map((item, i) => ({ label: item.label ?? `Level ${i + 1}`, text: item.text, detail: item.detail })) },
+      caption: 'Layered list structure from the article.'
+    }
+  }
+  return {
+    type: 'grid-list',
+    data: { items: items.slice(0, 12).map((item, i) => ({ label: item.label ?? `Item ${i + 1}`, text: item.text, detail: item.detail })) },
+    caption: 'Card grid summary of article items.'
+  }
+}
+
+export function selectRelationVisual(items: InfographicSectionItem[], corpus: string): InfographicVisual | undefined {
+  if (items.length < 2) return undefined
+  if (/\b(hierarchy|taxonomy|category|organization|structure|层级|分类|组织|结构)\b/i.test(corpus)) {
+    return {
+      type: 'hierarchy-tree',
+      data: {
+        items: items.slice(0, 8).map((item, i) => ({
+          label: item.label ?? `Node ${i + 1}`,
+          text: item.text,
+          ...(i > 0 ? { parent: Math.max(0, Math.floor((i - 1) / 2)) } : {})
+        }))
+      },
+      caption: 'Hierarchy inferred from article structure.'
+    }
+  }
+  if (/\b(cause|effect|depends?|relationship|influence|drives?|leads to|because|导致|依赖|关系|影响|因果)\b/i.test(corpus)) {
+    return {
+      type: 'relation-flow',
+      data: {
+        nodes: items.slice(0, 8).map((item, i) => ({ label: item.label ?? `Node ${i + 1}`, detail: item.text })),
+        edges: items.slice(1, 8).map((_, i) => ({ from: i, to: i + 1 }))
+      },
+      caption: 'Directed relation flow inferred from article text.'
+    }
+  }
+  return undefined
+}

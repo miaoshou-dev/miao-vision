@@ -2,8 +2,10 @@ import type { InfographicSectionItem } from '../article-infographic'
 import {
   COMPOSITION_CONFIDENCE_THRESHOLD,
   type CompositionDecision,
-  type InfographicCompositionType
+  type InfographicCompositionType,
+  type VisualRecommendation
 } from './composition-decision'
+import type { InfographicVisualType } from './types'
 
 export interface CompositionPlannerInput {
   facts: InfographicSectionItem[]
@@ -136,6 +138,42 @@ export function planComposition(input: CompositionPlannerInput): CompositionDeci
       type: c.type,
       reason: c.signals[0] ?? 'Available alternate composition'
     })),
+    visualRecommendations: planVisualRecommendations(input, text),
     needsUserChoice
   }
+}
+
+function visual(type: InfographicVisualType, score: number, reason: string, signals: string[], blockedReason?: string): VisualRecommendation {
+  return { visualType: type, score: Number(score.toFixed(2)), reason, signals, ...(blockedReason ? { blockedReason } : {}) }
+}
+
+function planVisualRecommendations(input: CompositionPlannerInput, text: string): VisualRecommendation[] {
+  const recs: VisualRecommendation[] = []
+  const sequenceItems = Math.max(input.timeline.length, input.processItems.length, input.lifecycleFacts.length)
+  const comparisonItems = Math.max(input.comparison.length, input.tableRows.length > 0 ? input.tableRows.length - 1 : 0)
+  const listItems = Math.max(input.takeaways.length, input.processItems.length)
+
+  if (sequenceItems >= 3 && hasAny(text, [/roadmap|milestone|phase|stage|launch|rollout|plan/i, /路线图|里程碑|阶段|规划/])) {
+    recs.push(visual('roadmap-sequence', 0.86, 'Article has phased roadmap or milestone language.', ['sequence', 'roadmap'], sequenceItems > 8 ? 'more than 8 stages will be truncated' : undefined))
+  }
+  if (comparisonItems >= 4 && hasAny(text, [/priority|impact|effort|risk|likelihood|urgent/i, /优先级|风险|影响|紧急/])) {
+    recs.push(visual('quadrant-priority', 0.84, 'Article frames items by priority, risk, impact, or effort.', ['quadrant', 'decision matrix']))
+  }
+  if (listItems >= 3 && hasAny(text, [/pyramid|layer|level|foundation|maturity|capability/i, /层级|金字塔|基础|能力|成熟度/])) {
+    recs.push(visual('pyramid-list', 0.78, 'Article describes layered or maturity-style items.', ['list', 'hierarchy']))
+  }
+  if (listItems >= 2) {
+    recs.push(visual('grid-list', 0.64, 'Article has multiple standalone list items.', ['list', 'cards'], listItems > 12 ? 'more than 12 items will be truncated' : undefined))
+  }
+  if (hasAny(text, [/hierarchy|taxonomy|category|organization|structure/i, /层级|分类|组织|结构/])) {
+    recs.push(visual('hierarchy-tree', 0.76, 'Article includes hierarchy, taxonomy, or structure language.', ['hierarchy'], input.takeaways.length > 12 ? 'more than 12 nodes will be truncated' : undefined))
+  }
+  if (hasAny(text, [/cause|effect|depends?|relationship|influence|drives?|leads to|because/i, /导致|依赖|关系|影响|因果/])) {
+    recs.push(visual('relation-flow', 0.74, 'Article includes cause, dependency, or relation language.', ['relation', 'flow']))
+  }
+  if (input.facts.filter(f => f.value).length >= 2) {
+    recs.push(visual('kpi-strip', 0.62, 'Article includes multiple numeric facts.', ['metric-highlight']))
+  }
+
+  return recs.sort((a, b) => b.score - a.score).slice(0, 5)
 }

@@ -91,6 +91,7 @@ Options:
   miao-viz article --spec-input <spec.json> --output <file> [options]
   miao-viz article --bundle-input <bundle.json> --output <file> [options]
   miao-viz article analyze <file> [--output <context.json>]
+  miao-viz article catalog [--for-llm]
 
 Convert a local article into a static infographic artifact, render a
 pre-built InfographicSpec JSON, render an atomic multi-chart bundle, or
@@ -99,6 +100,7 @@ analyze an article for LLM-driven spec generation.
 Subcommands:
   analyze               Extract article structure (headings, sections,
                         paragraphs, terms) for LLM consumption
+  catalog               List article infographic structures/templates
 
 Options:
   --output <file>         Output file path (required for render, optional for analyze)

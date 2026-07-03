@@ -11,8 +11,14 @@ import {
   kpiStripDataSchema,
   metricBarsDataSchema,
   partToWholeDataSchema,
+  gridListDataSchema,
+  hierarchyTreeDataSchema,
+  pyramidListDataSchema,
   processFlowDataSchema,
+  quadrantPriorityDataSchema,
   rankedListChartDataSchema,
+  relationFlowDataSchema,
+  roadmapSequenceDataSchema,
   systemDiagramDataSchema,
   timelinePathDataSchema,
   tradeoffMatrixDataSchema
@@ -45,24 +51,26 @@ export interface InfographicBundleSpec {
   }
 }
 
-const visualSchemas = [
-  { type: z.literal('kpi-strip'), data: kpiStripDataSchema },
-  { type: z.literal('metric-bars'), data: metricBarsDataSchema },
-  { type: z.literal('process-flow'), data: processFlowDataSchema },
-  { type: z.literal('concept-contrast'), data: conceptContrastDataSchema },
-  { type: z.literal('timeline-path'), data: timelinePathDataSchema },
-  { type: z.literal('part-to-whole'), data: partToWholeDataSchema },
-  { type: z.literal('before-after'), data: beforeAfterDataSchema },
-  { type: z.literal('tradeoff-matrix'), data: tradeoffMatrixDataSchema },
-  { type: z.literal('ranked-list-chart'), data: rankedListChartDataSchema },
-  { type: z.literal('system-diagram'), data: systemDiagramDataSchema },
-  { type: z.literal('callout-diagram'), data: calloutDiagramDataSchema },
-  { type: z.literal('icon-cluster'), data: iconClusterDataSchema }
-] as const
-
-const bundleVisualSchema = z.discriminatedUnion('type', visualSchemas.map(s =>
-  z.object({ type: s.type, data: s.data, caption: z.string().optional() })
-) as any)
+const bundleVisualSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('kpi-strip'), data: kpiStripDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('metric-bars'), data: metricBarsDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('process-flow'), data: processFlowDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('concept-contrast'), data: conceptContrastDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('timeline-path'), data: timelinePathDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('part-to-whole'), data: partToWholeDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('before-after'), data: beforeAfterDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('tradeoff-matrix'), data: tradeoffMatrixDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('ranked-list-chart'), data: rankedListChartDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('system-diagram'), data: systemDiagramDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('callout-diagram'), data: calloutDiagramDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('icon-cluster'), data: iconClusterDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('quadrant-priority'), data: quadrantPriorityDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('roadmap-sequence'), data: roadmapSequenceDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('hierarchy-tree'), data: hierarchyTreeDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('relation-flow'), data: relationFlowDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('pyramid-list'), data: pyramidListDataSchema, caption: z.string().optional() }),
+  z.object({ type: z.literal('grid-list'), data: gridListDataSchema, caption: z.string().optional() }),
+])
 
 const bundleBlockSchema = z.object({
   id: z.string().regex(/^fig-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*$/, 'block id must look like fig-01-market-timeline'),

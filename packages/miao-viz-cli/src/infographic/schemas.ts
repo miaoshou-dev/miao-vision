@@ -127,6 +127,54 @@ export const iconClusterDataSchema = z.object({
   items: z.array(iconClusterItemSchema).min(1).max(12)
 })
 
+const labeledDetailItemSchema = z.object({
+  label: z.string().min(1),
+  text: z.string().min(1),
+  detail: z.string().optional()
+})
+
+export const quadrantPriorityDataSchema = z.object({
+  items: z.array(labeledDetailItemSchema).length(4),
+  xLabel: z.string().optional(),
+  yLabel: z.string().optional()
+})
+
+export const roadmapSequenceDataSchema = z.object({
+  items: z.array(z.object({
+    label: z.string().optional(),
+    text: z.string().min(1),
+    detail: z.string().optional()
+  })).min(3).max(8)
+})
+
+export const hierarchyTreeDataSchema = z.object({
+  items: z.array(z.object({
+    label: z.string().min(1),
+    text: z.string().optional(),
+    parent: z.number().int().min(0).optional()
+  })).min(2).max(12)
+})
+
+export const relationFlowDataSchema = z.object({
+  nodes: z.array(z.object({
+    label: z.string().min(1),
+    detail: z.string().optional()
+  })).min(2).max(12),
+  edges: z.array(z.object({
+    from: z.number().int().min(0),
+    to: z.number().int().min(0),
+    label: z.string().optional()
+  })).min(1).max(18)
+})
+
+export const pyramidListDataSchema = z.object({
+  items: z.array(labeledDetailItemSchema).min(3).max(6)
+})
+
+export const gridListDataSchema = z.object({
+  items: z.array(labeledDetailItemSchema).min(2).max(12)
+})
+
 export const visualDataSchemas = {
   'kpi-strip': kpiStripDataSchema,
   'metric-bars': metricBarsDataSchema,
@@ -139,5 +187,11 @@ export const visualDataSchemas = {
   'ranked-list-chart': rankedListChartDataSchema,
   'system-diagram': systemDiagramDataSchema,
   'callout-diagram': calloutDiagramDataSchema,
-  'icon-cluster': iconClusterDataSchema
+  'icon-cluster': iconClusterDataSchema,
+  'quadrant-priority': quadrantPriorityDataSchema,
+  'roadmap-sequence': roadmapSequenceDataSchema,
+  'hierarchy-tree': hierarchyTreeDataSchema,
+  'relation-flow': relationFlowDataSchema,
+  'pyramid-list': pyramidListDataSchema,
+  'grid-list': gridListDataSchema
 } as const

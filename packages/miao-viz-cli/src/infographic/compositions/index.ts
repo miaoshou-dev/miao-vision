@@ -160,11 +160,11 @@ function hasDashboardData(spec: InfographicSpec): boolean {
 }
 
 function hasExplainerData(spec: InfographicSpec): boolean {
-  return spec.sections.some(s => ['system-diagram', 'callout-diagram', 'process-flow'].includes(s.visual?.type ?? ''))
+  return spec.sections.some(s => ['system-diagram', 'callout-diagram', 'process-flow', 'relation-flow', 'hierarchy-tree'].includes(s.visual?.type ?? ''))
 }
 
 function hasComparisonData(spec: InfographicSpec): boolean {
-  return spec.sections.some(s => ['concept-contrast', 'tradeoff-matrix', 'before-after'].includes(s.visual?.type ?? '')) ||
+  return spec.sections.some(s => ['concept-contrast', 'tradeoff-matrix', 'before-after', 'quadrant-priority'].includes(s.visual?.type ?? '')) ||
     spec.sections.some(s => s.type === 'comparison' && s.items.length >= 2)
 }
 

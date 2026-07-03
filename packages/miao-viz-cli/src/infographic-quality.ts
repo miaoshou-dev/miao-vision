@@ -13,6 +13,10 @@ export type InfographicWarningCode =
   | 'lifecycle_missing_actions'
   | 'dashboard_missing_kpis'
   | 'comparison_missing_criteria'
+  | 'visual_item_limit_exceeded'
+  | 'visual_text_too_long'
+  | 'hierarchy_too_deep'
+  | 'relation_too_dense'
 
 export interface InfographicWarning {
   code: InfographicWarningCode
@@ -28,7 +32,7 @@ export interface InfographicQualityReport {
   warnings: InfographicWarning[]
 }
 
-const SVG_VISUAL_TYPES: InfographicVisualType[] = ['metric-bars', 'process-flow', 'concept-contrast', 'timeline-path', 'part-to-whole', 'before-after', 'tradeoff-matrix', 'ranked-list-chart', 'system-diagram', 'callout-diagram', 'icon-cluster']
+const SVG_VISUAL_TYPES: InfographicVisualType[] = ['metric-bars', 'process-flow', 'concept-contrast', 'timeline-path', 'part-to-whole', 'before-after', 'tradeoff-matrix', 'ranked-list-chart', 'system-diagram', 'callout-diagram', 'icon-cluster', 'quadrant-priority', 'roadmap-sequence', 'hierarchy-tree', 'relation-flow', 'pyramid-list', 'grid-list']
 const QUANTIFIED_VISUAL_TYPES: InfographicVisualType[] = ['kpi-strip', 'metric-bars', 'part-to-whole', 'ranked-list-chart']
 
 export function assessInfographicQuality(spec: InfographicSpec): InfographicQualityReport {
@@ -106,5 +110,50 @@ export function assessInfographicQuality(spec: InfographicSpec): InfographicQual
     warnings.push({ code: 'dashboard_missing_kpis', message: 'strategy-dashboard requires at least one kpi-strip visual for the KPI header.' })
   }
 
+  for (const section of visualSections) {
+    const visual = section.visual!
+    const data = visual.data as Record<string, unknown>
+    const itemCount = Array.isArray(data.items) ? data.items.length : Array.isArray(data.nodes) ? data.nodes.length : 0
+    if (itemCount > 12) {
+      warnings.push({ code: 'visual_item_limit_exceeded', message: `${visual.type} has ${itemCount} items; dense article visuals should stay at or below 12.` })
+    }
+    const textValues = collectVisualText(data)
+    if (textValues.some(value => value.length > 180)) {
+      warnings.push({ code: 'visual_text_too_long', message: `${visual.type} contains text longer than 180 characters; it may crowd the rendered visual.` })
+    }
+    if (visual.type === 'hierarchy-tree') {
+      const depth = hierarchyDepth(data.items as Array<{ parent?: number }> | undefined)
+      if (depth > 3) warnings.push({ code: 'hierarchy_too_deep', message: `hierarchy-tree depth is ${depth}; keep article hierarchies to 3 levels or fewer.` })
+    }
+    if (visual.type === 'relation-flow') {
+      const edges = Array.isArray(data.edges) ? data.edges.length : 0
+      if (edges > 18) warnings.push({ code: 'relation_too_dense', message: `relation-flow has ${edges} edges; dense relation maps may be hard to read on mobile.` })
+    }
+  }
+
   return { visualComponentCount, svgVisualCount, textOnlySectionCount: textOnlySections.length, quantifiedVisualCount, averageWordsPerSection, warnings }
+}
+
+function collectVisualText(value: unknown): string[] {
+  if (typeof value === 'string') return [value]
+  if (Array.isArray(value)) return value.flatMap(collectVisualText)
+  if (value && typeof value === 'object') return Object.values(value).flatMap(collectVisualText)
+  return []
+}
+
+function hierarchyDepth(items?: Array<{ parent?: number }>): number {
+  if (!items) return 0
+  let max = 1
+  for (let i = 0; i < items.length; i += 1) {
+    let depth = 1
+    let parent = items[i].parent
+    const seen = new Set<number>()
+    while (parent !== undefined && items[parent] && !seen.has(parent)) {
+      seen.add(parent)
+      depth += 1
+      parent = items[parent].parent
+    }
+    max = Math.max(max, depth)
+  }
+  return max
 }

@@ -1573,6 +1573,59 @@ describe('article composition layer (P0)', () => {
 	    expect(parsed.choices?.map(choice => choice.type)).toContain('explainer-map')
 	  })
 
+  it('lists article-only infographic templates for LLM selection', () => {
+    const out = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'article', 'catalog', '--for-llm'], { encoding: 'utf8' })
+    const parsed = JSON.parse(out) as { ok: boolean; value: { templates: Array<[string, string, string]> } }
+    expect(parsed.ok).toBe(true)
+    expect(parsed.value.templates.map(t => t[0])).toContain('roadmap-sequence')
+    expect(parsed.value.templates.map(t => t[0])).toContain('quadrant-priority')
+  })
+
+  it('validates and renders new article visual structures', () => {
+    const spec = {
+      title: 'New structures',
+      style: 'editorial',
+      composition: { type: 'article-linear' },
+      compositionDecision: compositionDecision('article-linear'),
+      summary: 'Exercise new article visual structures.',
+      sections: [
+        { type: 'process', title: 'Roadmap', items: [{ text: 'One' }], visual: { type: 'roadmap-sequence', data: { items: [{ label: 'Phase 1', text: 'Start' }, { label: 'Phase 2', text: 'Scale' }, { label: 'Phase 3', text: 'Optimize' }] } } },
+        { type: 'comparison', title: 'Priority', items: [{ text: 'One' }], visual: { type: 'quadrant-priority', data: { items: [{ label: 'Do', text: 'High impact' }, { label: 'Plan', text: 'Needs work' }, { label: 'Defer', text: 'Low value' }, { label: 'Watch', text: 'Potential risk' }] } } },
+        { type: 'takeaways', title: 'Hierarchy', items: [{ text: 'One' }], visual: { type: 'hierarchy-tree', data: { items: [{ label: 'Root' }, { label: 'Branch A', parent: 0 }, { label: 'Branch B', parent: 0 }] } } },
+        { type: 'takeaways', title: 'Relations', items: [{ text: 'One' }], visual: { type: 'relation-flow', data: { nodes: [{ label: 'Input' }, { label: 'Output' }], edges: [{ from: 0, to: 1 }] } } },
+        { type: 'takeaways', title: 'Pyramid', items: [{ text: 'One' }], visual: { type: 'pyramid-list', data: { items: [{ label: 'Base', text: 'Foundation' }, { label: 'Middle', text: 'Capability' }, { label: 'Top', text: 'Outcome' }] } } },
+        { type: 'takeaways', title: 'Grid', items: [{ text: 'One' }], visual: { type: 'grid-list', data: { items: [{ label: 'A', text: 'Alpha' }, { label: 'B', text: 'Beta' }] } } }
+      ],
+      metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
+    }
+    const parsed = infographicSpecSchema.safeParse(spec)
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) return
+    const html = renderInfographicHtml(parsed.data)
+    expect(html).toContain('Phase 1')
+    expect(html).toContain('<svg')
+    expect(html).toContain('Priority')
+  })
+
+  it('auto generation includes article visual recommendations', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-article-catalog-'))
+    const file = join(dir, 'roadmap.md')
+    writeFileSync(file, [
+      '# Launch roadmap',
+      '',
+      'The plan has three stages: phase one foundation, phase two rollout, and phase three optimization.',
+      '',
+      '- Stage one builds the foundation.',
+      '- Stage two rolls out the product.',
+      '- Stage three optimizes adoption.',
+      '- Priority work should balance impact and effort.'
+    ].join('\n'), 'utf8')
+    const result = generateInfographicFromFile(file, 'editorial')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.spec.compositionDecision.visualRecommendations?.some(r => r.visualType === 'roadmap-sequence')).toBe(true)
+  })
+
   it('existing article fixtures still pass with composition layer', () => {
     const quality = readFileSync('test_data/article-spec-quality.json', 'utf8')
     const parsed = infographicSpecSchema.safeParse(JSON.parse(quality))

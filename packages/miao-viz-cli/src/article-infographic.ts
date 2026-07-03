@@ -3,9 +3,12 @@ import { extname, basename } from 'node:path'
 import { z } from 'zod'
 import { agentError, ok } from './errors'
 import type { AgentResult } from './types'
+import type { InfographicVisualType } from './infographic/types'
+export type { InfographicVisualType } from './infographic/types'
 import {
   collectFacts, collectTimeline, collectComparison, collectTakeaways,
-  detectLifecyclePoints, detectProcessItems, selectFactsVisual, selectTimelineVisual, selectProcessVisual
+  detectLifecyclePoints, detectProcessItems, selectFactsVisual, selectTimelineVisual, selectProcessVisual,
+  selectSequenceVisual, selectComparisonVisual, selectListVisual, selectRelationVisual
 } from './infographic/planner'
 import { planComposition } from './infographic/composition-planner'
 import {
@@ -19,7 +22,9 @@ import {
   kpiStripDataSchema, metricBarsDataSchema, processFlowDataSchema,
   conceptContrastDataSchema, timelinePathDataSchema, partToWholeDataSchema,
   beforeAfterDataSchema, tradeoffMatrixDataSchema, rankedListChartDataSchema,
-  systemDiagramDataSchema, calloutDiagramDataSchema, iconClusterDataSchema
+  systemDiagramDataSchema, calloutDiagramDataSchema, iconClusterDataSchema,
+  quadrantPriorityDataSchema, roadmapSequenceDataSchema, hierarchyTreeDataSchema,
+  relationFlowDataSchema, pyramidListDataSchema, gridListDataSchema
 } from './infographic/schemas'
 import { countOrderedPhasePoints, hasKpiVisual } from './infographic/compositions/helpers'
 
@@ -36,20 +41,6 @@ export interface InfographicSectionItem {
   text: string
   detail?: string
 }
-
-export type InfographicVisualType =
-  | 'kpi-strip'
-  | 'metric-bars'
-  | 'process-flow'
-  | 'concept-contrast'
-  | 'timeline-path'
-  | 'part-to-whole'
-  | 'before-after'
-  | 'tradeoff-matrix'
-  | 'ranked-list-chart'
-  | 'system-diagram'
-  | 'callout-diagram'
-  | 'icon-cluster'
 
 export interface InfographicVisual {
   type: InfographicVisualType
@@ -107,7 +98,13 @@ const visualSchemas = [
   { type: z.literal('ranked-list-chart'), data: rankedListChartDataSchema },
   { type: z.literal('system-diagram'), data: systemDiagramDataSchema },
   { type: z.literal('callout-diagram'), data: calloutDiagramDataSchema },
-  { type: z.literal('icon-cluster'), data: iconClusterDataSchema }
+  { type: z.literal('icon-cluster'), data: iconClusterDataSchema },
+  { type: z.literal('quadrant-priority'), data: quadrantPriorityDataSchema },
+  { type: z.literal('roadmap-sequence'), data: roadmapSequenceDataSchema },
+  { type: z.literal('hierarchy-tree'), data: hierarchyTreeDataSchema },
+  { type: z.literal('relation-flow'), data: relationFlowDataSchema },
+  { type: z.literal('pyramid-list'), data: pyramidListDataSchema },
+  { type: z.literal('grid-list'), data: gridListDataSchema }
 ] as const
 
 const infographicVisualSchema = z.discriminatedUnion('type', visualSchemas.map(s =>
@@ -316,6 +313,7 @@ function parseArticle(text: string, file: string): ParsedArticle {
 
 function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, file: string): InfographicSpec {
   const evidence = [...parsed.listItems, ...sentences(parsed.paragraphs.join(' '))]
+  const corpus = [...parsed.paragraphs, ...parsed.listItems].join(' ')
   const lifecycleFacts = detectLifecyclePoints(evidence)
   const facts = lifecycleFacts.length >= 3 ? lifecycleFacts : collectFacts(evidence)
   const timeline = collectTimeline(evidence)
@@ -345,7 +343,7 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
     }
   ]
 
-  const processVisual = selectProcessVisual(processItems)
+  const processVisual = selectSequenceVisual(processItems, corpus) ?? selectProcessVisual(processItems)
   if (processVisual) {
     sections.push({
       type: 'process',
@@ -376,7 +374,8 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
     sections.push({ type: 'timeline', title: 'Timeline', items: timeline.slice(0, 6), ...(v ? { visual: v } : {}) })
   }
   if (comparison.length > 1) {
-    sections.push({ type: 'comparison', title: 'Comparison', items: comparison.slice(0, 6) })
+    const v = selectComparisonVisual(comparison, corpus)
+    sections.push({ type: 'comparison', title: 'Comparison', items: comparison.slice(0, 6), ...(v ? { visual: v } : {}) })
   }
   if (parsed.quotes.length > 0) {
     sections.push({
@@ -386,7 +385,10 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
       items: parsed.quotes.slice(0, 3).map(text => ({ text }))
     })
   }
-  if (takeaways.length > 0) sections.push({ type: 'takeaways', title: 'Takeaways', items: takeaways.slice(0, 5) })
+  if (takeaways.length > 0) {
+    const v = selectRelationVisual(takeaways, corpus) ?? selectListVisual(takeaways, corpus)
+    sections.push({ type: 'takeaways', title: 'Takeaways', items: takeaways.slice(0, 5), ...(v ? { visual: v } : {}) })
+  }
 
   return {
     title: parsed.title,
