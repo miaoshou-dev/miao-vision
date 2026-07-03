@@ -3,10 +3,16 @@ import type { InfographicSpec, InfographicStyle } from './article-infographic'
 import { getInfographicTokens } from './infographic/primitives/theme'
 import { renderInfographicComposition } from './infographic/compositions/index'
 import { lifecycleCurveStyles } from './infographic/compositions/lifecycle-curve'
+import { strategyDashboardStyles } from './infographic/compositions/strategy-dashboard'
+import { explainerMapStyles } from './infographic/compositions/explainer-map'
+import { comparisonMatrixStyles } from './infographic/compositions/comparison-matrix'
 
 const COMPOSITION_STYLES: Record<string, string> = {
   'article-linear': '',
   'lifecycle-curve': lifecycleCurveStyles,
+  'strategy-dashboard': strategyDashboardStyles,
+  'explainer-map': explainerMapStyles,
+  'comparison-matrix': comparisonMatrixStyles,
 }
 
 export function renderInfographicHtml(spec: InfographicSpec): string {

@@ -3,6 +3,19 @@
   "subtitle": "A structured guide to shipping your next feature",
   "source": "https://example.com/launch-playbook",
   "style": "editorial",
+  "composition": { "type": "article-linear", "emphasis": "narrative" },
+  "compositionDecision": {
+    "recommended": "article-linear",
+    "selected": "article-linear",
+    "confidence": 0.86,
+    "rationale": "Template fixture exercises all section renderers in a linear article layout.",
+    "signals": ["template coverage fixture", "multi-section article flow"],
+    "dataShape": ["process, pros-cons, stat-grid, risk-matrix, checklist sections"],
+    "alternatives": [
+      { "type": "strategy-dashboard", "reason": "Readiness metrics and launch checklist could support a dashboard." }
+    ],
+    "needsUserChoice": false
+  },
   "summary": "Launching a product feature requires coordinating engineering, marketing, and support across six clear stages. The pros and cons of an aggressive vs cautious approach, key readiness metrics, risk factors, and a launch-day checklist.",
   "sections": [
     {

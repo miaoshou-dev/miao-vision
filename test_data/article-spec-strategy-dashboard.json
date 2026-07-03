@@ -1,0 +1,56 @@
+{
+  "title": "Q3 Growth Decision Brief",
+  "subtitle": "KPI, risks, and next actions for the executive team",
+  "style": "executive",
+  "composition": { "type": "strategy-dashboard", "emphasis": "actions" },
+  "compositionDecision": {
+    "recommended": "strategy-dashboard",
+    "selected": "strategy-dashboard",
+    "confidence": 0.92,
+    "rationale": "The brief combines KPI metrics, risks, and recommended actions.",
+    "signals": ["business decision brief", "KPI metrics", "action recommendations"],
+    "dataShape": ["kpi-strip visual", "risk matrix", "checklist actions"],
+    "alternatives": [
+      { "type": "article-linear", "reason": "Use for prose-first brief." }
+    ],
+    "needsUserChoice": false
+  },
+  "summary": "Revenue is ahead of target, conversion is below goal, and churn risk requires immediate onboarding action.",
+  "sections": [
+    {
+      "type": "facts",
+      "title": "Executive KPIs",
+      "visual": {
+        "type": "kpi-strip",
+        "data": {
+          "items": [
+            { "label": "Revenue", "value": 128, "unit": "%", "delta": "+28%" },
+            { "label": "Conversion", "value": 4.8, "unit": "%", "delta": "-0.7pp" },
+            { "label": "Churn Risk", "value": 12, "unit": "%", "delta": "+3pp" }
+          ]
+        }
+      },
+      "items": [{ "text": "Revenue is above target while conversion and churn need action." }]
+    },
+    {
+      "type": "risk-matrix",
+      "title": "Risks",
+      "items": [
+        { "label": "High", "text": "Churn rises in new enterprise accounts." },
+        { "label": "Medium", "text": "Pipeline quality falls after paid acquisition surge." },
+        { "label": "Low", "text": "Support SLA pressure increases during rollout." },
+        { "label": "Watch", "text": "Activation lag persists in self-serve segment." }
+      ]
+    },
+    {
+      "type": "checklist",
+      "title": "Next Actions",
+      "items": [
+        { "text": "Prioritize onboarding fixes for enterprise accounts." },
+        { "text": "Shift campaign budget toward high-intent sources." },
+        { "text": "Review churn cohort weekly until risk returns below 8%." }
+      ]
+    }
+  ],
+  "metadata": { "inputFile": "", "generatedAt": "2026-01-01T00:00:00.000Z", "wordCount": 110 }
+}

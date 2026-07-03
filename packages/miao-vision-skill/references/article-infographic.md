@@ -11,10 +11,12 @@ The agent understands the article and writes an `InfographicSpec`; the CLI valid
 1. If the input is a URL, fetch/open the page and extract the main article content. Preserve title, date/author if available, headings, body text, lists, tables, and key quotes.
 2. Save normalized Markdown to `/tmp/miao-vision/article.md`.
 3. Extract compact, source-grounded claims (see below).
-4. Group claims into a short section outline (see below).
-5. Plan visual components: for each section, decide whether to use a text layout or a visual graphic (see Visual Components below).
-6. Write `/tmp/miao-vision/article-spec.json` including `section.visual` where applicable.
-7. Render with `--spec-input`:
+4. Use `references/composition-playbook.md` to choose narrative shape and data shape.
+5. Write `compositionDecision` before writing sections. This is required.
+6. Group claims into a short section outline (see below).
+7. Plan visual components: for each section, decide whether to use a text layout or a visual graphic (see Visual Components below).
+8. Write `/tmp/miao-vision/article-spec.json` including `composition`, `compositionDecision`, and `section.visual` where applicable.
+9. Render with `--spec-input`:
 
 ```bash
 miao-viz article \
@@ -23,7 +25,7 @@ miao-viz article \
   --output /tmp/miao-vision/article-infographic.html
 ```
 
-8. Return the generated artifact path to the user.
+10. Return the generated artifact path to the user.
 
 The CLI will emit visual density warnings if the spec is too text-heavy. Aim for at least 4 visual components and 2 SVG visuals per infographic.
 
@@ -113,6 +115,7 @@ Rules:
 After choosing the narrative arc, select a **composition type** for the page-level layout. The composition determines how sections are arranged as a whole.
 
 **Do not force short structured business text into the default article-linear layout.**
+**Do not treat `style: "editorial"` as a layout choice.** `style` is only the visual theme; `composition.type` is the rendering layout.
 
 | Input characteristics | Recommended composition |
 |---|---|
@@ -122,17 +125,29 @@ After choosing the narrative arc, select a **composition type** for the page-lev
 | Mechanism, system, cause-effect, how-it-works | `explainer-map` |
 | Option A vs B, tradeoffs, before/after alternatives | `comparison-matrix` |
 
-Add the composition to the spec:
+Add both `composition` and `compositionDecision` to the spec. The CLI rejects specs that omit `compositionDecision`.
 
 ```json
 {
-  "composition": { "type": "lifecycle-curve", "emphasis": "metrics" }
+  "composition": { "type": "lifecycle-curve", "emphasis": "metrics" },
+  "compositionDecision": {
+    "recommended": "lifecycle-curve",
+    "selected": "lifecycle-curve",
+    "confidence": 0.91,
+    "rationale": "The article has ordered lifecycle phases with numeric phase values.",
+    "signals": ["stage progression", "numeric phase metrics"],
+    "dataShape": ["4 ordered phase points", "metric-bars visual"],
+    "alternatives": [
+      { "type": "article-linear", "reason": "Use if the user wants narrative order instead of a curve." }
+    ],
+    "needsUserChoice": false
+  }
 }
 ```
 
 Allowed `emphasis` values: `narrative`, `metrics`, `actions`, `structure`.
 
-If no composition is set, the renderer defaults to `article-linear` (current behavior).
+If `needsUserChoice` is true, do not render. Ask the user to choose from the alternatives, then regenerate the spec.
 
 ## Section Outline
 
@@ -173,6 +188,17 @@ Write a valid `InfographicSpec` after claims and outline are stable.
   "subtitle": "One-line summary",
   "source": "https://example.com/article",
   "style": "editorial",
+  "composition": { "type": "article-linear", "emphasis": "narrative" },
+  "compositionDecision": {
+    "recommended": "article-linear",
+    "selected": "article-linear",
+    "confidence": 0.88,
+    "rationale": "The source is a long-form article with mixed narrative sections.",
+    "signals": ["long-form editorial structure", "mixed section flow"],
+    "dataShape": ["facts, quote, and takeaways"],
+    "alternatives": [],
+    "needsUserChoice": false
+  },
   "summary": "Two-sentence summary of the key finding.",
   "sections": [
     {
@@ -211,6 +237,13 @@ If `miao-viz article` returns `INVALID_INFOGRAPHIC_SPEC`, read the `issues` arra
 - Add at least one item to each section.
 - Use only allowed section types.
 - Ensure `title` and `summary` are non-empty strings.
+
+Composition-specific errors:
+
+- `MISSING_COMPOSITION_DECISION`: regenerate the spec using this workflow.
+- `COMPOSITION_DECISION_MISMATCH`: make `composition.type` match `compositionDecision.selected`.
+- `COMPOSITION_DATA_INSUFFICIENT`: repair the data shape required by the selected composition, or ask the user to choose a different composition.
+- `COMPOSITION_SELECTION_REQUIRED`: show `choices[]` to the user and regenerate the spec with their selection.
 
 ## Visual Components
 

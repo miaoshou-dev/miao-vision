@@ -1,0 +1,55 @@
+{
+  "title": "How The Local Render Pipeline Works",
+  "subtitle": "A mechanism map from source article to shareable artifact",
+  "style": "minimal",
+  "composition": { "type": "explainer-map", "emphasis": "structure" },
+  "compositionDecision": {
+    "recommended": "explainer-map",
+    "selected": "explainer-map",
+    "confidence": 0.91,
+    "rationale": "The article explains components, dependencies, and data flow.",
+    "signals": ["system mechanism", "component dependency", "process flow"],
+    "dataShape": ["system-diagram visual", "explanation panels"],
+    "alternatives": [
+      { "type": "article-linear", "reason": "Use when detailed prose is more important than structure." }
+    ],
+    "needsUserChoice": false
+  },
+  "summary": "Miao Vision keeps data local by turning article claims into a structured spec, validating it, and rendering a self-contained artifact.",
+  "sections": [
+    {
+      "type": "process",
+      "title": "Pipeline Map",
+      "visual": {
+        "type": "system-diagram",
+        "data": {
+          "nodes": [
+            { "label": "Article", "zone": "Input" },
+            { "label": "Claims", "zone": "Plan" },
+            { "label": "Spec", "zone": "Plan" },
+            { "label": "Validate", "zone": "CLI" },
+            { "label": "Render", "zone": "CLI" },
+            { "label": "HTML", "zone": "Output" }
+          ],
+          "edges": [
+            { "from": 0, "to": 1 },
+            { "from": 1, "to": 2 },
+            { "from": 2, "to": 3 },
+            { "from": 3, "to": 4 },
+            { "from": 4, "to": 5 }
+          ]
+        }
+      },
+      "items": [{ "text": "The pipeline converts source content into a validated artifact without uploading data." }]
+    },
+    {
+      "type": "takeaways",
+      "title": "Why It Matters",
+      "items": [
+        { "text": "The agent owns interpretation while the CLI owns deterministic validation." },
+        { "text": "The artifact remains self-contained and shareable." }
+      ]
+    }
+  ],
+  "metadata": { "inputFile": "", "generatedAt": "2026-01-01T00:00:00.000Z", "wordCount": 120 }
+}

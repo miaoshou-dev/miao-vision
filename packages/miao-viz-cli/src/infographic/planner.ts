@@ -3,6 +3,14 @@ import type { InfographicWarning } from '../infographic-quality'
 
 const DATE_PATTERN = /\b(?:\d{4}(?:[-/]\d{1,2}(?:[-/]\d{1,2})?)?|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4})\b/i
 const NUMBER_PATTERN = /(?:[$¥€]\s?\d[\d,.]*|\b\d+(?:\.\d+)?%?\b)/
+const NUMBER_GLOBAL_PATTERN = /[$¥€]?\s?\d[\d,.]*%?/g
+
+const LIFECYCLE_PHASES = [
+  { label: 'Introduction', regex: /\b(introduction|intro(?:ductory)?|launch)\b/i },
+  { label: 'Growth', regex: /\b(growth|expansion|scaling)\b/i },
+  { label: 'Maturity', regex: /\b(maturity|mature|peak|plateau|stable)\b/i },
+  { label: 'Decline', regex: /\b(decline|drop|fall|downturn|erosion)\b/i }
+] as const
 
 function cleanMarkdown(value: string): string {
   return value
@@ -87,6 +95,49 @@ export function detectProcessItems(listItems: string[], evidence: string[]): Inf
     .filter(text => stepPattern.test(text))
     .map(text => ({ text: compactText(text, 150) }))
   return uniqueItems(candidates)
+}
+
+export function detectLifecyclePoints(candidates: string[]): InfographicSectionItem[] {
+  const found = new Map<string, InfographicSectionItem>()
+
+  for (const raw of candidates) {
+    const text = compactText(raw, 180)
+    if (!text) continue
+
+    const numbers = Array.from(text.matchAll(NUMBER_GLOBAL_PATTERN)).map(match => match[0].trim())
+    if (numbers.length === 0) continue
+
+    const matchedPhases = LIFECYCLE_PHASES.filter(phase => phase.regex.test(text))
+    if (matchedPhases.length === 0) continue
+
+    if (
+      matchedPhases.length >= 2 &&
+      numbers.length >= 2 &&
+      matchedPhases[0]?.label === 'Introduction' &&
+      matchedPhases[1]?.label === 'Growth'
+    ) {
+      const phaseText = raw.toLowerCase().includes('from') && raw.toLowerCase().includes('to')
+        ? text
+        : `${matchedPhases[0].label} to ${matchedPhases[1].label}: ${text}`
+      if (!found.has('Introduction')) {
+        found.set('Introduction', { label: 'Introduction', value: numbers[0], text: phaseText })
+      }
+      if (!found.has('Growth')) {
+        found.set('Growth', { label: 'Growth', value: numbers[1], text: phaseText })
+      }
+      continue
+    }
+
+    for (const phase of matchedPhases) {
+      if (found.has(phase.label)) continue
+      const value = numbers[numbers.length - 1]
+      found.set(phase.label, { label: phase.label, value, text })
+    }
+  }
+
+  return LIFECYCLE_PHASES
+    .map(phase => found.get(phase.label))
+    .filter((item): item is InfographicSectionItem => Boolean(item))
 }
 
 export interface PlannedVisual {

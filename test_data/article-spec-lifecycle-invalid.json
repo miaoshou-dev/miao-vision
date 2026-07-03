@@ -3,7 +3,19 @@
   "subtitle": "Only two phases — insufficient for lifecycle-curve",
   "style": "editorial",
   "composition": { "type": "lifecycle-curve", "emphasis": "metrics" },
-  "summary": "This spec has only two data points, which should trigger a fallback to article-linear.",
+  "compositionDecision": {
+    "recommended": "lifecycle-curve",
+    "selected": "lifecycle-curve",
+    "confidence": 0.86,
+    "rationale": "The author selected lifecycle-curve, but the data is incomplete.",
+    "signals": ["lifecycle intent"],
+    "dataShape": ["2 phase points"],
+    "alternatives": [
+      { "type": "article-linear", "reason": "Use a linear layout if lifecycle data cannot be repaired." }
+    ],
+    "needsUserChoice": false
+  },
+  "summary": "This spec has only two data points, which should trigger a composition repair choice.",
   "sections": [
     {
       "type": "facts",

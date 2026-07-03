@@ -30,6 +30,19 @@ const tsvPath = 'test_data/agent-sales.tsv'
 const jsonPath = 'test_data/agent-sales.json'
 const articlePath = 'test_data/article-editorial.md'
 
+function compositionDecision(type: 'article-linear' | 'lifecycle-curve' | 'strategy-dashboard' | 'explainer-map' | 'comparison-matrix' = 'article-linear') {
+  return {
+    recommended: type,
+    selected: type,
+    confidence: 0.9,
+    rationale: `${type} selected for test fixture.`,
+    signals: ['test fixture shape'],
+    dataShape: ['test fixture data'],
+    alternatives: [{ type: 'article-linear' as const, reason: 'Default article structure.' }].filter(alt => alt.type !== type),
+    needsUserChoice: false
+  }
+}
+
 describe('agent data loader and profiler', () => {
   it('loads CSV, TSV, JSON, and XLSX files', () => {
     const csv = loadDataset(csvPath)
@@ -667,10 +680,12 @@ charts:
 
 describe('article --spec-input (T30–T33)', () => {
   const validSpec = {
-    title: 'Test Article',
-    subtitle: 'A test subtitle',
-    style: 'editorial',
-    summary: 'A short summary for testing purposes.',
+	    title: 'Test Article',
+	    subtitle: 'A test subtitle',
+	    style: 'editorial',
+	    composition: { type: 'article-linear' as const },
+	    compositionDecision: compositionDecision(),
+	    summary: 'A short summary for testing purposes.',
     sections: [
       {
         type: 'hero',
@@ -736,7 +751,14 @@ describe('article --spec-input (T30–T33)', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-bad-spec-'))
     const specFile = join(dir, 'bad.json')
     const htmlOutput = join(dir, 'out.html')
-    writeFileSync(specFile, JSON.stringify({ title: '', sections: [] }), 'utf8')
+	    writeFileSync(specFile, JSON.stringify({
+	      title: '',
+	      style: 'editorial',
+	      composition: { type: 'article-linear' },
+	      compositionDecision: compositionDecision(),
+	      summary: '',
+	      sections: []
+	    }), 'utf8')
 
     const out = runCliExpectFailure([
       'article',
@@ -803,10 +825,12 @@ describe('article infographic generation', () => {
   })
 
   it('uses dynamic section numbering regardless of which section types are present', () => {
-    const spec = {
-      title: 'Numbering Test',
-      style: 'editorial' as const,
-      summary: 'Testing dynamic section numbering.',
+	    const spec = {
+	      title: 'Numbering Test',
+	      style: 'editorial' as const,
+	      composition: { type: 'article-linear' as const },
+	      compositionDecision: compositionDecision(),
+	      summary: 'Testing dynamic section numbering.',
       sections: [
         { type: 'hero' as const, title: 'Numbering Test', emphasis: 'Lead.', items: [{ text: 'Lead.' }] },
         { type: 'takeaways' as const, title: 'First', items: [{ text: 'Item 1' }] },
@@ -874,9 +898,11 @@ describe('article infographic generation', () => {
   })
 
   it('accepts visual field in InfographicSection schema', () => {
-    const spec = {
-      title: 'Visual Test', style: 'editorial' as const,
-      summary: 'Testing visual field.',
+	    const spec = {
+	      title: 'Visual Test', style: 'editorial' as const,
+	      composition: { type: 'article-linear' as const },
+	      compositionDecision: compositionDecision(),
+	      summary: 'Testing visual field.',
       sections: [{
         type: 'facts' as const, title: 'Metrics', items: [{ text: 'Test item.' }],
         visual: { type: 'kpi-strip' as const, data: { items: [{ label: 'CPU', value: 4 }] }, caption: 'A test KPI' }
@@ -890,9 +916,11 @@ describe('article infographic generation', () => {
   })
 
   it('rejects unknown visual type via schema', () => {
-    const badSpec = {
-      title: 'Bad Visual', style: 'editorial' as const,
-      summary: 'Bad visual type.',
+	    const badSpec = {
+	      title: 'Bad Visual', style: 'editorial' as const,
+	      composition: { type: 'article-linear' as const },
+	      compositionDecision: compositionDecision(),
+	      summary: 'Bad visual type.',
       sections: [{
         type: 'facts' as const, title: 'X', items: [{ text: 'x' }],
         visual: { type: 'nonexistent', data: {} }
@@ -904,9 +932,11 @@ describe('article infographic generation', () => {
   })
 
   it('accepts notes as string or string[]', () => {
-    const spec = (notes: string | string[]) => ({
-      title: 'Notes Test', style: 'editorial' as const,
-      summary: 'Testing notes field.',
+	    const spec = (notes: string | string[]) => ({
+	      title: 'Notes Test', style: 'editorial' as const,
+	      composition: { type: 'article-linear' as const },
+	      compositionDecision: compositionDecision(),
+	      summary: 'Testing notes field.',
       sections: [{ type: 'facts' as const, title: 'Metrics', items: [{ text: 'Item 1' }], notes }],
       metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
     })
@@ -973,9 +1003,11 @@ describe('article infographic generation', () => {
   })
 
   it('quality: text-only spec emits warnings', () => {
-    const spec = {
-      title: 'Text Only', style: 'editorial' as const,
-      summary: 'A text-heavy article with no visual components.',
+	    const spec = {
+	      title: 'Text Only', style: 'editorial' as const,
+	      composition: { type: 'article-linear' as const },
+	      compositionDecision: compositionDecision(),
+	      summary: 'A text-heavy article with no visual components.',
       sections: [
         { type: 'hero' as const, title: 'Text Only', emphasis: 'No visuals.', items: [{ text: 'No visuals.' }] },
         { type: 'facts' as const, title: 'Facts', items: [{ value: '42%', text: 'Growth rate.' }, { value: '100', text: 'Total items count.' }] },
@@ -1099,6 +1131,27 @@ describe('article auto-extraction visual inference', () => {
     expect(['part-to-whole', 'ranked-list-chart', 'metric-bars', 'kpi-strip']).toContain(factsSec?.visual?.type)
   })
 
+  it('auto-selects lifecycle-curve composition for lifecycle-shaped content', () => {
+    const result = generateInfographicFromFile('test_data/article-lifecycle.md', 'editorial')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.spec.composition?.type).toBe('lifecycle-curve')
+    const factsSec = result.value.spec.sections.find(s => s.type === 'facts')
+    expect(factsSec?.visual?.type).toBe('metric-bars')
+    expect(factsSec?.items.map(item => item.label)).toEqual(['Introduction', 'Growth', 'Maturity', 'Decline'])
+  })
+
+  it('renders lifecycle-shaped article with lifecycle composition html', () => {
+    const result = generateInfographicFromFile('test_data/article-lifecycle.md', 'editorial')
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    const html = renderInfographicHtml(result.value.spec)
+    expect(html).toContain('data-composition-type="lifecycle-curve"')
+    expect(html).toContain('mv-lifecycle-curve-wrap')
+    expect(html).toContain('Introduction')
+    expect(html).toContain('Decline')
+  })
+
   it('data-heavy article has at least 4 visual component types', () => {
     const result = generateInfographicFromFile('test_data/article-data-heavy.md', 'editorial')
     expect(result.ok).toBe(true)
@@ -1195,11 +1248,12 @@ describe('article auto-extraction visual inference', () => {
 })
 
 describe('article composition layer (P0)', () => {
-  const validLifecycle = {
-    title: 'Lifecycle Test',
-    style: 'editorial' as const,
-    composition: { type: 'lifecycle-curve' as const, emphasis: 'metrics' as const },
-    summary: 'A test lifecycle summary.',
+	  const validLifecycle = {
+	    title: 'Lifecycle Test',
+	    style: 'editorial' as const,
+	    composition: { type: 'lifecycle-curve' as const, emphasis: 'metrics' as const },
+	    compositionDecision: compositionDecision('lifecycle-curve'),
+	    summary: 'A test lifecycle summary.',
     sections: [{
       type: 'facts' as const,
       title: 'Phases',
@@ -1277,7 +1331,7 @@ describe('article composition layer (P0)', () => {
     expect(html).toContain('<path')
   })
 
-  it('lifecycle fixture renders via CLI without warnings', () => {
+	  it('lifecycle fixture renders via CLI without warnings', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-lifecycle-test-'))
     const output = join(dir, 'out.html')
     const out = execFileSync('npm', [
@@ -1292,7 +1346,33 @@ describe('article composition layer (P0)', () => {
     if (result.ok) {
       expect(result.value.warnings.some(w => w.code.startsWith('composition'))).toBe(false)
     }
-  })
+	  })
+
+	  it('renders all implemented composition fixtures via CLI', () => {
+	    const fixtures = [
+	      ['article-linear', 'test_data/article-spec-quality.json', 'mv-hero'],
+	      ['lifecycle-curve', 'test_data/article-spec-lifecycle.json', 'mv-lifecycle-curve-wrap'],
+	      ['strategy-dashboard', 'test_data/article-spec-strategy-dashboard.json', 'mv-strategy-dashboard'],
+	      ['explainer-map', 'test_data/article-spec-explainer-map.json', 'mv-explainer-map'],
+	      ['comparison-matrix', 'test_data/article-spec-comparison-matrix.json', 'mv-composition-comparison']
+	    ]
+	    for (const [type, fixture, marker] of fixtures) {
+	      const dir = mkdtempSync(join(tmpdir(), `miao-${type}-`))
+	      const output = join(dir, 'out.html')
+	      const out = execFileSync('npm', [
+	        'run', '--silent', 'miao-viz', '--',
+	        'article',
+	        '--spec-input', fixture,
+	        '--format', 'html',
+	        '--output', output
+	      ], { encoding: 'utf8' })
+	      const result = JSON.parse(out) as { ok: boolean }
+	      expect(result.ok, `${type} should render`).toBe(true)
+	      const html = readFileSync(output, 'utf8')
+	      expect(html).toContain(`data-composition-type="${type}"`)
+	      expect(html).toContain(marker)
+	    }
+	  })
 
   it('lifecycle fixture html contains expected elements', () => {
     const html = renderInfographicHtml(validLifecycle)
@@ -1302,24 +1382,30 @@ describe('article composition layer (P0)', () => {
     expect(html).toContain('<circle')
   })
 
-  it('invalid lifecycle warns under normal mode', () => {
+  it('invalid lifecycle asks caller to choose instead of falling back', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-lifecycle-invalid-'))
     const output = join(dir, 'out.html')
-    const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', 'test_data/article-spec-lifecycle-invalid.json',
-      '--format', 'html',
-      '--output', output
-    ], { encoding: 'utf8' })
-    const result = JSON.parse(out) as { ok: boolean; value: { warnings: Array<{ code: string }> } }
-    expect(result.ok).toBe(true)
-    if (result.ok) {
-      expect(result.value.warnings.some(w => w.code === 'lifecycle_requires_ordered_points')).toBe(true)
+    try {
+      execFileSync('npm', [
+        'run', '--silent', 'miao-viz', '--',
+        'article',
+        '--spec-input', 'test_data/article-spec-lifecycle-invalid.json',
+        '--format', 'html',
+        '--output', output
+      ], { encoding: 'utf8' })
+      throw new Error('Expected invalid lifecycle to require composition selection')
+    } catch (e) {
+      const outputText = (e as { stdout?: Buffer | string }).stdout
+      const text = Buffer.isBuffer(outputText) ? outputText.toString('utf8') : String(outputText ?? '')
+      const result = JSON.parse(text) as { ok: boolean; code?: string; choices?: Array<{ type: string }> }
+      expect(result.ok).toBe(false)
+	      expect(result.code).toBe('COMPOSITION_DATA_INSUFFICIENT')
+      expect(result.choices?.map(choice => choice.type)).toContain('lifecycle-curve')
+      expect(result.choices?.map(choice => choice.type)).toContain('article-linear')
     }
   })
 
-  it('invalid lifecycle fails under strict mode', () => {
+	  it('invalid lifecycle requires composition selection before strict checks', () => {
     try {
       execFileSync('npm', [
         'run', '--silent', 'miao-viz', '--',
@@ -1335,9 +1421,53 @@ describe('article composition layer (P0)', () => {
       const text = Buffer.isBuffer(output) ? output.toString('utf8') : String(output ?? '')
       const parsed = JSON.parse(text) as { ok: boolean; code?: string }
       expect(parsed.ok).toBe(false)
-      expect(parsed.code).toBe('STRICT_VISUALS_FAILED')
+	      expect(parsed.code).toBe('COMPOSITION_DATA_INSUFFICIENT')
     }
-  })
+	  })
+
+	  it('rejects old specs without compositionDecision', () => {
+	    const out = runCliExpectFailure([
+	      'article',
+	      '--spec-input', 'test_data/article-spec-old-format.json',
+	      '--format', 'html',
+	      '--output', '/tmp/miao-old-spec.html'
+	    ])
+	    expect(JSON.parse(out).code).toBe('MISSING_COMPOSITION_DECISION')
+	  })
+
+	  it('rejects specs where composition and decision selected mismatch', () => {
+	    const dir = mkdtempSync(join(tmpdir(), 'miao-mismatch-'))
+	    const specFile = join(dir, 'spec.json')
+	    writeFileSync(specFile, JSON.stringify({
+	      title: 'Mismatch',
+	      style: 'editorial',
+	      composition: { type: 'article-linear' },
+	      compositionDecision: compositionDecision('comparison-matrix'),
+	      summary: 'Mismatch test.',
+	      sections: [{ type: 'takeaways', title: 'T', items: [{ text: 'x' }] }],
+	      metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
+	    }), 'utf8')
+	    const out = runCliExpectFailure([
+	      'article',
+	      '--spec-input', specFile,
+	      '--format', 'html',
+	      '--output', join(dir, 'out.html')
+	    ])
+	    expect(JSON.parse(out).code).toBe('COMPOSITION_DECISION_MISMATCH')
+	  })
+
+	  it('rejects specs that still need user composition choice', () => {
+	    const out = runCliExpectFailure([
+	      'article',
+	      '--spec-input', 'test_data/article-spec-low-confidence.json',
+	      '--format', 'html',
+	      '--output', '/tmp/miao-low-confidence.html'
+	    ])
+	    const parsed = JSON.parse(out) as { ok: boolean; code?: string; choices?: Array<{ type: string }> }
+	    expect(parsed.ok).toBe(false)
+	    expect(parsed.code).toBe('COMPOSITION_SELECTION_REQUIRED')
+	    expect(parsed.choices?.map(choice => choice.type)).toContain('explainer-map')
+	  })
 
   it('existing article fixtures still pass with composition layer', () => {
     const quality = readFileSync('test_data/article-spec-quality.json', 'utf8')

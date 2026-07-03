@@ -3,6 +3,18 @@
   "subtitle": "Market share progression through four strategic phases",
   "style": "editorial",
   "composition": { "type": "lifecycle-curve", "emphasis": "metrics" },
+  "compositionDecision": {
+    "recommended": "lifecycle-curve",
+    "selected": "lifecycle-curve",
+    "confidence": 0.94,
+    "rationale": "The spec contains ordered lifecycle phases with numeric market share values.",
+    "signals": ["ordered lifecycle phases", "numeric phase metrics"],
+    "dataShape": ["4 ordered phase points", "metric-bars visual"],
+    "alternatives": [
+      { "type": "article-linear", "reason": "Could render as linear prose if the curve is not desired." }
+    ],
+    "needsUserChoice": false
+  },
   "summary": "By adjusting strategy at each phase, the product achieved a 40% peak market share before a managed decline, laying groundwork for a renewal cycle.",
   "sections": [
     {

@@ -15,6 +15,8 @@ import { generateInfographicFromFile, loadInfographicSpec, parseArticleFormat, p
 import { renderInfographicHtml } from './article-html'
 import { exportInfographicToFile } from './article-export'
 import { assessInfographicQuality } from './infographic-quality'
+import { getCompositionRenderIssue } from './infographic/compositions/index'
+import { compositionSelectionRequired } from './cli-article-composition'
 import { analyzeDataset } from './analyzer'
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { printHelp } from './cli-help'
@@ -404,6 +406,8 @@ async function runArticle(args: CliArgs): Promise<unknown> {
     if (isAgentError(loaded)) return fail(loaded)
     const spec = loaded.value
     const quality = assessInfographicQuality(spec)
+    const compositionIssue = getCompositionRenderIssue(spec)
+    if (compositionIssue) return fail(compositionSelectionRequired(compositionIssue))
     if (strictVisuals) {
       const strictParsed = strictInfographicSpecSchema.safeParse(spec)
       if (!strictParsed.success) {
@@ -446,6 +450,8 @@ async function runArticle(args: CliArgs): Promise<unknown> {
 
   const generated = generateInfographicFromFile(file, style)
   if (isAgentError(generated)) return fail(generated)
+  const compositionIssue = getCompositionRenderIssue(generated.value.spec)
+  if (compositionIssue) return fail(compositionSelectionRequired(compositionIssue))
 
   if (format === 'json') {
     writeOutput(output, `${JSON.stringify(generated.value.spec, null, 2)}\n`)

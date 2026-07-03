@@ -1,0 +1,46 @@
+{
+  "title": "Build vs Buy Platform Decision",
+  "subtitle": "A structured comparison of two delivery options",
+  "style": "editorial",
+  "composition": { "type": "comparison-matrix", "emphasis": "structure" },
+  "compositionDecision": {
+    "recommended": "comparison-matrix",
+    "selected": "comparison-matrix",
+    "confidence": 0.93,
+    "rationale": "The source compares two options across shared criteria and ends with a recommendation.",
+    "signals": ["explicit A/B comparison", "tradeoff language", "shared decision criteria"],
+    "dataShape": ["concept-contrast visual", "2 comparable options", "verdict"],
+    "alternatives": [
+      { "type": "strategy-dashboard", "reason": "Use if the decision is mostly KPI-driven." }
+    ],
+    "needsUserChoice": false
+  },
+  "summary": "Buying accelerates launch while building gives long-term control; the recommendation depends on urgency and integration risk.",
+  "sections": [
+    {
+      "type": "comparison",
+      "title": "Option Comparison",
+      "visual": {
+        "type": "concept-contrast",
+        "data": {
+          "items": [
+            { "label": "Build", "text": "Maximum control", "Speed": "Slow", "Cost": "High upfront", "Control": "High" },
+            { "label": "Buy", "text": "Fastest path", "Speed": "Fast", "Cost": "Subscription", "Control": "Medium" }
+          ]
+        }
+      },
+      "items": [
+        { "label": "Build", "text": "Best when differentiation and integration control matter most." },
+        { "label": "Buy", "text": "Best when launch speed and vendor support matter most." }
+      ]
+    },
+    {
+      "type": "takeaways",
+      "title": "Verdict",
+      "items": [
+        { "text": "Buy now to meet the launch deadline, then revisit build once usage patterns stabilize." }
+      ]
+    }
+  ],
+  "metadata": { "inputFile": "", "generatedAt": "2026-01-01T00:00:00.000Z", "wordCount": 100 }
+}

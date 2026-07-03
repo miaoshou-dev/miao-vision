@@ -1,0 +1,27 @@
+{
+  "title": "Ambiguous Notes",
+  "style": "editorial",
+  "composition": { "type": "article-linear", "emphasis": "narrative" },
+  "compositionDecision": {
+    "recommended": "article-linear",
+    "selected": "article-linear",
+    "confidence": 0.52,
+    "rationale": "The content lacks a strong structure and needs user confirmation.",
+    "signals": ["weak structure"],
+    "dataShape": ["short notes"],
+    "alternatives": [
+      { "type": "explainer-map", "reason": "Could work if the user wants a mechanism view." },
+      { "type": "strategy-dashboard", "reason": "Could work if this is intended as a decision brief." }
+    ],
+    "needsUserChoice": true
+  },
+  "summary": "The notes could become several different infographic forms.",
+  "sections": [
+    {
+      "type": "takeaways",
+      "title": "Notes",
+      "items": [{ "text": "This source does not clearly indicate a preferred infographic structure." }]
+    }
+  ],
+  "metadata": { "inputFile": "", "generatedAt": "2026-01-01T00:00:00.000Z", "wordCount": 30 }
+}

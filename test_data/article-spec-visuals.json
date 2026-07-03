@@ -3,6 +3,20 @@
   "subtitle": "Latency, throughput, and cost comparison across three configurations",
   "source": "https://example.com/benchmark-2025",
   "style": "editorial",
+  "composition": { "type": "article-linear", "emphasis": "narrative" },
+  "compositionDecision": {
+    "recommended": "article-linear",
+    "selected": "article-linear",
+    "confidence": 0.9,
+    "rationale": "Visual catalog fixture intentionally renders every visual section in a linear sequence.",
+    "signals": ["visual coverage fixture", "many independent visual components"],
+    "dataShape": ["kpi, bars, process, contrast, timeline, system, callout, cluster visuals"],
+    "alternatives": [
+      { "type": "explainer-map", "reason": "System and callout visuals could support an explanation layout." },
+      { "type": "comparison-matrix", "reason": "Contrast and tradeoff visuals could support comparison layout." }
+    ],
+    "needsUserChoice": false
+  },
   "summary": "Reservoir sampling reduces recording size from 250MiB to 6MiB while preserving trace utility. Increasing heap from 1GiB to 6GiB eliminated allocation stalls but did not reduce latency — vCPUs had to increase from 2 to 10.",
   "sections": [
     {

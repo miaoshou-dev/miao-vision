@@ -5,8 +5,16 @@ import { agentError, ok } from './errors'
 import type { AgentResult } from './types'
 import {
   collectFacts, collectTimeline, collectComparison, collectTakeaways,
-  detectProcessItems, selectFactsVisual, selectTimelineVisual, selectProcessVisual
+  detectLifecyclePoints, detectProcessItems, selectFactsVisual, selectTimelineVisual, selectProcessVisual
 } from './infographic/planner'
+import { planComposition } from './infographic/composition-planner'
+import {
+  COMPOSITION_CONFIDENCE_THRESHOLD,
+  compositionDecisionSchema,
+  compositionTypeSchema,
+  type CompositionDecision,
+  type InfographicCompositionType
+} from './infographic/composition-decision'
 import {
   kpiStripDataSchema, metricBarsDataSchema, processFlowDataSchema,
   conceptContrastDataSchema, timelinePathDataSchema, partToWholeDataSchema,
@@ -58,13 +66,6 @@ export interface InfographicSection {
   visual?: InfographicVisual
 }
 
-export type InfographicCompositionType =
-  | 'article-linear'
-  | 'lifecycle-curve'
-  | 'strategy-dashboard'
-  | 'explainer-map'
-  | 'comparison-matrix'
-
 export interface InfographicComposition {
   type: InfographicCompositionType
   density?: 'compact' | 'standard' | 'long'
@@ -76,7 +77,8 @@ export interface InfographicSpec {
   subtitle?: string
   source?: string
   style: InfographicStyle
-  composition?: InfographicComposition
+  composition: InfographicComposition
+  compositionDecision: CompositionDecision
   summary: string
   sections: InfographicSection[]
   metadata: {
@@ -127,10 +129,10 @@ const infographicSectionSchema = z.object({
 })
 
 const infographicCompositionSchema = z.object({
-  type: z.enum(['article-linear', 'lifecycle-curve', 'strategy-dashboard', 'explainer-map', 'comparison-matrix']),
+  type: compositionTypeSchema,
   density: z.enum(['compact', 'standard', 'long']).optional(),
   emphasis: z.enum(['narrative', 'metrics', 'actions', 'structure']).optional(),
-}).optional()
+})
 
 const baseSpecSchema = z.object({
   title: z.string().min(1, 'title must not be empty'),
@@ -138,6 +140,7 @@ const baseSpecSchema = z.object({
   source: z.string().optional(),
   style: z.enum(['editorial', 'executive', 'minimal']).default('editorial'),
   composition: infographicCompositionSchema,
+  compositionDecision: compositionDecisionSchema,
   summary: z.string().min(1, 'summary must not be empty'),
   sections: z.array(infographicSectionSchema).min(1, 'sections must have at least one entry'),
   metadata: z.object({
@@ -145,6 +148,21 @@ const baseSpecSchema = z.object({
     generatedAt: z.string().default(() => new Date().toISOString()),
     wordCount: z.number().int().min(0).default(0)
   }).default(() => ({ inputFile: '', generatedAt: new Date().toISOString(), wordCount: 0 }))
+}).superRefine((spec, ctx) => {
+  if (spec.composition.type !== spec.compositionDecision.selected) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['compositionDecision', 'selected'],
+      message: `composition.type must match compositionDecision.selected (${spec.composition.type} !== ${spec.compositionDecision.selected})`
+    })
+  }
+  if (spec.compositionDecision.confidence < COMPOSITION_CONFIDENCE_THRESHOLD && !spec.compositionDecision.needsUserChoice) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['compositionDecision', 'needsUserChoice'],
+      message: `confidence below ${COMPOSITION_CONFIDENCE_THRESHOLD} requires needsUserChoice: true`
+    })
+  }
 })
 
 export const infographicSpecSchema = baseSpecSchema
@@ -178,8 +196,15 @@ export function loadInfographicSpec(file: string): AgentResult<InfographicSpec> 
   } catch (error) {
     return agentError('ARTICLE_INPUT_UNREADABLE', error instanceof Error ? error.message : 'Spec file could not be read.', { file })
   }
+  if (!raw || typeof raw !== 'object' || !('compositionDecision' in raw)) {
+    return agentError('MISSING_COMPOSITION_DECISION', 'InfographicSpec must include compositionDecision. Regenerate the spec with the current article workflow.', { file })
+  }
   const parsed = infographicSpecSchema.safeParse(raw)
   if (!parsed.success) {
+    const mismatch = parsed.error.issues.find(i => i.path.join('.') === 'compositionDecision.selected')
+    if (mismatch) {
+      return agentError('COMPOSITION_DECISION_MISMATCH', mismatch.message, { file, issues: parsed.error.issues.map(i => ({ path: i.path.join('.'), message: i.message })) })
+    }
     return agentError(
       'INVALID_INFOGRAPHIC_SPEC',
       `Spec validation failed: ${parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join('; ')}`,
@@ -291,12 +316,25 @@ function parseArticle(text: string, file: string): ParsedArticle {
 
 function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, file: string): InfographicSpec {
   const evidence = [...parsed.listItems, ...sentences(parsed.paragraphs.join(' '))]
-  const facts = collectFacts(evidence)
+  const lifecycleFacts = detectLifecyclePoints(evidence)
+  const facts = lifecycleFacts.length >= 3 ? lifecycleFacts : collectFacts(evidence)
   const timeline = collectTimeline(evidence)
   const comparison = collectComparison(evidence, parsed.tableRows)
   const takeaways = collectTakeaways(evidence, facts)
   const processItems = detectProcessItems(parsed.listItems, evidence)
   const summary = parsed.subtitle ?? takeaways[0]?.text ?? facts[0]?.text ?? 'A concise visual summary of the source article.'
+  const useLifecycleComposition = lifecycleFacts.length >= 3
+  const compositionDecision = planComposition({
+    facts,
+    timeline,
+    comparison,
+    takeaways,
+    processItems,
+    quotes: parsed.quotes,
+    paragraphs: parsed.paragraphs,
+    tableRows: parsed.tableRows,
+    lifecycleFacts
+  })
 
   const sections: InfographicSection[] = [
     {
@@ -318,7 +356,19 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
   }
 
   if (facts.length > 0) {
-    const v = selectFactsVisual(facts)
+    const v = useLifecycleComposition
+      ? {
+          type: 'metric-bars' as const,
+          data: {
+            items: facts.slice(0, 6).map(f => ({
+              label: f.label || f.text,
+              value: Number.parseFloat((f.value ?? '').replace(/[^0-9.\-]/g, '')) || 0,
+              unit: f.value?.includes('%') ? '%' : undefined
+            }))
+          },
+          caption: 'Lifecycle phase metrics compared side by side.'
+        }
+      : selectFactsVisual(facts)
     sections.push({ type: 'facts', title: 'Key Facts', items: facts.slice(0, 6), ...(v ? { visual: v } : {}) })
   }
   if (timeline.length > 1) {
@@ -343,6 +393,18 @@ function buildInfographicSpec(parsed: ParsedArticle, style: InfographicStyle, fi
     subtitle: parsed.subtitle,
     source: parsed.source,
     style,
+    composition: {
+      type: compositionDecision.selected,
+      density: compositionDecision.selected === 'article-linear' ? 'long' : 'compact',
+      emphasis: compositionDecision.selected === 'strategy-dashboard'
+        ? 'actions'
+        : compositionDecision.selected === 'explainer-map'
+          ? 'structure'
+          : compositionDecision.selected === 'lifecycle-curve' || useLifecycleComposition
+            ? 'metrics'
+            : 'narrative'
+    },
+    compositionDecision,
     summary,
     sections,
     metadata: {

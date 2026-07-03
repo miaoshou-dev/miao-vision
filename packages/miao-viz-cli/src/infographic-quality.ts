@@ -84,7 +84,7 @@ export function assessInfographicQuality(spec: InfographicSpec): InfographicQual
   if (hasCompositionType(spec, 'lifecycle-curve')) {
     const phaseCount = countOrderedPhasePoints(spec)
     if (phaseCount < 3) {
-      warnings.push({ code: 'lifecycle_requires_ordered_points', message: `lifecycle-curve requires at least 3 ordered phase points, found ${phaseCount}. Falling back to article-linear.` })
+      warnings.push({ code: 'lifecycle_requires_ordered_points', message: `lifecycle-curve requires at least 3 ordered phase points, found ${phaseCount}. Choose a different composition or add lifecycle data.` })
     } else {
       const hasNumeric = spec.sections.some(s =>
         s.visual?.type === 'metric-bars' &&

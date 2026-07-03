@@ -1,0 +1,14 @@
+{
+  "title": "Old Format Spec",
+  "style": "editorial",
+  "composition": { "type": "article-linear" },
+  "summary": "This fixture intentionally omits compositionDecision.",
+  "sections": [
+    {
+      "type": "takeaways",
+      "title": "Legacy",
+      "items": [{ "text": "Old specs must be regenerated." }]
+    }
+  ],
+  "metadata": { "inputFile": "", "generatedAt": "2026-01-01T00:00:00.000Z", "wordCount": 20 }
+}

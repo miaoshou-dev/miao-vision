@@ -3,6 +3,19 @@
   "subtitle": "How solar, wind, and battery storage are reshaping global power markets",
   "source": "https://example.com/renewable-energy-2025",
   "style": "editorial",
+  "composition": { "type": "article-linear", "emphasis": "narrative" },
+  "compositionDecision": {
+    "recommended": "article-linear",
+    "selected": "article-linear",
+    "confidence": 0.88,
+    "rationale": "Long-form editorial article with timeline, comparison, quote, and implications sections.",
+    "signals": ["long-form editorial structure", "multi-section narrative"],
+    "dataShape": ["sectioned article content", "timeline and comparison support"],
+    "alternatives": [
+      { "type": "comparison-matrix", "reason": "Solar vs wind comparison exists but is not the primary structure." }
+    ],
+    "needsUserChoice": false
+  },
   "summary": "Renewable energy capacity grew 24% in 2025, with solar accounting for more than half of all new installations worldwide. Battery storage costs fell below $80/kWh for the first time, making round-the-clock renewable power economically viable.",
   "sections": [
     {
