@@ -57,7 +57,7 @@ function renderFacts(section: InfographicSpec['sections'][number], index: number
     <div class="mv-fact-grid">
       ${section.items.map(item => `<article class="mv-fact">
         ${item.value ? `<strong>${escapeHtml(item.value)}</strong>` : ''}
-        <p>${escapeHtml(item.text)}</p>
+        ${renderItemBody(item)}
       </article>`).join('\n')}
     </div>
   </section>`
@@ -67,7 +67,7 @@ function renderTimeline(section: InfographicSpec['sections'][number], index: num
   return `<section class="mv-section mv-timeline">
     <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
     <ol>
-      ${section.items.map(item => `<li><time>${escapeHtml(item.label ?? '')}</time><p>${escapeHtml(item.text)}</p></li>`).join('\n')}
+      ${section.items.map(item => `<li><time>${escapeHtml(item.label ?? '')}</time><div>${renderItemBody(item)}</div></li>`).join('\n')}
     </ol>
   </section>`
 }
@@ -78,7 +78,7 @@ function renderComparison(section: InfographicSpec['sections'][number], index: n
     <div class="mv-comparison-grid">
       ${section.items.map(item => `<article>
         ${item.label ? `<h3>${escapeHtml(item.label)}</h3>` : ''}
-        <p>${escapeHtml(item.text)}</p>
+        ${renderItemBody(item)}
       </article>`).join('\n')}
     </div>
   </section>`
@@ -88,7 +88,7 @@ function renderTakeaways(section: InfographicSpec['sections'][number], index: nu
   return `<section class="mv-section mv-takeaways">
     <div class="mv-section-head"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
     <ul>
-      ${section.items.map(item => `<li>${escapeHtml(item.text)}</li>`).join('\n')}
+      ${section.items.map(item => `<li>${renderItemBody(item)}</li>`).join('\n')}
     </ul>
   </section>`
 }
@@ -101,7 +101,7 @@ function renderProcess(section: InfographicSpec['sections'][number], index: numb
         <span class="mv-step-num">${i + 1}</span>
         <div>
           ${item.label ? `<strong>${escapeHtml(item.label)}</strong>` : ''}
-          <p>${escapeHtml(item.text)}</p>
+          ${renderItemBody(item)}
         </div>
       </li>`).join('\n')}
     </ol>
@@ -117,11 +117,11 @@ function renderProsCons(section: InfographicSpec['sections'][number], index: num
     <div class="mv-pros-cons-grid">
       <div class="mv-pros-col">
         <h3>Pros</h3>
-        <ul>${[...pros, ...unlabeled].map(item => `<li>${escapeHtml(item.text)}</li>`).join('\n')}</ul>
+        <ul>${[...pros, ...unlabeled].map(item => `<li>${renderItemBody(item)}</li>`).join('\n')}</ul>
       </div>
       <div class="mv-cons-col">
         <h3>Cons</h3>
-        <ul>${cons.map(item => `<li>${escapeHtml(item.text)}</li>`).join('\n')}</ul>
+        <ul>${cons.map(item => `<li>${renderItemBody(item)}</li>`).join('\n')}</ul>
         ${cons.length === 0 ? '<p class="mv-muted">No cons listed</p>' : ''}
       </div>
     </div>
@@ -134,7 +134,7 @@ function renderStatGrid(section: InfographicSpec['sections'][number], index: num
     <div class="mv-stat-grid-items">
       ${section.items.map(item => `<article class="mv-stat-card">
         ${item.value ? `<strong>${escapeHtml(item.value)}</strong>` : ''}
-        <p>${escapeHtml(item.text)}</p>
+        ${renderItemBody(item)}
       </article>`).join('\n')}
     </div>
   </section>`
@@ -151,8 +151,7 @@ function renderRiskMatrix(section: InfographicSpec['sections'][number], index: n
       <div class="mv-risk-header mv-risk-lh">High Likelihood / Low Impact</div>
       ${quadrants.map(item => `<article class="mv-risk-cell">
         ${item.label ? `<h3>${escapeHtml(item.label)}</h3>` : ''}
-        <p>${escapeHtml(item.text)}</p>
-        ${item.detail ? `<p class="mv-risk-detail">${escapeHtml(item.detail)}</p>` : ''}
+        ${renderItemBody(item)}
       </article>`).join('\n')}
     </div>
   </section>`
@@ -164,7 +163,7 @@ function renderChecklist(section: InfographicSpec['sections'][number], index: nu
     <ul class="mv-checklist-items">
       ${section.items.map(item => `<li>
         <span class="mv-check-icon">${item.label === 'done' ? '&#10003;' : '&#9744;'}</span>
-        <span>${escapeHtml(item.text)}</span>
+        <span>${renderItemBody(item)}</span>
       </li>`).join('\n')}
     </ul>
   </section>`
@@ -181,9 +180,16 @@ function renderVisualSection(section: InfographicSpec['sections'][number], index
   const safeItems = section.items ?? []
   const items = safeItems.length > 0
     ? `<div class="mv-section-head" style="margin-top:12px"><span>${sectionNumber(index)}</span><h2>${escapeHtml(section.title)}</h2></div>
-       <ul class="mv-visual-support-items">${safeItems.map(item => `<li>${escapeHtml(item.text)}</li>`).join('\n')}</ul>`
+       <ul class="mv-visual-support-items">${safeItems.map(item => `<li>${renderItemBody(item)}</li>`).join('\n')}</ul>`
     : ''
   return `<section class="mv-section mv-visual-section">${visualHtml}${notesBlock}${items}</section>`
+}
+
+function renderItemBody(item: InfographicSpec['sections'][number]['items'][number]): string {
+  const detail = item.detail && item.detail !== item.text
+    ? `<p class="mv-item-detail">${escapeHtml(item.detail)}</p>`
+    : ''
+  return `<p>${escapeHtml(item.text)}</p>${detail}`
 }
 
 function escapeHtml(str: string): string {

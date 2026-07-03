@@ -89,11 +89,12 @@ Options:
   article: `Usage:
   miao-viz article <file> --output <file> [options]
   miao-viz article --spec-input <spec.json> --output <file> [options]
+  miao-viz article --bundle-input <bundle.json> --output <file> [options]
   miao-viz article analyze <file> [--output <context.json>]
 
 Convert a local article into a static infographic artifact, render a
-pre-built InfographicSpec JSON directly, or analyze an article for
-LLM-driven spec generation.
+pre-built InfographicSpec JSON, render an atomic multi-chart bundle, or
+analyze an article for LLM-driven spec generation.
 
 Subcommands:
   analyze               Extract article structure (headings, sections,
@@ -104,7 +105,12 @@ Options:
   --format <fmt>          Output format: html, json, markdown, png, pdf (default: html)
   --style <name>          Style: editorial, executive, minimal (default: editorial; ignored with --spec-input)
   --spec-input <file>     Path to a pre-built InfographicSpec JSON file
+  --bundle-input <file>   Path to an InfographicBundleSpec JSON file with numbered atomic chart blocks
   --strict-visuals        Fail if visual density is below recommended thresholds
+
+Use --bundle-input for multi-chart article pages where each figure has a
+stable id such as fig-01-market-timeline. Use --spec-input for one complete
+single-composition infographic.
 
 Note: png and pdf export requires Playwright. Install with:
   npm install --save-dev @playwright/test && npx playwright install chromium

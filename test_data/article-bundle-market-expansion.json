@@ -1,0 +1,100 @@
+{
+  "title": "Global Market Expansion Timeline",
+  "summary": "A four-figure atomic infographic showing how revenue concentration shifted from Asia-Pacific focus to an initial global market layout.",
+  "source": "User-provided text",
+  "style": "executive",
+  "layout": "stacked",
+  "blocks": [
+    {
+      "id": "fig-01-market-timeline",
+      "order": 1,
+      "title": "Market Entry Timeline",
+      "claim": "The globalization story is a four-step market-entry sequence from 2020 to 2023.",
+      "explanation": "The source describes one regional milestone per year: Asia-Pacific focus, Europe expansion, North America entry, and emerging-market breakthrough.",
+      "evidenceIds": ["c1", "c2", "c3", "c4"],
+      "visual": {
+        "type": "timeline-path",
+        "data": {
+          "items": [
+            { "label": "2020", "text": "Asia-Pacific focus; APAC accounted for 60% of revenue." },
+            { "label": "2021", "text": "Expanded to Europe; Europe increased to 25%." },
+            { "label": "2022", "text": "Entered North America; three major markets formed a 40%, 30%, and 25% pattern." },
+            { "label": "2023", "text": "Latin America and the Middle East contributed a combined 15%." }
+          ]
+        },
+        "caption": "The market footprint broadens one stage at a time."
+      }
+    },
+    {
+      "id": "fig-02-kpi-summary",
+      "order": 2,
+      "title": "Headline Revenue Shares",
+      "claim": "Three headline percentages summarize the expansion arc.",
+      "explanation": "The key stated metrics are APAC's 60% share in 2020, Europe's 25% share in 2021, and the combined 15% contribution from Latin America and the Middle East in 2023.",
+      "evidenceIds": ["c1", "c2", "c4"],
+      "visual": {
+        "type": "kpi-strip",
+        "data": {
+          "items": [
+            { "label": "2020 APAC", "value": 60, "unit": "%" },
+            { "label": "2021 Europe", "value": 25, "unit": "%" },
+            { "label": "2023 Emerging markets", "value": 15, "unit": "%" }
+          ]
+        },
+        "caption": "Headline shares are shown as separate KPIs because their denominators are not identical time-series values."
+      }
+    },
+    {
+      "id": "fig-03-market-structure",
+      "order": 3,
+      "title": "2022 Three-Market Structure",
+      "claim": "By 2022, three major markets formed a balanced 40%, 30%, and 25% pattern.",
+      "explanation": "The stated values sum to 95%, so the remaining 5% is shown as unstated rather than invented.",
+      "evidenceIds": ["c3"],
+      "visual": {
+        "type": "part-to-whole",
+        "data": {
+          "items": [
+            { "label": "Major market 1", "value": 40, "text": "Largest major market in 2022." },
+            { "label": "Major market 2", "value": 30, "text": "Second major market in 2022." },
+            { "label": "Major market 3", "value": 25, "text": "Third major market in 2022." },
+            { "label": "Unstated", "value": 5, "text": "Remainder implied by the stated values." }
+          ]
+        },
+        "caption": "The chart preserves the source's partial breakdown."
+      }
+    },
+    {
+      "id": "fig-04-footprint-shift",
+      "order": 4,
+      "title": "Footprint Shift",
+      "claim": "The endpoint is an initial globalization layout, not a single-region revenue model.",
+      "explanation": "The before-after view compares the 2020 APAC-led starting point with the 2023 state that includes three major markets plus emerging-market contribution.",
+      "evidenceIds": ["c1", "c4"],
+      "visual": {
+        "type": "before-after",
+        "data": {
+          "beforeLabel": "2020",
+          "afterLabel": "2023",
+          "before": [
+            { "label": "Core focus", "value": "Asia-Pacific" },
+            { "label": "Stated share", "value": "60%" }
+          ],
+          "after": [
+            { "label": "Major markets", "value": "APAC, Europe, North America" },
+            { "label": "Emerging markets", "value": "Latin America + Middle East: 15%" }
+          ],
+          "items": [
+            { "label": "Revenue footprint", "text": "The business moved from regional concentration to broader global coverage.", "value": "2020 -> 2023" }
+          ]
+        },
+        "caption": "The portfolio expands from APAC concentration to initial globalization."
+      }
+    }
+  ],
+  "metadata": {
+    "inputFile": "",
+    "generatedAt": "2026-07-03T00:00:00.000Z",
+    "wordCount": 79
+  }
+}

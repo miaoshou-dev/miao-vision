@@ -28,6 +28,16 @@ function compactText(text: string, max: number): string {
   return clean.length > max ? `${clean.slice(0, max - 1).trim()}...` : clean
 }
 
+function compactItem(text: string, max: number, extra: Partial<InfographicSectionItem> = {}): InfographicSectionItem {
+  const clean = cleanMarkdown(text)
+  const compact = clean.length > max ? `${clean.slice(0, max - 1).trim()}...` : clean
+  return {
+    ...extra,
+    text: compact,
+    ...(clean.length > compact.length ? { detail: clean } : {})
+  }
+}
+
 function uniqueItems(items: InfographicSectionItem[]): InfographicSectionItem[] {
   const seen = new Set<string>()
   return items.filter(item => {
@@ -55,19 +65,13 @@ function detectSameUnit(items: { value?: string }[]): boolean {
 export function collectFacts(candidates: string[]): InfographicSectionItem[] {
   return uniqueItems(candidates
     .filter(text => NUMBER_PATTERN.test(text))
-    .map(text => ({
-      value: text.match(NUMBER_PATTERN)?.[0],
-      text: compactText(text, 150)
-    })))
+    .map(text => compactItem(text, 150, { value: text.match(NUMBER_PATTERN)?.[0] })))
 }
 
 export function collectTimeline(candidates: string[]): InfographicSectionItem[] {
   return uniqueItems(candidates
     .filter(text => DATE_PATTERN.test(text))
-    .map(text => ({
-      label: text.match(DATE_PATTERN)?.[0],
-      text: compactText(text, 150)
-    })))
+    .map(text => compactItem(text, 150, { label: text.match(DATE_PATTERN)?.[0] })))
 }
 
 export function collectComparison(candidates: string[], tableRows: string[][]): InfographicSectionItem[] {
@@ -77,23 +81,23 @@ export function collectComparison(candidates: string[], tableRows: string[][]): 
   }))
   const textItems = candidates
     .filter(text => /\b(vs\.?|versus|compared with|compared to|whereas|while)\b/i.test(text))
-    .map(text => ({ text: compactText(text, 160) }))
+    .map(text => compactItem(text, 160))
   return uniqueItems([...tableItems, ...textItems])
 }
 
 export function collectTakeaways(candidates: string[], facts: InfographicSectionItem[]): InfographicSectionItem[] {
   const explicit = candidates
     .filter(text => /\b(key|takeaway|therefore|recommend|should|must|need to|in summary|conclusion|next)\b/i.test(text))
-    .map(text => ({ text: compactText(text, 160) }))
+    .map(text => compactItem(text, 160))
   if (explicit.length > 0) return uniqueItems(explicit)
-  return facts.slice(0, 3).map(item => ({ text: item.text }))
+  return facts.slice(0, 3).map(item => ({ text: item.text, ...(item.detail ? { detail: item.detail } : {}) }))
 }
 
 export function detectProcessItems(listItems: string[], evidence: string[]): InfographicSectionItem[] {
   const stepPattern = /\b(step|stage|phase|first|then|next|finally|步骤|阶段|首先|然后|最后)\b/i
   const candidates = [...listItems, ...evidence]
     .filter(text => stepPattern.test(text))
-    .map(text => ({ text: compactText(text, 150) }))
+    .map(text => compactItem(text, 150))
   return uniqueItems(candidates)
 }
 

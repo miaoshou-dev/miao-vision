@@ -18,6 +18,8 @@ import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { generateInfographicFromFile, infographicSpecSchema, strictInfographicSpecSchema } from './article-infographic'
 import { assessInfographicQuality } from './infographic-quality'
 import { renderInfographicHtml } from './article-html'
+import { infographicBundleSpecSchema } from './article-bundle'
+import { renderInfographicBundleHtml } from './article-bundle-html'
 import { extractLifecyclePoints, countOrderedPhasePoints } from './infographic/compositions/helpers'
 import { analyzeDataset } from './analyzer'
 import { CHART_CATALOG } from './chart-catalog'
@@ -808,6 +810,89 @@ describe('article --spec-input (T30–T33)', () => {
   })
 })
 
+describe('article --bundle-input atomic bundle', () => {
+  const bundlePath = 'test_data/article-bundle-market-expansion.json'
+
+  it('validates the market expansion bundle fixture', () => {
+    const bundle = JSON.parse(readFileSync(bundlePath, 'utf8'))
+    const parsed = infographicBundleSpecSchema.safeParse(bundle)
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) return
+    expect(parsed.data.blocks.map(block => block.id)).toEqual([
+      'fig-01-market-timeline',
+      'fig-02-kpi-summary',
+      'fig-03-market-structure',
+      'fig-04-footprint-shift'
+    ])
+  })
+
+  it('rejects duplicate block ids and orders', () => {
+    const bundle = JSON.parse(readFileSync(bundlePath, 'utf8'))
+    bundle.blocks[1].id = bundle.blocks[0].id
+    bundle.blocks[1].order = bundle.blocks[0].order
+
+    const parsed = infographicBundleSpecSchema.safeParse(bundle)
+    expect(parsed.success).toBe(false)
+    if (parsed.success) return
+    const messages = parsed.error.issues.map(issue => issue.message).join('\n')
+    expect(messages).toContain('duplicate block id')
+    expect(messages).toContain('duplicate block order')
+  })
+
+  it('renders bundle HTML with addressable atomic block ids', () => {
+    const bundle = infographicBundleSpecSchema.parse(JSON.parse(readFileSync(bundlePath, 'utf8')))
+    const html = renderInfographicBundleHtml(bundle)
+    expect(html).toContain('data-infographic-kind="atomic-bundle"')
+    expect(html).toContain('data-block-id="fig-01-market-timeline"')
+    expect(html).toContain('FIG 01')
+    expect(html).toContain('fig-03-market-structure')
+    expect(html).toContain('miao-infographic-bundle-spec')
+  })
+
+  it('renders bundle HTML and markdown through the CLI', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-bundle-cli-'))
+    const htmlOutput = join(dir, 'bundle.html')
+    const mdOutput = join(dir, 'bundle.md')
+
+    const htmlRun = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--bundle-input', bundlePath,
+      '--format', 'html',
+      '--output', htmlOutput
+    ], { encoding: 'utf8' })
+    const result = JSON.parse(htmlRun) as { ok: boolean; value: { blocks: string[]; warnings: unknown[] } }
+    expect(result.ok).toBe(true)
+    expect(result.value.blocks).toContain('fig-03-market-structure')
+    expect(result.value.warnings).toEqual([])
+    const html = readFileSync(htmlOutput, 'utf8')
+    expect(html).toContain('data-block-id="fig-03-market-structure"')
+
+    const mdRun = execFileSync('npm', [
+      'run', '--silent', 'miao-viz', '--',
+      'article',
+      '--bundle-input', bundlePath,
+      '--format', 'markdown',
+      '--output', mdOutput
+    ], { encoding: 'utf8' })
+    expect(JSON.parse(mdRun).ok).toBe(true)
+    const markdown = readFileSync(mdOutput, 'utf8')
+    expect(markdown).toContain('Block: fig-01-market-timeline')
+    expect(markdown).toContain('Visual: part-to-whole')
+  })
+
+  it('rejects conflicting --spec-input and --bundle-input flags', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-bundle-conflict-'))
+    const out = runCliExpectFailure([
+      'article',
+      '--spec-input', 'test_data/article-spec-quality.json',
+      '--bundle-input', bundlePath,
+      '--output', join(dir, 'out.html')
+    ])
+    expect(JSON.parse(out).code).toBe('ARTICLE_INPUT_CONFLICT')
+  })
+})
+
 describe('article infographic generation', () => {
   it('builds a deterministic spec and HTML renderer output', () => {
     const generated = generateInfographicFromFile(articlePath, 'executive')
@@ -822,6 +907,25 @@ describe('article infographic generation', () => {
     expect(html).toContain('<style>')
     expect(html).toContain('mv-fact-grid')
     expect(html).toContain('miao-infographic-spec')
+  })
+
+  it('preserves full long article text in rendered item detail', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-long-article-'))
+    const article = join(dir, 'article.md')
+    const longSentence = 'In 2026, the platform expanded into a complex enterprise deployment motion with 42 regional teams coordinating procurement, compliance, onboarding, data governance, and executive reporting across multiple business units, which is intentionally long enough to exceed the compact card summary limit while still needing to remain visible in the rendered infographic.'
+    writeFileSync(article, `# Long Article\n\n${longSentence}\n`, 'utf8')
+
+    const generated = generateInfographicFromFile(article, 'editorial')
+    expect(generated.ok).toBe(true)
+    if (!generated.ok) return
+
+    const facts = generated.value.spec.sections.find(section => section.type === 'facts')
+    expect(facts?.items[0]?.text).toContain('...')
+    expect(facts?.items[0]?.detail).toBe(longSentence)
+
+    const html = renderInfographicHtml(generated.value.spec)
+    expect(html).toContain('mv-item-detail')
+    expect(html).toContain('remain visible in the rendered infographic')
   })
 
   it('uses dynamic section numbering regardless of which section types are present', () => {

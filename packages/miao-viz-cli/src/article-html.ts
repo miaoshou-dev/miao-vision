@@ -60,6 +60,7 @@ function buildCss(style: InfographicStyle): string {
     .mv-fact, .mv-comparison article { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 18px; }
     .mv-fact strong { display: block; color: var(--accent); font-size: 30px; line-height: 1; margin-bottom: 12px; overflow-wrap: break-word; word-break: break-word; }
     .mv-fact p, .mv-comparison p, .mv-timeline p { margin: 0; color: var(--muted); line-height: 1.5; overflow-wrap: break-word; word-break: break-word; }
+    .mv-item-detail { margin-top: 10px !important; padding-left: 12px; border-left: 2px solid var(--line); font-size: 13px; line-height: 1.55 !important; color: color-mix(in srgb, var(--muted) 88%, var(--ink)); }
     .mv-comparison h3 { margin: 0 0 8px; font-size: 16px; overflow-wrap: break-word; word-break: break-word; }
     .mv-timeline ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
     .mv-timeline li { display: grid; grid-template-columns: 150px 1fr; gap: 18px; align-items: start; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 16px; }
