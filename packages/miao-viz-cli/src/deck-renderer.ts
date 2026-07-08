@@ -2,6 +2,7 @@ import { getTheme } from './themes/index'
 import { escapeHtml } from './svg-renderer'
 import type { DeckSpec, SlideSpec } from './deck-types'
 import type { ThemeName } from './themes/types'
+import { shouldEnableDeckInteractive, renderDeckInteractiveAssets } from './deck-interactive'
 import {
   renderCoverSlide,
   renderTitleOnlySlide,
@@ -129,8 +130,10 @@ const SLIDE_JS = `
   }
 
   document.addEventListener('keydown', function(e) {
-    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
-    else if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    var inInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+    if (e.key === 'ArrowRight' || e.key === ' ') { if (!inInput) { e.preventDefault(); goTo(current + 1); } }
+    else if (e.key === 'ArrowLeft') { if (!inInput) { e.preventDefault(); goTo(current - 1); } }
     else if (e.key === 'f' || e.key === 'F') {
       if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function() {});
       else document.exitFullscreen().catch(function() {});
@@ -189,10 +192,14 @@ export function renderDeckHtml(
   rows: Record<string, unknown>[],
   themeOverride?: ThemeName
 ): string {
-  const theme = getTheme(themeOverride ?? spec.theme ?? 'editorial')
+  const theme = getTheme(themeOverride ?? spec.theme ?? 'magazine')
   const themeRootVars = extractRootVars(theme.css)
   const title = spec.title ?? 'Presentation'
   const total = spec.slides.length
+  const interactive = shouldEnableDeckInteractive(spec)
+
+  const hasFilters = Boolean(spec.interactions?.globalFilters?.length)
+  const filterBtn = hasFilters ? '<button id="btn-filter" title="Filters">&#x2630;</button>' : ''
 
   const slidesHtml = spec.slides
     .map((slide, i) => renderSlide(slide, rows, theme.svg, i, total, spec.description))
@@ -220,9 +227,15 @@ export function renderDeckHtml(
     <button id="btn-next">&#8594;</button>
     <button id="btn-fs" title="Fullscreen (F)">&#x26F6;</button>
     <button id="btn-print" title="Export PDF">&#x2399;</button>
+    ${filterBtn}
   </nav>
-  <script type="application/json" id="miao-viz-deck">${escapeHtml(JSON.stringify(spec))}</script>
+  <script type="application/json" id="miao-viz-deck">${jsonScript(spec)}</script>
   <script>${SLIDE_JS}</script>
+  ${interactive ? renderDeckInteractiveAssets(rows) : ''}
 </body>
 </html>`
+}
+
+function jsonScript(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, '\\u003c')
 }

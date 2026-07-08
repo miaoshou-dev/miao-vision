@@ -15,6 +15,10 @@ const COMPOSITION_STYLES: Record<string, string> = {
   'comparison-matrix': comparisonMatrixStyles,
 }
 
+function jsonScript(value: unknown): string {
+  return JSON.stringify(value, null, 2).replace(/<\//g, '<\\u002f')
+}
+
 export function renderInfographicHtml(spec: InfographicSpec): string {
   const style = spec.style
   const compositionType = spec.composition?.type ?? 'article-linear'
@@ -35,7 +39,7 @@ export function renderInfographicHtml(spec: InfographicSpec): string {
   <main class="mv-infographic mv-infographic-${style}" data-composition-type="${compositionType}">
     ${compositionHtml}
   </main>
-  <script type="application/json" id="miao-infographic-spec">${escapeHtml(JSON.stringify(spec, null, 2))}</script>
+  <script type="application/json" id="miao-infographic-spec">${jsonScript(spec)}</script>
 </body>
 </html>`
 }

@@ -1,4 +1,4 @@
-export type ThemeName = 'default' | 'editorial' | 'dark' | 'minimal'
+export type ThemeName = 'standard-white' | 'magazine' | 'standard-dark' | 'minimal' | 'nyt' | 'bloomberg' | 'tableau'
 export type LayoutName = 'standard' | 'editorial'
 
 export interface SvgTheme {

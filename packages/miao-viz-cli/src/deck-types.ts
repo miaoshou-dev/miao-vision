@@ -1,4 +1,4 @@
-import type { AgentChartSpec, AgentDataTransform } from './types'
+import type { AgentChartSpec, AgentDataTransform, AgentGlobalFilter } from './types'
 import type { ThemeName } from './themes/types'
 
 export type SlideLayout =
@@ -32,9 +32,14 @@ export interface SlideSpec {
   charts?: AgentChartSpec[]
 }
 
+export interface DeckInteractions {
+  globalFilters?: AgentGlobalFilter[]
+}
+
 export interface DeckSpec {
   title?: string
   description?: string
   theme?: ThemeName
+  interactions?: DeckInteractions
   slides: SlideSpec[]
 }

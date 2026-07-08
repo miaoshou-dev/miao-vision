@@ -1,26 +1,20 @@
-export const INTERACTIVE_CSS = `
-.miao-interactive-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 0 0 24px; padding: 12px 0; border-top: 1px solid rgba(128,128,128,0.18); border-bottom: 1px solid rgba(128,128,128,0.18); }
-.miao-filter { display: grid; gap: 5px; font-size: 12px; }
-.miao-filter label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.56; }
-.miao-filter select, .miao-filter input { min-width: 140px; border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; padding: 6px 8px; background: transparent; color: inherit; font: inherit; }
-.miao-filter-range { display: flex; gap: 6px; }
-.miao-reset { border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; padding: 7px 10px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
-.miao-reset:hover { background: rgba(128,128,128,0.08); }
-`
-
-export const INTERACTIVE_JS = `
+export const DECK_INTERACTIVE_JS = `
 (function() {
   var md = window.miaoData;
   if (!md) return;
-  var specEl = document.getElementById('miao-viz-spec');
+  var specEl = document.getElementById('miao-viz-deck');
   var dataEl = document.getElementById('miao-viz-data');
   if (!specEl || !dataEl) return;
 
   var spec = JSON.parse(specEl.textContent || '{}');
   var rows = JSON.parse(dataEl.textContent || '[]');
   var filters = (spec.interactions && spec.interactions.globalFilters) || [];
-  var charts = spec.charts || [];
   var state = { filters: {}, selection: null, sort: {}, drilldown: null };
+
+  var tooltip = null;
+  var filterPanel = null;
+  var filterBtn = null;
+  var overlay = null;
 
   function createTooltip() {
     var el = document.createElement('div');
@@ -30,36 +24,77 @@ export const INTERACTIVE_JS = `
     return el;
   }
 
-  var tooltip = createTooltip();
-
-  function uniqueValues(field) {
-    return md.uniqueValues(rows, field, 200);
+  function createOverlay() {
+    var el = document.createElement('div');
+    el.className = 'deck-overlay';
+    el.addEventListener('click', function() { closeFilterPanel(); });
+    document.body.appendChild(el);
+    return el;
   }
 
-  function renderControls() {
+  function openFilterPanel() {
+    filterPanel.classList.add('open');
+    filterBtn.classList.add('active');
+    overlay.classList.add('visible');
+  }
+
+  function closeFilterPanel() {
+    filterPanel.classList.remove('open');
+    filterBtn.classList.remove('active');
+    overlay.classList.remove('visible');
+  }
+
+  function toggleFilterPanel() {
+    if (filterPanel.classList.contains('open')) {
+      closeFilterPanel();
+    } else {
+      openFilterPanel();
+    }
+  }
+
+  function renderFilterPanel() {
     if (!filters.length) return;
-    var main = document.querySelector('.miao-viz-report');
-    if (!main) return;
-    var controls = document.createElement('section');
-    controls.className = 'miao-interactive-controls';
-    controls.setAttribute('aria-label', 'Interactive filters');
+    tooltip = createTooltip();
+    overlay = createOverlay();
+
+    filterPanel = document.createElement('div');
+    filterPanel.className = 'deck-filter-panel';
+    filterPanel.innerHTML =
+      '<div class="deck-filter-header">' +
+      '  <span>Filters</span>' +
+      '  <button class="deck-filter-close" id="deck-filter-close">&times;</button>' +
+      '</div>' +
+      '<div class="deck-filter-body" id="deck-filter-body"></div>' +
+      '<div class="deck-filter-footer">' +
+      '  <button class="miao-reset" id="deck-filter-reset">Reset</button>' +
+      '</div>';
+    document.body.appendChild(filterPanel);
+
+    document.getElementById('deck-filter-close').addEventListener('click', closeFilterPanel);
+
+    var body = document.getElementById('deck-filter-body');
     filters.forEach(function(filter) {
-      controls.appendChild(filter.type === 'range' ? renderRangeFilter(filter) : renderSelectFilter(filter));
+      body.appendChild(filter.type === 'range' ? renderRangeFilter(filter) : renderSelectFilter(filter));
     });
-    var reset = document.createElement('button');
-    reset.type = 'button';
-    reset.className = 'miao-reset';
-    reset.textContent = 'Reset';
-    reset.addEventListener('click', function() {
+
+    document.getElementById('deck-filter-reset').addEventListener('click', function() {
       state.filters = {};
       state.selection = null;
       state.drilldown = null;
-      controls.querySelectorAll('select,input').forEach(function(input) { input.value = ''; input.checked = false; });
-      update();
+      filterPanel.querySelectorAll('select,input').forEach(function(el) { el.value = ''; el.checked = false; });
+      updateActiveSlide();
     });
-    controls.appendChild(reset);
-    var header = main.querySelector('header');
-    main.insertBefore(controls, header ? header.nextSibling : main.firstChild);
+
+    filterBtn = document.getElementById('btn-filter');
+    if (filterBtn) {
+      filterBtn.addEventListener('click', toggleFilterPanel);
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && filterPanel.classList.contains('open')) {
+        closeFilterPanel();
+      }
+    });
   }
 
   function renderSelectFilter(filter) {
@@ -82,9 +117,9 @@ export const INTERACTIVE_JS = `
       var input = document.createElement('input');
       input.className = 'miao-filter-search';
       input.placeholder = 'Search ' + filter.field + '...';
-      input.setAttribute('list', 'miao-sg-' + md.escapeAttr(filter.field));
+      input.setAttribute('list', 'miao-dk-' + md.escapeAttr(filter.field));
       var datalist = document.createElement('datalist');
-      datalist.id = 'miao-sg-' + md.escapeAttr(filter.field);
+      datalist.id = 'miao-dk-' + md.escapeAttr(filter.field);
       values.forEach(function(v) {
         var opt = document.createElement('option');
         opt.value = v;
@@ -92,7 +127,7 @@ export const INTERACTIVE_JS = `
       });
       input.addEventListener('change', function() {
         state.filters[filter.field] = input.value;
-        update();
+        updateActiveSlide();
       });
       wrap.appendChild(input);
       wrap.appendChild(datalist);
@@ -103,7 +138,7 @@ export const INTERACTIVE_JS = `
       }).join('');
       select.addEventListener('change', function() {
         state.filters[filter.field] = select.value;
-        update();
+        updateActiveSlide();
       });
       wrap.appendChild(select);
     }
@@ -136,7 +171,7 @@ export const INTERACTIVE_JS = `
           var idx = arr.indexOf(v);
           if (idx !== -1) arr.splice(idx, 1);
         }
-        update();
+        updateActiveSlide();
       });
       labelEl.appendChild(cb);
       labelEl.appendChild(document.createTextNode(' ' + v));
@@ -169,7 +204,7 @@ export const INTERACTIVE_JS = `
             var idx = arr.indexOf(v);
             if (idx !== -1) arr.splice(idx, 1);
           }
-          update();
+          updateActiveSlide();
         });
         labelEl.appendChild(cb);
         labelEl.appendChild(document.createTextNode(' ' + v));
@@ -202,7 +237,7 @@ export const INTERACTIVE_JS = `
     [min, max].forEach(function(input) {
       input.addEventListener('input', function() {
         state.filters[filter.field] = [min.value, max.value];
-        update();
+        updateActiveSlide();
       });
     });
     pair.appendChild(min);
@@ -212,12 +247,22 @@ export const INTERACTIVE_JS = `
     return wrap;
   }
 
-  function chartSpec(chartId) {
-    return charts.find(function(chart, index) { return (chart.id || ('chart-' + (index + 1))) === chartId; }) || null;
+  function uniqueValues(field) {
+    return md.uniqueValues(rows, field, 200);
   }
 
-  function canSelect(chart) {
-    return Boolean(chart && ((chart.interaction && chart.interaction.select) || chart.drilldownPreset));
+  function getSlideCharts(slide) {
+    return slide.querySelectorAll('[data-miao-chart]');
+  }
+
+  function getChartSpec(slideIndex, chartIndex) {
+    var slide = spec.slides[slideIndex];
+    if (!slide || !slide.charts) return null;
+    return slide.charts[chartIndex] || null;
+  }
+
+  function getActiveSlide() {
+    return document.querySelector('.slide.active');
   }
 
   function renderChart(container, chart, sourceRows) {
@@ -253,24 +298,31 @@ export const INTERACTIVE_JS = `
       else if (current.order === 'asc') newOrder = 'desc';
       else newOrder = null;
       state.sort[chartId] = newOrder ? { field: field, order: newOrder } : null;
-      update();
+      updateActiveSlide();
     };
     container.removeEventListener('click', handler);
     container.addEventListener('click', handler);
   }
 
+  function canSelect(chart) {
+    return Boolean(chart && ((chart.interaction && chart.interaction.select) || chart.drilldownPreset));
+  }
+
   function bindMarks() {
-    document.querySelectorAll('[data-miao-mark]').forEach(function(mark) {
-      var chart = chartSpec(mark.getAttribute('data-chart-id'));
+    document.querySelectorAll('.slide.active [data-miao-mark]').forEach(function(mark) {
+      var chart = getChartSpec(
+        Number(mark.getAttribute('data-slide-index')),
+        Number(mark.getAttribute('data-chart-index'))
+      );
       mark.addEventListener('mouseenter', function(event) {
         var text = mark.getAttribute('data-tooltip');
-        if (!text) return;
+        if (!text || !tooltip) return;
         tooltip.textContent = text;
         tooltip.hidden = false;
         moveTooltip(event);
       });
       mark.addEventListener('mousemove', moveTooltip);
-      mark.addEventListener('mouseleave', function() { tooltip.hidden = true; });
+      mark.addEventListener('mouseleave', function() { if (tooltip) tooltip.hidden = true; });
       mark.addEventListener('click', function() {
         var field = mark.getAttribute('data-field');
         var value = mark.getAttribute('data-value');
@@ -283,59 +335,62 @@ export const INTERACTIVE_JS = `
             var target = document.querySelector('[data-miao-chart="' + md.escapeAttr(chart.drilldownChart) + '"]');
             if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
           }
-          update();
+          updateActiveSlide();
           return;
         }
         if (!canSelect(chart)) return;
         state.selection = state.selection && state.selection.field === field && String(state.selection.value) === String(value)
           ? null
           : { field: field, value: value };
-        update();
+        updateActiveSlide();
       });
     });
   }
 
   function renderDrilldownBreadcrumb() {
-    var main = document.querySelector('.miao-viz-report');
-    if (!main) return;
-    var existing = document.getElementById('miao-drilldown-bar');
+    var activeSlide = getActiveSlide();
+    if (!activeSlide) return;
+    var existing = activeSlide.querySelector('.miao-drilldown-bar');
     if (!state.drilldown) {
       if (existing) existing.remove();
       return;
     }
     if (existing) existing.remove();
     var bar = document.createElement('div');
-    bar.id = 'miao-drilldown-bar';
     bar.className = 'miao-drilldown-bar';
     bar.innerHTML = '<span class="miao-drilldown-label">Drilldown: </span>' +
       '<span class="miao-drilldown-chip">' + md.escapeHtml(state.drilldown.field) + ': ' + md.escapeHtml(String(state.drilldown.value)) +
       ' <button class="miao-drilldown-clear">&times;</button></span>';
-    bar.querySelector('.miao-drilldown-clear').addEventListener('click', function() {
-      state.drilldown = null;
-      update();
-    });
-    var controls = main.querySelector('.miao-interactive-controls');
-    var header = main.querySelector('header');
-    main.insertBefore(bar, controls || (header ? header.nextSibling : main.firstChild));
+    bar.querySelector('.miao-drilldown-clear').addEventListener('click', function(e) { e.stopPropagation(); state.drilldown = null; updateActiveSlide(); });
+    activeSlide.insertBefore(bar, activeSlide.firstChild);
   }
 
-  function update() {
+  function updateActiveSlide() {
     var filtered = md.applyFilters(rows, filters, state.filters);
-    document.querySelectorAll('[data-miao-chart]').forEach(function(container) {
-      var chart = chartSpec(container.getAttribute('data-miao-chart'));
+    var activeSlide = getActiveSlide();
+    if (!activeSlide) return;
+
+    getSlideCharts(activeSlide).forEach(function(container) {
+      var slideIndex = Number(container.getAttribute('data-slide-index') || -1);
+      var chartIndex = Number(container.getAttribute('data-chart-index') || 0);
+      var chart = getChartSpec(slideIndex, chartIndex);
       renderChart(container, chart, filtered);
     });
+
     bindMarks();
-    document.querySelectorAll('[data-miao-mark]').forEach(function(mark) {
+
+    document.querySelectorAll('.slide.active [data-miao-mark]').forEach(function(mark) {
       var field = mark.getAttribute('data-field');
       var value = mark.getAttribute('data-value');
       var selected = state.selection && state.selection.field === field && String(state.selection.value) === String(value);
       mark.setAttribute('data-miao-selected', selected ? 'true' : 'false');
       mark.classList.toggle('miao-mark-hidden', Boolean((state.selection && !selected) || !markMatchesFilters(field, value)));
     });
-    document.querySelectorAll('[data-miao-chart]').forEach(function(container) {
+
+    document.querySelectorAll('.slide.active [data-miao-chart]').forEach(function(container) {
       renderDetail(container, filtered);
     });
+
     renderDrilldownBreadcrumb();
   }
 
@@ -360,8 +415,10 @@ export const INTERACTIVE_JS = `
   }
 
   function moveTooltip(event) {
-    tooltip.style.left = event.clientX + 'px';
-    tooltip.style.top = event.clientY + 'px';
+    if (tooltip) {
+      tooltip.style.left = event.clientX + 'px';
+      tooltip.style.top = event.clientY + 'px';
+    }
   }
 
   function markMatchesFilters(field, value) {
@@ -387,7 +444,28 @@ export const INTERACTIVE_JS = `
     });
   }
 
-  renderControls();
-  update();
+  function watchSlideChanges() {
+    var canvas = document.querySelector('.slide-canvas');
+    if (!canvas) return;
+    var lastIndex = -1;
+    var observer = new MutationObserver(function() {
+      var active = getActiveSlide();
+      if (!active) return;
+      var idx = Array.prototype.indexOf.call(canvas.querySelectorAll('.slide'), active);
+      if (idx === lastIndex) return;
+      lastIndex = idx;
+      updateActiveSlide();
+    });
+    observer.observe(canvas, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeFilter: ['class']
+    });
+  }
+
+  renderFilterPanel();
+  updateActiveSlide();
+  watchSlideChanges();
 })();
 `

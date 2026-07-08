@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { chartSpecSchema } from './spec-schema'
+import { chartSpecSchema, globalFilterSchema } from './spec-schema'
 import type { DeckSpec, SlideMetric, SlideSpec } from './deck-types'
 
 const SLIDE_LAYOUTS = [
@@ -42,9 +42,14 @@ const slideSpecSchema: z.ZodType<SlideSpec> = z.object({
   charts: z.array(chartSpecSchema).optional()
 })
 
+const deckInteractionsSchema = z.object({
+  globalFilters: z.array(globalFilterSchema).optional()
+})
+
 export const deckSpecSchema: z.ZodType<DeckSpec> = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
-  theme: z.enum(['default', 'editorial', 'dark', 'minimal']).optional(),
+  theme: z.enum(['standard-white', 'magazine', 'standard-dark', 'minimal', 'nyt', 'bloomberg', 'tableau']).optional(),
+  interactions: deckInteractionsSchema.optional(),
   slides: z.array(slideSpecSchema).min(1, 'Deck must have at least one slide')
 })

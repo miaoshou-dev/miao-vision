@@ -50,7 +50,8 @@ function runTemplateInstantiate(args: CliArgs): unknown {
     fields: ctx.fields,
     evidence: ctx.evidence,
     catalog: ctx.catalog,
-    sampleWarnings: ctx.sampleWarnings
+    sampleWarnings: ctx.sampleWarnings,
+    metricCandidates: ctx.metricCandidates
   }
   const decision = template.canUse(matchCtx)
   if (!decision.ok) {

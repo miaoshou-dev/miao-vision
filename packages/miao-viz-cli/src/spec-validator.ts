@@ -86,6 +86,9 @@ export function validateReportSpec(
     if (isAgentError(finalSchemaResult)) return finalSchemaResult
   }
 
+  const drilldownResult = validateDrilldownCharts(parsed.data.charts)
+  if (isAgentError(drilldownResult)) return drilldownResult
+
   return ok(parsed.data)
 }
 
@@ -340,6 +343,22 @@ function validateReportInteractions(
   return ok(spec)
 }
 
+function validateDrilldownCharts(charts: AgentChartSpec[]): AgentResult<void> {
+  const chartIds = new Set(charts.map(c => c.id).filter((id): id is string => Boolean(id)))
+  for (const chart of charts) {
+    if (chart.drilldownChart) {
+      if (!chartIds.has(chart.drilldownChart)) {
+        return agentError('INVALID_DRILLDOWN_CHART', `drilldownChart '${chart.drilldownChart}' on chart '${chart.id ?? chart.type}' does not match any chart id.`, {
+          chartId: chart.id,
+          drilldownChart: chart.drilldownChart,
+          availableIds: [...chartIds]
+        })
+      }
+    }
+  }
+  return ok(void 0 as unknown as void)
+}
+
 function validateChartInteraction(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
   if (chart.drilldownPreset && chart.drilldownPreset !== 'category-detail') {
     return agentError('UNSUPPORTED_DRILLDOWN_PRESET', `Drilldown preset '${chart.drilldownPreset}' is not supported.`, {
@@ -365,16 +384,6 @@ function validateChartInteraction(chart: AgentChartSpec): AgentResult<AgentChart
 }
 
 function validateTransforms(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
-  for (const transform of chart.data?.transform ?? []) {
-    if (transform.type === 'filter') {
-      return agentError(
-        'UNSUPPORTED_TRANSFORM',
-        `Chart '${chart.id ?? chart.type}': transform type 'filter' has no renderer executor and will silently return unfiltered rows. ` +
-        'Use miao-viz query --filter to pre-filter, or remove this transform.',
-        { chartId: chart.id ?? chart.type, transformType: 'filter' }
-      )
-    }
-  }
   return ok(chart)
 }
 

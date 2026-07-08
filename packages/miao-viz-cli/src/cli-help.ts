@@ -67,7 +67,7 @@ Options:
   --spec <file>     Path to vizspec YAML/JSON
   --output <file>   Output file path
   --format <fmt>    Output format: html, svg (default: html)
-  --theme <name>    Theme: default, editorial, dark, minimal
+  --theme <name>    Theme: standard-white, magazine, standard-dark, minimal, nyt, bloomberg, tableau
   --context <file>  Path to context.json (output of "analyze") — resolves $evidence: directives in insights[]
   --interactive     Force interactive runtime for HTML output
   --no-interactive  Force static HTML output
@@ -82,7 +82,7 @@ Options:
   --input <file>    Path to data file
   --spec <file>     Path to deck spec YAML/JSON
   --output <file>   Output file path
-  --theme <name>    Theme: default, editorial, dark, minimal
+  --theme <name>    Theme: standard-white, magazine, standard-dark, minimal, nyt, bloomberg, tableau
   --sheet <name>    Sheet name (Excel only)
   --limit <n>       Max rows to read
 `,

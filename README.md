@@ -174,7 +174,7 @@ The agent applies the patch, re-validates, and renders. No human intervention re
 | **Your data stays local** | Nothing leaves your machine. No upload, no API call with your data. |
 | **One file to share** | Every output is a self-contained `.html` file — open it, email it, archive it. No viewer needed. |
 | **Not a dashboard** | No database to connect, no tiles to arrange, no filter panel to maintain. You get an artifact, not a workspace. |
-| **Looks good by default** | The editorial theme is designed to be clear and credible out of the box. |
+| **Looks good by default** | The magazine theme is designed to be clear and credible out of the box. |
 
 ---
 
@@ -186,7 +186,7 @@ You have a CSV, TSV, XLSX, or JSON file. You want a chart report to share with y
 
 Ask your AI agent:
 ```
-Use miao-vision to analyze ~/data/sales.csv and generate an editorial HTML report.
+Use miao-vision to analyze ~/data/sales.csv and generate an HTML report.
 ```
 
 Or run the CLI yourself:
@@ -241,7 +241,7 @@ If you prefer writing specs yourself, here's what a simple one looks like:
 
 ```yaml
 title: Sales Dashboard
-theme: editorial
+theme: magazine
 charts:
   - type: bigvalue
     title: Total Sales
@@ -276,7 +276,55 @@ charts:
         field: total_sales
 ```
 
-Run `miao-viz catalog` to see all supported chart types. Run `miao-viz validate --spec ./your-spec.yaml` to catch errors before rendering.
+Run `miao-viz catalog` for the full catalog with encoding rules, anti-patterns, and usage guidance.
+
+---
+
+## Supported chart types
+
+Miao Vision supports 27 chart types across three categories:
+
+### Standard
+
+| Chart | Description |
+|-------|-------------|
+| `bar` | Vertical bars for ranking and comparison across categories |
+| `line` | Connected series for trends and time series |
+| `area` | Filled line chart for cumulative trends and stacked mass |
+| `pie` | Proportional slices for part-to-whole composition (2-7 categories) |
+| `scatter` | Points on two axes for correlation and relationship analysis |
+| `histogram` | Binned distribution of a single numeric field |
+| `heatmap` | Colored grid for matrix density and cross-tab patterns |
+| `table` | Sortable HTML table for detail view |
+| `bigvalue` | Large single-number KPI for top-level metrics |
+
+### Extended
+
+| Chart | Description |
+|-------|-------------|
+| `progress` | Horizontal progress bar for goal attainment |
+| `sparkline` | Tiny inline line chart for embedding in tables |
+| `delta` | KPI value with up/down arrow and percentage change |
+| `funnel` | Narrowing trapezoids for conversion stage dropoff |
+| `gauge` | Semi-circular gauge with needle for threshold monitoring |
+| `bubble` | Circle points on two axes with radius encoding a third measure |
+| `boxplot` | Box-and-whisker for distribution comparison across groups |
+| `waterfall` | Floating bar cascade for financial bridges and cumulative breakdown |
+| `radar` | Spider-web polygon for multi-faceted performance profiling |
+| `calendar` | Day-of-week grid for daily activity density |
+| `treemap` | Nested rectangles for part-to-whole with many categories |
+| `pivot` | HTML cross-tabulation with row/column dimensions |
+| `sankey` | Curved flows between source and target nodes |
+
+### Infographic
+
+| Chart | Description |
+|-------|-------------|
+| `infographic-kpi` | Stylized KPI card with gradient background |
+| `infographic-list` | Ranked item list with numbered badges |
+| `infographic-flow` | Sequential step flow with arrow connectors |
+| `infographic-hierarchy` | Tree structure with center divider line |
+| `infographic-comparison` | Side-by-side comparison cards |
 
 ---
 
@@ -284,7 +332,7 @@ Run `miao-viz catalog` to see all supported chart types. Run `miao-viz validate 
 
 ```yaml
 title: Sales Review
-theme: editorial
+theme: magazine
 slides:
   - layout: cover
     eyebrow: Q4 Review

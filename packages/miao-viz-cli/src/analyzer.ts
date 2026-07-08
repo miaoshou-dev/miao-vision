@@ -34,9 +34,9 @@ export function analyzeDataset(dataset: LoadedDataset, options: AnalyzerOptions 
     if (extra) evidence.push(extra)
   }
 
-  const catalog = buildCatalog(fields, sampleWarnings, profile.rows, evidence)
-  const promptRules = buildPromptRules(catalog.charts, sampleWarnings)
   const metricCandidates = buildMetricCandidates(fields, evidence)
+  const catalog = buildCatalog(fields, sampleWarnings, profile.rows, evidence, metricCandidates)
+  const promptRules = buildPromptRules(catalog.charts, sampleWarnings)
   const clarificationQuestions = buildClarificationQuestions(fields, options.intent ?? '')
 
   return { intent, fields, evidence, catalog, sampleWarnings, promptRules, metricCandidates, clarificationQuestions }
@@ -307,7 +307,8 @@ function buildCatalog(
   fields: AnalyzeField[],
   warnings: AnalyzeSampleWarning[],
   rowCount: number,
-  evidence: AnalyzeEvidence[]
+  evidence: AnalyzeEvidence[],
+  metricCandidates: MetricCandidate[]
 ): AnalyzeCatalog {
   const measures = fields.filter(f => f.role === 'measure' || f.role === 'score')
   const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status')
@@ -366,7 +367,7 @@ function buildCatalog(
   const recommendedPlan = buildRecommendedPlan(charts, fields)
 
   const partialCatalog = { charts, blockedCharts, recommendedPlan }
-  const matchCtx: BlockMatchContext = { fields, evidence, catalog: partialCatalog, sampleWarnings: warnings }
+  const matchCtx: BlockMatchContext = { fields, evidence, catalog: partialCatalog, sampleWarnings: warnings, metricCandidates }
 
   const blocks: AnalyzeCatalog['blocks'] = []
   const blockedBlocks: AnalyzeCatalog['blockedBlocks'] = []

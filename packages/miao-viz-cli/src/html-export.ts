@@ -75,8 +75,8 @@ export function renderStaticHtml(
     ${insights}
     ${charts}
   </main>
-  <script type="application/json" id="miao-viz-spec">${escapeHtml(JSON.stringify(spec, null, 2))}</script>
-  <script type="application/json" id="miao-viz-profile">${escapeHtml(JSON.stringify(profile, null, 2))}</script>
+  <script type="application/json" id="miao-viz-spec">${jsonScript(spec)}</script>
+  <script type="application/json" id="miao-viz-profile">${jsonScript(profile)}</script>
   ${interactive ? renderInteractiveAssets(rows) : ''}
 </body>
 </html>`
@@ -172,4 +172,8 @@ function buildCaption(chart: AgentChartSpec): string {
   if (typeof limited?.value === 'number') parts.push(`top ${limited.value}`)
 
   return parts.join(' · ')
+}
+
+function jsonScript(value: unknown): string {
+  return JSON.stringify(value, null, 2).replace(/<\//g, '<\\u002f')
 }

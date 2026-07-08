@@ -45,6 +45,65 @@ encoding:
     type: quantitative
 ```
 
+### Multi-series via `encoding.color`
+
+Set `encoding.color` to split a chart into multiple series. Each unique value in the color field gets its own color from the theme palette, and a legend is rendered automatically.
+
+**Bar — grouped** (default):
+
+```yaml
+type: bar
+encoding:
+  x: { field: month, type: temporal }
+  y: { field: revenue, aggregate: sum, type: quantitative }
+  color: { field: region, type: nominal }
+```
+
+**Bar — stacked** (set `style.barMode: "stacked"`):
+
+```yaml
+type: bar
+encoding:
+  x: { field: month }
+  y: { field: revenue, aggregate: sum }
+  color: { field: region }
+style:
+  barMode: stacked
+```
+
+**Multi-line** (one line per color value):
+
+```yaml
+type: line
+encoding:
+  x: { field: month, type: temporal }
+  y: { field: revenue, aggregate: sum }
+  color: { field: channel, type: nominal }
+```
+
+**Stacked area** (color + area type = stacked):
+
+```yaml
+type: area
+encoding:
+  x: { field: month, type: temporal }
+  y: { field: revenue, aggregate: sum }
+  color: { field: product, type: nominal }
+```
+
+### Donut (pie variant)
+
+Set `style.innerRadius` to a value between 0 and 1 to turn a pie into a donut:
+
+```yaml
+type: pie
+encoding:
+  label: { field: category }
+  value: { field: revenue, aggregate: sum }
+style:
+  innerRadius: 0.55
+```
+
 ## Transform requirement (applies to all chart types)
 
 **A chart with no `data.transform` receives all raw rows from the input file.** The renderer does not aggregate, sort, or filter data on its own. Always add the transforms needed to produce the exact rows and columns you intend to show.
@@ -153,18 +212,18 @@ Add an optional `theme` field to the report spec:
 
 ```yaml
 title: Sales Dashboard
-theme: editorial
+theme: magazine
 charts: [...]
 ```
 
 | Value | Layout | Description |
 | --- | --- | --- |
-| `editorial` | editorial | Warm paper background, serif headings, muted palette, chart captions. Recommended for user-facing reports. |
-| `dark` | editorial | Dark background (`#0f1117`), light-blue accent, same card layout as editorial. For night-mode or developer-facing reports. |
-| `default` | standard | Plain blue/white SaaS palette. Simple stacked layout. |
+| `magazine` | editorial | Warm paper background, serif headings, muted palette, chart captions. Recommended for user-facing reports. |
+| `standard-dark` | editorial | Dark background (`#0f1117`), light-blue accent, same card layout as editorial. For night-mode or developer-facing reports. |
+| `standard-white` | standard | Plain blue/white SaaS palette. Simple stacked layout. |
 | `minimal` | standard | Pure white, no shadows, thin dividers only. Maximum readability, minimum decoration. |
 
-The theme can also be set via CLI flag (`--theme dark`), which takes precedence over the spec field.
+The theme can also be set via CLI flag (`--theme standard-dark`), which takes precedence over the spec field.
 
 ## Insights Field
 
@@ -321,7 +380,7 @@ The insight drafts become the `insights` field in the spec. Numbers must match t
 
 - Only reference fields present in the profile or created by prior transforms.
 - Use `bar` for rankings, `line` for temporal trends, `bigvalue` for KPIs, and `table` for row previews.
-- Default to `theme: editorial` for all user-facing HTML reports.
+- Default to `theme: magazine` for all user-facing HTML reports.
 - Render HTML unless the user asks for SVG.
 - Insights must be grounded in real aggregated values from `miao-viz query` or reliable profile statistics. See grounding rules above.
 
@@ -335,7 +394,7 @@ Render with:
 miao-viz deck \
   --input /path/to/data.csv \
   --spec /tmp/miao-vision/deck.yaml \
-  --theme editorial \
+  --theme magazine \
   --output /tmp/miao-vision/deck.html
 ```
 
@@ -354,7 +413,7 @@ Validation rules:
 ```yaml
 title: Sales Executive Briefing
 description: Optional deck summary
-theme: editorial
+theme: magazine
 slides:
   - layout: cover
     eyebrow: Q4 Business Review
@@ -451,12 +510,12 @@ Deck themes are the same as report themes:
 
 | Value | Use |
 | --- | --- |
-| `editorial` | Default for user-facing presentation decks. |
-| `dark` | Good for technical or high-contrast presentations. |
+| `magazine` | Default for user-facing presentation decks. |
+| `standard-dark` | Good for technical or high-contrast presentations. |
 | `minimal` | Clean white slides with minimal decoration. |
-| `default` | Plain baseline style. |
+| `standard-white` | Plain baseline style. |
 
-Prefer `theme: editorial` unless the user asks otherwise.
+Prefer `theme: magazine` unless the user asks otherwise.
 
 ### Deck Error Handling
 

@@ -1,5 +1,7 @@
-import type { AnalyzeContext, AnalyzeField, CatalogBlockEntry } from './context-schema'
+import type { AnalyzeField, CatalogBlockEntry, MetricCandidate } from './context-schema'
 import type { AgentChartSpec, AgentInsight } from './types'
+import { insightTotal, insightTrend, insightTopN, insightPeriodChange } from './block-insight-generator'
+import { buildKpiChart, buildBarChart, buildLineChart, buildPieChart, buildTableChart } from './block-chart-builders'
 
 // Subset of AnalyzeContext available when block matching runs (catalog is being built)
 export interface BlockMatchContext {
@@ -7,6 +9,7 @@ export interface BlockMatchContext {
   evidence: AnalyzeContext['evidence']
   catalog: AnalyzeContext['catalog']
   sampleWarnings: AnalyzeContext['sampleWarnings']
+  metricCandidates?: MetricCandidate[]
 }
 
 export interface BlockDecision {
@@ -65,98 +68,6 @@ function scoreTimePeriods(fields: AnalyzeField[]): number {
   return Math.min(periods / 3, 1) * 0.1
 }
 
-// ---- Chart spec builders ----
-
-function buildKpiChart(measure: string): AgentChartSpec {
-  const alias = `total_${measure}`
-  return {
-    id: `kpi_total_${measure}`,
-    type: 'bigvalue',
-    title: `Total ${measure}`,
-    data: {
-      transform: [
-        { type: 'aggregate', measures: [{ field: measure, op: 'sum', as: alias }] }
-      ]
-    },
-    encoding: { value: { field: alias, type: 'quantitative' } }
-  }
-}
-
-function buildBarChart(measure: string, dimension: string, topN: number): AgentChartSpec {
-  const alias = `total_${measure}`
-  return {
-    id: `ranking_by_${dimension}`,
-    type: 'bar',
-    title: `${measure} by ${dimension}`,
-    data: {
-      transform: [
-        { type: 'aggregate', groupBy: [dimension], measures: [{ field: measure, op: 'sum', as: alias }] },
-        { type: 'sort', field: alias, order: 'desc' },
-        { type: 'limit', value: topN }
-      ]
-    },
-    encoding: {
-      x: { field: dimension, type: 'nominal' },
-      y: { field: alias, type: 'quantitative' }
-    }
-  }
-}
-
-function buildLineChart(measure: string, timeField: string): AgentChartSpec {
-  const alias = `total_${measure}`
-  return {
-    id: `trend_by_${timeField}`,
-    type: 'line',
-    title: `${measure} over ${timeField}`,
-    data: {
-      transform: [
-        { type: 'aggregate', groupBy: [timeField], measures: [{ field: measure, op: 'sum', as: alias }] },
-        { type: 'sort', field: timeField, order: 'asc' }
-      ]
-    },
-    encoding: {
-      x: { field: timeField, type: 'temporal' },
-      y: { field: alias, type: 'quantitative' }
-    }
-  }
-}
-
-function buildPieChart(measure: string, dimension: string): AgentChartSpec {
-  const alias = `total_${measure}`
-  return {
-    id: `share_by_${dimension}`,
-    type: 'pie',
-    title: `${measure} share by ${dimension}`,
-    data: {
-      transform: [
-        { type: 'aggregate', groupBy: [dimension], measures: [{ field: measure, op: 'sum', as: alias }] },
-        { type: 'sort', field: alias, order: 'desc' },
-        { type: 'limit', value: 7 }
-      ]
-    },
-    encoding: {
-      label: { field: dimension, type: 'nominal' },
-      value: { field: alias, type: 'quantitative' }
-    }
-  }
-}
-
-function buildTableChart(measure: string, dimension: string): AgentChartSpec {
-  const alias = `total_${measure}`
-  return {
-    id: 'detail_table',
-    type: 'table',
-    title: 'Full Detail',
-    data: {
-      transform: [
-        { type: 'aggregate', groupBy: [dimension], measures: [{ field: measure, op: 'sum', as: alias }] },
-        { type: 'sort', field: alias, order: 'desc' }
-      ]
-    },
-    encoding: {}
-  }
-}
-
 // ---- Resolver implementations ----
 
 const kpiSummary: ReportBlockResolver = {
@@ -184,9 +95,16 @@ const kpiSummary: ReportBlockResolver = {
     return { primaryMeasure: measure?.name ?? '' }
   },
 
-  compile(variables, _ctx) {
+  compile(variables, ctx) {
     const measure = String(variables.primaryMeasure)
-    return { charts: [buildKpiChart(measure)] }
+    const candidates = ctx.metricCandidates ?? []
+    const insights: AgentInsight[] = [insightTotal(measure)]
+    const change = candidates.find(c => c.type === 'period_change')
+    if (change) {
+      const pc = insightPeriodChange(change)
+      if (pc) insights.push(pc)
+    }
+    return { charts: [buildKpiChart(measure)], insights }
   }
 }
 
@@ -225,13 +143,17 @@ const snapshotRanking: ReportBlockResolver = {
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', topN: 10 }
   },
 
-  compile(variables, _ctx) {
+  compile(variables, ctx) {
     const measure = String(variables.primaryMeasure)
     const dimension = String(variables.primaryDimension)
     const topN = Number(variables.topN ?? 10)
+    const insights: AgentInsight[] = [
+      insightTotal(measure),
+      insightTopN(dimension, measure, topN)
+    ]
     return {
       charts: [buildKpiChart(measure), buildBarChart(measure, dimension, topN)],
-      insights: []
+      insights
     }
   }
 }
@@ -271,12 +193,19 @@ const trendOverview: ReportBlockResolver = {
     return { primaryMeasure: measure?.name ?? '', timeField: time?.name ?? '' }
   },
 
-  compile(variables, _ctx) {
+  compile(variables, ctx) {
     const measure = String(variables.primaryMeasure)
     const timeField = String(variables.timeField)
+    const candidates = ctx.metricCandidates ?? []
+    const change = candidates.find(c => c.type === 'period_change')
+    const insights: AgentInsight[] = [
+      insightTotal(measure)
+    ]
+    const trend = insightTrend(timeField, measure, change)
+    if (trend) insights.push(trend)
     return {
       charts: [buildKpiChart(measure), buildLineChart(measure, timeField)],
-      insights: []
+      insights
     }
   }
 }
@@ -318,13 +247,17 @@ const comparisonBreakdown: ReportBlockResolver = {
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', topN: 10 }
   },
 
-  compile(variables, _ctx) {
+  compile(variables, ctx) {
     const measure = String(variables.primaryMeasure)
     const dimension = String(variables.primaryDimension)
     const topN = Number(variables.topN ?? 10)
+    const insights: AgentInsight[] = [
+      insightTotal(measure),
+      insightTopN(dimension, measure, Math.min(topN, 3))
+    ]
     return {
       charts: [buildBarChart(measure, dimension, topN), buildPieChart(measure, dimension)],
-      insights: []
+      insights
     }
   }
 }
@@ -370,18 +303,24 @@ const trendRanking: ReportBlockResolver = {
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', timeField: time?.name ?? '', topN: 5 }
   },
 
-  compile(variables, _ctx) {
+  compile(variables, ctx) {
     const measure = String(variables.primaryMeasure)
     const dimension = String(variables.primaryDimension)
     const timeField = String(variables.timeField)
     const topN = Number(variables.topN ?? 5)
+    const candidates = ctx.metricCandidates ?? []
+    const change = candidates.find(c => c.type === 'period_change')
+    const insights: AgentInsight[] = [insightTotal(measure)]
+    const trend = insightTrend(timeField, measure, change)
+    if (trend) insights.push(trend)
+    insights.push(insightTopN(dimension, measure, topN))
     return {
       charts: [
         buildKpiChart(measure),
         buildLineChart(measure, timeField),
         buildBarChart(measure, dimension, topN)
       ],
-      insights: []
+      insights
     }
   }
 }
@@ -429,11 +368,17 @@ const fullDetailReport: ReportBlockResolver = {
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', timeField: time?.name ?? '', topN: 5 }
   },
 
-  compile(variables, _ctx) {
+  compile(variables, ctx) {
     const measure = String(variables.primaryMeasure)
     const dimension = String(variables.primaryDimension)
     const timeField = String(variables.timeField)
     const topN = Number(variables.topN ?? 5)
+    const candidates = ctx.metricCandidates ?? []
+    const change = candidates.find(c => c.type === 'period_change')
+    const insights: AgentInsight[] = [insightTotal(measure)]
+    const trend = insightTrend(timeField, measure, change)
+    if (trend) insights.push(trend)
+    insights.push(insightTopN(dimension, measure, topN))
     return {
       charts: [
         buildKpiChart(measure),
@@ -441,7 +386,7 @@ const fullDetailReport: ReportBlockResolver = {
         buildBarChart(measure, dimension, topN),
         buildTableChart(measure, dimension)
       ],
-      insights: []
+      insights
     }
   }
 }

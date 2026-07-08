@@ -92,6 +92,9 @@ function validateDeckSpecSemantics(spec: DeckSpec): DeckValidationIssue[] {
 export function validateDeckFields(spec: DeckSpec, profile: DataProfile): AgentResult<DeckSpec> {
   const sourceFields = new Set(profile.columns.map(column => column.name))
 
+  const interactionResult = validateDeckInteractions(spec, sourceFields)
+  if (isAgentError(interactionResult)) return interactionResult
+
   for (let slideIndex = 0; slideIndex < spec.slides.length; slideIndex += 1) {
     const slide = spec.slides[slideIndex]
 
@@ -108,6 +111,21 @@ export function validateDeckFields(spec: DeckSpec, profile: DataProfile): AgentR
   }
 
   return ok(spec)
+}
+
+function validateDeckInteractions(spec: DeckSpec, sourceFields: Set<string>): AgentResult<void> {
+  const filters = spec.interactions?.globalFilters ?? []
+  for (let i = 0; i < filters.length; i += 1) {
+    const filter = filters[i]
+    if (!sourceFields.has(filter.field)) {
+      return deckFieldError(
+        `interactions.globalFilters[${i}].field`,
+        filter.field,
+        `Filter field '${filter.field}' is not found in the data profile.`
+      )
+    }
+  }
+  return ok<void>(undefined as unknown as void)
 }
 
 function formatDeckSpecIssues(error: z.ZodError): DeckValidationIssue[] {

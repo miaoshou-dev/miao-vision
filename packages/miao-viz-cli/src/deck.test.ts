@@ -52,7 +52,7 @@ describe('deckSpecSchema', () => {
   })
 
   it('accepts optional theme field', () => {
-    const result = deckSpecSchema.safeParse({ ...MINIMAL_DECK, theme: 'dark' })
+    const result = deckSpecSchema.safeParse({ ...MINIMAL_DECK, theme: 'standard-dark' })
     expect(result.success).toBe(true)
   })
 
@@ -347,20 +347,20 @@ describe('deck theme integration', () => {
     expect(html).toContain('--mv-brand')
   })
 
-  it('renders dark theme variables', () => {
-    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'dark')
+  it('renders standard-dark theme variables', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'standard-dark')
     expect(html).toContain('--mv-paper: #0f1117')
     expect(html).toContain('--mv-brand: #7eb8f7')
   })
 
-  it('renders editorial theme variables', () => {
-    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'editorial')
+  it('renders magazine theme variables', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'magazine')
     expect(html).toContain('--mv-paper: #f5f4ed')
     expect(html).toContain('--mv-brand: #1b365d')
   })
 
-  it('renders default theme variables', () => {
-    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'default')
+  it('renders standard-white theme variables', () => {
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'standard-white')
     expect(html).toContain('--mv-paper: #f8fafc')
     expect(html).toContain('--mv-brand: #2563eb')
   })
@@ -443,7 +443,7 @@ describe('deck example smoke tests', () => {
         'deck',
         '--input', example.input,
         '--spec', example.spec,
-        '--theme', 'editorial',
+        '--theme', 'magazine',
         '--output', output
       ], { encoding: 'utf8' })
       const result = JSON.parse(stdout)

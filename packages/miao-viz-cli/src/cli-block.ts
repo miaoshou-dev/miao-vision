@@ -70,7 +70,8 @@ export function runBlock(args: CliArgs): unknown {
     fields: ctx.fields,
     evidence: ctx.evidence,
     catalog: ctx.catalog,
-    sampleWarnings: ctx.sampleWarnings
+    sampleWarnings: ctx.sampleWarnings,
+    metricCandidates: ctx.metricCandidates
   }
 
   const decision = resolver.canUse(matchCtx)

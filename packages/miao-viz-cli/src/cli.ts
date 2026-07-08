@@ -263,7 +263,7 @@ function runRender(args: CliArgs): unknown {
     }
   }
 
-  const themeFlag = stringFlag(args, 'theme') as 'default' | 'editorial' | 'dark' | 'minimal' | undefined
+  const themeFlag = stringFlag(args, 'theme') as 'standard-white' | 'magazine' | 'standard-dark' | 'minimal' | 'nyt' | 'bloomberg' | 'tableau' | undefined
   const interactive = args.flags['interactive'] === true
     ? true
     : args.flags['no-interactive'] === true
@@ -315,7 +315,7 @@ function runDeck(args: CliArgs): unknown {
   const validation = validateDeckFields(parsed.value, profile)
   if (isAgentError(validation)) return fail(validation)
 
-  const themeFlag = stringFlag(args, 'theme') as 'default' | 'editorial' | 'dark' | 'minimal' | undefined
+  const themeFlag = stringFlag(args, 'theme') as 'standard-white' | 'magazine' | 'standard-dark' | 'minimal' | 'nyt' | 'bloomberg' | 'tableau' | undefined
   const html = renderDeckHtml(validation.value, dataset.value.rows, themeFlag)
   writeOutput(output, html)
   return { ok: true, value: { output, slides: validation.value.slides.length } }

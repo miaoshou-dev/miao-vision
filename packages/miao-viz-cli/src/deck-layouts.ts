@@ -141,7 +141,8 @@ export function renderTextPointsSlide(slide: SlideSpec, _rows: Record<string, un
 
 export function renderTextChartSlide(slide: SlideSpec, rows: Record<string, unknown>[], svg: SvgTheme, index: number, total: number): string {
   const chart = slide.charts?.[0]
-  const chartHtml = chart ? renderChartSvg(withSize(chart, 540, 400), rows, svg) : ''
+  const chartId = chart?.id ?? `slide-${index}-chart`
+  const chartHtml = chart ? renderChartSvg(withSize(chart, 540, 400), rows, svg, { chartId }) : ''
   return `<div class="slide">
   ${slide.eyebrow ? renderEyebrow(slide.eyebrow) : ''}
   <div class="slide-title">${escapeHtml(slide.title ?? '')}</div>
@@ -151,7 +152,7 @@ export function renderTextChartSlide(slide: SlideSpec, rows: Record<string, unkn
       ${slide.bullets?.length ? renderBullets(slide.bullets) : ''}
       ${slide.callout ? renderCallout(slide.callout) : ''}
     </div>
-    <div class="slide-chart-full">${chartHtml}</div>
+    <div class="slide-chart-full" data-miao-chart="${escapeHtml(chartId)}" data-slide-index="${index}" data-chart-index="0"><div class="miao-render-slot">${chartHtml}</div></div>
   </div>
   ${pageFooter(index, total)}
 </div>`
@@ -159,34 +160,37 @@ export function renderTextChartSlide(slide: SlideSpec, rows: Record<string, unkn
 
 export function renderMetricsChartSlide(slide: SlideSpec, rows: Record<string, unknown>[], svg: SvgTheme, index: number, total: number): string {
   const chart = slide.charts?.[0]
-  const chartHtml = chart ? renderChartSvg(withSize(chart, 1100, 310), rows, svg) : ''
+  const chartId = chart?.id ?? `slide-${index}-chart`
+  const chartHtml = chart ? renderChartSvg(withSize(chart, 1100, 310), rows, svg, { chartId }) : ''
   return `<div class="slide">
   ${slide.eyebrow ? renderEyebrow(slide.eyebrow) : ''}
   <div class="slide-title" style="margin-bottom:16px">${escapeHtml(slide.title ?? '')}</div>
   ${slide.metrics?.length ? renderMetricsRow(slide.metrics, rows) : ''}
-  <div class="slide-chart-full" style="flex:1">${chartHtml}</div>
+  <div class="slide-chart-full" style="flex:1" data-miao-chart="${escapeHtml(chartId)}" data-slide-index="${index}" data-chart-index="0"><div class="miao-render-slot">${chartHtml}</div></div>
   ${pageFooter(index, total)}
 </div>`
 }
 
 export function renderChartFullSlide(slide: SlideSpec, rows: Record<string, unknown>[], svg: SvgTheme, index: number, total: number): string {
   const chart = slide.charts?.[0]
-  const chartHtml = chart ? renderChartSvg(withSize(chart, 1100, 460), rows, svg) : ''
+  const chartId = chart?.id ?? `slide-${index}-chart`
+  const chartHtml = chart ? renderChartSvg(withSize(chart, 1100, 460), rows, svg, { chartId }) : ''
   return `<div class="slide">
   ${slide.eyebrow ? renderEyebrow(slide.eyebrow) : ''}
   <div class="slide-title" style="margin-bottom:16px">${escapeHtml(slide.title ?? '')}</div>
-  <div class="slide-chart-full" style="flex:1">${chartHtml}</div>
+  <div class="slide-chart-full" style="flex:1" data-miao-chart="${escapeHtml(chartId)}" data-slide-index="${index}" data-chart-index="0"><div class="miao-render-slot">${chartHtml}</div></div>
   ${pageFooter(index, total)}
 </div>`
 }
 
 export function renderTableFullSlide(slide: SlideSpec, rows: Record<string, unknown>[], svg: SvgTheme, index: number, total: number): string {
   const chart = slide.charts?.[0] ?? { type: 'table' as const, encoding: {} }
-  const tableHtml = renderChartSvg(chart, rows, svg)
+  const chartId = chart?.id ?? `slide-${index}-chart`
+  const tableHtml = renderChartSvg(chart, rows, svg, { chartId })
   return `<div class="slide">
   ${slide.eyebrow ? renderEyebrow(slide.eyebrow) : ''}
   <div class="slide-title" style="margin-bottom:16px">${escapeHtml(slide.title ?? '')}</div>
-  <div style="flex:1;overflow:hidden">${tableHtml}</div>
+  <div style="flex:1;overflow:hidden" data-miao-chart="${escapeHtml(chartId)}" data-slide-index="${index}" data-chart-index="0"><div class="miao-render-slot">${tableHtml}</div></div>
   ${pageFooter(index, total)}
 </div>`
 }

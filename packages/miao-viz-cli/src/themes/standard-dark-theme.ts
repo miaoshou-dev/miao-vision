@@ -1,24 +1,24 @@
 import type { ReportTheme } from './types'
 
-export const editorialTheme: ReportTheme = {
-  name: 'editorial',
+export const standardDarkTheme: ReportTheme = {
+  name: 'standard-dark',
   layout: 'editorial',
   svg: {
-    palette: ['#1b365d', '#8a5a44', '#4f6f52', '#a37f2c', '#6b5b95', '#2f6f73'],
-    background: '#faf9f5',
-    axisColor: '#c8c5b8',
-    labelColor: '#6b6a64'
+    palette: ['#7eb8f7', '#5ecfb1', '#f7a55e', '#e87d7d', '#c4a3f0', '#5ec4d6'],
+    background: '#161b26',
+    axisColor: '#252c3a',
+    labelColor: '#737069'
   },
   css: `
     :root {
-      --mv-paper: #f5f4ed;
-      --mv-surface: #faf9f5;
-      --mv-border: #e5e3d8;
-      --mv-ink: #141413;
-      --mv-muted: #6b6a64;
-      --mv-soft-text: #504e49;
-      --mv-soft: #504e49;
-      --mv-brand: #1b365d;
+      --mv-paper: #0f1117;
+      --mv-surface: #161b26;
+      --mv-border: #252c3a;
+      --mv-ink: #e2e0d8;
+      --mv-muted: #737069;
+      --mv-soft-text: #a8a69f;
+      --mv-soft: #a8a69f;
+      --mv-brand: #7eb8f7;
       --mv-mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
       --mv-serif: Charter, Georgia, "Times New Roman", serif;
       --mv-sans: Inter, ui-sans-serif, system-ui, sans-serif;
@@ -51,7 +51,7 @@ export const editorialTheme: ReportTheme = {
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
     .kpi-grid .miao-bigvalue { border: none; border-radius: 0; border-right: 1px solid var(--mv-border); padding: 16px 24px 24px; }
     .kpi-grid .miao-bigvalue:last-child { border-right: none; }
-    .miao-unsupported { padding: 18px; border-radius: 3px; background: #fff7ed; color: #9a3412; font-size: 13px; border: 1px solid #fed7aa; }
+    .miao-unsupported { padding: 18px; border-radius: 3px; background: #1c1500; color: #fbbf24; font-size: 13px; border: 1px solid #3d2f00; }
     @media (max-width: 720px) {
       .miao-viz-report { padding: 32px 16px 48px; }
       h1 { font-size: 26px; }

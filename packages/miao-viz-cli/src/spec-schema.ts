@@ -10,7 +10,25 @@ export const MVP_CHART_TYPES = [
   'histogram',
   'heatmap',
   'table',
-  'bigvalue'
+  'bigvalue',
+  'progress',
+  'sparkline',
+  'delta',
+  'funnel',
+  'gauge',
+  'bubble',
+  'boxplot',
+  'waterfall',
+  'radar',
+  'calendar',
+  'treemap',
+  'pivot',
+  'sankey',
+  'infographic-kpi',
+  'infographic-list',
+  'infographic-flow',
+  'infographic-hierarchy',
+  'infographic-comparison'
 ] as const
 
 export const OUTPUT_FORMATS = ['html', 'svg', 'png', 'pdf'] as const
@@ -36,9 +54,10 @@ const transformSchema = z.object({
   value: z.unknown().optional()
 })
 
-const globalFilterSchema = z.object({
+export const globalFilterSchema = z.object({
   field: z.string().min(1),
-  type: z.enum(['select', 'range'])
+  type: z.enum(['select', 'range']),
+  multiSelect: z.boolean().optional()
 })
 
 const chartInteractionSchema = z.object({
@@ -60,8 +79,10 @@ export const chartSpecSchema: z.ZodType<AgentChartSpec> = z.object({
   id: z.string().min(1).optional(),
   type: z.enum(MVP_CHART_TYPES),
   title: z.string().optional(),
+  sortable: z.boolean().optional(),
   interaction: chartInteractionSchema.optional(),
   drilldownPreset: z.enum(['category-detail']).optional(),
+  drilldownChart: z.string().optional(),
   data: z.object({
     source: z.string().optional(),
     transform: z.array(transformSchema).optional()
@@ -80,7 +101,7 @@ export const chartSpecSchema: z.ZodType<AgentChartSpec> = z.object({
 export const reportSpecSchema: z.ZodType<AgentReportSpec> = z.object({
   title: z.string().optional(),
   description: z.string().optional(),
-  theme: z.enum(['default', 'editorial', 'dark', 'minimal']).optional(),
+  theme: z.enum(['standard-white', 'magazine', 'standard-dark', 'minimal', 'nyt', 'bloomberg', 'tableau']).optional(),
   interactions: z.object({
     globalFilters: z.array(globalFilterSchema).optional()
   }).optional(),

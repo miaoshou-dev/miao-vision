@@ -1,3 +1,4 @@
+import { CLIENT_DATA_ENGINE_CSS, CLIENT_DATA_ENGINE_JS } from './client-data-engine'
 import { INTERACTIVE_CSS, INTERACTIVE_JS } from './interactive-runtime-assets'
 import type { AgentGlobalFilter, AgentReportSpec } from './types'
 
@@ -43,7 +44,8 @@ export function selectDetailRows(
 export function renderInteractiveAssets(rows: Record<string, unknown>[]): string {
   return `
   <script type="application/json" id="miao-viz-data">${escapeScriptJson(rows)}</script>
-  <style>${INTERACTIVE_CSS}</style>
+  <script>${CLIENT_DATA_ENGINE_JS}</script>
+  <style>${CLIENT_DATA_ENGINE_CSS}${INTERACTIVE_CSS}</style>
   <script>${INTERACTIVE_JS}</script>`
 }
 

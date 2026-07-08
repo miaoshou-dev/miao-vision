@@ -28,9 +28,13 @@ export function renderInfographicBundleHtml(spec: InfographicBundleSpec): string
       ${blocks.map(block => renderBlock(block, style)).join('\n')}
     </div>
   </main>
-  <script type="application/json" id="miao-infographic-bundle-spec">${escapeHtml(JSON.stringify(spec, null, 2))}</script>
+  <script type="application/json" id="miao-infographic-bundle-spec">${jsonScript(spec)}</script>
 </body>
 </html>`
+}
+
+function jsonScript(value: unknown): string {
+  return JSON.stringify(value, null, 2).replace(/</g, '\\u003c')
 }
 
 function renderBlock(block: InfographicBundleBlock, style: InfographicBundleSpec['style']): string {

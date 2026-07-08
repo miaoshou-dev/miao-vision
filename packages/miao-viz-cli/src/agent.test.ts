@@ -176,15 +176,15 @@ describe('agent spec validation and HTML rendering', () => {
     expect(html).toContain('class="chart-block"')
   })
 
-  it('renders editorial theme with correct structure', () => {
+  it('renders magazine theme with correct structure', () => {
     const dataset = loadDataset(csvPath)
     expect(dataset.ok).toBe(true)
     if (!dataset.ok) return
 
     const profile = profileDataset(dataset.value)
     const spec: AgentReportSpec = {
-      title: 'Editorial Test',
-      description: 'Checking editorial theme output.',
+      title: 'Magazine Test',
+      description: 'Checking magazine theme output.',
       charts: [
         {
           type: 'bar',
@@ -208,7 +208,7 @@ describe('agent spec validation and HTML rendering', () => {
       ]
     }
 
-    const html = renderStaticHtml(spec, profile, dataset.value.rows, 'editorial')
+    const html = renderStaticHtml(spec, profile, dataset.value.rows, 'magazine')
     expect(html).toContain('--mv-paper')
     expect(html).toContain('class="report-hero"')
     expect(html).toContain('class="chart-card"')
@@ -227,7 +227,7 @@ describe('agent spec validation and HTML rendering', () => {
     const profile = profileDataset(dataset.value)
     const spec: AgentReportSpec = {
       title: 'Theme via Spec',
-      theme: 'editorial',
+      theme: 'magazine',
       charts: [{ type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'sales' } } }]
     }
     const html = renderStaticHtml(spec, profile, dataset.value.rows)
@@ -1646,7 +1646,7 @@ describe('validate semantic warnings (T24–T28)', () => {
   const profile = dataset.ok ? profileDataset(dataset.value) : ({} as ReturnType<typeof profileDataset>)
 
   // T23: filter transform is a hard error, not a warning
-  it('rejects filter transform with UNSUPPORTED_TRANSFORM', () => {
+  it('accepts filter transform now that renderer supports it', () => {
     const spec: AgentReportSpec = {
       charts: [{
         type: 'bar',
@@ -1656,8 +1656,7 @@ describe('validate semantic warnings (T24–T28)', () => {
       }]
     }
     const result = validateReportSpec(spec, profile)
-    expect(result.ok).toBe(false)
-    if (!result.ok) expect(result.code).toBe('UNSUPPORTED_TRANSFORM')
+    expect(result.ok).toBe(true)
   })
 
   // T24: derive-month on string field → warning
@@ -2097,7 +2096,7 @@ describe('collectVerifyWarnings (T47–T49)', () => {
 })
 
 describe('generatePatchHints (T40)', () => {
-  it('generates remove patch for UNSUPPORTED_TRANSFORM filter', () => {
+  it('filter transform is no longer rejected by validator', () => {
     const spec: AgentReportSpec = {
       charts: [{
         id: 'c1',
@@ -2106,10 +2105,8 @@ describe('generatePatchHints (T40)', () => {
         encoding: { x: { field: 'region' }, y: { field: 'sales' } }
       }]
     }
-    const err = { ok: false as const, code: 'UNSUPPORTED_TRANSFORM', message: '', detail: { chartId: 'c1' } }
-    const patches = generatePatchHints(err, spec)
-    expect(patches).toBeDefined()
-    expect(patches![0]).toMatchObject({ op: 'remove', path: '/charts/0/data/transform/0' })
+    expect(spec.charts[0].data?.transform?.[0].type).toBe('filter')
+    expect(spec.charts[0].data?.transform?.[0].value).toBe('East')
   })
 
   it('generates replace patch for BLOCKED_CHART_STRICT', () => {
@@ -2270,7 +2267,25 @@ describe('renderChartSvg — all MVP_CHART_TYPES have a renderer (no renderUnsup
     histogram: { type: 'histogram', encoding: { x: { field: 'num_x' } } },
     heatmap:   { type: 'heatmap',   encoding: { x: { field: 'dim_x' }, y: { field: 'dim_y' }, value: { field: 'num_x' } } },
     table:     { type: 'table',     encoding: {} },
-    bigvalue:  { type: 'bigvalue',  encoding: { value: { field: 'num_x' } } }
+    bigvalue:  { type: 'bigvalue',  encoding: { value: { field: 'num_x' } } },
+    progress:  { type: 'progress',  encoding: { value: { field: 'num_x' } } },
+    sparkline: { type: 'sparkline', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    delta:     { type: 'delta',     encoding: { value: { field: 'num_x' } } },
+    funnel:    { type: 'funnel',    encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    gauge:     { type: 'gauge',     encoding: { value: { field: 'num_x' } } },
+    bubble:    { type: 'bubble',    encoding: { x: { field: 'num_x' }, y: { field: 'num_y' }, size: { field: 'num_x' } } },
+    boxplot:   { type: 'boxplot',   encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    waterfall: { type: 'waterfall', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    radar:     { type: 'radar',     encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    calendar:  { type: 'calendar',  encoding: { x: { field: 'dim_x' }, value: { field: 'num_x' } } },
+    treemap:   { type: 'treemap',   encoding: { label: { field: 'dim_x' }, value: { field: 'num_x' } } },
+    pivot:     { type: 'pivot',     encoding: { x: { field: 'dim_x' }, y: { field: 'dim_y' }, value: { field: 'num_x' } } },
+    sankey:    { type: 'sankey',    encoding: { x: { field: 'dim_x' }, y: { field: 'dim_y' }, value: { field: 'num_x' } } },
+    'infographic-kpi':  { type: 'infographic-kpi',  encoding: { value: { field: 'num_x' } } },
+    'infographic-list': { type: 'infographic-list', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    'infographic-flow': { type: 'infographic-flow', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    'infographic-hierarchy': { type: 'infographic-hierarchy', encoding: { label: { field: 'dim_x' }, value: { field: 'num_x' } } },
+    'infographic-comparison': { type: 'infographic-comparison', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } }
   }
 
   for (const chartType of MVP_CHART_TYPES) {

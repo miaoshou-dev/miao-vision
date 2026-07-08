@@ -73,7 +73,9 @@ export function applyEncodingAggregates(
     const xField = enc.x?.field
     const yEnc = enc.y
     if (xField && yEnc?.field && yEnc.aggregate) {
-      return groupByAndAggregate(rows, xField, yEnc.field, yEnc.aggregate)
+      const groupFields = [xField]
+      if (enc.color?.field) groupFields.push(enc.color.field)
+      return groupByAndAggregate(rows, groupFields, yEnc.field, yEnc.aggregate)
     }
     return rows
   }
@@ -82,7 +84,9 @@ export function applyEncodingAggregates(
     const labelField = enc.label?.field
     const valueEnc = enc.value
     if (labelField && valueEnc?.field && valueEnc.aggregate) {
-      return groupByAndAggregate(rows, labelField, valueEnc.field, valueEnc.aggregate)
+      const groupFields = [labelField]
+      if (enc.color?.field) groupFields.push(enc.color.field)
+      return groupByAndAggregate(rows, groupFields, valueEnc.field, valueEnc.aggregate)
     }
     return rows
   }
@@ -92,21 +96,24 @@ export function applyEncodingAggregates(
 
 function groupByAndAggregate(
   rows: Record<string, unknown>[],
-  groupField: string,
+  groupFields: string[],
   valueField: string,
   op: string
 ): Record<string, unknown>[] {
-  const groups = new Map<unknown, Record<string, unknown>[]>()
+  const groups = new Map<string, Record<string, unknown>[]>()
   for (const row of rows) {
-    const key = row[groupField]
+    const key = JSON.stringify(groupFields.map(f => row[f]))
     const group = groups.get(key) ?? []
     group.push(row)
     groups.set(key, group)
   }
-  return [...groups.entries()].map(([key, groupRows]) => ({
-    [groupField]: key,
-    [valueField]: aggregateMeasure(groupRows, valueField, op)
-  }))
+  return [...groups.values()].map(groupRows => {
+    const first = groupRows[0]
+    const out: Record<string, unknown> = {}
+    for (const f of groupFields) out[f] = first[f]
+    out[valueField] = aggregateMeasure(groupRows, valueField, op)
+    return out
+  })
 }
 
 function applyTransform(
@@ -134,10 +141,7 @@ function applyTransform(
   }
 
   if (transform.type === 'filter') {
-    throw new Error(
-      "Transform type 'filter' is not supported in the renderer. " +
-      "Use miao-viz query --filter to pre-filter data, or the validate command will catch this before render."
-    )
+    return applyFilter(rows, transform)
   }
 
   return rows
@@ -189,6 +193,49 @@ function compareValues(a: unknown, b: unknown, order: 'asc' | 'desc'): number {
     return (aNumber - bNumber) * direction
   }
   return String(a ?? '').localeCompare(String(b ?? '')) * direction
+}
+
+function applyFilter(
+  rows: Record<string, unknown>[],
+  transform: AgentDataTransform
+): Record<string, unknown>[] {
+  const field = transform.field
+  const rawValue = transform.value
+  if (!field || rawValue == null) return rows
+
+  const rawStr = String(rawValue)
+  const ops = ['>=', '<=', '>', '<', '='] as const
+  let op = '='
+  let compareValue = rawStr
+
+  for (const candidate of ops) {
+    if (rawStr.startsWith(candidate)) {
+      op = candidate
+      compareValue = rawStr.slice(candidate.length).trim()
+      break
+    }
+  }
+
+  return rows.filter(row => {
+    const cellValue = row[field]
+    if (op === '=') return String(cellValue ?? '') === compareValue
+
+    const numCell = Number(cellValue)
+    const numComp = Number(compareValue)
+    if (Number.isFinite(numCell) && Number.isFinite(numComp)) {
+      if (op === '>=') return numCell >= numComp
+      if (op === '<=') return numCell <= numComp
+      if (op === '>') return numCell > numComp
+      if (op === '<') return numCell < numComp
+    }
+
+    const strCell = String(cellValue ?? '')
+    if (op === '>=') return strCell >= compareValue
+    if (op === '<=') return strCell <= compareValue
+    if (op === '>') return strCell > compareValue
+    if (op === '<') return strCell < compareValue
+    return false
+  })
 }
 
 function toMonth(value: unknown): string {

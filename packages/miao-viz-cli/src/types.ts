@@ -167,6 +167,7 @@ export type AgentDrilldownPreset = 'category-detail'
 export interface AgentGlobalFilter {
   field: string
   type: AgentGlobalFilterType
+  multiSelect?: boolean
 }
 
 export interface AgentChartInteraction {
@@ -191,8 +192,10 @@ export interface AgentChartSpec {
   id?: string
   type: VizType
   title?: string
+  sortable?: boolean
   interaction?: AgentChartInteraction
   drilldownPreset?: AgentDrilldownPreset
+  drilldownChart?: string
   data?: {
     source?: string
     transform?: AgentDataTransform[]
@@ -212,7 +215,7 @@ export interface AgentChartSpec {
 export interface AgentReportSpec {
   title?: string
   description?: string
-  theme?: 'default' | 'editorial' | 'dark' | 'minimal'
+  theme?: 'standard-white' | 'magazine' | 'standard-dark' | 'minimal' | 'nyt' | 'bloomberg' | 'tableau'
   interactions?: AgentReportInteractions
   insights?: AgentInsight[]
   charts: AgentChartSpec[]
