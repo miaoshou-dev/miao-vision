@@ -1,8 +1,8 @@
 import type { AgentChartSpec } from './types'
 import type { SvgTheme } from './themes/types'
 import {
-  escapeHtml, formatTick, svgFrame, markAttrs, numberStyle,
-  buildAxis, describeArc, polarToCartesian, renderUnsupported
+  escapeHtml, svgFrame, markAttrs, numberStyle,
+  buildAxis, describeArc, polarToCartesian
 } from './svg-renderer-utils'
 
 export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: { chartId?: string }): string {
@@ -185,7 +185,7 @@ export function renderLineChart(chart: AgentChartSpec, rows: Record<string, unkn
       })
     })
 
-    const areas = colorValues.map((cv, si) => {
+    const areas = colorValues.map((_cv, si) => {
       const color = theme.palette[si % theme.palette.length]
       const topPath = stacks.map((s, i) => {
         const y = baseline - s[si].top
@@ -224,7 +224,7 @@ export function renderLineChart(chart: AgentChartSpec, rows: Record<string, unkn
     seriesPoints.set(cv, pts)
   }
 
-  const paths = [...seriesPoints.entries()].map(([cv, pts], si) => {
+  const paths = [...seriesPoints.entries()].map(([_cv, pts], si) => {
     const color = theme.palette[si % theme.palette.length]
     const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
     return `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />`

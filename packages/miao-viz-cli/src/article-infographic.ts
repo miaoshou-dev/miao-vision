@@ -166,7 +166,7 @@ export const infographicSpecSchema = baseSpecSchema
 
 export const strictInfographicSpecSchema = baseSpecSchema.superRefine((spec, ctx) => {
   if (spec.composition?.type === 'lifecycle-curve') {
-    const count = countOrderedPhasePoints(spec)
+    const count = countOrderedPhasePoints(spec as InfographicSpec)
     if (count < 3) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -176,7 +176,7 @@ export const strictInfographicSpecSchema = baseSpecSchema.superRefine((spec, ctx
     }
   }
   if (spec.composition?.type === 'strategy-dashboard') {
-    if (!hasKpiVisual(spec)) {
+    if (!hasKpiVisual(spec as InfographicSpec)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['composition', 'type'],

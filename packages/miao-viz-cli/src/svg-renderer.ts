@@ -52,7 +52,7 @@ export function renderChartSvg(
   if (chart.type === 'calendar') return renderCalendarChart(chart, data, theme, options)
   if (chart.type === 'treemap') return renderTreemapChart(chart, data)
   if (chart.type === 'pivot') return renderPivotChart(chart, data)
-  if (chart.type === 'sankey') return renderSankeyChart(chart, data, theme, options)
+  if (chart.type === 'sankey') return renderSankeyChart(chart, data, theme)
   if (chart.type === 'infographic-kpi') return renderInfographicKpi(chart, data)
   if (chart.type === 'infographic-list') return renderInfographicList(chart, data)
   if (chart.type === 'infographic-flow') return renderInfographicFlow(chart, data)

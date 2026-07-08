@@ -1,7 +1,5 @@
 import type { ChartCatalogItem } from "./chart-catalog-types"
 
-import type { ChartCatalogItem } from "./chart-catalog-types"
-
 export const CHART_CATALOG: ChartCatalogItem[] = [
   {
     id: 'bar',

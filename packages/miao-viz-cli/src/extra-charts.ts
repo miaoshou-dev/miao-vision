@@ -1,6 +1,6 @@
 import type { AgentChartSpec } from './types'
 import type { SvgTheme } from './themes/types'
-import { escapeHtml, numberStyle, markAttrs, svgFrame, buildAxis, formatTick } from './svg-renderer-utils'
+import { escapeHtml, numberStyle, markAttrs, svgFrame, buildAxis } from './svg-renderer-utils'
 
 interface RenderOptions {
   chartId?: string
@@ -27,7 +27,6 @@ export function renderProgressChart(chart: AgentChartSpec, rows: Record<string, 
 }
 
 export function renderSparklineChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme): string {
-  const xField = chart.encoding?.x?.field ?? ''
   const yField = chart.encoding?.y?.field ?? ''
   const width = numberStyle(chart, 'width', 160)
   const height = numberStyle(chart, 'height', 40)
@@ -248,10 +247,8 @@ export function renderWaterfallChart(chart: AgentChartSpec, rows: Record<string,
   const bars = rows.map((row, i) => {
     const val = values[i]
     const isLast = i === rows.length - 1
-    const yBase = isLast ? 0 : (val >= 0 ? 0 : val)
     const barH = Math.abs(val) / ySpan * chartH
     const x = margin.left + i * (barW + gap)
-    const y = margin.top + chartH - ((Math.max(running, running + val) - yMin) / ySpan) * chartH
     const float = isLast ? 0 : Math.min(running, running + val)
     const yFloat = margin.top + chartH - ((float - yMin) / ySpan) * chartH
     const color = isLast ? theme.palette[0] : (val >= 0 ? '#16a34a' : '#dc2626')
@@ -304,7 +301,7 @@ export function renderCalendarChart(chart: AgentChartSpec, rows: Record<string, 
   const valueField = chart.encoding?.value?.field ?? ''
   const width = numberStyle(chart, 'width', 700)
   const height = numberStyle(chart, 'height', 150)
-  const cellS = 16; const gap = 2; const dayW = 7
+  const cellS = 16; const gap = 2
   const dates = rows.map(r => ({ d: new Date(String(r[xField])), v: Number(r[valueField]) || 0 }))
     .filter(d => Number.isFinite(d.d.getTime()))
   if (dates.length === 0) return ''
@@ -312,7 +309,6 @@ export function renderCalendarChart(chart: AgentChartSpec, rows: Record<string, 
   const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   const grids = dates.map(d => {
     const day = (d.d.getDay() + 6) % 7
-    const week = Math.floor((d.d.getDate() - 1) / 7)
     const month = d.d.getMonth()
     // compute a simple week-of-month position; group by week offset
     const firstDay = new Date(d.d.getFullYear(), month, 1)
@@ -388,7 +384,7 @@ export function renderPivotChart(chart: AgentChartSpec, rows: Record<string, unk
   return `<div class="miao-table-wrap"><table class="miao-table"><caption>${escapeHtml(chart.title ?? 'Pivot')}</caption>${thead}${tbody}</table></div>`
 }
 
-export function renderSankeyChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: RenderOptions): string {
+export function renderSankeyChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme): string {
   const sourceField = chart.encoding?.x?.field ?? ''
   const targetField = chart.encoding?.y?.field ?? ''
   const valueField = chart.encoding?.value?.field ?? ''

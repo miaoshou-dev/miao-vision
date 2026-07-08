@@ -1,4 +1,4 @@
-import type { AnalyzeField, CatalogBlockEntry, MetricCandidate } from './context-schema'
+import type { AnalyzeContext, AnalyzeField, CatalogBlockEntry, MetricCandidate } from './context-schema'
 import type { AgentChartSpec, AgentInsight } from './types'
 import { insightTotal, insightTrend, insightTopN, insightPeriodChange } from './block-insight-generator'
 import { buildKpiChart, buildBarChart, buildLineChart, buildPieChart, buildTableChart } from './block-chart-builders'
@@ -143,7 +143,7 @@ const snapshotRanking: ReportBlockResolver = {
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', topN: 10 }
   },
 
-  compile(variables, ctx) {
+  compile(variables, _ctx) {
     const measure = String(variables.primaryMeasure)
     const dimension = String(variables.primaryDimension)
     const topN = Number(variables.topN ?? 10)
@@ -247,7 +247,7 @@ const comparisonBreakdown: ReportBlockResolver = {
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', topN: 10 }
   },
 
-  compile(variables, ctx) {
+  compile(variables, _ctx) {
     const measure = String(variables.primaryMeasure)
     const dimension = String(variables.primaryDimension)
     const topN = Number(variables.topN ?? 10)

@@ -341,7 +341,7 @@ describe('formatMetricValue', () => {
 
 describe('deck theme integration', () => {
   it('injects theme root CSS variables into HTML', () => {
-    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'dark')
+    const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS, 'standard-dark')
     expect(html).toContain('id="miao-deck-theme"')
     expect(html).toContain('--mv-paper')
     expect(html).toContain('--mv-brand')
@@ -385,7 +385,7 @@ describe('deck theme integration', () => {
   })
 
   it('uses spec.theme when no themeOverride', () => {
-    const spec: DeckSpec = { ...MINIMAL_DECK, theme: 'dark' }
+    const spec: DeckSpec = { ...MINIMAL_DECK, theme: 'standard-dark' }
     const html = renderDeckHtml(spec, SAMPLE_ROWS)
     expect(html).toContain('--mv-paper: #0f1117')
   })

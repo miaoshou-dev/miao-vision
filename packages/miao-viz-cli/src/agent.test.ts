@@ -1566,7 +1566,7 @@ describe('article composition layer (P0)', () => {
     const parsed = infographicSpecSchema.safeParse(spec)
     expect(parsed.success).toBe(true)
     if (!parsed.success) return
-    const html = renderInfographicHtml(parsed.data)
+    const html = renderInfographicHtml(parsed.data as Parameters<typeof renderInfographicHtml>[0])
     expect(html).toContain('Phase 1')
     expect(html).toContain('<svg')
     expect(html).toContain('Priority')
