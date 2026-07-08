@@ -7,19 +7,29 @@ Use this workflow when the user asks for slides, a presentation, a PPT/PPTX-like
 1. Run `miao-viz profile <file>` to inspect the data.
 2. Read the profile JSON and decide the story arc: opening claim, key metrics, supporting chart, and closing implication.
 3. Create a DeckSpec YAML using `references/vizspec.md`.
-4. Render the deck directly. Do not run `miao-viz validate`; DeckSpec uses its own schema inside the `deck` command.
+4. **Choose theme** — ask the user which theme they want (or default to `magazine` if unsure):
+
+   | Theme | Style |
+   |---|---|
+   | `standard-white` | Clean blue/white card-based, default |
+   | `magazine` | Serif font, warm paper texture |
+   | `standard-dark` | Dark background, mono+serif |
+   | `minimal` | Ultra-minimal, borderless |
+   | `nyt` | New York Times — Georgia serif, hairline borders, newspaper feel |
+   | `bloomberg` | Bloomberg Terminal — monospace, green-on-black, data-dense |
+   | `tableau` | Tableau-style BI dashboard — orange/blue palette, clean cards, tool-like |
+
+5. Render the deck directly with the chosen theme. Do not run `miao-viz validate`; DeckSpec uses its own schema inside the `deck` command.
 
 ```bash
 miao-viz deck \
   --input /path/to/data.csv \
   --spec /tmp/miao-vision/deck.yaml \
-  --theme editorial \
+  --theme <chosen-theme> \
   --output /tmp/miao-vision/deck.html
 ```
 
-5. Return the generated HTML path to the user.
-
-Use `--theme editorial` for user-facing decks unless the user asks for `dark` or `minimal`.
+6. Return the generated HTML path to the user.
 
 ## Error Repair
 

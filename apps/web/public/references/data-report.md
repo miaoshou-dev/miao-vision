@@ -108,7 +108,7 @@ miao-viz template instantiate <id> --context /tmp/miao-vision/context.json
 miao-viz block instantiate <id> --context /tmp/miao-vision/context.json
 ```
 
-3. Review the draft: confirm field names against `context.json fields[]`, adjust variables such as `topN`, fill `insights[]` using `evidence[]` values, and complete each generated quality check.
+3. Review the draft: confirm field names against `context.json fields[]`, adjust variables such as `topN`, and complete each generated quality check. **Insights are auto-generated from `evidence[]` values** — review them, add caveats if needed (e.g. when `sampleWarnings` are present), but do not delete them.
 4. Proceed to validate. Skip manual chart writing when using a matching template or block.
 
 If `catalog.blocks` is empty or no block matches the intent, fall back to manual chart selection from `catalog.charts`.
@@ -126,6 +126,7 @@ Read `references/vizspec.md` before writing specs. Key rules:
 - Default maximum is 6 charts per report; 4 `bigvalue` blocks count as 1.
 - Two charts of the same type must cover clearly different dimensions.
 - When over budget, merge charts instead of dropping analytical goals.
+- **`encoding.color` is supported** for multi-series bar (grouped/stacked), multi-line, stacked area, and donut. See `references/vizspec.md`.
 
 ## Insights And Evidence
 
@@ -208,6 +209,22 @@ Patchable warnings:
 
 Non-patchable errors: `FIELD_NOT_FOUND`, `UNSUPPORTED_CHART_TYPE`, `EVIDENCE_PATH_NOT_FOUND`.
 
+## Step 5: Choose Theme
+
+Before rendering, ask the user which theme they want (or default to `magazine` if unsure):
+
+| Theme | Style |
+|---|---|
+| `standard-white` | Clean blue/white card-based, default |
+| `magazine` | Serif font, warm paper texture |
+| `standard-dark` | Dark background, mono+serif |
+| `minimal` | Ultra-minimal, borderless |
+| `nyt` | New York Times — Georgia serif, hairline borders, newspaper feel |
+   | `bloomberg` | Bloomberg Terminal — monospace, green-on-black, data-dense |
+   | `tableau` | Tableau-style BI dashboard — orange/blue palette, clean cards, tool-like |
+
+If the user has no preference, use `magazine` for user-facing reports.
+
 Render:
 
 ```bash
@@ -215,12 +232,12 @@ miao-viz render \
   --input /path/to/data.csv \
   --spec /tmp/miao-vision/report.yaml \
   --context /tmp/miao-vision/context.json \
-  --theme editorial \
+  --theme <chosen-theme> \
   --format html \
   --output /tmp/miao-vision/report.html
 ```
 
-Return the generated HTML path to the user. Use `--theme editorial` for user-facing reports.
+Return the generated HTML path to the user.
 
 ## Edit Mode
 

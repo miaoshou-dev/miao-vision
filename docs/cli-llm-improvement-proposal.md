@@ -12,7 +12,7 @@
 
 ## 背景与分工原则
 
-CLI（`packages/miao-viz-cli`）+ Skill（`packages/miao-vision-skill/SKILL.md`）共同构成面向 LLM Agent 的可视化工作流。问题集中在两个层面：**CLI 工具能力限制**和 **LLM 行为约束缺失**。
+CLI（`packages/miao-viz-cli`）+ Skill（`skills/miao-vision/SKILL.md`）共同构成面向 LLM Agent 的可视化工作流。问题集中在两个层面：**CLI 工具能力限制**和 **LLM 行为约束缺失**。
 
 三份文档的分析最终指向同一个架构方向——从"改 workflow"升级到"改契约层"：
 
@@ -55,7 +55,7 @@ Render     ：确定性 artifact 生成
 
 ### 问题 2：数据可视化 workflow 步骤过多
 
-**所在文件：** `packages/miao-vision-skill/SKILL.md`（Phase 1–4）
+**所在文件：** `skills/miao-vision/SKILL.md`（Phase 1–4）
 
 完整 workflow 最少需要 **7–9 次工具调用**，每次调用都有上下文重传和 LLM 重新理解当前状态的成本。**步骤多是 token 消耗的主要来源。**
 
@@ -87,7 +87,7 @@ Render     ：确定性 artifact 生成
 
 ### 问题 5：LLM 数字幻觉与过度解读
 
-**所在文件：** `packages/miao-vision-skill/SKILL.md`（Phase 3、Step G）
+**所在文件：** `skills/miao-vision/SKILL.md`（Phase 3、Step G）
 
 - insight 里的百分比由 LLM 自行推算，来源不可追踪（`240/450≈53.3%` 可能算错）
 - 小样本下写出超出证据范围的经营结论
@@ -98,7 +98,7 @@ Render     ：确定性 artifact 生成
 
 ### 问题 6：chart 选择规则分散、存在冲突
 
-**所在文件：** `packages/miao-viz-cli/src/data-profiler.ts`、`packages/miao-vision-skill/SKILL.md`（Step A–B）
+**所在文件：** `packages/miao-viz-cli/src/data-profiler.ts`、`skills/miao-vision/SKILL.md`（Step A–B）
 
 `generateHints` 和 Step B 基数规则有时给出矛盾信号（15 个 distinct value 的列：hints 建议 bar，规则要求 table）。LLM 需要自行判断优先级，但规则优先级没有机器编码。更深层的问题是：图表约束散落在 SKILL.md prose 里，无法被 validator 执行，只能靠 LLM 记忆。
 

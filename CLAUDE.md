@@ -18,10 +18,9 @@ The web app is currently a landing, preview, packaging, and distribution surface
 
 ```text
 packages/miao-viz-cli/       Primary CLI implementation and renderer
-packages/miao-vision-skill/  Source skill instructions and install docs
+skills/miao-vision/          Source skill, references, and install docs
 packages/shared/             Shared type packages
 apps/web/                    Svelte landing/distribution app
-skills/miao-vision/          Installed/local skill copy
 docs/                        Product, architecture, and implementation plans
 tests/                       E2E tests and test helpers
 test_data/                   CLI and rendering fixtures
@@ -132,21 +131,24 @@ npm run miao-viz -- deck \
 
 Deck validation should continue to identify missing fields in chart encodings, chart transforms, and metric transforms with structured repair information.
 
+## Skill Installation
+
+This repo ships an AI agent skill that can be installed via [vercel-labs/skills](https://github.com/vercel-labs/skills):
+
+```bash
+npx skills add miaoshou-dev/miao-vision
+```
+
+Or from a local checkout:
+
+```bash
+mkdir -p ~/.claude/skills
+cp -R skills/miao-vision ~/.claude/skills/miao-vision
+```
+
 ## Skill Maintenance
 
-The source skill is:
-
-```text
-packages/miao-vision-skill/SKILL.md
-```
-
-Reference docs for the skill live under:
-
-```text
-packages/miao-vision-skill/references/
-```
-
-Packaged or copied skill files such as `apps/web/public/SKILL.md`, `apps/web/dist/SKILL.md`, and `skills/miao-vision/SKILL.md` are not the primary source of truth. Update the source skill, then use the existing build or packaging workflow to refresh generated copies when needed.
+The source skill is in `skills/miao-vision/`. Packaged or copied skill files such as `apps/web/public/SKILL.md` and `apps/web/dist/SKILL.md` are not the primary source of truth. Update the source skill, then use the existing build or packaging workflow to refresh generated copies when needed.
 
 ## Web App Scope
 

@@ -616,7 +616,7 @@ V03/V04 在 `patch-hints` 里提供自动修复（补 sort）。
 | `packages/miao-viz-cli/src/analyzer.ts` | 修改 | `buildCatalog()` 调用 block resolver matching；import `CHART_CATALOG` 驱动 blockedCharts 判断 |
 | `packages/miao-viz-cli/src/spec-validator.ts` | 修改 | 删除 `REQUIRED_ENCODINGS` 常量（改从 `CHART_CATALOG` 读）；error 规则进主验证、warning 规则进 warnings；新增 V01–V04；patch-hints 扩展 |
 | `packages/miao-viz-cli/src/cli.ts` | 修改 | 新增 `block instantiate <id>` 子命令；新增 `catalog --for-llm` 命令 |
-| `packages/miao-vision-skill/SKILL.md` | 修改 | 新增 Intent Routing（第 0 步）；Phase 3 新增 Block Selection 段；新增 Edit Mode 说明；System/User prompt 分层注释 |
+| `skills/miao-vision/SKILL.md` | 修改 | 新增 Intent Routing（第 0 步）；Phase 3 新增 Block Selection 段；新增 Edit Mode 说明；System/User prompt 分层注释 |
 | `packages/miao-viz-cli/fixtures/` | **新建目录** | golden fixture 文件（见下节） |
 
 **不需要修改：**

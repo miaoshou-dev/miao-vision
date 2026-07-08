@@ -30,7 +30,7 @@
   "homepage": "https://github.com/maishou-dev/miao-vision#readme",
   "scripts": {
     "dev": "vite",
-    "build": "cp packages/miao-vision-skill/SKILL.md apps/web/public/SKILL.md && cp -r packages/miao-vision-skill/references/ apps/web/public/references/ && vite build",
+    "build": "cp skills/miao-vision/SKILL.md apps/web/public/SKILL.md && cp -r skills/miao-vision/references/ apps/web/public/references/ && vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "check:size": "bash scripts/check-file-size.sh",

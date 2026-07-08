@@ -20,7 +20,7 @@ Article infographic source files:
 
 - `packages/miao-viz-cli/src/article-infographic.ts`
 - `packages/miao-viz-cli/src/article-html.ts`
-- `packages/miao-vision-skill/references/article-infographic.md`
+- `skills/miao-vision/references/article-infographic.md`
 
 Data report visual source files:
 
@@ -812,7 +812,7 @@ Acceptance:
 
 Deliverables:
 
-- Update `packages/miao-vision-skill/references/article-infographic.md`.
+- Update `skills/miao-vision/references/article-infographic.md`.
 - Explain visual candidate planning in the quality path.
 - Add examples for `metric-bars`, `process-flow`, and `concept-contrast`.
 - Clarify that URL fetching remains in the agent layer.

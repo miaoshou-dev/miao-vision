@@ -5,7 +5,7 @@ import { resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
 const repoRoot = resolve(import.meta.dirname, '..')
-const source = resolve(repoRoot, 'packages/miao-vision-skill')
+const source = resolve(repoRoot, 'skills/miao-vision')
 const distRoot = resolve(repoRoot, 'dist/skills')
 const distSkill = resolve(distRoot, 'miao-vision-skill')
 const zipPath = resolve(distRoot, 'miao-vision-skill.zip')

@@ -9,7 +9,17 @@ Use Miao Vision as a local-first infographic and visualization workflow for agen
 
 ## Agent Self-Install
 
-If you are reading this file via URL, not from a local skill installation, run the following to install this skill permanently:
+Install via `npx skills add` (recommended):
+
+```bash
+# 1. Install the CLI
+npm install -g @miao-vision/cli
+
+# 2. Install the skill
+npx skills add miaoshou-dev/miao-vision
+```
+
+Or install from a GitHub Release ZIP:
 
 ```bash
 # 1. Install the CLI
@@ -24,7 +34,7 @@ unzip -o /tmp/miao-vision-skill.zip -d ~/.claude/skills/
 rm /tmp/miao-vision-skill.zip
 ```
 
-After installation, the skill is available at `~/.claude/skills/miao-vision-skill/SKILL.md`.
+After installation, the skill is available at `~/.claude/skills/miao-vision/SKILL.md`.
 
 ## Requirement
 
@@ -36,10 +46,10 @@ Check:
 miao-viz catalog
 ```
 
-To get a machine-readable list of chart types with their rules, encodings, and anti-patterns:
+To get a machine-readable catalog of chart types and infographic templates with rules, encodings, and anti-patterns:
 
 ```bash
-miao-viz catalog --for-llm
+miao-viz spec catalog --for-llm
 ```
 
 If the command is missing, tell the user to install:
@@ -54,7 +64,7 @@ Read only the reference needed for the user's task.
 
 | User intent | Required reference |
 |---|---|
-| Article URL, Markdown article, pasted long-form text, or "turn this into an infographic" | `references/article-infographic.md` |
+| Article URL, Markdown article, pasted long-form text, or "turn this into an infographic" | `references/article-infographic.md` and `references/composition-playbook.md` — **Use the atomic bundle path as default for non-trivial articles. Auto-extract is for quick drafts only.** |
 | Local CSV/TSV/XLSX/JSON data report, analysis, dashboard, chart, visualization, or detailed findings | `references/data-report.md` |
 | Slides, presentation, PPT, deck, 演示, 演示文稿, 汇报, 给老板看, meeting brief, or executive briefing | `references/browser-deck.md` |
 
@@ -72,15 +82,16 @@ If the request mixes report and presentation, prefer the explicitly named output
 - For data reports, validate before render.
 - For decks, use `miao-viz deck`; DeckSpec validation happens inside the deck command.
 - Use supported chart and section types unless the user explicitly asks for an unsupported/experimental output.
+- For article infographics, use `miao-viz spec catalog --for-llm` when choosing a visual structure (article templates are included alongside chart types). The article catalog includes structures such as roadmap sequences, priority quadrants, hierarchy trees, relation flows, pyramid lists, and grid lists.
 
 ## Source Of Truth
 
-The source skill lives in `packages/miao-vision-skill/`.
+The source skill lives in `skills/miao-vision/`.
 
-Packaged or copied skill files, including `apps/web/public/SKILL.md`, `apps/web/dist/SKILL.md`, and `skills/miao-vision/SKILL.md`, are not the primary source of truth. Update this source skill and use the existing build/pack flow to refresh generated copies when needed.
+Packaged or copied skill files, including `apps/web/public/SKILL.md` and `apps/web/dist/SKILL.md`, are not the primary source of truth. Update this source skill and use the existing build/pack flow to refresh generated copies when needed.
 
 ## Shared References
 
 - Read `references/vizspec.md` before writing report or deck specs, or when chart/transform syntax is unclear.
 - Read `references/examples.md` when the request is ambiguous or close to an existing example.
-- Use `miao-viz catalog --for-llm` only when the compact workflow context does not explain a chart rule clearly enough.
+- Use `miao-viz spec catalog --for-llm` only when the compact workflow context does not explain a chart rule clearly enough.

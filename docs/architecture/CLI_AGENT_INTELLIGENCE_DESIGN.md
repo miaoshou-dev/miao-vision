@@ -2,7 +2,7 @@
 
 **文档类型**: 架构改进设计  
 **状态**: 待实施  
-**关联模块**: `packages/miao-viz-cli`, `packages/miao-vision-skill/SKILL.md`  
+**关联模块**: `packages/miao-viz-cli`, `skills/miao-vision/SKILL.md`  
 **撰写日期**: 2026-06-23
 
 ---

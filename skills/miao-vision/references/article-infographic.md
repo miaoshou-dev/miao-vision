@@ -2,36 +2,65 @@
 
 Use this workflow when the user provides an article URL, a Markdown file, a plain-text article, pasted long-form text, or asks to "turn this into an infographic".
 
-Use the **quality path** for polished user-facing output (default). Use the auto-extract path only for quick drafts, short articles, or tight token budgets. For long articles, use the long-article mode.
+Use the **atomic bundle quality path** for polished user-facing output (default). Use single-composition specs only when the user explicitly asks for one integrated composition. Use the auto-extract path only for quick drafts, short articles, or tight token budgets. For long articles, use the long-article mode.
 
-## Path A: Quality Spec + `--spec-input` (Default)
+## Path A: Atomic Bundle + `--bundle-input` (Default)
 
-The agent understands the article and writes an `InfographicSpec`; the CLI validates and renders it.
+The agent understands the article and writes an `InfographicBundleSpec`: a numbered set of atomic chart blocks. Each block has one visual, one claim, one explanation, and a stable id such as `fig-03-market-structure`. This improves accuracy and lets users request local edits like "修改 fig-03-market-structure".
 
 1. If the input is a URL, fetch/open the page and extract the main article content. Preserve title, date/author if available, headings, body text, lists, tables, and key quotes.
 2. Save normalized Markdown to `/tmp/miao-vision/article.md`.
 3. Extract compact, source-grounded claims (see below).
-4. Group claims into a short section outline (see below).
-5. Plan visual components: for each section, decide whether to use a text layout or a visual graphic (see Visual Components below).
-6. Write `/tmp/miao-vision/article-spec.json` including `section.visual` where applicable.
-7. Render with `--spec-input`:
+4. Group claims into 3-6 atomic chart blocks. Use one visual per block.
+5. Assign stable, readable ids in display order: `fig-01-timeline`, `fig-02-kpi-summary`, `fig-03-market-structure`.
+6. Choose the visual for each block by data shape (see Visual Components below).
+7. Write `/tmp/miao-vision/article-bundle.json`.
+8. Render with `--bundle-input`:
 
 ```bash
 miao-viz article \
-  --spec-input /tmp/miao-vision/article-spec.json \
+  --bundle-input /tmp/miao-vision/article-bundle.json \
   --format html \
   --output /tmp/miao-vision/article-infographic.html
 ```
 
-8. Return the generated artifact path to the user.
+9. Return the generated artifact path to the user.
 
-The CLI will emit visual density warnings if the spec is too text-heavy. Aim for at least 4 visual components and 2 SVG visuals per infographic.
+Aim for 3-6 atomic blocks. Every block should have `id`, `order`, `title`, `claim`, `explanation`, and `visual`.
+
+```json
+{
+  "title": "Global Market Expansion Timeline",
+  "summary": "One-sentence page summary.",
+  "style": "executive",
+  "layout": "stacked",
+  "blocks": [
+    {
+      "id": "fig-01-market-timeline",
+      "order": 1,
+      "title": "Market Entry Timeline",
+      "claim": "The expansion unfolded through four yearly milestones.",
+      "explanation": "2020 focused on APAC, 2021 added Europe, 2022 entered North America, and 2023 added emerging markets.",
+      "evidenceIds": ["c1", "c2", "c3", "c4"],
+      "visual": {
+        "type": "timeline-path",
+        "data": {
+          "items": [
+            { "label": "2020", "text": "APAC accounted for 60% of revenue." },
+            { "label": "2021", "text": "Europe increased to 25%." }
+          ]
+        }
+      }
+    }
+  ]
+}
+```
 
 For sharing and presentation, use `--format png` or `--format pdf`:
 
    ```bash
    miao-viz article \
-     --spec-input /tmp/miao-vision/article-spec.json \
+     --bundle-input /tmp/miao-vision/article-bundle.json \
      --format png \
      --output /tmp/miao-vision/article-infographic.png
    ```
@@ -49,17 +78,17 @@ Use when the article is long enough that carrying the full text through every st
 1. Chunk the article into sections (by headings or paragraph groups).
 2. Extract top 5-8 claims per chunk.
 3. Merge all claims into one list (deduplicate).
-4. Write the section outline and `InfographicSpec` from merged claims — do not include the full article text.
+4. Write the atomic bundle blocks from merged claims — do not include the full article text.
 
 ### Token Budget Rules
 
 - Keep `claims[]` to 12-20 items for ordinary articles.
 - Keep each claim under 160 characters when possible.
-- Keep the section outline to 4-6 sections.
-- Keep each section to 3-6 items.
-- Do not include the full article when generating the final `InfographicSpec`; include compact claims and the selected outline.
+- Keep the bundle to 3-6 atomic blocks.
+- Keep each block focused on one visual claim.
+- Do not include the full article when generating the final `InfographicBundleSpec`; include compact claims and selected block explanations.
 - For long articles, chunk first and keep only top claims from each chunk, then merge.
-- Skip the outline step for short articles (<5 claims) and generate `claims -> InfographicSpec` directly.
+- Skip the outline step for short articles (<5 claims) and generate `claims -> InfographicBundleSpec` directly.
 
 ## Compact Claims
 
@@ -108,6 +137,45 @@ Rules:
 - **If this article's type matches the last infographic you wrote, force yourself to change at least 2 section types.** E.g., if you used `checklist` last time for a guide, use `pros-cons` this time.
 - After selecting the arc, map each claim to the section type that best serves the **narrative**, not the section type you used for similar claims in the previous infographic.
 
+## Composition Selection
+
+After choosing the narrative arc, select a **composition type** for the page-level layout. The composition determines how sections are arranged as a whole.
+
+**Do not force short structured business text into the default article-linear layout.**
+**Do not treat `style: "editorial"` as a layout choice.** `style` is only the visual theme; `composition.type` is the rendering layout.
+
+| Input characteristics | Recommended composition |
+|---|---|
+| Long editorial article, scientific narrative, text-heavy multi-section | `article-linear` (default) |
+| Stage progression with numeric values (growth → maturity → decline) | `lifecycle-curve` |
+| KPIs + recommendations + compact decision brief | `strategy-dashboard` |
+| Mechanism, system, cause-effect, how-it-works | `explainer-map` |
+| Option A vs B, tradeoffs, before/after alternatives | `comparison-matrix` |
+
+Add both `composition` and `compositionDecision` to the spec. The CLI rejects specs that omit `compositionDecision`.
+
+```json
+{
+  "composition": { "type": "lifecycle-curve", "emphasis": "metrics" },
+  "compositionDecision": {
+    "recommended": "lifecycle-curve",
+    "selected": "lifecycle-curve",
+    "confidence": 0.91,
+    "rationale": "The article has ordered lifecycle phases with numeric phase values.",
+    "signals": ["stage progression", "numeric phase metrics"],
+    "dataShape": ["4 ordered phase points", "metric-bars visual"],
+    "alternatives": [
+      { "type": "article-linear", "reason": "Use if the user wants narrative order instead of a curve." }
+    ],
+    "needsUserChoice": false
+  }
+}
+```
+
+Allowed `emphasis` values: `narrative`, `metrics`, `actions`, `structure`.
+
+If `needsUserChoice` is true, do not render. Ask the user to choose from the alternatives, then regenerate the spec.
+
 ## Section Outline
 
 Group claims into infographic sections according to the chosen narrative arc.
@@ -137,7 +205,9 @@ Section-to-claim mapping rules (use the narrative arc to prioritize which rules 
 - System architecture, data flow, dependency chain → `system-diagram` (use `callout-diagram` for annotation-heavy explanation).
 - Before/after state, intervention result → `before-after`.
 
-## InfographicSpec
+## Single-Composition InfographicSpec (Advanced / Legacy)
+
+Use this only when the user explicitly asks for one integrated page-level composition or when maintaining older `--spec-input` workflows. For default article infographics, prefer the atomic bundle path above.
 
 Write a valid `InfographicSpec` after claims and outline are stable.
 
@@ -147,6 +217,17 @@ Write a valid `InfographicSpec` after claims and outline are stable.
   "subtitle": "One-line summary",
   "source": "https://example.com/article",
   "style": "editorial",
+  "composition": { "type": "article-linear", "emphasis": "narrative" },
+  "compositionDecision": {
+    "recommended": "article-linear",
+    "selected": "article-linear",
+    "confidence": 0.88,
+    "rationale": "The source is a long-form article with mixed narrative sections.",
+    "signals": ["long-form editorial structure", "mixed section flow"],
+    "dataShape": ["facts, quote, and takeaways"],
+    "alternatives": [],
+    "needsUserChoice": false
+  },
   "summary": "Two-sentence summary of the key finding.",
   "sections": [
     {
@@ -185,6 +266,13 @@ If `miao-viz article` returns `INVALID_INFOGRAPHIC_SPEC`, read the `issues` arra
 - Add at least one item to each section.
 - Use only allowed section types.
 - Ensure `title` and `summary` are non-empty strings.
+
+Composition-specific errors:
+
+- `MISSING_COMPOSITION_DECISION`: regenerate the spec using this workflow.
+- `COMPOSITION_DECISION_MISMATCH`: make `composition.type` match `compositionDecision.selected`.
+- `COMPOSITION_DATA_INSUFFICIENT`: repair the data shape required by the selected composition, or ask the user to choose a different composition.
+- `COMPOSITION_SELECTION_REQUIRED`: show `choices[]` to the user and regenerate the spec with their selection.
 
 ## Visual Components
 
@@ -337,7 +425,7 @@ If `miao-viz article` returns a structured error, fix the input or command once 
 
 ## Examples
 
-- URL input, quality path: fetch/open the URL, extract the article body, save `/tmp/miao-vision/article.md`, write `/tmp/miao-vision/article-spec.json`, then run `miao-viz article --spec-input /tmp/miao-vision/article-spec.json --format html --output /tmp/miao-vision/article-infographic.html`.
-- Markdown file input, quality path: read the file, write compact claims and `/tmp/miao-vision/article-spec.json`, then render with `--spec-input`.
-- Pasted text input, quality path: write the text to `/tmp/miao-vision/article.md`, write `/tmp/miao-vision/article-spec.json`, then render with `--spec-input`.
+- URL input, quality path: fetch/open the URL, extract the article body, save `/tmp/miao-vision/article.md`, write `/tmp/miao-vision/article-bundle.json`, then run `miao-viz article --bundle-input /tmp/miao-vision/article-bundle.json --format html --output /tmp/miao-vision/article-infographic.html`.
+- Markdown file input, quality path: read the file, write compact claims and `/tmp/miao-vision/article-bundle.json`, then render with `--bundle-input`.
+- Pasted text input, quality path: write the text to `/tmp/miao-vision/article.md`, write `/tmp/miao-vision/article-bundle.json`, then render with `--bundle-input`.
 - Quick draft: run `miao-viz article /tmp/miao-vision/article.md --style editorial --format html --output /tmp/miao-vision/article-infographic.html`.

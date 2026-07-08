@@ -1,0 +1,17 @@
+{
+  "name": "miao-vision",
+  "owner": {
+    "name": "Miao Vision Team",
+    "email": "hello@miaoshou.dev",
+    "url": "https://github.com/miaoshou-dev/miao-vision"
+  },
+  "plugins": [
+    {
+      "name": "miao-vision",
+      "source": "./",
+      "description": "Miao Vision — local-first data visualization and infographics. Profile data, generate HTML reports with charts and evidence-backed insights, create browser slide decks, and turn articles into infographics.",
+      "homepage": "https://github.com/miaoshou-dev/miao-vision",
+      "license": "MIT"
+    }
+  ]
+}

@@ -12,27 +12,24 @@ Verify:
 miao-viz catalog
 ```
 
-## 2. Install the Skill
+## 2. Quick Install (Recommended)
 
-From a local checkout:
+```bash
+npx skills add miaoshou-dev/miao-vision
+```
+
+## 3. Local Checkout Install
 
 ```bash
 mkdir -p ~/.codex/skills
-cp -R packages/miao-vision-skill ~/.codex/skills/miao-vision
+cp -R skills/miao-vision ~/.codex/skills/miao-vision
 ```
 
-Or from a released skill folder:
-
-```bash
-mkdir -p ~/.codex/skills
-cp -R miao-vision-skill ~/.codex/skills/miao-vision
-```
-
-## 3. Restart Codex
+## 4. Restart Codex
 
 Restart Codex or open a new thread.
 
-## 4. Use
+## 5. Use
 
 ```text
 使用 miao-vision 分析 ~/data/sales.csv，生成 HTML 可视化报告。

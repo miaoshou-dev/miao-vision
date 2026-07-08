@@ -5,7 +5,7 @@
 >
 > 日期：2026-06-25  
 > 状态：规划稿（归档）  
-> 关联模块：`packages/miao-viz-cli`, `packages/miao-vision-skill/SKILL.md`  
+> 关联模块：`packages/miao-viz-cli`, `skills/miao-vision/SKILL.md`  
 > 目标：让 `miao-viz` 面向任意结构化数据生成的报告既保持可复现，又具备更强的解释力，同时避免小样本下的过度解读。
 
 ---

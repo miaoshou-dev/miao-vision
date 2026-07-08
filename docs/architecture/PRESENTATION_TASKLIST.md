@@ -383,7 +383,7 @@ slides:
 
 > 完成后：Agent 知道 deck 命令的存在和用法。
 
-### T8 — 修改 `packages/miao-vision-skill/SKILL.md`
+### T8 — 修改 `skills/miao-vision/SKILL.md`
 
 在现有 `render` 工作流后面新增 `deck` 章节：
 
@@ -406,7 +406,7 @@ miao-viz deck \
 Default theme is `editorial`. Supported themes: editorial, dark, minimal, default.
 ```
 
-### T9 — 新建 `packages/miao-vision-skill/references/deckspec.md`
+### T9 — 新建 `skills/miao-vision/references/deckspec.md`
 
 内容结构：
 - DeckSpec 根字段说明
@@ -428,8 +428,8 @@ Default theme is `editorial`. Supported themes: editorial, dark, minimal, defaul
 | 修改 | `src/agent/cli.ts` | +40（265 总） |
 | 新建 | `packages/miao-viz-cli/examples/sales-deck.yaml` | ~60 |
 | 新建 | `src/agent/deck.test.ts` | ~70 |
-| 修改 | `packages/miao-vision-skill/SKILL.md` | +30 |
-| 新建 | `packages/miao-vision-skill/references/deckspec.md` | 文档 |
+| 修改 | `skills/miao-vision/SKILL.md` | +30 |
+| 新建 | `skills/miao-vision/references/deckspec.md` | 文档 |
 
 **新增代码约 715 行**，全部 TypeScript，无 Svelte，无新依赖。
 

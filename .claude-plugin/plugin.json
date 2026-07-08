@@ -1,0 +1,13 @@
+{
+  "name": "miao-vision",
+  "description": "Miao Vision — local-first data visualization and infographics. Profile data, generate HTML reports with charts and evidence-backed insights, create browser slide decks, and turn articles into infographics.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Miao Vision Team",
+    "email": "hello@miaoshou.dev",
+    "url": "https://github.com/miaoshou-dev/miao-vision"
+  },
+  "homepage": "https://github.com/miaoshou-dev/miao-vision",
+  "repository": "https://github.com/miaoshou-dev/miao-vision",
+  "license": "MIT"
+}

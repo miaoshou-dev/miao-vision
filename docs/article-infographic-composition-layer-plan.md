@@ -506,7 +506,7 @@ In strict mode, invalid composition requirements should fail instead of silently
 
 ## Agent Skill Updates
 
-Update `packages/miao-vision-skill/references/article-infographic.md`.
+Update `skills/miao-vision/references/article-infographic.md`.
 
 Add a composition selection step after narrative arc selection:
 

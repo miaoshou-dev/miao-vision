@@ -373,7 +373,7 @@ If `catalog.blocks` is empty (dataset doesn't match any block's required fields)
 | `src/context-schema.ts` | 扩展 | 新增 `BlockVariable`、`CatalogBlock` 接口；`AnalyzeCatalog.blocks?` 可选；更新 Zod schema |
 | `src/analyzer.ts` | 修改 | `buildCatalog()` 末尾调用 `matchBlocks()`，import 新文件 |
 | `src/spec-validator.ts` | 修改 | `collectValidationWarnings()` 新增 V01–V04 结构性视觉警告 |
-| `packages/miao-vision-skill/SKILL.md` | 修改 | Phase 3 新增 Block Selection 段；Self-Review 新增一项 |
+| `skills/miao-vision/SKILL.md` | 修改 | Phase 3 新增 Block Selection 段；Self-Review 新增一项 |
 | `docs/cli-llm-improvement-proposal.md` | 修改 | 新增 "Catalog Productization Gap" 节 |
 | `src/agent.test.ts` | **无需改动** | `blocks` optional，现有内联 context 对象不受影响 |
 

@@ -23,11 +23,19 @@ Verify:
 miao-viz catalog
 ```
 
+## Quick Install (All Agents)
+
+```bash
+npx skills add miaoshou-dev/miao-vision
+```
+
 ## Install for Codex
+
+From a local checkout:
 
 ```bash
 mkdir -p ~/.codex/skills
-cp -R packages/miao-vision-skill ~/.codex/skills/miao-vision
+cp -R skills/miao-vision ~/.codex/skills/miao-vision
 ```
 
 Restart Codex or open a new thread.
@@ -39,7 +47,7 @@ For local files and CLI execution, Claude Code is the recommended surface.
 ```bash
 npm install -g @miao-vision/cli
 mkdir -p ~/.claude/skills
-cp -R packages/miao-vision-skill ~/.claude/skills/miao-vision
+cp -R skills/miao-vision ~/.claude/skills/miao-vision
 ```
 
 If your Claude Code version uses a different skills directory, use that configured directory instead.

@@ -18,10 +18,9 @@ The web app is a lightweight landing, preview, packaging, and distribution surfa
 
 ```text
 packages/miao-viz-cli/       Primary CLI implementation, specs, validation, and renderers
-packages/miao-vision-skill/  Source agent skill instructions, references, and install docs
+skills/miao-vision/          Source skill, references, and install docs
 packages/shared/             Shared type packages
 apps/web/                    Svelte landing/distribution app
-skills/miao-vision/          Installed/local skill copy
 docs/                        Product, architecture, and implementation plans
 tests/                       E2E tests and helpers
 test_data/                   CLI and renderer fixtures
@@ -134,16 +133,16 @@ For evidence-related work, do not degrade machine-readable `ok/value` responses,
 The source skill lives at:
 
 ```text
-packages/miao-vision-skill/SKILL.md
+skills/miao-vision/SKILL.md
 ```
 
 Skill references live under:
 
 ```text
-packages/miao-vision-skill/references/
+skills/miao-vision/references/
 ```
 
-Packaged or copied skill files, including `apps/web/public/SKILL.md`, `apps/web/dist/SKILL.md`, and `skills/miao-vision/SKILL.md`, are not the primary source of truth. Update the source skill and use the existing build/pack flow to refresh generated copies when needed.
+Packaged or copied skill files, including `apps/web/public/SKILL.md` and `apps/web/dist/SKILL.md`, are not the primary source of truth. Update the source skill and use the existing build/pack flow to refresh generated copies when needed.
 
 Skill docs should describe CLI workflows and agent behavior. They should not duplicate renderer internals or become a second implementation spec for CLI logic.
 

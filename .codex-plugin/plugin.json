@@ -1,0 +1,31 @@
+{
+  "name": "miao-vision",
+  "version": "0.2.0",
+  "description": "AI-first local data visualization generator. Profile CSV/TSV/XLSX/JSON data, generate HTML reports with charts and evidence-backed insights, create browser slide decks, and turn articles into infographics.",
+  "author": {
+    "name": "Miao Vision Team",
+    "email": "hello@miaoshou.dev"
+  },
+  "homepage": "https://github.com/miaoshou-dev/miao-vision",
+  "repository": "https://github.com/miaoshou-dev/miao-vision",
+  "license": "MIT",
+  "keywords": [
+    "data-visualization",
+    "infographic",
+    "reporting",
+    "cli",
+    "local-first",
+    "privacy"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Miao Vision",
+    "shortDescription": "Local-first data visualization and infographics",
+    "longDescription": "Turn local data files (CSV, TSV, XLSX, JSON) into rich HTML reports with KPI cards, charts, tables, and evidence-backed insights. Create browser-presentable slide decks from data. Turn articles and Markdown into infographic artifacts. All local, no data upload.",
+    "developerName": "Miao Vision Team",
+    "category": "Data & Analytics",
+    "capabilities": ["Read", "Write"],
+    "websiteURL": "https://github.com/miaoshou-dev/miao-vision",
+    "brandColor": "#2563eb"
+  }
+}

@@ -363,9 +363,9 @@ Goal: teach agents to request polished reports.
 
 Updates:
 
-- Add theme guidance to `packages/miao-vision-skill/references/vizspec.md`.
+- Add theme guidance to `skills/miao-vision/references/vizspec.md`.
 - Add examples using `theme: editorial`.
-- Update `packages/miao-vision-skill/SKILL.md` Workflow section to mention `theme: editorial` as the recommended default for user-facing HTML reports — agents read `SKILL.md` as the entry point and will miss the option if only `vizspec.md` is updated.
+- Update `skills/miao-vision/SKILL.md` Workflow section to mention `theme: editorial` as the recommended default for user-facing HTML reports — agents read `SKILL.md` as the entry point and will miss the option if only `vizspec.md` is updated.
 
 Recommended agent behavior:
 

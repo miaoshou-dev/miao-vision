@@ -54,20 +54,17 @@ Once installed, just describe what you want:
 | "turn this into a deck for Monday's meeting" | Browser slide deck |
 | "make an infographic from this article" | Static infographic HTML |
 
-**Or install the skill manually** — download the ZIP from [GitHub Releases](../../releases):
+**Manual install** — install the skill for your agent:
 
-For Claude Code:
 ```bash
+# Quick install (all agents)
+npx skills add miaoshou-dev/miao-vision
+
+# Or from GitHub Releases ZIP
+# Download miao-vision-skill.zip from https://github.com/miaoshou-dev/miao-vision/releases
 npm install -g @miao-vision/cli
 mkdir -p ~/.claude/skills
 unzip miao-vision-skill.zip -d ~/.claude/skills/
-```
-
-For Codex:
-```bash
-npm install -g @miao-vision/cli
-mkdir -p ~/.codex/skills
-unzip miao-vision-skill.zip -d ~/.codex/skills/
 ```
 
 ---

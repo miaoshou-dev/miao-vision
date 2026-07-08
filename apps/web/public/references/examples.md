@@ -72,6 +72,79 @@ charts:
         field: total_sales
 ```
 
+## Multi-series: Grouped Bar by Region and Channel
+
+```yaml
+title: Sales by Region and Channel
+charts:
+  - type: bar
+    title: Revenue by Region, split by Channel
+    data:
+      transform:
+        - type: aggregate
+          groupBy: [region, channel]
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+        - type: sort
+          field: total_sales
+          order: desc
+    encoding:
+      x: { field: region }
+      y: { field: total_sales, aggregate: sum }
+      color: { field: channel, type: nominal }
+```
+
+## Multi-series: Multi-line Trend by Channel
+
+```yaml
+title: Monthly Revenue by Channel
+charts:
+  - type: line
+    title: Revenue Trend by Channel
+    data:
+      transform:
+        - type: derive-month
+          field: order_date
+          as: order_month
+        - type: aggregate
+          groupBy: [order_month, channel]
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+        - type: sort
+          field: order_month
+          order: asc
+    encoding:
+      x: { field: order_month, type: temporal }
+      y: { field: total_sales, type: quantitative }
+      color: { field: channel, type: nominal }
+```
+
+## Donut Chart
+
+```yaml
+title: Revenue Share by Category
+charts:
+  - type: pie
+    title: Category Share
+    data:
+      transform:
+        - type: aggregate
+          groupBy: [category]
+          measures:
+            - field: sales
+              op: sum
+              as: total_sales
+    encoding:
+      label: { field: category }
+      value: { field: total_sales }
+    style:
+      innerRadius: 0.55
+```
+
 ## Presentation Deck: Sales Executive Briefing
 
 Use this shape when the user asks for slides, a presentation, a deck, PPT-like output, 演示文稿, or a concise executive briefing.
@@ -79,7 +152,7 @@ Use this shape when the user asks for slides, a presentation, a deck, PPT-like o
 ```yaml
 title: Sales Executive Briefing
 description: Four-slide browser-presentable deck generated from sales data.
-theme: editorial
+theme: magazine
 slides:
   - layout: cover
     eyebrow: Q4 Revenue Review

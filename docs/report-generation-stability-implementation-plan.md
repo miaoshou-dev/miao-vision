@@ -2,7 +2,7 @@
 
 > 日期：2026-06-29  
 > 状态：规划稿  
-> 关联模块：`packages/miao-viz-cli`、`packages/miao-vision-skill`  
+> 关联模块：`packages/miao-viz-cli`、`skills/miao-vision`  
 > 目标：提升 AI Agent 生成 report 的稳定性，降低 token 消耗，并增强 LLM 使用体验。
 
 ---
@@ -206,7 +206,7 @@ HTML renderer 对两种 insight 兼容：
 - `packages/miao-viz-cli/src/spec-validator.ts`
 - `packages/miao-viz-cli/src/html-export.ts`
 - `packages/miao-viz-cli/src/directive-resolver.ts`
-- `packages/miao-vision-skill/SKILL.md`
+- `skills/miao-vision/SKILL.md`
 
 ### 4.6 验收标准
 
@@ -336,7 +336,7 @@ miao-viz analyze data.csv --intent "..." --verbose
 - `packages/miao-viz-cli/src/analyzer.ts`
 - `packages/miao-viz-cli/src/context-schema.ts`
 - `packages/miao-viz-cli/src/cli.ts`
-- `packages/miao-vision-skill/SKILL.md`
+- `skills/miao-vision/SKILL.md`
 - `packages/miao-viz-cli/src/agent.test.ts`
 
 ### 5.7 验收标准
@@ -489,7 +489,7 @@ miao-viz template instantiate <id> --context context.json --output report.yaml
 - `packages/miao-viz-cli/src/cli-block.ts`
 - 新增 `packages/miao-viz-cli/src/cli-template.ts`
 - `packages/miao-viz-cli/src/analyzer.ts`
-- `packages/miao-vision-skill/SKILL.md`
+- `skills/miao-vision/SKILL.md`
 
 ### 6.7 验收标准
 
@@ -581,7 +581,7 @@ If clarificationQuestions exists:
 
 - `packages/miao-viz-cli/src/context-schema.ts`
 - `packages/miao-viz-cli/src/analyzer.ts`
-- `packages/miao-vision-skill/SKILL.md`
+- `skills/miao-vision/SKILL.md`
 
 ### 7.6 验收标准
 

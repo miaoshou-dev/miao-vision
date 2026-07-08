@@ -32,7 +32,7 @@ These paths are core to the new direction and should not be removed during dashb
 - `scripts/miao-viz.mjs`
 - `packages/miao-viz-cli/`
 - `skills/miao-vision/`
-- `packages/miao-vision-skill/`
+- `skills/miao-vision/`
 - `packages/miao-viz-cli/src/themes/`
 - `test_data/agent-sales.*`
 - CLI-oriented docs such as `docs/PRODUCT_OVERVIEW.md`, `docs/miao-viz-product-restructure-direction.md`, `docs/miao-vision-agent-skill-prd.md`, and `docs/architecture/CLI_AGENT_INTELLIGENCE_DESIGN.md`
