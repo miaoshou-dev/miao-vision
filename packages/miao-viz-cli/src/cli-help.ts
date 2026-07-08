@@ -1,5 +1,5 @@
 const COMMAND_HELP: Record<string, string> = {
-  analyze: `Usage: miao-viz analyze <file> [options]
+  'data.analyze': `Usage: miao-viz data analyze <file> [options]
 
 Compile a scoped evidence pack and catalog for LLM report generation.
 Outputs context.json: intent, fields, evidence, catalog (blockedCharts), sampleWarnings, promptRules.
@@ -14,7 +14,7 @@ Options:
   --sheet <name>                Sheet name (Excel only)
   --limit <n>                   Max rows to read
 `,
-  profile: `Usage: miao-viz profile <file> [options]
+  'data.profile': `Usage: miao-viz data profile <file> [options]
 
 Profile a data file and output column statistics.
 
@@ -25,7 +25,7 @@ Options:
   --sheet <name>        Sheet name (Excel only)
   --limit <n>           Max rows to read
 `,
-  validate: `Usage: miao-viz validate --spec <file> --profile <file> [options]
+  'spec.validate': `Usage: miao-viz spec validate --spec <file> --profile <file> [options]
 
 Validate a vizspec against a data profile.
 Hard errors block rendering. Warnings should be fixed before rendering.
@@ -39,26 +39,29 @@ Options:
   --verify            Also check for forbidden words and missing sampleWarning caveats
   --patch-hints       Attach machine-readable JSON Patch hints to fixable errors
 `,
-  catalog: `Usage: miao-viz catalog
+  'spec.catalog': `Usage: miao-viz spec catalog [--for-llm]
 
-List all available chart types and their required fields.
+List all available chart types and article infographic templates.
+
+Options:
+  --for-llm     Output machine-readable format for agent consumption
 `,
-  block: `Usage: miao-viz block instantiate <block-id> --context <context.json> [--output <file>]
+  'spec.block': `Usage: miao-viz spec block instantiate <block-id> --context <context.json> [--output <file>]
 
 Instantiate a report block using full or compact analyze context.
 `,
-  template: `Usage:
-  miao-viz template list
-  miao-viz template inspect <template-id>
-  miao-viz template instantiate <template-id> --context <context.json> [--output <file>]
+  'spec.template': `Usage:
+  miao-viz spec template list
+  miao-viz spec template inspect <template-id>
+  miao-viz spec template instantiate <template-id> --context <context.json> [--output <file>]
 
 List, inspect, or instantiate report templates using full or compact analyze context.
 `,
-  inspect: `Usage: miao-viz inspect --input <file> --spec <file> --context <context.json> --output <file>
+  'spec.inspect': `Usage: miao-viz spec inspect --input <file> --spec <file> --context <context.json> --output <file>
 
 Inspect chart transform pipelines and evidence usage for debugging.
 `,
-  render: `Usage: miao-viz render --input <file> --spec <file> --output <file> [options]
+  'render.report': `Usage: miao-viz render report --input <file> --spec <file> --output <file> [options]
 
 Render a vizspec to HTML or SVG.
 
@@ -74,7 +77,7 @@ Options:
   --sheet <name>    Sheet name (Excel only)
   --limit <n>       Max rows to read
 `,
-  deck: `Usage: miao-viz deck --input <file> --spec <file> --output <file> [options]
+  'render.deck': `Usage: miao-viz render deck --input <file> --spec <file> --output <file> [options]
 
 Render a deck spec to HTML slides.
 
@@ -86,12 +89,12 @@ Options:
   --sheet <name>    Sheet name (Excel only)
   --limit <n>       Max rows to read
 `,
-  article: `Usage:
-  miao-viz article <file> --output <file> [options]
-  miao-viz article --spec-input <spec.json> --output <file> [options]
-  miao-viz article --bundle-input <bundle.json> --output <file> [options]
-  miao-viz article analyze <file> [--output <context.json>]
-  miao-viz article catalog [--for-llm]
+  'render.article': `Usage:
+  miao-viz render article <file> --output <file> [options]
+  miao-viz render article --spec-input <spec.json> --output <file> [options]
+  miao-viz render article --bundle-input <bundle.json> --output <file> [options]
+  miao-viz render article analyze <file> [--output <context.json>]
+  miao-viz render article catalog [--for-llm]
 
 Convert a local article into a static infographic artifact, render a
 pre-built InfographicSpec JSON, render an atomic multi-chart bundle, or
@@ -117,7 +120,7 @@ single-composition infographic.
 Note: png and pdf export requires Playwright. Install with:
   npm install --save-dev @playwright/test && npx playwright install chromium
 `,
-  query: `Usage: miao-viz query <file> [options]
+  'data.query': `Usage: miao-viz data query <file> [options]
 
 Run an aggregation query against a data file.
 
@@ -131,30 +134,67 @@ Options:
 `,
 }
 
-export function printHelp(command?: string): void {
-  if (command && COMMAND_HELP[command]) {
-    process.stdout.write(COMMAND_HELP[command])
-    return
-  }
-  process.stdout.write(`miao-viz — local data visualization CLI
+const GROUP_HELP: Record<string, string> = {
+  data: `
+Usage: miao-viz data <command> [options]
 
-Usage:
-  miao-viz <command> [options]
-  miao-viz --version
+Inspect and query your data files.
 
 Commands:
-  analyze   Compile evidence pack + catalog for LLM report generation (start here)
-  profile   Profile a data file (CSV, Excel, JSON)
+  profile   Profile a data file — column types, distributions, stats
   query     Run an aggregation query to get real computed values
+  analyze   Pre-compute evidence pack + catalog for AI agent consumption
+`,
+  spec: `
+Usage: miao-viz spec <command> [options]
+
+Author, validate, and debug visualization specs.
+
+Commands:
   validate  Validate a vizspec against a data profile
-  catalog   List all available chart types
+  catalog   List all available chart types and infographic templates
   block     Instantiate report blocks from analyze context
   template  List, inspect, or instantiate report templates
   inspect   Inspect chart transforms and evidence usage
-  render    Render a vizspec to HTML or SVG
+`,
+  render: `
+Usage: miao-viz render <command> [options]
+
+Generate HTML output artifacts.
+
+Commands:
+  report    Render a vizspec to HTML or SVG
   deck      Render a deck spec to HTML slides
   article   Convert a local article to an infographic artifact
+`,
+}
 
-Run "miao-viz <command> --help" for command-specific options.
+export function printHelp(groupOrCommand?: string): void {
+  // Try group help
+  if (groupOrCommand && GROUP_HELP[groupOrCommand]) {
+    process.stdout.write(GROUP_HELP[groupOrCommand])
+    return
+  }
+
+  // Try new-style command help (e.g. "data.profile")
+  if (groupOrCommand && COMMAND_HELP[groupOrCommand]) {
+    process.stdout.write(COMMAND_HELP[groupOrCommand])
+    return
+  }
+
+  // Top-level help
+  process.stdout.write(`miao-viz — local data visualization CLI
+
+Usage:
+  miao-viz <group> <command> [options]
+  miao-viz --version
+
+Groups:
+  data    Inspect and query data files
+  spec    Author, validate, and debug visualization specs
+  render  Generate HTML output (reports, decks, infographics)
+
+Run "miao-viz <group> --help" for group-specific commands.
+Run "miao-viz <group> <command> --help" for command-specific options.
 `)
 }

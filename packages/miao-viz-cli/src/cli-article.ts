@@ -18,7 +18,7 @@ export async function runArticle(args: CliArgs): Promise<unknown> {
   if (firstPos === 'analyze') {
     const file = args.positional[1]
     if (!file) {
-      return fail(agentError('MISSING_INPUT', 'Usage: miao-viz article analyze <file> [--output <context.json>]'))
+      return fail(agentError('MISSING_INPUT', 'Usage: miao-viz render article analyze <file> [--output <context.json>]'))
     }
     const result = analyzeArticle(file)
     if (isAgentError(result)) return fail(result)
@@ -114,7 +114,7 @@ export async function runArticle(args: CliArgs): Promise<unknown> {
 
   const file = args.positional[0]
   if (!file) {
-    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz article <file> --output <file> [--style editorial|executive|minimal] [--format html|json|markdown|png|pdf]\n       miao-viz article --spec-input <spec.json> --output <file> [--format html|json|markdown|png|pdf]\n       miao-viz article --bundle-input <bundle.json> --output <file> [--format html|json|markdown|png|pdf]'))
+    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz render article <file> --output <file> [--style editorial|executive|minimal] [--format html|json|markdown|png|pdf]\n       miao-viz render article --spec-input <spec.json> --output <file> [--format html|json|markdown|png|pdf]\n       miao-viz render article --bundle-input <bundle.json> --output <file> [--format html|json|markdown|png|pdf]'))
   }
 
   const styleFlag = stringFlag(args, 'style')

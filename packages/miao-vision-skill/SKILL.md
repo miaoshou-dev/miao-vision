@@ -36,10 +36,10 @@ Check:
 miao-viz catalog
 ```
 
-To get a machine-readable list of chart types with their rules, encodings, and anti-patterns:
+To get a machine-readable catalog of chart types and infographic templates with rules, encodings, and anti-patterns:
 
 ```bash
-miao-viz catalog --for-llm
+miao-viz spec catalog --for-llm
 ```
 
 If the command is missing, tell the user to install:
@@ -72,7 +72,7 @@ If the request mixes report and presentation, prefer the explicitly named output
 - For data reports, validate before render.
 - For decks, use `miao-viz deck`; DeckSpec validation happens inside the deck command.
 - Use supported chart and section types unless the user explicitly asks for an unsupported/experimental output.
-- For article infographics, use `miao-viz article catalog --for-llm` when choosing a visual structure. The article catalog is separate from data-report charts and includes structures such as roadmap sequences, priority quadrants, hierarchy trees, relation flows, pyramid lists, and grid lists.
+- For article infographics, use `miao-viz spec catalog --for-llm` when choosing a visual structure (article templates are included alongside chart types). The article catalog includes structures such as roadmap sequences, priority quadrants, hierarchy trees, relation flows, pyramid lists, and grid lists.
 
 ## Source Of Truth
 
@@ -84,4 +84,4 @@ Packaged or copied skill files, including `apps/web/public/SKILL.md`, `apps/web/
 
 - Read `references/vizspec.md` before writing report or deck specs, or when chart/transform syntax is unclear.
 - Read `references/examples.md` when the request is ambiguous or close to an existing example.
-- Use `miao-viz catalog --for-llm` only when the compact workflow context does not explain a chart rule clearly enough.
+- Use `miao-viz spec catalog --for-llm` only when the compact workflow context does not explain a chart rule clearly enough.

@@ -462,7 +462,7 @@ describe('interactive runtime helpers', () => {
 
 describe('miao-viz CLI', () => {
   it('prints profile JSON', () => {
-    const output = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'profile', csvPath], {
+    const output = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'data', 'profile', csvPath], {
       encoding: 'utf8'
     })
     const parsed = JSON.parse(output) as { ok: boolean; value: { rows: number } }
@@ -471,7 +471,7 @@ describe('miao-viz CLI', () => {
   })
 
   it('accepts profile flags before the file path', () => {
-    const summaryOutput = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'profile', '--summary', csvPath], {
+    const summaryOutput = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'data', 'profile', '--summary', csvPath], {
       encoding: 'utf8'
     })
     const summary = JSON.parse(summaryOutput) as { ok: boolean; value: { columns: Array<{ name: string }> } }
@@ -483,7 +483,7 @@ describe('miao-viz CLI', () => {
       '--silent',
       'miao-viz',
       '--',
-      'profile',
+      'data', 'profile',
       '--columns',
       'sales,region',
       '--reliable-only',
@@ -501,7 +501,7 @@ describe('miao-viz CLI', () => {
       '--silent',
       'miao-viz',
       '--',
-      'query',
+      'data', 'query',
       csvPath,
       '--groupby',
       'region',
@@ -546,7 +546,7 @@ charts:
       '--silent',
       'miao-viz',
       '--',
-      'render',
+      'render', 'report',
       '--input',
       csvPath,
       '--spec',
@@ -563,7 +563,7 @@ charts:
       '--silent',
       'miao-viz',
       '--',
-      'render',
+      'render', 'report',
       '--input',
       csvPath,
       '--spec',
@@ -587,7 +587,7 @@ charts:
       '--silent',
       'miao-viz',
       '--',
-      'article',
+      'render', 'article',
       articlePath,
       '--format',
       'json',
@@ -603,11 +603,7 @@ charts:
     expect(spec.sections.map(section => section.type)).toContain('timeline')
 
     const markdownRun = execFileSync('npm', [
-      'run',
-      '--silent',
-      'miao-viz',
-      '--',
-      'article',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article',
       articlePath,
       '--format',
       'markdown',
@@ -618,11 +614,7 @@ charts:
     expect(readFileSync(markdownOutput, 'utf8')).toContain('## Key Facts')
 
     const htmlRun = execFileSync('npm', [
-      'run',
-      '--silent',
-      'miao-viz',
-      '--',
-      'article',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article',
       articlePath,
       '--output',
       htmlOutput
@@ -640,7 +632,7 @@ charts:
     writeFileSync(emptyFile, '   \n', 'utf8')
 
     const badStyle = runCliExpectFailure([
-      'article',
+      'render', 'article',
       articlePath,
       '--style',
       'storytelling',
@@ -650,7 +642,7 @@ charts:
     expect(JSON.parse(badStyle).code).toBe('UNSUPPORTED_ARTICLE_STYLE')
 
     const badFormat = runCliExpectFailure([
-      'article',
+      'render', 'article',
       articlePath,
       '--format',
       'svg',
@@ -659,11 +651,11 @@ charts:
     ])
     expect(JSON.parse(badFormat).code).toBe('UNSUPPORTED_ARTICLE_FORMAT')
 
-    const missingOutput = runCliExpectFailure(['article', articlePath])
+    const missingOutput = runCliExpectFailure(['render', 'article', articlePath])
     expect(JSON.parse(missingOutput).code).toBe('MISSING_FLAG')
 
     const missingFile = runCliExpectFailure([
-      'article',
+      'render', 'article',
       join(dir, 'missing.md'),
       '--output',
       join(dir, 'missing.html')
@@ -671,7 +663,7 @@ charts:
     expect(JSON.parse(missingFile).code).toBe('ARTICLE_INPUT_UNREADABLE')
 
     const empty = runCliExpectFailure([
-      'article',
+      'render', 'article',
       emptyFile,
       '--output',
       join(dir, 'empty.html')
@@ -715,7 +707,7 @@ describe('article --spec-input (T30–T33)', () => {
 
     const out = execFileSync('npm', [
       'run', '--silent', 'miao-viz', '--',
-      'article',
+      'render', 'article',
       '--spec-input', specFile,
       '--format', 'html',
       '--output', htmlOutput
@@ -737,9 +729,7 @@ describe('article --spec-input (T30–T33)', () => {
     writeFileSync(specFile, JSON.stringify(validSpec), 'utf8')
 
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', specFile,
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', specFile,
       '--format', 'markdown',
       '--output', mdOutput
     ], { encoding: 'utf8' })
@@ -763,7 +753,7 @@ describe('article --spec-input (T30–T33)', () => {
 	    }), 'utf8')
 
     const out = runCliExpectFailure([
-      'article',
+      'render', 'article',
       '--spec-input', specFile,
       '--format', 'html',
       '--output', htmlOutput
@@ -776,8 +766,7 @@ describe('article --spec-input (T30–T33)', () => {
     const htmlOutput = join(dir, 'out.html')
 
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article',
       articlePath,
       '--format', 'html',
       '--output', htmlOutput
@@ -791,9 +780,7 @@ describe('article --spec-input (T30–T33)', () => {
     const htmlOutput = join(dir, 'out.html')
 
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', 'test_data/article-spec-quality.json',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-quality.json',
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -855,9 +842,7 @@ describe('article --bundle-input atomic bundle', () => {
     const mdOutput = join(dir, 'bundle.md')
 
     const htmlRun = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--bundle-input', bundlePath,
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--bundle-input', bundlePath,
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -869,9 +854,7 @@ describe('article --bundle-input atomic bundle', () => {
     expect(html).toContain('data-block-id="fig-03-market-structure"')
 
     const mdRun = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--bundle-input', bundlePath,
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--bundle-input', bundlePath,
       '--format', 'markdown',
       '--output', mdOutput
     ], { encoding: 'utf8' })
@@ -884,7 +867,7 @@ describe('article --bundle-input atomic bundle', () => {
   it('rejects conflicting --spec-input and --bundle-input flags', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-bundle-conflict-'))
     const out = runCliExpectFailure([
-      'article',
+      'render', 'article',
       '--spec-input', 'test_data/article-spec-quality.json',
       '--bundle-input', bundlePath,
       '--output', join(dir, 'out.html')
@@ -984,9 +967,7 @@ describe('article infographic generation', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-p2-templates-'))
     const htmlOutput = join(dir, 'out.html')
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', 'test_data/article-spec-templates.json',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-templates.json',
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -1068,9 +1049,7 @@ describe('article infographic generation', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-visual-cli-'))
     const htmlOutput = join(dir, 'out.html')
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', 'test_data/article-spec-visuals.json',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-visuals.json',
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -1133,9 +1112,7 @@ describe('article infographic generation', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-quality-cli-'))
     const htmlOutput = join(dir, 'out.html')
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', 'test_data/article-spec-templates.json',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-templates.json',
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -1162,9 +1139,7 @@ describe('article infographic generation', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-p1-cli-'))
     const htmlOutput = join(dir, 'out.html')
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', 'test_data/article-spec-visuals.json',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-visuals.json',
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -1192,9 +1167,7 @@ describe('article infographic generation', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-p2-cli-'))
     const htmlOutput = join(dir, 'out.html')
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', 'test_data/article-spec-visuals.json',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-visuals.json',
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -1269,7 +1242,7 @@ describe('article auto-extraction visual inference', () => {
     const htmlOutput = join(dir, 'out.html')
     const out = execFileSync('npm', [
       'run', '--silent', 'miao-viz', '--',
-      'article', 'test_data/article-list-heavy.md',
+      'render', 'article', 'test_data/article-list-heavy.md',
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -1286,7 +1259,7 @@ describe('article auto-extraction visual inference', () => {
     const htmlOutput = join(dir, 'out.html')
     const out = execFileSync('npm', [
       'run', '--silent', 'miao-viz', '--',
-      'article', 'test_data/article-quote-heavy.md',
+      'render', 'article', 'test_data/article-quote-heavy.md',
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -1302,7 +1275,7 @@ describe('article auto-extraction visual inference', () => {
     const htmlOutput = join(dir, 'out.html')
     const out = execFileSync('npm', [
       'run', '--silent', 'miao-viz', '--',
-      'article', 'test_data/article-data-heavy.md',
+      'render', 'article', 'test_data/article-data-heavy.md',
       '--format', 'html',
       '--output', htmlOutput
     ], { encoding: 'utf8' })
@@ -1319,7 +1292,7 @@ describe('article auto-extraction visual inference', () => {
     try {
       execFileSync('npm', [
         'run', '--silent', 'miao-viz', '--',
-        'article',
+        'render', 'article',
         '--spec-input', 'test_data/article-spec-quality.json',
         '--format', 'html',
         '--output', htmlOutput,
@@ -1339,9 +1312,7 @@ describe('article auto-extraction visual inference', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-strict-visuals-pass-'))
     const htmlOutput = join(dir, 'out.html')
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', 'test_data/article-spec-visuals.json',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-visuals.json',
       '--format', 'html',
       '--output', htmlOutput,
       '--strict-visuals'
@@ -1439,9 +1410,7 @@ describe('article composition layer (P0)', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-lifecycle-test-'))
     const output = join(dir, 'out.html')
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--',
-      'article',
-      '--spec-input', 'test_data/article-spec-lifecycle.json',
+      'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-lifecycle.json',
       '--format', 'html',
       '--output', output
     ], { encoding: 'utf8' })
@@ -1465,7 +1434,7 @@ describe('article composition layer (P0)', () => {
 	      const output = join(dir, 'out.html')
 	      const out = execFileSync('npm', [
 	        'run', '--silent', 'miao-viz', '--',
-	        'article',
+	        'render', 'article',
 	        '--spec-input', fixture,
 	        '--format', 'html',
 	        '--output', output
@@ -1491,9 +1460,7 @@ describe('article composition layer (P0)', () => {
     const output = join(dir, 'out.html')
     try {
       execFileSync('npm', [
-        'run', '--silent', 'miao-viz', '--',
-        'article',
-        '--spec-input', 'test_data/article-spec-lifecycle-invalid.json',
+        'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-lifecycle-invalid.json',
         '--format', 'html',
         '--output', output
       ], { encoding: 'utf8' })
@@ -1512,9 +1479,7 @@ describe('article composition layer (P0)', () => {
 	  it('invalid lifecycle requires composition selection before strict checks', () => {
     try {
       execFileSync('npm', [
-        'run', '--silent', 'miao-viz', '--',
-        'article',
-        '--spec-input', 'test_data/article-spec-lifecycle-invalid.json',
+        'run', '--silent', 'miao-viz', '--', 'render', 'article', '--spec-input', 'test_data/article-spec-lifecycle-invalid.json',
         '--format', 'html',
         '--output', '/tmp/miao-lifecycle-strict-fail.html',
         '--strict-visuals'
@@ -1531,7 +1496,7 @@ describe('article composition layer (P0)', () => {
 
 	  it('rejects old specs without compositionDecision', () => {
 	    const out = runCliExpectFailure([
-	      'article',
+	      'render', 'article',
 	      '--spec-input', 'test_data/article-spec-old-format.json',
 	      '--format', 'html',
 	      '--output', '/tmp/miao-old-spec.html'
@@ -1552,7 +1517,7 @@ describe('article composition layer (P0)', () => {
 	      metadata: { inputFile: '', generatedAt: '', wordCount: 0 }
 	    }), 'utf8')
 	    const out = runCliExpectFailure([
-	      'article',
+	      'render', 'article',
 	      '--spec-input', specFile,
 	      '--format', 'html',
 	      '--output', join(dir, 'out.html')
@@ -1562,7 +1527,7 @@ describe('article composition layer (P0)', () => {
 
 	  it('rejects specs that still need user composition choice', () => {
 	    const out = runCliExpectFailure([
-	      'article',
+	      'render', 'article',
 	      '--spec-input', 'test_data/article-spec-low-confidence.json',
 	      '--format', 'html',
 	      '--output', '/tmp/miao-low-confidence.html'
@@ -1574,7 +1539,7 @@ describe('article composition layer (P0)', () => {
 	  })
 
   it('lists article-only infographic templates for LLM selection', () => {
-    const out = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'article', 'catalog', '--for-llm'], { encoding: 'utf8' })
+    const out = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'render', 'article', 'catalog', '--for-llm'], { encoding: 'utf8' })
     const parsed = JSON.parse(out) as { ok: boolean; value: { templates: Array<[string, string, string]> } }
     expect(parsed.ok).toBe(true)
     expect(parsed.value.templates.map(t => t[0])).toContain('roadmap-sequence')
@@ -1754,7 +1719,7 @@ describe('validate semantic warnings (T24–T28)', () => {
     writeFileSync(badContextFile, JSON.stringify({ not: 'a valid context' }), 'utf8')
 
     const out = runCliExpectFailure([
-      'validate',
+      'spec', 'validate',
       '--spec', specFile,
       '--profile', profileFile,
       '--context', badContextFile
@@ -1791,7 +1756,7 @@ describe('validate semantic warnings (T24–T28)', () => {
     writeFileSync(contextFile, JSON.stringify(context), 'utf8')
 
     const out = runCliExpectFailure([
-      'validate',
+      'spec', 'validate',
       '--spec', specFile,
       '--profile', profileFile,
       '--context', contextFile,
@@ -1831,7 +1796,7 @@ describe('validate semantic warnings (T24–T28)', () => {
 
     const out = execFileSync('npm', [
       'run', '--silent', 'miao-viz', '--',
-      'validate',
+      'spec', 'validate',
       '--spec', specFile,
       '--profile', profileFile,
       '--context', contextFile
@@ -2461,7 +2426,7 @@ describe('report stability features', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-compact-'))
     const contextPath = join(dir, 'context.json')
     const analyzeOut = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--', 'analyze', csvPath,
+      'run', '--silent', 'miao-viz', '--', 'data', 'analyze', csvPath,
       '--intent', 'sales by region',
       '--compact',
       '--output', contextPath
@@ -2472,7 +2437,7 @@ describe('report stability features', () => {
     expect(context.value.catalog.blocks.length).toBeGreaterThan(0)
 
     const blockOut = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--', 'block', 'instantiate', 'snapshot-ranking',
+      'run', '--silent', 'miao-viz', '--', 'spec', 'block', 'instantiate', 'snapshot-ranking',
       '--context', contextPath
     ], { encoding: 'utf8' })
     const parsed = JSON.parse(blockOut)
@@ -2482,12 +2447,12 @@ describe('report stability features', () => {
 
   it('analyze --verbose is full context and --compact is tuple summary only', () => {
     const verboseOut = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--', 'analyze', csvPath,
+      'run', '--silent', 'miao-viz', '--', 'data', 'analyze', csvPath,
       '--intent', 'sales by region',
       '--verbose'
     ], { encoding: 'utf8' })
     const compactOut = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--', 'analyze', csvPath,
+      'run', '--silent', 'miao-viz', '--', 'data', 'analyze', csvPath,
       '--intent', 'sales by region',
       '--compact'
     ], { encoding: 'utf8' })
@@ -2502,7 +2467,7 @@ describe('report stability features', () => {
   })
 
   it('catalog --for-llm exposes compact knowledge for all MVP chart types', () => {
-    const out = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'catalog', '--for-llm'], { encoding: 'utf8' })
+    const out = execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'spec', 'catalog', '--for-llm'], { encoding: 'utf8' })
     const parsed = JSON.parse(out)
     expect(parsed.ok).toBe(true)
     for (const item of parsed.value.charts) {
@@ -2541,7 +2506,7 @@ describe('report stability features', () => {
       const specPath = join(dir, `${testCase.code}.yaml`)
       writeFileSync(specPath, testCase.yaml)
       const output = runCliExpectFailure([
-        'validate',
+        'spec', 'validate',
         '--spec', specPath,
         '--profile', profilePath,
         '--context', contextPath,
@@ -2555,12 +2520,12 @@ describe('report stability features', () => {
   })
 
   it('template list and inspect return structured template info', () => {
-    const list = JSON.parse(execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'template', 'list'], { encoding: 'utf8' }))
+    const list = JSON.parse(execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'spec', 'template', 'list'], { encoding: 'utf8' }))
     expect(list.ok).toBe(true)
     expect(list.value.some((template: { id: string }) => template.id === 'snapshot-overview')).toBe(true)
 
     const inspect = JSON.parse(execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--', 'template', 'inspect', 'snapshot-overview'
+      'run', '--silent', 'miao-viz', '--', 'spec', 'template', 'inspect', 'snapshot-overview'
     ], { encoding: 'utf8' }))
     expect(inspect.ok).toBe(true)
     expect(inspect.value.id).toBe('snapshot-overview')
@@ -2597,12 +2562,12 @@ describe('report stability features', () => {
     const contextPath = join(dir, 'context.json')
     const specPath = join(dir, 'report.yaml')
     execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--', 'analyze', csvPath,
+      'run', '--silent', 'miao-viz', '--', 'data', 'analyze', csvPath,
       '--intent', 'sales overview',
       '--output', contextPath
     ], { encoding: 'utf8' })
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--', 'template', 'instantiate', 'snapshot-overview',
+      'run', '--silent', 'miao-viz', '--', 'spec', 'template', 'instantiate', 'snapshot-overview',
       '--context', contextPath,
       '--output', specPath
     ], { encoding: 'utf8' })
@@ -2612,7 +2577,7 @@ describe('report stability features', () => {
     const dataset = loadDataset(csvPath)
     if (!dataset.ok) return
     const validation = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--', 'validate',
+      'run', '--silent', 'miao-viz', '--', 'spec', 'validate',
       '--spec', specPath,
       '--profile', writeProfileFixture(dir, dataset.value),
       '--context', contextPath
@@ -2625,7 +2590,7 @@ describe('report stability features', () => {
     const contextPath = join(dir, 'context.json')
     const specPath = join(dir, 'report.yaml')
     const inspectPath = join(dir, 'inspect.json')
-    execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'analyze', csvPath, '--output', contextPath], { encoding: 'utf8' })
+    execFileSync('npm', ['run', '--silent', 'miao-viz', '--', 'data', 'analyze', csvPath, '--output', contextPath], { encoding: 'utf8' })
     writeFileSync(specPath, [
       'insights:',
       '  - text: "East is $evidence:by_dimension.rows[0].region."',
@@ -2646,7 +2611,7 @@ describe('report stability features', () => {
       '      y: { field: total_sales }'
     ].join('\n'))
     const out = execFileSync('npm', [
-      'run', '--silent', 'miao-viz', '--', 'inspect',
+      'run', '--silent', 'miao-viz', '--', 'spec', 'inspect',
       '--input', csvPath,
       '--spec', specPath,
       '--context', contextPath,

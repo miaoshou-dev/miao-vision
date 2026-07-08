@@ -382,15 +382,35 @@ Supported layouts: `cover`, `title-only`, `text-points`, `text-chart`, `metrics-
 
 ## CLI reference
 
+Commands are organized into three groups:
+
+### data — Inspect and query data files
+
 | Command | What it does |
 |---|---|
-| `miao-viz profile <file>` | Inspect fields, types, and distributions |
-| `miao-viz analyze <file>` | Pre-compute evidence pack and catalog for agent consumption |
-| `miao-viz catalog` | List all chart types with AI-readable usage guidance |
-| `miao-viz validate` | Check your VizSpec or DeckSpec; return machine-readable patch hints |
-| `miao-viz render` | Render a self-contained HTML data report |
-| `miao-viz deck` | Render a browser slide deck |
-| `miao-viz article` | Convert a local Markdown/text file into a static infographic |
+| `miao-viz data profile <file>` | Inspect fields, types, and distributions |
+| `miao-viz data query <file>` | Run ad-hoc aggregation queries |
+| `miao-viz data analyze <file>` | Pre-compute evidence pack and catalog for agent consumption |
+
+### spec — Author, validate, and debug specs
+
+| Command | What it does |
+|---|---|
+| `miao-viz spec validate` | Check your VizSpec or DeckSpec; return machine-readable patch hints |
+| `miao-viz spec catalog` | List chart types and infographic templates |
+| `miao-viz spec block` | Instantiate report blocks from analyze context |
+| `miao-viz spec template` | List, inspect, or instantiate report templates |
+| `miao-viz spec inspect` | Debug chart transform pipelines and evidence usage |
+
+### render — Generate HTML output
+
+| Command | What it does |
+|---|---|
+| `miao-viz render report` | Render a vizspec to self-contained HTML or SVG |
+| `miao-viz render deck` | Render a deck spec to HTML slides |
+| `miao-viz render article` | Convert a local Markdown/text file into a static infographic |
+
+Legacy flat commands (`profile`, `render`, `deck`, ...) still work for backward compatibility.
 
 ---
 

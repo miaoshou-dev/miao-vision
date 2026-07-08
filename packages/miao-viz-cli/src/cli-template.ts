@@ -16,7 +16,7 @@ export function runTemplate(args: CliArgs): unknown {
 
   if (subcommand === 'inspect') {
     const templateId = args.positional[1]
-    if (!templateId) return fail(agentError('MISSING_INPUT', 'Usage: miao-viz template inspect <template-id>'))
+    if (!templateId) return fail(agentError('MISSING_INPUT', 'Usage: miao-viz spec template inspect <template-id>'))
     const template = getTemplateById(templateId)
     if (!template) return fail(agentError('UNKNOWN_TEMPLATE_ID', `Template id '${templateId}' not found.`, { availableIds: TEMPLATE_REGISTRY.map(t => t.id) }))
     return { ok: true, value: templateInfo(template) }
@@ -32,7 +32,7 @@ export function runTemplate(args: CliArgs): unknown {
 function runTemplateInstantiate(args: CliArgs): unknown {
   const templateId = args.positional[1]
   if (!templateId) {
-    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz template instantiate <template-id> --context <context.json> [--output <file>]'))
+    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz spec template instantiate <template-id> --context <context.json> [--output <file>]'))
   }
 
   const contextPath = requiredFlag(args, 'context')

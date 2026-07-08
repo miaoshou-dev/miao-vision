@@ -43,68 +43,26 @@ async function main(): Promise<void> {
   }
 
   if (args.flags['help'] === true || args.flags['h'] === true) {
-    printHelp(args.command)
+    if (args.subcommand) {
+      printHelp(`${args.command}.${args.subcommand}`)
+    } else {
+      printHelp(args.command)
+    }
     return
   }
 
   try {
-    if (args.command === 'profile') {
-      printJson(runProfile(args))
-      return
-    }
-
-    if (args.command === 'validate') {
-      printJson(runValidate(args))
-      return
-    }
-
-    if (args.command === 'catalog') {
-      printJson(runCatalog(args))
-      return
-    }
-
-    if (args.command === 'block') {
-      printJson(runBlock(args))
-      return
-    }
-
-    if (args.command === 'template') {
-      printJson(runTemplate(args))
-      return
-    }
-
-    if (args.command === 'inspect') {
-      printJson(runInspect(args))
-      return
-    }
-
-    if (args.command === 'render') {
-      printJson(runRender(args))
-      return
-    }
-
-    if (args.command === 'deck') {
-      printJson(runDeck(args))
-      return
-    }
-
-    if (args.command === 'article') {
-      printJson(await runArticle(args))
-      return
-    }
-
-    if (args.command === 'query') {
-      printJson(runQuery(args))
-      return
-    }
-
-    if (args.command === 'analyze') {
-      await runAnalyze(args)
-      return
+    switch (args.command) {
+      case 'data':
+        return runData(args)
+      case 'spec':
+        return runSpec(args)
+      case 'render':
+        return runRenderGroup(args)
     }
 
     printJson(agentError('UNKNOWN_COMMAND', `Unknown command: ${args.command ?? '(none)'}`, {
-      commands: ['profile', 'validate', 'catalog', 'block', 'template', 'inspect', 'render', 'deck', 'article', 'query', 'analyze']
+      commands: ['data', 'spec', 'render']
     }))
     process.exitCode = 1
   } catch (error) {
@@ -113,9 +71,71 @@ async function main(): Promise<void> {
   }
 }
 
+function runData(args: CliArgs): void | Promise<void> {
+  switch (args.subcommand) {
+    case 'profile':
+      printJson(runProfile(args))
+      return
+    case 'query':
+      printJson(runQuery(args))
+      return
+    case 'analyze':
+      return runAnalyze(args)
+    default:
+      printJson(fail(agentError('UNKNOWN_SUBCOMMAND',
+        `Unknown data subcommand: ${args.subcommand ?? '(none)'}. Available: profile, query, analyze`,
+        { subcommand: args.subcommand, available: ['profile', 'query', 'analyze'] }
+      )))
+  }
+}
+
+function runSpec(args: CliArgs): void {
+  switch (args.subcommand) {
+    case 'validate':
+      printJson(runValidate(args))
+      return
+    case 'catalog':
+      printJson(runCatalog(args))
+      return
+    case 'block':
+      printJson(runBlock(args))
+      return
+    case 'template':
+      printJson(runTemplate(args))
+      return
+    case 'inspect':
+      printJson(runInspect(args))
+      return
+    default:
+      printJson(fail(agentError('UNKNOWN_SUBCOMMAND',
+        `Unknown spec subcommand: ${args.subcommand ?? '(none)'}. Available: validate, catalog, block, template, inspect`,
+        { subcommand: args.subcommand, available: ['validate', 'catalog', 'block', 'template', 'inspect'] }
+      )))
+  }
+}
+
+async function runRenderGroup(args: CliArgs): Promise<void> {
+  switch (args.subcommand) {
+    case 'report':
+      printJson(runRender(args))
+      return
+    case 'deck':
+      printJson(runDeck(args))
+      return
+    case 'article':
+      printJson(await runArticle(args))
+      return
+    default:
+      printJson(fail(agentError('UNKNOWN_SUBCOMMAND',
+        `Unknown render subcommand: ${args.subcommand ?? '(none)'}. Available: report, deck, article`,
+        { subcommand: args.subcommand, available: ['report', 'deck', 'article'] }
+      )))
+  }
+}
+
 function runProfile(args: CliArgs): unknown {
   const file = args.positional[0]
-  if (!file) return fail(agentError('MISSING_INPUT', 'Usage: miao-viz profile <file> [--summary] [--columns col1,col2] [--reliable-only] [--sheet <name>] [--limit <rows>]'))
+  if (!file) return fail(agentError('MISSING_INPUT', 'Usage: miao-viz data profile <file> [--summary] [--columns col1,col2] [--reliable-only] [--sheet <name>] [--limit <rows>]'))
 
   const dataset = loadDataset(file, {
     sheet: stringFlag(args, 'sheet'),
@@ -323,7 +343,7 @@ function runDeck(args: CliArgs): unknown {
 
 function runQuery(args: CliArgs): unknown {
   const file = args.positional[0]
-  if (!file) return fail(agentError('MISSING_INPUT', 'Usage: miao-viz query <file> [--groupby cols] [--measure "fn(col) as alias"] [--filter col=val] [--orderby "col desc"] [--limit n]'))
+  if (!file) return fail(agentError('MISSING_INPUT', 'Usage: miao-viz data query <file> [--groupby cols] [--measure "fn(col) as alias"] [--filter col=val] [--orderby "col desc"] [--limit n]'))
 
   const dataset = loadDataset(file, { sheet: stringFlag(args, 'sheet') })
   if (isAgentError(dataset)) return fail(dataset)
@@ -342,7 +362,7 @@ function runQuery(args: CliArgs): unknown {
 async function runAnalyze(args: CliArgs): Promise<void> {
   const file = args.positional[0]
   if (!file) {
-    printJson(fail(agentError('MISSING_INPUT', 'Usage: miao-viz analyze <file> [--intent "..."] [--output context.json] [--extra-query "..."] [--correct-assumption "primary_measure=col"] [--sheet <name>] [--limit <n>]')))
+    printJson(fail(agentError('MISSING_INPUT', 'Usage: miao-viz data analyze <file> [--intent "..."] [--output context.json] [--extra-query "..."] [--correct-assumption "primary_measure=col"] [--sheet <name>] [--limit <n>]')))
     return
   }
 

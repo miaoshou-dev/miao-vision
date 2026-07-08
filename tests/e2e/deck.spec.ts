@@ -10,10 +10,10 @@ function renderExampleDeck(): string {
   const output = join(dir, 'deck.html')
   execFileSync(process.execPath, [
     'scripts/miao-viz.mjs',
-    'deck',
+    'render', 'deck',
     '--input', 'packages/miao-viz-cli/examples/sales.csv',
     '--spec', 'packages/miao-viz-cli/examples/sales-deck.yaml',
-    '--theme', 'editorial',
+    '--theme', 'magazine',
     '--output', output
   ], { encoding: 'utf8' })
   return output

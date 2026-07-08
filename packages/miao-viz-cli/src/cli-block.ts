@@ -8,6 +8,7 @@ import type { BlockMatchContext, ReportBlockResolver } from './report-block-regi
 import type { AgentChartSpec, AgentInsight } from './types'
 import { stringFlag, requiredFlag, writeOutput, fail, readJson } from './cli-utils'
 import type { CliArgs } from './cli-utils'
+import { compactArticleInfographicTemplates } from './infographic/catalog'
 
 export function runCatalog(args: CliArgs): unknown {
   if (args.flags['for-llm'] === true) {
@@ -25,6 +26,7 @@ export function runCatalog(args: CliArgs): unknown {
         bestFor: c.bestFor,
         antiPatterns: c.antiPatterns
       })),
+      templates: compactArticleInfographicTemplates(),
       version: '1.0.0'
     }
     const outputPath = stringFlag(args, 'output')
@@ -45,7 +47,7 @@ export function runBlock(args: CliArgs): unknown {
 
   const blockId = args.positional[1]
   if (!blockId) {
-    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz block instantiate <block-id> --context <context.json> [--output <file>]'))
+    return fail(agentError('MISSING_INPUT', 'Usage: miao-viz spec block instantiate <block-id> --context <context.json> [--output <file>]'))
   }
 
   const contextPath = requiredFlag(args, 'context')

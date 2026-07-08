@@ -5,8 +5,17 @@ import { agentError } from './errors'
 import { parseOutputFormats, singleOrReportSpecSchema } from './spec-schema'
 import type { AgentError, AgentOutputFormat, AgentReportSpec, DataProfile } from './types'
 
+const GROUPS = new Set(['data', 'spec', 'render'])
+
+const GROUP_SUBCOMMANDS: Record<string, Set<string>> = {
+  data:   new Set(['profile', 'query', 'analyze']),
+  spec:   new Set(['validate', 'catalog', 'block', 'template', 'inspect']),
+  render: new Set(['report', 'deck', 'article']),
+}
+
 export interface CliArgs {
   command?: string
+  subcommand?: string
   positional: string[]
   flags: Record<string, string | boolean>
 }
@@ -16,20 +25,19 @@ export const BOOLEAN_FLAGS = new Set([
   'strict', 'patch-hints', 'verify', 'for-llm', 'compact', 'verbose'
 ])
 
-export function parseArgs(argv: string[]): CliArgs {
-  const [command, ...rest] = argv
+function parseRest(args: string[]): { positional: string[]; flags: Record<string, string | boolean> } {
   const positional: string[] = []
   const flags: Record<string, string | boolean> = {}
 
-  for (let i = 0; i < rest.length; i += 1) {
-    const value = rest[i]
+  for (let i = 0; i < args.length; i += 1) {
+    const value = args[i]
     if (value.startsWith('--')) {
       const key = value.slice(2)
       if (BOOLEAN_FLAGS.has(key)) {
         flags[key] = true
         continue
       }
-      const next = rest[i + 1]
+      const next = args[i + 1]
       if (!next || next.startsWith('--')) {
         flags[key] = true
       } else {
@@ -41,7 +49,25 @@ export function parseArgs(argv: string[]): CliArgs {
     }
   }
 
-  return { command, positional, flags }
+  return { positional, flags }
+}
+
+export function parseArgs(argv: string[]): CliArgs {
+  const [first, ...rest] = argv
+
+  if (first && GROUPS.has(first)) {
+    const subcommands = GROUP_SUBCOMMANDS[first]
+    const second = rest[0]
+    if (second && subcommands?.has(second)) {
+      const { positional, flags } = parseRest(rest.slice(1))
+      return { command: first, subcommand: second, positional, flags }
+    }
+    const { positional, flags } = parseRest(rest)
+    return { command: first, subcommand: positional[0], positional: positional.slice(1), flags }
+  }
+
+  const { positional, flags } = parseRest(rest)
+  return { command: first, positional, flags }
 }
 
 export function requiredFlag(args: CliArgs, name: string): string | AgentError {

@@ -440,7 +440,7 @@ describe('deck example smoke tests', () => {
       const output = join(dir, 'deck.html')
       const stdout = execFileSync(process.execPath, [
         'scripts/miao-viz.mjs',
-        'deck',
+        'render', 'deck',
         '--input', example.input,
         '--spec', example.spec,
         '--theme', 'magazine',
