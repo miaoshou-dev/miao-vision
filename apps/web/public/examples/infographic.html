@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regional Sales Infographic — Miao Vision</title>
+<style>
+:root {
+  --mv-paper: #fafafa;
+  --mv-surface: #ffffff;
+  --mv-border: #dcdcdc;
+  --mv-ink: #111111;
+  --mv-muted: #737373;
+  --mv-brand: #326891;
+  --mv-serif: Georgia, 'Times New Roman', Times, serif;
+  --mv-sans: 'Helvetica Neue', Arial, sans-serif;
+  --mv-mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--mv-paper); color: var(--mv-ink); font-family: var(--mv-serif); line-height: 1.7; }
+.infographic-wrap { max-width: 720px; margin: 0 auto; padding: 3rem 2rem; }
+.article-headline { margin-bottom: 0.5rem; }
+.article-headline .kicker { font-family: var(--mv-sans); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mv-brand); margin-bottom: 0.75rem; }
+.article-headline h1 { font-size: 2.6rem; font-weight: 700; line-height: 1.12; letter-spacing: -0.01em; }
+.article-headline .deck { font-size: 1.05rem; color: var(--mv-muted); margin-top: 0.75rem; line-height: 1.5; }
+.byline { font-family: var(--mv-sans); font-size: 0.78rem; color: var(--mv-muted); margin: 1.5rem 0 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--mv-border); }
+.data-highlight { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2.5rem; }
+.highlight-card { background: var(--mv-surface); border-top: 3px solid var(--mv-brand); padding: 1.25rem 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.highlight-card .number { font-size: 2.2rem; font-weight: 700; line-height: 1.1; color: var(--mv-brand); }
+.highlight-card .label { font-family: var(--mv-sans); font-size: 0.82rem; color: var(--mv-muted); margin-top: 0.2rem; }
+.highlight-card .change { font-family: var(--mv-mono); font-size: 0.78rem; margin-top: 0.4rem; }
+.change.up { color: #1a7a3a; }
+.change.down { color: #b91c1c; }
+.chart-figure { margin-bottom: 2.5rem; background: var(--mv-surface); padding: 1.5rem; border: 1px solid var(--mv-border); }
+.chart-figure figcaption { font-family: var(--mv-sans); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mv-muted); margin-bottom: 0.75rem; }
+.chart-figure svg { width: 100%; height: auto; display: block; }
+.callout-quote { margin: 2.5rem 0; padding: 1.5rem 2rem; background: var(--mv-surface); border-left: 4px solid var(--mv-brand); font-size: 1.2rem; line-height: 1.5; color: var(--mv-ink); }
+.callout-quote .attribution { font-family: var(--mv-sans); font-size: 0.78rem; color: var(--mv-muted); margin-top: 0.75rem; }
+.section-title { font-family: var(--mv-sans); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mv-brand); margin: 2.5rem 0 1rem; padding-top: 0.5rem; border-top: 1px solid var(--mv-border); }
+.body-text { font-size: 0.95rem; color: #333; margin-bottom: 1.2rem; max-width: 65ch; }
+.body-text strong { color: var(--mv-ink); }
+.footer-note { text-align: center; font-family: var(--mv-sans); font-size: 0.72rem; color: var(--mv-muted); padding-top: 2rem; margin-top: 2rem; border-top: 1px solid var(--mv-border); }
+</style>
+</head>
+<body>
+<div class="infographic-wrap">
+  <div class="article-headline">
+    <div class="kicker">Regional Sales Analysis</div>
+    <h1>West leads growth as repeat buyers drive Q1 momentum</h1>
+    <p class="deck">Regional performance diverged sharply in Q1 2025: the West saw record repeat-purchase rates, while the East maintained revenue leadership through volume.</p>
+  </div>
+
+  <div class="byline">Miao Vision Infographic &middot; Generated from sales-summary.md &middot; nyt theme</div>
+
+  <div class="data-highlight">
+    <div class="highlight-card">
+      <div class="number">$104K</div>
+      <div class="label">Total Revenue</div>
+      <div class="change up">&#9650; +12.3% vs Q4</div>
+    </div>
+    <div class="highlight-card">
+      <div class="number">18%</div>
+      <div class="label">Repeat Buyer Growth (West)</div>
+      <div class="change up">&#9650; Month-over-month</div>
+    </div>
+    <div class="highlight-card">
+      <div class="number">1,332</div>
+      <div class="label">Units Sold</div>
+      <div class="change up">&#9650; +8.1% vs Q4</div>
+    </div>
+    <div class="highlight-card">
+      <div class="number">$78.32</div>
+      <div class="label">Avg Order Value</div>
+      <div class="change down">&#9660; -2.4% vs Q4</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-title">Revenue Trajectory</div>
+    <figure class="chart-figure">
+      <figcaption>Monthly Revenue by Region</figcaption>
+      <svg viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+        <line x1="0" y1="40" x2="560" y2="40" stroke="#dcdcdc" stroke-dasharray="4,4"/>
+        <line x1="0" y1="100" x2="560" y2="100" stroke="#dcdcdc" stroke-dasharray="4,4"/>
+        <line x1="0" y1="160" x2="560" y2="160" stroke="#dcdcdc" stroke-dasharray="4,4"/>
+        <line x1="0" y1="220" x2="560" y2="220" stroke="#dcdcdc" stroke-dasharray="4,4"/>
+
+        <polyline points="40,180 160,172 280,176" fill="none" stroke="#326891" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="40" cy="180" r="4" fill="#326891"/><text x="40" y="196" font-family="'Helvetica Neue',Arial,sans-serif" font-size="9" fill="#326891" text-anchor="middle">Jan</text>
+        <circle cx="160" cy="172" r="4" fill="#326891"/><text x="160" y="196" font-family="'Helvetica Neue',Arial,sans-serif" font-size="9" fill="#326891" text-anchor="middle">Feb</text>
+        <circle cx="280" cy="176" r="4" fill="#326891"/><text x="280" y="196" font-family="'Helvetica Neue',Arial,sans-serif" font-size="9" fill="#326891" text-anchor="middle">Mar</text>
+
+        <polyline points="90,150 210,136 330,156" fill="none" stroke="#d0021b" stroke-width="2.5" stroke-linejoin="round" opacity="0.75"/>
+        <circle cx="90" cy="150" r="3" fill="#d0021b"/><text x="90" y="210" font-family="'Helvetica Neue',Arial,sans-serif" font-size="9" fill="#d0021b" text-anchor="middle">Jan</text>
+        <circle cx="210" cy="136" r="3" fill="#d0021b"/><text x="210" y="210" font-family="'Helvetica Neue',Arial,sans-serif" font-size="9" fill="#d0021b" text-anchor="middle">Feb</text>
+        <circle cx="330" cy="156" r="3" fill="#d0021b"/><text x="330" y="210" font-family="'Helvetica Neue',Arial,sans-serif" font-size="9" fill="#d0021b" text-anchor="middle">Mar</text>
+
+        <text x="350" y="40" font-family="'Helvetica Neue',Arial,sans-serif" font-size="9" fill="#737373">&#8212; East</text>
+        <text x="350" y="54" font-family="'Helvetica Neue',Arial,sans-serif" font-size="9" fill="#737373">&#8212; West</text>
+        <line x1="336" y1="36" x2="348" y2="36" stroke="#326891" stroke-width="2.5"/>
+        <line x1="336" y1="50" x2="348" y2="50" stroke="#d0021b" stroke-width="2.5" opacity="0.75"/>
+
+        <line x1="0" y1="220" x2="560" y2="220" stroke="#111" stroke-width="1.5"/>
+      </svg>
+    </figure>
+  </section>
+
+  <div class="callout-quote">
+    The West region's repeat-buyer rate reached 34% in Q1, up from 28% in Q4 — the highest retention growth across all regions.
+    <div class="attribution">&#8212; Customer Intelligence Report, Q1 2025</div>
+  </div>
+
+  <section>
+    <div class="section-title">Key Drivers</div>
+    <p class="body-text">The <strong>East region</strong> continues to generate the highest absolute revenue at $38,200, though its growth rate has plateaued. The <strong>West region</strong> shows the strongest momentum, with repeat buyers growing 18% month-over-month and a 34% retention rate.</p>
+    <p class="body-text"><strong>North</strong> and <strong>South</strong> regions present a mixed picture: North shows steady order growth (+6% MoM) but lower average order values, while South's revenue declined 3% in March after a strong January launch.</p>
+  </section>
+
+  <div class="footer-note">Rendered by miao-viz render article &middot; nyt theme &middot; Self-contained HTML</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Intelligence Report — Miao Vision</title>
+<style>
+:root {
+  --mv-paper: #f5f4ed;
+  --mv-surface: #faf9f5;
+  --mv-border: #e5e3d8;
+  --mv-ink: #141413;
+  --mv-muted: #6b6a64;
+  --mv-soft: #504e49;
+  --mv-soft-text: #e8e6df;
+  --mv-brand: #1b365d;
+  --mv-serif: Charter, Georgia, 'Times New Roman', serif;
+  --mv-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --mv-mono: 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: var(--mv-paper); color: var(--mv-ink); font-family: var(--mv-sans); line-height: 1.6; }
+.report-wrap { max-width: 1120px; margin: 0 auto; padding: 2.5rem 2rem; }
+.report-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 2px solid var(--mv-ink); }
+.report-header h1 { font-family: var(--mv-serif); font-size: 2.4rem; font-weight: 700; line-height: 1.15; }
+.report-header .meta { text-align: right; font-size: 0.78rem; color: var(--mv-muted); font-family: var(--mv-mono); }
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--mv-border); border: 1px solid var(--mv-border); margin-bottom: 1.5rem; }
+.kpi-card { background: var(--mv-surface); padding: 1.25rem 1rem; text-align: center; transition: opacity 0.2s; }
+.kpi-card .value { font-family: var(--mv-serif); font-size: 2.4rem; font-weight: 700; color: var(--mv-brand); line-height: 1.1; transition: color 0.2s; }
+.kpi-card .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mv-muted); margin-top: 0.35rem; font-family: var(--mv-mono); }
+.filter-bar { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.filter-bar .filter-label { font-family: var(--mv-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--mv-muted); margin-right: 0.4rem; }
+.filter-pill { padding: 0.3rem 0.7rem; font-family: var(--mv-mono); font-size: 0.72rem; color: var(--mv-soft); background: var(--mv-surface); border: 1px solid var(--mv-border); border-radius: 999px; cursor: pointer; user-select: none; transition: all 0.15s; }
+.filter-pill:hover { border-color: var(--mv-brand); color: var(--mv-brand); }
+.filter-pill.active { color: #fff; background: var(--mv-brand); border-color: var(--mv-brand); }
+.filter-pill.dimmed { opacity: 0.35; }
+.chart-section { background: var(--mv-surface); border: 1px solid var(--mv-border); border-radius: 3px; margin-bottom: 1.5rem; }
+.chart-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--mv-border); }
+.chart-header h2 { font-family: var(--mv-serif); font-size: 1.1rem; }
+.chart-header .note { font-size: 0.7rem; color: var(--mv-muted); font-family: var(--mv-mono); }
+.chart-body { padding: 1.25rem; position: relative; }
+.chart-body svg { width: 100%; height: auto; display: block; }
+.chart-body .bar { cursor: pointer; transition: opacity 0.2s; }
+.chart-body .bar:hover { opacity: 0.7; }
+.chart-body .bar.dimmed { opacity: 0.15; }
+.table-section { background: var(--mv-surface); border: 1px solid var(--mv-border); border-radius: 3px; margin-bottom: 2rem; }
+.table-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; border-bottom: 1px solid var(--mv-border); }
+.table-header h2 { font-family: var(--mv-serif); font-size: 1.1rem; }
+.table-header .row-count { font-size: 0.7rem; color: var(--mv-muted); font-family: var(--mv-mono); }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+thead th { text-align: left; padding: 0.75rem 1.25rem; font-family: var(--mv-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--mv-muted); border-bottom: 1px solid var(--mv-border); cursor: pointer; user-select: none; }
+thead th:hover { color: var(--mv-brand); }
+thead th .sort-arrow { opacity: 0.3; margin-left: 0.25rem; }
+thead th.sorted .sort-arrow { opacity: 1; color: var(--mv-brand); }
+tbody td { padding: 0.7rem 1.25rem; border-bottom: 1px solid var(--mv-border); transition: opacity 0.2s; }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover { background: #f0eee6; }
+tbody tr.dimmed { opacity: 0.2; }
+.amount { font-family: var(--mv-mono); text-align: right; }
+.region-tag { display: inline-block; padding: 0.08rem 0.4rem; border-radius: 3px; font-size: 0.65rem; font-family: var(--mv-mono); color: #fff; }
+.region-east { background: #1b365d; }
+.region-west { background: #8a5a44; }
+.region-north { background: #4f6f52; }
+.region-south { background: #a37f2c; }
+.insight-callout { background: var(--mv-surface); border-left: 4px solid var(--mv-brand); padding: 1.25rem 1.5rem; margin-bottom: 2rem; border-radius: 0 3px 3px 0; }
+.insight-callout .tag { font-family: var(--mv-mono); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mv-brand); margin-bottom: 0.3rem; }
+.insight-callout p { font-family: var(--mv-serif); font-size: 1.05rem; line-height: 1.5; color: var(--mv-ink); }
+.active-filters { display: flex; align-items: center; gap: 0.4rem; min-height: 1.5rem; flex-wrap: wrap; }
+.active-filter-chip { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.15rem 0.5rem; font-family: var(--mv-mono); font-size: 0.62rem; background: var(--mv-surface); border: 1px solid var(--mv-brand); border-radius: 999px; color: var(--mv-brand); }
+.active-filter-chip .clear { cursor: pointer; font-size: 0.75rem; line-height: 1; opacity: 0.6; }
+.active-filter-chip .clear:hover { opacity: 1; }
+.footer-note { text-align: center; font-size: 0.75rem; color: var(--mv-muted); font-family: var(--mv-mono); padding-top: 1.5rem; border-top: 1px solid var(--mv-border); }
+#chart-tooltip { position: fixed; pointer-events: none; background: var(--mv-ink); color: var(--mv-surface); font-size: 0.78rem; padding: 0.4rem 0.7rem; border-radius: 4px; font-family: var(--mv-mono); opacity: 0; transition: opacity 0.15s; z-index: 10; }
+</style>
+</head>
+<body>
+<div class="report-wrap">
+  <header class="report-header">
+    <h1>Q1 2025 Sales Intelligence Report</h1>
+    <div class="meta">
+      <div>Generated 2026-07-09</div>
+      <div>miao-viz render report --theme magazine</div>
+    </div>
+  </header>
+
+  <div class="filter-bar" id="filter-bar">
+    <span class="filter-label">Region:</span>
+    <span class="filter-pill active" data-region="all" onclick="setFilter('all')">All</span>
+    <span class="filter-pill" data-region="East" onclick="setFilter('East')">East</span>
+    <span class="filter-pill" data-region="West" onclick="setFilter('West')">West</span>
+    <span class="filter-pill" data-region="North" onclick="setFilter('North')">North</span>
+    <span class="filter-pill" data-region="South" onclick="setFilter('South')">South</span>
+  </div>
+
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi-card"><div class="value" id="kpi-revenue">$104,350</div><div class="label">Total Revenue</div></div>
+    <div class="kpi-card"><div class="value" id="kpi-units">1,332</div><div class="label">Units Sold</div></div>
+    <div class="kpi-card"><div class="value" id="kpi-customers">1,205</div><div class="label">Customers</div></div>
+    <div class="kpi-card"><div class="value" id="kpi-aov">$78.32</div><div class="label">Avg Order Value</div></div>
+  </div>
+
+  <div class="chart-section">
+    <div class="chart-header">
+      <h2>Revenue by Region</h2>
+      <span class="note">Q1 2025 · USD</span>
+    </div>
+    <div class="chart-body">
+      <svg viewBox="0 0 600 280" xmlns="http://www.w3.org/2000/svg" id="revenue-chart">
+        <text x="0" y="16" font-family="'SF Mono', monospace" font-size="10" fill="#6b6a64">$40K</text>
+        <line x1="0" y1="20" x2="560" y2="20" stroke="#e5e3d8" stroke-width="1"/>
+        <text x="0" y="76" font-family="'SF Mono', monospace" font-size="10" fill="#6b6a64">$30K</text>
+        <line x1="0" y1="80" x2="560" y2="80" stroke="#e5e3d8" stroke-width="1"/>
+        <text x="0" y="136" font-family="'SF Mono', monospace" font-size="10" fill="#6b6a64">$20K</text>
+        <line x1="0" y1="140" x2="560" y2="140" stroke="#e5e3d8" stroke-width="1"/>
+        <text x="0" y="196" font-family="'SF Mono', monospace" font-size="10" fill="#6b6a64">$10K</text>
+        <line x1="0" y1="200" x2="560" y2="200" stroke="#e5e3d8" stroke-width="1"/>
+        <text x="0" y="256" font-family="'SF Mono', monospace" font-size="10" fill="#6b6a64">$0</text>
+        <line x1="0" y1="260" x2="560" y2="260" stroke="#e5e3d8" stroke-width="1"/>
+        <rect class="bar" x="40" y="28" width="80" height="230" rx="3" fill="#1b365d" opacity="0.9" data-region="East" data-value="$38,200"/>
+        <text x="80" y="274" font-family="'SF Mono', monospace" font-size="11" fill="#6b6a64" text-anchor="middle">East</text>
+        <rect class="bar" x="160" y="68" width="80" height="190" rx="3" fill="#8a5a44" opacity="0.85" data-region="West" data-value="$28,400"/>
+        <text x="200" y="274" font-family="'SF Mono', monospace" font-size="11" fill="#6b6a64" text-anchor="middle">West</text>
+        <rect class="bar" x="280" y="108" width="80" height="150" rx="3" fill="#4f6f52" opacity="0.8" data-region="North" data-value="$21,800"/>
+        <text x="320" y="274" font-family="'SF Mono', monospace" font-size="11" fill="#6b6a64" text-anchor="middle">North</text>
+        <rect class="bar" x="400" y="148" width="80" height="110" rx="3" fill="#a37f2c" opacity="0.75" data-region="South" data-value="$15,950"/>
+        <text x="440" y="274" font-family="'SF Mono', monospace" font-size="11" fill="#6b6a64" text-anchor="middle">South</text>
+        <line x1="0" y1="260" x2="560" y2="260" stroke="#141413" stroke-width="1.5"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="table-section">
+    <div class="table-header">
+      <h2>Monthly Revenue Trend</h2>
+      <span class="row-count" id="row-count">9 rows</span>
+    </div>
+    <table id="revenue-table">
+      <thead>
+        <tr><th onclick="sortBy(0)" id="sort-0">Month <span class="sort-arrow">&#9650;&#9660;</span></th><th onclick="sortBy(1)" id="sort-1">Region <span class="sort-arrow">&#9650;&#9660;</span></th><th onclick="sortBy(2)" id="sort-2">Revenue <span class="sort-arrow">&#9650;&#9660;</span></th><th onclick="sortBy(3)" id="sort-3">Orders <span class="sort-arrow">&#9650;&#9660;</span></th></tr>
+      </thead>
+      <tbody id="table-body">
+        <tr data-region="East"><td>Jan</td><td><span class="region-tag region-east">East</span></td><td class="amount">$12,800</td><td class="amount">142</td></tr>
+        <tr data-region="West"><td>Jan</td><td><span class="region-tag region-west">West</span></td><td class="amount">$9,600</td><td class="amount">98</td></tr>
+        <tr data-region="North"><td>Jan</td><td><span class="region-tag region-north">North</span></td><td class="amount">$7,200</td><td class="amount">76</td></tr>
+        <tr data-region="East"><td>Feb</td><td><span class="region-tag region-east">East</span></td><td class="amount">$13,200</td><td class="amount">151</td></tr>
+        <tr data-region="West"><td>Feb</td><td><span class="region-tag region-west">West</span></td><td class="amount">$10,100</td><td class="amount">106</td></tr>
+        <tr data-region="South"><td>Feb</td><td><span class="region-tag region-south">South</span></td><td class="amount">$5,400</td><td class="amount">61</td></tr>
+        <tr data-region="East"><td>Mar</td><td><span class="region-tag region-east">East</span></td><td class="amount">$12,200</td><td class="amount">138</td></tr>
+        <tr data-region="West"><td>Mar</td><td><span class="region-tag region-west">West</span></td><td class="amount">$8,700</td><td class="amount">92</td></tr>
+        <tr data-region="North"><td>Mar</td><td><span class="region-tag region-north">North</span></td><td class="amount">$7,600</td><td class="amount">80</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight-callout">
+    <div class="tag">&#9650; Evidence-driven insight</div>
+    <p id="insight-text">The East region leads Q1 revenue at $38,200, driven by a strong February performance. Repeat buyers in the West grew 18% MoM, signaling an opportunity for targeted retention campaigns.</p>
+  </div>
+
+  <div class="footer-note">Rendered by miao-viz &middot; magazine theme &middot; Filter pills &middot; Sortable table &middot; Interactive chart</div>
+</div>
+
+<div id="chart-tooltip"></div>
+
+<script>
+var fullData = [
+  { month:'Jan', region:'East', revenue:12800, orders:142 },
+  { month:'Jan', region:'West', revenue:9600, orders:98 },
+  { month:'Jan', region:'North', revenue:7200, orders:76 },
+  { month:'Feb', region:'East', revenue:13200, orders:151 },
+  { month:'Feb', region:'West', revenue:10100, orders:106 },
+  { month:'Feb', region:'South', revenue:5400, orders:61 },
+  { month:'Mar', region:'East', revenue:12200, orders:138 },
+  { month:'Mar', region:'West', revenue:8700, orders:92 },
+  { month:'Mar', region:'North', revenue:7600, orders:80 }
+];
+
+var currentFilter = 'all';
+var sortCol = -1;
+var sortAsc = true;
+
+function setFilter(region) {
+  currentFilter = region;
+  document.querySelectorAll('.filter-pill').forEach(function(p) {
+    p.classList.toggle('active', p.getAttribute('data-region') === region);
+  });
+  updateView();
+}
+
+function updateView() {
+  var filtered = currentFilter === 'all' ? fullData : fullData.filter(function(d) { return d.region === currentFilter; });
+  var revenue = filtered.reduce(function(s, d) { return s + d.revenue; }, 0);
+  var orders = filtered.reduce(function(s, d) { return s + d.orders; }, 0);
+  var count = filtered.length;
+
+  document.getElementById('kpi-revenue').textContent = '$' + revenue.toLocaleString();
+  document.getElementById('kpi-units').textContent = orders;
+  document.getElementById('kpi-customers').textContent = new Set(filtered.map(function(d) { return d.region; })).size + ' regions';
+  document.getElementById('kpi-aov').textContent = '$' + (orders > 0 ? (revenue / orders).toFixed(2) : '0.00');
+
+  var rows = document.querySelectorAll('#table-body tr');
+  rows.forEach(function(r) {
+    var match = currentFilter === 'all' || r.getAttribute('data-region') === currentFilter;
+    r.classList.toggle('dimmed', !match);
+  });
+
+  document.getElementById('row-count').textContent = filtered.length + ' rows';
+
+  document.querySelectorAll('#revenue-chart .bar').forEach(function(b) {
+    var match = currentFilter === 'all' || b.getAttribute('data-region') === currentFilter;
+    b.classList.toggle('dimmed', !match);
+  });
+
+  var insight = document.getElementById('insight-text');
+  if (currentFilter === 'all') {
+    insight.textContent = 'The East region leads Q1 revenue at $38,200, driven by a strong February performance. Repeat buyers in the West grew 18% MoM, signaling an opportunity for targeted retention campaigns.';
+  } else {
+    var r = filtered.reduce(function(s, d) { return s + d.revenue; }, 0);
+    insight.textContent = currentFilter + ' region generated $' + r.toLocaleString() + ' in Q1 2025 across ' + filtered.length + ' month(s). Click "All" to see the full picture.';
+  }
+}
+
+var sortDir = [false, false, false, false];
+function sortBy(col) {
+  sortDir[col] = !sortDir[col];
+  sortCol = col;
+  sortAsc = sortDir[col];
+  document.querySelectorAll('thead th').forEach(function(th, i) {
+    th.classList.toggle('sorted', i === col);
+  });
+  var tbody = document.getElementById('table-body');
+  var rows = [...tbody.querySelectorAll('tr')];
+  rows.sort(function(a, b) {
+    var va = a.cells[col].textContent.trim();
+    var vb = b.cells[col].textContent.trim();
+    var na = parseFloat(va.replace(/[$,]/g, ''));
+    var nb = parseFloat(vb.replace(/[$,]/g, ''));
+    if (!isNaN(na) && !isNaN(nb)) return sortDir[col] ? na - nb : nb - na;
+    return sortDir[col] ? va.localeCompare(vb) : vb.localeCompare(va);
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
+}
+
+document.querySelectorAll('#revenue-chart .bar').forEach(function(el) {
+  el.addEventListener('mouseenter', function(e) {
+    var t = document.getElementById('chart-tooltip');
+    t.textContent = el.getAttribute('data-value') + ' (' + el.getAttribute('data-region') + ')';
+    t.style.opacity = 1;
+  });
+  el.addEventListener('mousemove', function(e) {
+    var t = document.getElementById('chart-tooltip');
+    t.style.left = (e.clientX + 12) + 'px';
+    t.style.top = (e.clientY - 30) + 'px';
+  });
+  el.addEventListener('mouseleave', function() {
+    document.getElementById('chart-tooltip').style.opacity = 0;
+  });
+  el.addEventListener('click', function() {
+    setFilter(el.getAttribute('data-region'));
+  });
+});
+
+document.querySelectorAll('#revenue-table th').forEach(function(th, i) {
+  th.addEventListener('click', function() { sortBy(i); });
+});
+</script>
+</body>
+</html>

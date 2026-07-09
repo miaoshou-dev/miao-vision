@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Executive Sales Review</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--mv-serif); -webkit-font-smoothing: antialiased; }
+body.present-mode { background: #141413; overflow: hidden; }
+.slide-viewport { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+.slide-canvas { width: 1280px; height: 720px; transform-origin: center center; position: relative; }
+.slide {
+  width: 1280px; height: 720px; background: var(--mv-paper);
+  position: absolute; top: 0; left: 0;
+  padding: 64px 80px 56px;
+  display: flex; flex-direction: column;
+  visibility: hidden; opacity: 0; transition: opacity 0.2s ease;
+}
+.slide.active { visibility: visible; opacity: 1; }
+.slide-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 48px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  background: rgba(20,20,19,0.72); backdrop-filter: blur(8px);
+  opacity: 0; transition: opacity 0.2s; z-index: 100;
+}
+.slide-nav:hover { opacity: 1; }
+.slide-nav button {
+  background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.65);
+  font-size: 13px; padding: 4px 10px; border-radius: 3px;
+  font-family: var(--mv-mono); transition: color 0.15s, background 0.15s;
+}
+.slide-nav button:hover { color: #fff; background: rgba(255,255,255,0.1); }
+.slide-counter { color: rgba(255,255,255,0.4); font-family: var(--mv-mono); font-size: 12px; min-width: 56px; text-align: center; }
+.slide-eyebrow { font-family: var(--mv-mono); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 3px; color: var(--mv-muted); margin-bottom: 14px; }
+.slide-title { font-family: var(--mv-serif); font-size: 50px; font-weight: 500; line-height: 1.1; letter-spacing: -0.6px; color: var(--mv-ink); margin-bottom: 24px; max-width: 19ch; overflow-wrap: anywhere; }
+.slide-claim { font-family: var(--mv-serif); font-size: 21px; line-height: 1.45; color: var(--mv-soft); margin-bottom: 18px; max-width: 52ch; overflow-wrap: anywhere; }
+.slide-pts { list-style: none; counter-reset: pts; }
+.slide-pts li { counter-increment: pts; font-size: 16px; line-height: 1.55; color: var(--mv-soft); padding-left: 22px; position: relative; margin-bottom: 10px; }
+.slide-pts li::before { content: counter(pts) "."; position: absolute; left: 0; color: var(--mv-brand); font-weight: 500; font-family: var(--mv-mono); font-size: 13px; }
+.slide-callout { border-left: 2px solid var(--mv-brand); padding: 8px 0 8px 16px; font-family: var(--mv-serif); font-size: 15px; line-height: 1.55; color: var(--mv-soft); margin-top: auto; }
+.slide-body-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; flex: 1; }
+.slide-chart-full { display: flex; align-items: center; overflow: hidden; flex: 1; }
+.slide-chart-full svg { width: 100%; }
+.slide-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding-top: 14px; border-top: 0.5px dotted var(--mv-border); margin-bottom: 20px; }
+.slide-metric { flex: 1; display: flex; flex-direction: column; gap: 5px; padding-right: 24px; }
+.slide-metric .v { font-family: var(--mv-serif); font-size: 42px; font-weight: 500; color: var(--mv-brand); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+.slide-metric .l { font-family: var(--mv-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--mv-muted); }
+.slide-cover { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; height: 100%; }
+.slide-cover-left { display: flex; flex-direction: column; }
+.slide-cover h1 { font-family: var(--mv-serif); font-size: 56px; font-weight: 500; line-height: 1.05; letter-spacing: -1px; color: var(--mv-ink); margin-bottom: 14px; max-width: 12ch; }
+.slide-cover .sub { font-size: 18px; color: var(--mv-soft); line-height: 1.5; margin-bottom: 22px; max-width: 34ch; }
+.slide-cover .line { width: 48px; height: 2px; background: var(--mv-brand); margin-bottom: 14px; }
+.slide-cover .meta { font-family: var(--mv-mono); font-size: 11px; color: var(--mv-muted); letter-spacing: 0.5px; }
+.slide-cover-right { display: flex; align-items: center; justify-content: center; }
+.slide-mark { font-family: var(--mv-mono); font-size: 10px; color: var(--mv-brand); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
+.slide-title-only { justify-content: center; }
+.slide-title-only .slide-title { font-size: 64px; }
+.slide-ending { justify-content: center; align-items: center; text-align: center; }
+.slide-ending h2 { font-family: var(--mv-serif); font-size: 52px; font-weight: 500; color: var(--mv-ink); letter-spacing: -0.8px; margin-bottom: 14px; }
+.slide-ending .line { width: 48px; height: 1.5px; background: var(--mv-brand); margin: 0 auto 14px; }
+.slide-ending .sub { font-size: 17px; color: var(--mv-soft); max-width: 44ch; line-height: 1.45; }
+.slide-page-num { position: absolute; bottom: 18px; right: 28px; font-family: var(--mv-mono); font-size: 10px; color: var(--mv-muted); font-variant-numeric: tabular-nums; }
+.slide-footer-mark { position: absolute; bottom: 18px; left: 28px; font-family: var(--mv-mono); font-size: 10px; color: var(--mv-muted); letter-spacing: 1px; text-transform: uppercase; }
+.miao-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.miao-table-wrap { max-height: 430px; overflow: hidden; flex: 1; }
+.miao-table caption { caption-side: top; text-align: left; padding: 0 0 10px; color: var(--mv-muted); font-family: var(--mv-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+.miao-table th { border-bottom: 1px solid var(--mv-border); padding: 7px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--mv-muted); font-family: var(--mv-mono); }
+.miao-table td { border-bottom: 1px solid var(--mv-border); padding: 8px 12px; color: var(--mv-soft); font-variant-numeric: tabular-nums; }
+.miao-table tbody tr:last-child td { border-bottom: none; }
+
+.bar-mark { cursor: pointer; transition: opacity 0.15s; }
+.bar-mark:hover { opacity: 0.7; }
+.bar-mark.dimmed { opacity: 0.12; }
+.bar-mark.selected { stroke: #fff; stroke-width: 2; }
+
+.filter-panel { position: fixed; top: 0; right: 0; width: 300px; height: 100vh; background: var(--mv-paper, #f5f4ed); box-shadow: -4px 0 24px rgba(0,0,0,0.18); z-index: 200; transform: translateX(100%); transition: transform 0.25s ease; display: flex; flex-direction: column; }
+.filter-panel.open { transform: translateX(0); }
+.filter-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid rgba(128,128,128,0.18); font-family: var(--mv-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mv-muted); }
+.filter-close { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--mv-muted); padding: 4px 8px; }
+.filter-close:hover { color: var(--mv-ink); }
+.filter-body { padding: 20px; flex: 1; overflow-y: auto; }
+.filter-group { margin-bottom: 20px; }
+.filter-group-label { font-family: var(--mv-mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mv-muted); margin-bottom: 8px; }
+.filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.filter-chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border: 1px solid var(--mv-border); border-radius: 4px; font-size: 12px; cursor: pointer; font-family: var(--mv-sans); background: var(--mv-surface); color: var(--mv-soft); transition: all 0.15s; user-select: none; }
+.filter-chip:hover { border-color: var(--mv-brand); color: var(--mv-brand); }
+.filter-chip.active { background: var(--mv-brand); color: #fff; border-color: var(--mv-brand); }
+.filter-footer { padding: 16px 20px; border-top: 1px solid rgba(128,128,128,0.18); }
+.filter-reset { width: 100%; padding: 8px; background: transparent; border: 1px solid var(--mv-border); border-radius: 4px; cursor: pointer; font-family: var(--mv-mono); font-size: 11px; color: var(--mv-muted); transition: all 0.15s; }
+.filter-reset:hover { border-color: var(--mv-brand); color: var(--mv-brand); }
+.deck-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.32); z-index: 180; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+.deck-overlay.visible { opacity: 1; pointer-events: auto; }
+.miao-tooltip { position: fixed; z-index: 9999; pointer-events: none; padding: 6px 8px; border-radius: 4px; background: rgba(20,20,19,0.92); color: #fff; font: 12px/1.35 system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,0.18); transform: translate(10px, 10px); }
+
+@media print {
+  body { background: var(--mv-paper); }
+  .slide-viewport { display: block; }
+  .slide-canvas { transform: none !important; width: auto; height: auto; }
+  .slide { width: 297mm; height: 210mm; position: relative; visibility: visible !important; opacity: 1 !important; break-after: page; page-break-after: always; }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+  .slide-nav, .filter-panel, .deck-overlay { display: none !important; }
+}
+@page { size: A4 landscape; margin: 0; background: var(--mv-paper, #f5f4ed); }
+</style>
+<style id="miao-deck-theme">
+:root {
+  --mv-paper: #f5f4ed;
+  --mv-surface: #faf9f5;
+  --mv-border: #e5e3d8;
+  --mv-ink: #141413;
+  --mv-muted: #6b6a64;
+  --mv-soft: #504e49;
+  --mv-soft-text: #504e49;
+  --mv-brand: #1b365d;
+  --mv-mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
+  --mv-serif: Charter, Georgia, "Times New Roman", serif;
+  --mv-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --slide-scale: 1;
+}
+</style>
+</head>
+<body class="present-mode">
+<div class="slide-viewport">
+  <div class="slide-canvas">
+
+    <div class="slide active">
+      <div class="slide-cover">
+        <div class="slide-cover-left">
+          <div class="slide-mark">miao-vision</div>
+          <h1>Executive Sales Review</h1>
+          <div class="sub">Q1 2025 performance across all regions with KPI metrics, regional breakdowns, and growth forecasts</div>
+          <div class="line"></div>
+          <div class="meta">2025 &middot; Miao Vision</div>
+        </div>
+        <div class="slide-cover-right">
+          <svg viewBox="0 0 320 320" style="width:260px;opacity:0.9">
+            <circle cx="160" cy="160" r="140" fill="none" stroke="var(--mv-border, #e5e3d8)" stroke-width="1"/>
+            <circle cx="160" cy="160" r="100" fill="none" stroke="var(--mv-border, #e5e3d8)" stroke-width="1"/>
+            <circle cx="160" cy="160" r="60" fill="var(--mv-surface, #eef2f7)" stroke="var(--mv-brand, #1b365d)" stroke-width="1.2"/>
+            <path d="M160 20 A140 140 0 0 1 300 160" fill="none" stroke="var(--mv-brand, #1b365d)" stroke-width="2.2" stroke-linecap="round"/>
+            <path d="M160 300 A140 140 0 0 1 20 160" fill="none" stroke="var(--mv-brand, #1b365d)" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+          </svg>
+        </div>
+      </div>
+      <div class="slide-footer-mark">miao-vision</div>
+      <div class="slide-page-num">01</div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-eyebrow">01 &middot; KEY METRICS</div>
+      <div class="slide-title" style="margin-bottom:16px">Quarter at a Glance</div>
+      <div class="slide-metrics" id="metrics-row">
+        <div class="slide-metric"><div class="v" id="m-revenue">$104,350</div><div class="l">Total Revenue</div></div>
+        <div class="slide-metric"><div class="v" id="m-units">1,332</div><div class="l">Units Sold</div></div>
+        <div class="slide-metric"><div class="v" id="m-customers">1,205</div><div class="l">Customers</div></div>
+        <div class="slide-metric"><div class="v" id="m-aov">$78.32</div><div class="l">Avg Order Value</div></div>
+      </div>
+      <div class="slide-chart-full" style="flex:1">
+        <svg viewBox="0 0 1100 380" style="width:100%;height:auto">
+          <text x="40" y="30" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$40K</text>
+          <line x1="0" y1="36" x2="1080" y2="36" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <text x="40" y="100" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$30K</text>
+          <line x1="0" y1="106" x2="1080" y2="106" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <text x="40" y="170" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$20K</text>
+          <line x1="0" y1="176" x2="1080" y2="176" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <text x="40" y="240" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$10K</text>
+          <line x1="0" y1="246" x2="1080" y2="246" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <text x="40" y="310" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$0</text>
+          <line x1="0" y1="316" x2="1080" y2="316" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <polyline points="80,260 200,240 320,250" fill="none" stroke="#1b365d" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="80" cy="260" r="5" fill="#1b365d"/><text x="80" y="340" font-family="'SF Mono',monospace" font-size="11" fill="#6b6a64" text-anchor="middle">Jan</text>
+          <circle cx="200" cy="240" r="5" fill="#1b365d"/><text x="200" y="340" font-family="'SF Mono',monospace" font-size="11" fill="#6b6a64" text-anchor="middle">Feb</text>
+          <circle cx="320" cy="250" r="5" fill="#1b365d"/><text x="320" y="340" font-family="'SF Mono',monospace" font-size="11" fill="#6b6a64" text-anchor="middle">Mar</text>
+          <polyline points="140,170 260,152 380,175" fill="none" stroke="#8a5a44" stroke-width="2.5" stroke-linejoin="round"/>
+          <circle cx="140" cy="170" r="4" fill="#8a5a44"/><text x="140" y="340" font-family="'SF Mono',monospace" font-size="11" fill="#8a5a44" text-anchor="middle">Jan</text>
+          <circle cx="260" cy="152" r="4" fill="#8a5a44"/><text x="260" y="340" font-family="'SF Mono',monospace" font-size="11" fill="#8a5a44" text-anchor="middle">Feb</text>
+          <circle cx="380" cy="175" r="4" fill="#8a5a44"/><text x="380" y="340" font-family="'SF Mono',monospace" font-size="11" fill="#8a5a44" text-anchor="middle">Mar</text>
+          <text x="400" y="40" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">&#8212; East</text>
+          <text x="400" y="56" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">&#8212; West</text>
+          <line x1="384" y1="36" x2="396" y2="36" stroke="#1b365d" stroke-width="3"/>
+          <line x1="384" y1="52" x2="396" y2="52" stroke="#8a5a44" stroke-width="2.5"/>
+          <line x1="0" y1="316" x2="1080" y2="316" stroke="#141413" stroke-width="2"/>
+        </svg>
+      </div>
+      <div class="slide-footer-mark">miao-vision</div>
+      <div class="slide-page-num">02</div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-eyebrow">02 &middot; REGIONAL</div>
+      <div class="slide-title">Sales by Region</div>
+      <div class="slide-claim" id="regional-claim">East leads at $38.2K, West accelerates at 7.8% MoM, North shows steady growth.</div>
+      <div class="slide-body-grid" style="flex:1">
+        <div>
+          <div class="slide-annotation">Click a bar to filter by region across all slides.</div>
+          <ul class="slide-pts">
+            <li>East region maintained 36.6% share of total revenue</li>
+            <li>West repeat buyers grew 18% month-over-month</li>
+            <li>North &amp; South combined account for 36% of volume</li>
+          </ul>
+        </div>
+        <div class="slide-chart-full">
+          <svg viewBox="0 0 500 300" style="width:100%;height:auto">
+            <rect class="bar-mark" x="30" y="30" width="70" height="240" rx="3" fill="#1b365d" opacity="0.9" data-region="East" data-value="$38,200"/>
+            <text x="65" y="290" font-family="'SF Mono',monospace" font-size="11" fill="#6b6a64" text-anchor="middle">East</text>
+            <text x="65" y="24" font-family="'SF Mono',monospace" font-size="12" fill="#1b365d" text-anchor="middle">$38.2K</text>
+            <rect class="bar-mark" x="130" y="80" width="70" height="190" rx="3" fill="#8a5a44" opacity="0.85" data-region="West" data-value="$28,400"/>
+            <text x="165" y="290" font-family="'SF Mono',monospace" font-size="11" fill="#6b6a64" text-anchor="middle">West</text>
+            <text x="165" y="74" font-family="'SF Mono',monospace" font-size="12" fill="#8a5a44" text-anchor="middle">$28.4K</text>
+            <rect class="bar-mark" x="230" y="120" width="70" height="150" rx="3" fill="#4f6f52" opacity="0.8" data-region="North" data-value="$21,800"/>
+            <text x="265" y="290" font-family="'SF Mono',monospace" font-size="11" fill="#6b6a64" text-anchor="middle">North</text>
+            <text x="265" y="114" font-family="'SF Mono',monospace" font-size="12" fill="#4f6f52" text-anchor="middle">$21.8K</text>
+            <rect class="bar-mark" x="330" y="170" width="70" height="100" rx="3" fill="#a37f2c" opacity="0.75" data-region="South" data-value="$16,000"/>
+            <text x="365" y="290" font-family="'SF Mono',monospace" font-size="11" fill="#6b6a64" text-anchor="middle">South</text>
+            <text x="365" y="164" font-family="'SF Mono',monospace" font-size="12" fill="#a37f2c" text-anchor="middle">$16.0K</text>
+            <line x1="15" y1="270" x2="450" y2="270" stroke="#141413" stroke-width="2"/>
+          </svg>
+        </div>
+      </div>
+      <div class="slide-footer-mark">miao-vision</div>
+      <div class="slide-page-num">03</div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-eyebrow">03 &middot; FORECAST</div>
+      <div class="slide-title" style="margin-bottom:16px">Revenue Forecast &mdash; Q2 2025</div>
+      <div class="slide-chart-full" style="flex:1">
+        <svg viewBox="0 0 1100 420" style="width:100%;height:auto">
+          <text x="40" y="40" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$50K</text>
+          <line x1="0" y1="46" x2="1040" y2="46" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <text x="40" y="110" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$40K</text>
+          <line x1="0" y1="116" x2="1040" y2="116" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <text x="40" y="180" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$30K</text>
+          <line x1="0" y1="186" x2="1040" y2="186" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <text x="40" y="250" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$20K</text>
+          <line x1="0" y1="256" x2="1040" y2="256" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <text x="40" y="320" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$10K</text>
+          <line x1="0" y1="326" x2="1040" y2="326" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <text x="40" y="390" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">$0</text>
+          <line x1="0" y1="396" x2="1040" y2="396" stroke="#e5e3d8" stroke-dasharray="4,4"/>
+          <polyline points="60,200 180,185 300,195 420,160 540,140 660,120" fill="none" stroke="#1b365d" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="60" cy="200" r="5" fill="#1b365d"/><text x="60" y="414" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64" text-anchor="middle">Jan</text>
+          <circle cx="180" cy="185" r="5" fill="#1b365d"/><text x="180" y="414" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64" text-anchor="middle">Feb</text>
+          <circle cx="300" cy="195" r="5" fill="#1b365d"/><text x="300" y="414" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64" text-anchor="middle">Mar</text>
+          <circle cx="420" cy="160" r="5" fill="#1b365d"/><text x="420" y="414" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64" text-anchor="middle">Apr</text>
+          <circle cx="540" cy="140" r="5" fill="#1b365d"/><text x="540" y="414" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64" text-anchor="middle">May</text>
+          <circle cx="660" cy="120" r="5" fill="#1b365d"/><text x="660" y="414" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64" text-anchor="middle">Jun</text>
+          <text x="680" y="50" font-family="'SF Mono',monospace" font-size="10" fill="#6b6a64">&#8212; Forecast trend</text>
+          <line x1="664" y1="46" x2="676" y2="46" stroke="#1b365d" stroke-width="3"/>
+          <rect x="860" y="20" width="180" height="80" rx="4" fill="#faf9f5" stroke="#e5e3d8" stroke-width="1"/>
+          <text x="870" y="42" font-family="'SF Mono',monospace" font-size="9" fill="#6b6a64">Q2 Projection</text>
+          <text x="870" y="64" font-family="'SF Mono',monospace" font-size="16" fill="#1b365d" font-weight="700">$118.5K</text>
+          <text x="870" y="82" font-family="'SF Mono',monospace" font-size="9" fill="#4f6f52">+13.6% vs Q1</text>
+          <line x1="0" y1="396" x2="1040" y2="396" stroke="#141413" stroke-width="2"/>
+          <line x1="356" y1="30" x2="356" y2="380" stroke="#e5e3d8" stroke-width="1" stroke-dasharray="6,4"/>
+          <text x="380" y="380" font-family="'SF Mono',monospace" font-size="9" fill="#6b6a64">Forecast</text>
+        </svg>
+      </div>
+      <div class="slide-footer-mark">miao-vision</div>
+      <div class="slide-page-num">04</div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-eyebrow">04 &middot; DETAIL</div>
+      <div class="slide-title" style="margin-bottom:16px">Top Transactions</div>
+      <div style="flex:1;overflow:hidden">
+        <div class="miao-table-wrap" style="max-height:430px">
+          <table class="miao-table" id="deck-table">
+            <caption>Q1 2025 highest-value orders</caption>
+            <thead>
+              <tr><th>Date</th><th>Region</th><th>Category</th><th>Amount</th><th>Customer</th></tr>
+            </thead>
+            <tbody>
+              <tr data-region="East"><td>2025-01-18</td><td>East</td><td>Electronics</td><td>$3,820.00</td><td>C10293</td></tr>
+              <tr data-region="East"><td>2025-02-05</td><td>East</td><td>Furniture</td><td>$3,150.00</td><td>C10452</td></tr>
+              <tr data-region="West"><td>2025-02-22</td><td>West</td><td>Electronics</td><td>$2,940.00</td><td>C10781</td></tr>
+              <tr data-region="North"><td>2025-01-30</td><td>North</td><td>Software</td><td>$2,680.00</td><td>C10134</td></tr>
+              <tr data-region="West"><td>2025-03-04</td><td>West</td><td>Furniture</td><td>$2,420.00</td><td>C10904</td></tr>
+              <tr data-region="East"><td>2025-03-15</td><td>East</td><td>Software</td><td>$2,310.00</td><td>C10673</td></tr>
+              <tr data-region="West"><td>2025-01-12</td><td>West</td><td>Electronics</td><td>$2,180.00</td><td>C10029</td></tr>
+              <tr data-region="South"><td>2025-02-14</td><td>South</td><td>Furniture</td><td>$1,960.00</td><td>C10518</td></tr>
+              <tr data-region="North"><td>2025-03-22</td><td>North</td><td>Electronics</td><td>$1,840.00</td><td>C10842</td></tr>
+              <tr data-region="East"><td>2025-03-30</td><td>East</td><td>Electronics</td><td>$1,720.00</td><td>C10991</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="slide-footer-mark">miao-vision</div>
+      <div class="slide-page-num">05</div>
+    </div>
+
+    <div class="slide slide-ending">
+      <h2>Thank you</h2>
+      <div class="line"></div>
+      <div class="sub">Miao Vision &middot; Data-driven presentations rendered from your local files &mdash; no setup required</div>
+      <div class="slide-footer-mark">miao-vision</div>
+      <div class="slide-page-num">06</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="deck-overlay" id="deck-overlay" onclick="closeFilterPanel()"></div>
+
+<div class="filter-panel" id="filter-panel">
+  <div class="filter-header">
+    <span>Region Filter</span>
+    <button class="filter-close" onclick="closeFilterPanel()">&times;</button>
+  </div>
+  <div class="filter-body">
+    <div class="filter-group">
+      <div class="filter-group-label">Region</div>
+      <div class="filter-chips">
+        <span class="filter-chip active" data-region="all" onclick="applyRegionFilter('all')">All</span>
+        <span class="filter-chip" data-region="East" onclick="applyRegionFilter('East')">East</span>
+        <span class="filter-chip" data-region="West" onclick="applyRegionFilter('West')">West</span>
+        <span class="filter-chip" data-region="North" onclick="applyRegionFilter('North')">North</span>
+        <span class="filter-chip" data-region="South" onclick="applyRegionFilter('South')">South</span>
+      </div>
+    </div>
+  </div>
+  <div class="filter-footer">
+    <button class="filter-reset" onclick="resetFilters()">Reset</button>
+  </div>
+</div>
+
+<nav class="slide-nav">
+  <button id="btn-prev">&#8592;</button>
+  <span id="slide-counter" class="slide-counter">1 / 6</span>
+  <button id="btn-next">&#8594;</button>
+  <button id="btn-fs" title="Fullscreen (F)">&#x26F6;</button>
+  <button id="btn-print" title="Export PDF">&#x2399;</button>
+  <button id="btn-filter" title="Filters" onclick="toggleFilterPanel()">&#x2630;</button>
+</nav>
+
+<script type="application/json" id="miao-viz-deck">
+{"title":"Executive Sales Review","theme":"magazine","slides":[{"layout":"cover","title":"Executive Sales Review"},{"layout":"metrics-chart","eyebrow":"01 · KEY METRICS","title":"Quarter at a Glance"},{"layout":"text-chart","eyebrow":"02 · REGIONAL","title":"Sales by Region"},{"layout":"chart-full","eyebrow":"03 · FORECAST","title":"Revenue Forecast — Q2 2025"},{"layout":"table-full","eyebrow":"04 · DETAIL","title":"Top Transactions"},{"layout":"ending","title":"Thank you"}]}
+</script>
+
+<script>
+var slides = document.querySelectorAll('.slide');
+var counter = document.getElementById('slide-counter');
+var total = slides.length;
+var current = 0;
+var activeRegion = 'all';
+
+function setScale() {
+  var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+  var canvas = document.querySelector('.slide-canvas');
+  if (canvas) canvas.style.transform = 'scale(' + s + ')';
+}
+
+function goTo(n) {
+  slides[current].classList.remove('active');
+  current = Math.max(0, Math.min(n, total - 1));
+  slides[current].classList.add('active');
+  if (counter) counter.textContent = (current + 1) + ' / ' + total;
+}
+
+function toggleFilterPanel() {
+  var p = document.getElementById('filter-panel');
+  var o = document.getElementById('deck-overlay');
+  p.classList.toggle('open');
+  o.classList.toggle('visible');
+}
+
+function closeFilterPanel() {
+  document.getElementById('filter-panel').classList.remove('open');
+  document.getElementById('deck-overlay').classList.remove('visible');
+}
+
+function applyRegionFilter(region) {
+  activeRegion = region;
+  document.querySelectorAll('#filter-panel .filter-chip').forEach(function(c) {
+    c.classList.toggle('active', c.getAttribute('data-region') === region);
+  });
+  document.querySelectorAll('.bar-mark').forEach(function(b) {
+    var match = region === 'all' || b.getAttribute('data-region') === region;
+    b.classList.toggle('dimmed', !match);
+  });
+  document.querySelectorAll('#deck-table tbody tr').forEach(function(r) {
+    var match = region === 'all' || r.getAttribute('data-region') === region;
+    r.style.opacity = match ? '1' : '0.15';
+  });
+  var revenueMap = { East:38200, West:28400, North:21800, South:16000 };
+  var unitsMap = { East:431, West:296, North:156, South:61 };
+  var customersAll = ['East','West','North','South'];
+  if (region === 'all') {
+    document.getElementById('m-revenue').textContent = '$104,350';
+    document.getElementById('m-units').textContent = '1,332';
+    document.getElementById('m-customers').textContent = '1,205';
+    document.getElementById('m-aov').textContent = '$78.32';
+    document.getElementById('regional-claim').textContent = 'East leads at $38.2K, West accelerates at 7.8% MoM, North shows steady growth.';
+  } else {
+    var r = revenueMap[region] || 0;
+    var u = unitsMap[region] || 0;
+    document.getElementById('m-revenue').textContent = '$' + r.toLocaleString();
+    document.getElementById('m-units').textContent = u;
+    document.getElementById('m-customers').textContent = '1 region';
+    document.getElementById('m-aov').textContent = '$' + (u > 0 ? (r / u).toFixed(2) : '0.00');
+    document.getElementById('regional-claim').textContent = region + ' region generated $' + r.toLocaleString() + ' in Q1 2025.';
+  }
+}
+
+function resetFilters() {
+  applyRegionFilter('all');
+}
+
+document.addEventListener('keydown', function(e) {
+  var tag = (document.activeElement && document.activeElement.tagName) || '';
+  var inInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+  if (e.key === 'Escape') { closeFilterPanel(); return; }
+  if (e.key === 'ArrowRight' || e.key === ' ') { if (!inInput) { e.preventDefault(); goTo(current + 1); } }
+  else if (e.key === 'ArrowLeft') { if (!inInput) { e.preventDefault(); goTo(current - 1); } }
+  else if (e.key === 'f' || e.key === 'F') {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function(){});
+    else document.exitFullscreen().catch(function(){});
+  }
+});
+
+document.querySelectorAll('.bar-mark').forEach(function(el) {
+  el.addEventListener('mouseenter', function(e) {
+    var t = document.createElement('div');
+    t.className = 'miao-tooltip';
+    t.id = 'deck-tooltip';
+    t.textContent = el.getAttribute('data-value') + ' (' + el.getAttribute('data-region') + ')';
+    document.body.appendChild(t);
+  });
+  el.addEventListener('mousemove', function(e) {
+    var t = document.getElementById('deck-tooltip');
+    if (t) { t.style.left = (e.clientX + 12) + 'px'; t.style.top = (e.clientY - 30) + 'px'; }
+  });
+  el.addEventListener('mouseleave', function() {
+    var t = document.getElementById('deck-tooltip');
+    if (t) t.remove();
+  });
+  el.addEventListener('click', function() {
+    applyRegionFilter(el.getAttribute('data-region'));
+    closeFilterPanel();
+  });
+});
+
+document.getElementById('btn-prev').addEventListener('click', function() { goTo(current - 1); });
+document.getElementById('btn-next').addEventListener('click', function() { goTo(current + 1); });
+document.getElementById('btn-fs').addEventListener('click', function() {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function(){});
+  else document.exitFullscreen().catch(function(){});
+});
+document.getElementById('btn-print').addEventListener('click', function() {
+  document.body.classList.remove('present-mode');
+  window.print();
+  document.body.classList.add('present-mode');
+});
+
+window.addEventListener('resize', setScale);
+setScale();
+goTo(0);
+</script>
+</body>
+</html>
