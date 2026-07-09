@@ -20,7 +20,7 @@ npm install -g @miao-vision/cli
 Verify:
 
 ```bash
-miao-viz catalog
+miao-viz spec catalog
 ```
 
 ## Quick Install (All Agents)
@@ -75,9 +75,9 @@ Browser/app-hosted Claude environments may not be able to execute local shell co
 The skill will run:
 
 ```bash
-miao-viz profile ~/data/sales.csv
-miao-viz validate --spec /tmp/miao-vision/report.yaml --profile /tmp/miao-vision/profile.json
-miao-viz render --input ~/data/sales.csv --spec /tmp/miao-vision/report.yaml --format html --output /tmp/miao-vision/report.html
+miao-viz data profile ~/data/sales.csv
+miao-viz spec validate --spec /tmp/miao-vision/report.yaml --profile /tmp/miao-vision/profile.json
+miao-viz render report --input ~/data/sales.csv --spec /tmp/miao-vision/report.yaml --format html --output /tmp/miao-vision/report.html
 ```
 
 ## Common Errors
@@ -94,7 +94,7 @@ Then verify:
 
 ```bash
 which miao-viz
-miao-viz catalog
+miao-viz spec catalog
 ```
 
 ### `FILE_NOT_FOUND`
@@ -103,12 +103,12 @@ The input path is wrong or inaccessible. Use an absolute path and confirm it exi
 
 ### `FIELD_NOT_FOUND`
 
-The generated spec references a field not present in the data profile. Re-run `miao-viz profile` and update the spec field names.
+The generated spec references a field not present in the data profile. Re-run `miao-viz data profile` and update the spec field names.
 
 ### `UNSUPPORTED_CHART_TYPE`
 
 Use one of the MVP chart types listed by:
 
 ```bash
-miao-viz catalog
+miao-viz spec catalog
 ```

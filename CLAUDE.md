@@ -51,7 +51,7 @@ The CLI is in `packages/miao-viz-cli/src/`.
 
 Important modules:
 
-- `cli.ts`: command routing for profile, analyze, validate, render, deck, article, catalog, block, and query.
+- `cli.ts`: command routing for the `data` (profile, query, analyze), `spec` (validate, catalog, block, template, inspect), and `render` (report, deck, article) groups.
 - `types.ts`: public report, chart, transform, dataset, and result contracts.
 - `spec-schema.ts`: Zod schema for report specs.
 - `spec-validator.ts`: field validation, catalog compliance, evidence path checks, verify warnings, and patch-hint integration.
@@ -72,24 +72,24 @@ All CLI commands should return structured, machine-readable results using the ex
 Use the evidence-first pipeline for report generation and report-related code changes:
 
 ```bash
-npm run miao-viz -- analyze /path/to/data.csv \
+npm run miao-viz -- data analyze /path/to/data.csv \
   --intent "user intent" \
   --output /tmp/miao-vision/context.json
 
-npm run miao-viz -- profile /path/to/data.csv \
+npm run miao-viz -- data profile /path/to/data.csv \
   > /tmp/miao-vision/profile.json
 
-npm run miao-viz -- block instantiate <block-id> \
+npm run miao-viz -- spec block instantiate <block-id> \
   --context /tmp/miao-vision/context.json \
   --output /tmp/miao-vision/report.yaml
 
-npm run miao-viz -- validate \
+npm run miao-viz -- spec validate \
   --spec /tmp/miao-vision/report.yaml \
   --profile /tmp/miao-vision/profile.json \
   --context /tmp/miao-vision/context.json \
   --verify
 
-npm run miao-viz -- render \
+npm run miao-viz -- render report \
   --input /path/to/data.csv \
   --spec /tmp/miao-vision/report.yaml \
   --context /tmp/miao-vision/context.json \
@@ -110,7 +110,7 @@ When writing or repairing report specs:
 The CLI reads local Markdown/text only. Agents are responsible for fetching URLs, extracting the article body, and saving normalized Markdown before invoking:
 
 ```bash
-npm run miao-viz -- article /tmp/miao-vision/article.md \
+npm run miao-viz -- render article /tmp/miao-vision/article.md \
   --style editorial \
   --format html \
   --output /tmp/miao-vision/article-infographic.html
@@ -120,10 +120,10 @@ Do not add URL fetching to the CLI unless the product direction explicitly chang
 
 ### Deck Workflow
 
-Use `miao-viz deck` for browser presentation artifacts:
+Use `miao-viz render deck` for browser presentation artifacts:
 
 ```bash
-npm run miao-viz -- deck \
+npm run miao-viz -- render deck \
   --input /path/to/data.csv \
   --spec /path/to/deck.yaml \
   --output /tmp/miao-vision/deck.html
@@ -203,7 +203,7 @@ npm run test:e2e
 
 ## Current Priorities
 
-- Improve the reliability of `miao-viz analyze -> instantiate/spec -> validate -> render`.
+- Improve the reliability of `miao-viz data analyze -> spec instantiate -> spec validate -> render report`.
 - Keep report insights evidence-grounded and machine-verifiable.
 - Reduce agent token cost by moving deterministic chart, block, template, and validation knowledge into the CLI.
 - Preserve local-first operation: no backend, no data upload, no required API key.

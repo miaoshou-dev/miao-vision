@@ -43,7 +43,7 @@ The `miao-viz` CLI must be installed and available on `PATH`.
 Check:
 
 ```bash
-miao-viz catalog
+miao-viz spec catalog
 ```
 
 To get a machine-readable catalog of chart types and infographic templates with rules, encodings, and anti-patterns:
@@ -80,7 +80,7 @@ If the request mixes report and presentation, prefer the explicitly named output
 - Keep URL fetching in the agent workflow. Do not require the CLI to fetch URLs directly.
 - For article workflows, normalize URL or pasted content to local Markdown/text before rendering.
 - For data reports, validate before render.
-- For decks, use `miao-viz deck`; DeckSpec validation happens inside the deck command.
+- For decks, use `miao-viz render deck`; DeckSpec validation happens inside the render deck command.
 - Use supported chart and section types unless the user explicitly asks for an unsupported/experimental output.
 - For article infographics, use `miao-viz spec catalog --for-llm` when choosing a visual structure (article templates are included alongside chart types). The article catalog includes structures such as roadmap sequences, priority quadrants, hierarchy trees, relation flows, pyramid lists, and grid lists.
 

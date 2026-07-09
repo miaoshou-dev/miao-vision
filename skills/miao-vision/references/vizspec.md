@@ -249,7 +249,7 @@ Every insight sentence must trace to one of these sources:
 
 | Source | Allowed |
 | --- | --- |
-| `miao-viz query` real aggregated value | ✅ Yes |
+| `miao-viz data query` real aggregated value | ✅ Yes |
 | Profile statistic with sufficient sample (rows ≥ 30 for skewness; n ≥ 10 for correlation) | ✅ Yes |
 | User's own statement in the request | ✅ Yes |
 | `profile.topSharePct` used as a value-share % | ❌ No — it is row frequency |
@@ -266,7 +266,7 @@ NARRATIVE PLAN
 Main story   : East region dominates with ¥420K (51% of total). Q4 2024
                marks the first quarter-on-quarter decline (−8.2%).
 
-Data evidence: (from miao-viz query)
+Data evidence: (from miao-viz data query)
   - East total_sales:  420,000  (50.6%)
   - West total_sales:  280,000  (33.7%)
   - North total_sales: 130,000  (15.7%)
@@ -315,7 +315,7 @@ NARRATIVE PLAN
 ══════════════════════════════════════════════════════════
 Main story   : [1–2 sentences. Use real numbers from query results.]
 
-Data evidence: (from miao-viz query — list actual computed values)
+Data evidence: (from miao-viz data query — list actual computed values)
   - [field or group]: [value] ([share or change, if applicable])
 
 Chart intents:
@@ -336,11 +336,11 @@ Insight drafts:
 Queries run before writing this plan:
 
 ```bash
-miao-viz query sales.csv --groupby region \
+miao-viz data query sales.csv --groupby region \
   --measure "sum(sales) as total_sales, count(*) as orders" \
   --orderby total_sales
 
-miao-viz query sales.csv --measure "sum(sales) as grand_total"
+miao-viz data query sales.csv --measure "sum(sales) as grand_total"
 ```
 
 Resulting Narrative Plan:
@@ -351,7 +351,7 @@ NARRATIVE PLAN
 Main story   : East region dominates with ¥420K (51% of total), 1.5× West's
                ¥280K. Q4 2024 shows East's first quarter-on-quarter decline (−8.2%).
 
-Data evidence: (from miao-viz query)
+Data evidence: (from miao-viz data query)
   - East   total_sales: 420,000  (50.6%)
   - West   total_sales: 280,000  (33.7%)
   - North  total_sales: 130,000  (15.7%)
@@ -382,7 +382,7 @@ The insight drafts become the `insights` field in the spec. Numbers must match t
 - Use `bar` for rankings, `line` for temporal trends, `bigvalue` for KPIs, and `table` for row previews.
 - Default to `theme: magazine` for all user-facing HTML reports.
 - Render HTML unless the user asks for SVG.
-- Insights must be grounded in real aggregated values from `miao-viz query` or reliable profile statistics. See grounding rules above.
+- Insights must be grounded in real aggregated values from `miao-viz data query` or reliable profile statistics. See grounding rules above.
 
 ## DeckSpec (Presentation Deck)
 
@@ -391,14 +391,14 @@ Use DeckSpec when the user asks for slides, a presentation, a deck, PPT-like out
 Render with:
 
 ```bash
-miao-viz deck \
+miao-viz render deck \
   --input /path/to/data.csv \
   --spec /tmp/miao-vision/deck.yaml \
   --theme magazine \
   --output /tmp/miao-vision/deck.html
 ```
 
-Do not run `miao-viz validate` for DeckSpec. The `deck` command validates DeckSpec with its own schema.
+Do not run `miao-viz spec validate` for DeckSpec. The `render deck` command validates DeckSpec with its own schema.
 
 Validation rules:
 

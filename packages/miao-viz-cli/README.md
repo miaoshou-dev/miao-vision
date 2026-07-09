@@ -11,12 +11,12 @@ npm install -g @miao-vision/cli
 ## Commands
 
 ```bash
-miao-viz profile ./examples/sales.csv
-miao-viz catalog
-miao-viz validate --spec ./examples/sales-dashboard.yaml --profile ./profile.json
-miao-viz render --input ./examples/sales.csv --spec ./examples/sales-dashboard.yaml --output /tmp/miao-report.html
-miao-viz deck --input ./examples/sales.csv --spec ./examples/sales-deck.yaml --output /tmp/miao-deck.html
-miao-viz article ./article.md --style editorial --format html --output /tmp/article-infographic.html
+miao-viz data profile ./examples/sales.csv
+miao-viz spec catalog
+miao-viz spec validate --spec ./examples/sales-dashboard.yaml --profile ./profile.json
+miao-viz render report --input ./examples/sales.csv --spec ./examples/sales-dashboard.yaml --output /tmp/miao-report.html
+miao-viz render deck --input ./examples/sales.csv --spec ./examples/sales-deck.yaml --output /tmp/miao-deck.html
+miao-viz render article ./article.md --style editorial --format html --output /tmp/article-infographic.html
 ```
 
 Deck examples are included for several common presentation scenarios:

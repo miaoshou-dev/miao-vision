@@ -39,19 +39,19 @@ Run two commands. The analyze output is what you read; the profile is only neede
 
 ```bash
 # Evidence pack + catalog (read this before writing spec)
-miao-viz analyze /path/to/data.csv \
+miao-viz data analyze /path/to/data.csv \
   --intent "..." \
   --compact \
   --output /tmp/miao-vision/context.json
 
 # Profile for validate (you do not need to read this)
-miao-viz profile /path/to/data.csv > /tmp/miao-vision/profile.json
+miao-viz data profile /path/to/data.csv > /tmp/miao-vision/profile.json
 ```
 
 If the auto-detected primary measure or dimension is wrong, rerun analyze with a correction:
 
 ```bash
-miao-viz analyze /path/to/data.csv \
+miao-viz data analyze /path/to/data.csv \
   --intent "..." \
   --correct-assumption "primary_measure=orders" \
   --compact \
@@ -61,14 +61,14 @@ miao-viz analyze /path/to/data.csv \
 To add a non-standard query not covered by the 3 standard evidence queries:
 
 ```bash
-miao-viz analyze /path/to/data.csv \
+miao-viz data analyze /path/to/data.csv \
   --intent "..." \
   --extra-query "groupby=region,month;measure=sum(revenue) as total;filter=year>=2024" \
   --compact \
   --output /tmp/miao-vision/context.json
 ```
 
-Use `--verbose` instead of `--compact` only when debugging full block/template metadata. Use `miao-viz catalog --for-llm` only when compact context does not explain a chart rule clearly enough.
+Use `--verbose` instead of `--compact` only when debugging full block/template metadata. Use `miao-viz spec catalog --for-llm` only when compact context does not explain a chart rule clearly enough.
 
 Read `context.json` and use these fields before writing the spec:
 
@@ -99,13 +99,13 @@ If `clarificationQuestions[]` contains a blocking question, ask exactly one befo
 1. Read `catalog.templates` first. If a template matches Step 0 routing, run:
 
 ```bash
-miao-viz template instantiate <id> --context /tmp/miao-vision/context.json
+miao-viz spec template instantiate <id> --context /tmp/miao-vision/context.json
 ```
 
 2. If no template matches, read `catalog.blocks` and run:
 
 ```bash
-miao-viz block instantiate <id> --context /tmp/miao-vision/context.json
+miao-viz spec block instantiate <id> --context /tmp/miao-vision/context.json
 ```
 
 3. Review the draft: confirm field names against `context.json fields[]`, adjust variables such as `topN`, and complete each generated quality check. **Insights are auto-generated from `evidence[]` values** — review them, add caveats if needed (e.g. when `sampleWarnings` are present), but do not delete them.
@@ -147,7 +147,7 @@ Path formats:
 - `$evidence:total.values.total_sales` from a single-row summary.
 - `$evidence:by_dimension.rows[0].region` from a multi-row result.
 
-`miao-viz validate --context context.json` checks every `$evidence` path and returns `EVIDENCE_PATH_NOT_FOUND` if a path does not resolve.
+`miao-viz spec validate --context context.json` checks every `$evidence` path and returns `EVIDENCE_PATH_NOT_FOUND` if a path does not resolve.
 
 Required caveats for `sampleWarnings[]`:
 
@@ -163,7 +163,7 @@ Required caveats for `sampleWarnings[]`:
 Validate with full checks:
 
 ```bash
-miao-viz validate \
+miao-viz spec validate \
   --spec /tmp/miao-vision/report.yaml \
   --profile /tmp/miao-vision/profile.json \
   --context /tmp/miao-vision/context.json \
@@ -178,7 +178,7 @@ Read `warnings[]`. Fix every warning before rendering.
 For machine-fixable errors and warnings, add `--patch-hints`:
 
 ```bash
-miao-viz validate \
+miao-viz spec validate \
   --spec /tmp/miao-vision/report.yaml \
   --profile /tmp/miao-vision/profile.json \
   --context /tmp/miao-vision/context.json \
@@ -228,7 +228,7 @@ If the user has no preference, use `magazine` for user-facing reports.
 Render:
 
 ```bash
-miao-viz render \
+miao-viz render report \
   --input /path/to/data.csv \
   --spec /tmp/miao-vision/report.yaml \
   --context /tmp/miao-vision/context.json \
@@ -253,13 +253,13 @@ Steps:
 1. Read the existing spec file completely before making changes.
 2. Identify the minimum fields to change.
 3. Apply common edits: change one parameter, append one chart, apply `--patch-hints`, or edit one insight string.
-4. Run `miao-viz validate` again after editing.
+4. Run `miao-viz spec validate` again after editing.
 
 Rewrite the full spec only when the user asks for a completely different report structure, or more than 50% of the spec needs to change.
 
 ## Conservative Language
 
-These rules apply to all insight text. Violations are caught by `miao-viz validate --verify`.
+These rules apply to all insight text. Violations are caught by `miao-viz spec validate --verify`.
 
 Forbidden words unless backed by statistical output in `context.json`:
 

@@ -36,8 +36,8 @@ npm run test:e2e:debug
 
 `miao-viz-static-report.spec.ts` verifies:
 
-- `miao-viz profile` returns AI-readable profile metadata, column roles, quality, and chart hints.
-- `miao-viz render` writes a static HTML report from a local CSV and VizSpec YAML.
+- `miao-viz data profile` returns AI-readable profile metadata, column roles, quality, and chart hints.
+- `miao-viz render report` writes a static HTML report from a local CSV and VizSpec YAML.
 - The generated HTML artifact includes embedded VizSpec, report title, chart headings, and SVG output.
 - When system Chrome can launch headless, Playwright also opens the generated HTML artifact directly and checks the rendered DOM.
 

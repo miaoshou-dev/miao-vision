@@ -18,7 +18,7 @@ The agent understands the article and writes an `InfographicBundleSpec`: a numbe
 8. Render with `--bundle-input`:
 
 ```bash
-miao-viz article \
+miao-viz render article \
   --bundle-input /tmp/miao-vision/article-bundle.json \
   --format html \
   --output /tmp/miao-vision/article-infographic.html
@@ -59,7 +59,7 @@ Aim for 3-6 atomic blocks. Every block should have `id`, `order`, `title`, `clai
 For sharing and presentation, use `--format png` or `--format pdf`:
 
    ```bash
-   miao-viz article \
+   miao-viz render article \
      --bundle-input /tmp/miao-vision/article-bundle.json \
      --format png \
      --output /tmp/miao-vision/article-infographic.png
@@ -260,7 +260,7 @@ Allowed section types: `hero`, `facts`, `timeline`, `comparison`, `quote`, `take
 
 Every section must have at least one item. `hero` is required and must come first.
 
-If `miao-viz article` returns `INVALID_INFOGRAPHIC_SPEC`, read the `issues` array and fix each reported `path`. Common fixes:
+If `miao-viz render article` returns `INVALID_INFOGRAPHIC_SPEC`, read the `issues` array and fix each reported `path`. Common fixes:
 
 - Add `"text"` to every item.
 - Add at least one item to each section.
@@ -413,7 +413,7 @@ Data Shape Check:
 The CLI can parse the article and generate an `InfographicSpec` automatically using regex-based extraction. Use this for quick drafts, short articles (<5 sections), or when the user explicitly asks for a fast result without structured claims/outline.
 
 ```bash
-miao-viz article /tmp/miao-vision/article.md \
+miao-viz render article /tmp/miao-vision/article.md \
   --style editorial \
   --format html \
   --output /tmp/miao-vision/article-infographic.html
@@ -421,11 +421,11 @@ miao-viz article /tmp/miao-vision/article.md \
 
 Path B is a fallback, not the standard. For user-facing output, use Path A.
 
-If `miao-viz article` returns a structured error, fix the input or command once when the repair is obvious. Do not recreate a separate HTML pipeline manually inside the skill.
+If `miao-viz render article` returns a structured error, fix the input or command once when the repair is obvious. Do not recreate a separate HTML pipeline manually inside the skill.
 
 ## Examples
 
-- URL input, quality path: fetch/open the URL, extract the article body, save `/tmp/miao-vision/article.md`, write `/tmp/miao-vision/article-bundle.json`, then run `miao-viz article --bundle-input /tmp/miao-vision/article-bundle.json --format html --output /tmp/miao-vision/article-infographic.html`.
+- URL input, quality path: fetch/open the URL, extract the article body, save `/tmp/miao-vision/article.md`, write `/tmp/miao-vision/article-bundle.json`, then run `miao-viz render article --bundle-input /tmp/miao-vision/article-bundle.json --format html --output /tmp/miao-vision/article-infographic.html`.
 - Markdown file input, quality path: read the file, write compact claims and `/tmp/miao-vision/article-bundle.json`, then render with `--bundle-input`.
 - Pasted text input, quality path: write the text to `/tmp/miao-vision/article.md`, write `/tmp/miao-vision/article-bundle.json`, then render with `--bundle-input`.
-- Quick draft: run `miao-viz article /tmp/miao-vision/article.md --style editorial --format html --output /tmp/miao-vision/article-infographic.html`.
+- Quick draft: run `miao-viz render article /tmp/miao-vision/article.md --style editorial --format html --output /tmp/miao-vision/article-infographic.html`.

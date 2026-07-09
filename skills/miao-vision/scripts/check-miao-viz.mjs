@@ -2,7 +2,7 @@
 
 import { spawnSync } from 'node:child_process'
 
-const result = spawnSync('miao-viz', ['catalog'], {
+const result = spawnSync('miao-viz', ['spec', 'catalog'], {
   encoding: 'utf8'
 })
 
@@ -14,7 +14,7 @@ if (result.error?.code === 'ENOENT') {
 }
 
 if (result.status !== 0) {
-  console.error(result.stderr || result.stdout || 'miao-viz catalog failed.')
+  console.error(result.stderr || result.stdout || 'miao-viz spec catalog failed.')
   process.exit(result.status ?? 1)
 }
 

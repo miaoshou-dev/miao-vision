@@ -104,8 +104,8 @@ npm install -g @miao-vision/cli
 **Step 2 — Run on your data**
 
 ```bash
-miao-viz profile ./sales.csv
-miao-viz render --input ./sales.csv --spec ./report.yaml --output ./report.html
+miao-viz data profile ./sales.csv
+miao-viz render report --input ./sales.csv --spec ./report.yaml --output ./report.html
 open ./report.html
 ```
 
@@ -131,10 +131,10 @@ The result wastes tokens, requires manual review, and still fails on complex dat
 A four-step pipeline that constrains the agent to what it's good at — reasoning — and delegates everything else to the CLI:
 
 ```
-1. Analyze    miao-viz analyze   → CLI inspects data, pre-computes summaries and evidence
-2. Draft      agent writes spec  → compact YAML citing pre-computed values, not invented ones
-3. Validate   miao-viz validate  → CLI checks the spec, returns machine-readable patch hints
-4. Render     miao-viz render    → CLI produces a self-contained HTML file
+1. Analyze    miao-viz data analyze   → CLI inspects data, pre-computes summaries and evidence
+2. Draft      agent writes spec       → compact YAML citing pre-computed values, not invented ones
+3. Validate   miao-viz spec validate  → CLI checks the spec, returns machine-readable patch hints
+4. Render     miao-viz render report  → CLI produces a self-contained HTML file
 ```
 
 The agent never generates chart code. It writes a spec. The CLI renders it.
@@ -146,7 +146,7 @@ The agent never generates chart code. It writes a spec. The CLI renders it.
 The `analyze` command pre-computes everything the agent needs — field roles, grouped aggregates, time periods, ranked results — as a structured JSON briefing. The agent reads the briefing and writes the spec. It doesn't spend tokens exploring the data:
 
 ```bash
-miao-viz analyze ./sales.csv \
+miao-viz data analyze ./sales.csv \
   --intent "monthly trend and top regions" \
   --output /tmp/context.json
 ```
@@ -164,9 +164,9 @@ insights:
   - "East contributed $evidence:by_region.rows[0].total — the largest region in this dataset."
 ```
 
-The CLI resolves every `$evidence:` path during `validate`. If a path doesn't exist, the agent gets `EVIDENCE_PATH_NOT_FOUND` — a hard error — before any HTML is produced. Hallucinated statistics fail fast, not silently.
+The CLI resolves every `$evidence:` path during `spec validate`. If a path doesn't exist, the agent gets `EVIDENCE_PATH_NOT_FOUND` — a hard error — before any HTML is produced. Hallucinated statistics fail fast, not silently.
 
-`validate --verify` adds a second layer: it flags forbidden language (`trend`, `significant`, `strong correlation`) used without statistical backing, and catches missing caveats when sample sizes are small.
+`spec validate --verify` adds a second layer: it flags forbidden language (`trend`, `significant`, `strong correlation`) used without statistical backing, and catches missing caveats when sample sizes are small.
 
 #### 3. Machine-readable fixes
 
@@ -191,7 +191,7 @@ The agent applies the patch, re-validates, and renders. No human intervention re
 |---|---|
 | **AI-native pipeline** | Every CLI command returns structured JSON. Agents read briefings, not raw data. Specs are compact YAML — never raw chart code. |
 | **Evidence-grounded output** | Insights cite pre-computed evidence via `$evidence:` directives. Every path is validated before rendering. Hallucinated statistics fail fast. |
-| **Machine-readable fixes** | `validate --patch-hints` returns `patches[]` the agent applies directly. No retry loops, no free-form error parsing. |
+| **Machine-readable fixes** | `spec validate --patch-hints` returns `patches[]` the agent applies directly. No retry loops, no free-form error parsing. |
 | **Your data stays local** | Nothing leaves your machine. No upload, no API call with your data. |
 | **One file to share** | Every output is a self-contained `.html` file — open it, email it, archive it. No viewer needed. |
 | **Not a dashboard** | No database to connect, no tiles to arrange, no filter panel to maintain. You get an artifact, not a workspace. |
@@ -212,8 +212,8 @@ Use miao-vision to analyze ~/data/sales.csv and generate an HTML report.
 
 Or run the CLI yourself:
 ```bash
-miao-viz profile ./sales.csv
-miao-viz render --input ./sales.csv --spec ./sales-dashboard.yaml --output ./report.html
+miao-viz data profile ./sales.csv
+miao-viz render report --input ./sales.csv --spec ./sales-dashboard.yaml --output ./report.html
 ```
 
 You get: KPI cards, bar charts, trend lines, and data tables — styled and ready to share.
@@ -231,7 +231,7 @@ Use miao-vision to turn ~/data/sales.csv into a presentation deck for an executi
 
 Or use the CLI:
 ```bash
-miao-viz deck --input ./sales.csv --spec ./sales-deck.yaml --output ./deck.html
+miao-viz render deck --input ./sales.csv --spec ./sales-deck.yaml --output ./deck.html
 ```
 
 You get: a browser-based slide deck with cover, metrics, charts, and an ending slide. Arrow-key navigation, fullscreen, and print-to-PDF built in.
@@ -249,7 +249,7 @@ Use miao-vision to turn this article Markdown file into an infographic.
 
 Or use the CLI:
 ```bash
-miao-viz article ./my-article.md --style editorial --output ./infographic.html
+miao-viz render article ./my-article.md --style editorial --output ./infographic.html
 ```
 
 You get: a static, shareable infographic you can embed or send directly.
@@ -297,7 +297,7 @@ charts:
         field: total_sales
 ```
 
-Run `miao-viz catalog` for the full catalog with encoding rules, anti-patterns, and usage guidance.
+Run `miao-viz spec catalog` for the full catalog with encoding rules, anti-patterns, and usage guidance.
 
 ---
 
@@ -431,7 +431,7 @@ Commands are organized into three groups:
 | `miao-viz render deck` | Render a deck spec to HTML slides |
 | `miao-viz render article` | Convert a local Markdown/text file into a static infographic |
 
-Legacy flat commands (`profile`, `render`, `deck`, ...) still work for backward compatibility.
+Commands are grouped: `data` (profile, query, analyze), `spec` (validate, catalog, block, template, inspect), `render` (report, deck, article).
 
 ---
 

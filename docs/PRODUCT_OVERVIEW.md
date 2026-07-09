@@ -14,7 +14,7 @@ Miao Vision 正在从完整本地 BI 工作台，收敛为面向 AI Agent 的本
 ```text
 Data Display:
 本地数据文件
-  -> miao-viz profile
+  -> miao-viz data profile
   -> AI 生成 VizSpec
   -> miao-viz validate
   -> miao-viz render
@@ -23,14 +23,14 @@ Data Display:
 Article-to-Infographic:
 文章 URL / Markdown
   -> Agent 归一化正文
-  -> miao-viz article
+  -> miao-viz render article
   -> 静态 infographic artifact
 
 Presentation Deck:
 本地数据文件
-  -> miao-viz profile
+  -> miao-viz data profile
   -> AI 生成 DeckSpec
-  -> miao-viz deck
+  -> miao-viz render deck
   -> browser-presentable slide deck
 ```
 
@@ -158,7 +158,7 @@ Miao Viz 的交付物是可查看、可分享、可归档的报告文件。
 ### Step 1: Profile
 
 ```bash
-miao-viz profile ./sales.csv
+miao-viz data profile ./sales.csv
 ```
 
 输出字段类型、缺失率、样本、时间粒度、数值范围、推荐 hints。
@@ -166,7 +166,7 @@ miao-viz profile ./sales.csv
 ### Step 2: Catalog
 
 ```bash
-miao-viz catalog
+miao-viz spec catalog
 ```
 
 输出支持的图表类型、required encodings、可选 encodings、适用场景。
@@ -174,7 +174,7 @@ miao-viz catalog
 ### Step 3: Validate
 
 ```bash
-miao-viz validate --spec ./report.yaml --profile ./profile.json
+miao-viz spec validate --spec ./report.yaml --profile ./profile.json
 ```
 
 检查字段是否存在、图表类型是否支持、encoding 是否完整。
@@ -182,7 +182,7 @@ miao-viz validate --spec ./report.yaml --profile ./profile.json
 ### Step 4: Render
 
 ```bash
-miao-viz render \
+miao-viz render report \
   --input ./sales.csv \
   --spec ./report.yaml \
   --theme editorial \
@@ -197,7 +197,7 @@ miao-viz render \
 
 ### 路线 C：Presentation Deck
 
-本地数据文件经 `profile` 后由 AI 生成 DeckSpec，再调用 `miao-viz deck` 输出可浏览器播放的演示文稿。
+本地数据文件经 `profile` 后由 AI 生成 DeckSpec，再调用 `miao-viz render deck` 输出可浏览器播放的演示文稿。
 
 ## 六、轻量交互方向
 

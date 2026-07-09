@@ -52,24 +52,24 @@ For CLI development, prefer `npm run miao-viz -- <command>` so the local wrapper
 Use the deterministic CLI pipeline for report generation and for testing report-related code changes:
 
 ```bash
-npm run miao-viz -- analyze /path/to/data.csv \
+npm run miao-viz -- data analyze /path/to/data.csv \
   --intent "user intent" \
   --output /tmp/miao-vision/context.json
 
-npm run miao-viz -- profile /path/to/data.csv \
+npm run miao-viz -- data profile /path/to/data.csv \
   > /tmp/miao-vision/profile.json
 
-npm run miao-viz -- block instantiate <block-id> \
+npm run miao-viz -- spec block instantiate <block-id> \
   --context /tmp/miao-vision/context.json \
   --output /tmp/miao-vision/report.yaml
 
-npm run miao-viz -- validate \
+npm run miao-viz -- spec validate \
   --spec /tmp/miao-vision/report.yaml \
   --profile /tmp/miao-vision/profile.json \
   --context /tmp/miao-vision/context.json \
   --verify
 
-npm run miao-viz -- render \
+npm run miao-viz -- render report \
   --input /path/to/data.csv \
   --spec /tmp/miao-vision/report.yaml \
   --context /tmp/miao-vision/context.json \
@@ -83,7 +83,7 @@ When changing evidence, validation, chart selection, or rendering behavior, test
 Agents fetch URLs and normalize article content themselves. The CLI accepts local Markdown/text only:
 
 ```bash
-npm run miao-viz -- article /tmp/miao-vision/article.md \
+npm run miao-viz -- render article /tmp/miao-vision/article.md \
   --style editorial \
   --format html \
   --output /tmp/miao-vision/article-infographic.html
@@ -91,10 +91,10 @@ npm run miao-viz -- article /tmp/miao-vision/article.md \
 
 ### Browser Deck
 
-Use `miao-viz deck` for presentation artifacts:
+Use `miao-viz render deck` for presentation artifacts:
 
 ```bash
-npm run miao-viz -- deck \
+npm run miao-viz -- render deck \
   --input /path/to/data.csv \
   --spec /path/to/deck.yaml \
   --output /tmp/miao-vision/deck.html
@@ -189,7 +189,7 @@ For deck/browser behavior changes:
 npm run test:e2e
 ```
 
-For report generation changes, include a workflow-level smoke test that covers `analyze`, block instantiate or spec authoring, `validate --context --verify`, and `render`.
+For report generation changes, include a workflow-level smoke test that covers `data analyze`, spec block instantiate or spec authoring, `spec validate --context --verify`, and `render report`.
 
 ## Code Quality Rules
 
@@ -211,7 +211,7 @@ For report generation changes, include a workflow-level smoke test that covers `
 
 ## Current Priorities
 
-- Improve reliability of `miao-viz analyze -> instantiate/spec -> validate -> render`.
+- Improve reliability of `miao-viz data analyze -> spec instantiate -> spec validate -> render report`.
 - Keep report insights evidence-grounded and machine-verifiable.
 - Move deterministic chart, block, template, and validation knowledge into the CLI to reduce agent token cost.
 - Preserve local-first operation: no backend, no data upload, no required API key.

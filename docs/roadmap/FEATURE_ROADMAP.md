@@ -11,10 +11,10 @@ Local data files become polished data display artifacts:
 
 ```text
 CSV / TSV / XLSX / JSON
-  -> miao-viz profile
+  -> miao-viz data profile
   -> AI writes VizSpec
-  -> miao-viz validate
-  -> miao-viz render
+  -> miao-viz spec validate
+  -> miao-viz render report
   -> KPI / chart / table / annotation / insight HTML artifact
 ```
 
@@ -25,7 +25,7 @@ Article URLs, Markdown files, or long-form text become static infographic artifa
 ```text
 article URL / markdown
   -> agent reads and normalizes content
-  -> miao-viz article
+  -> miao-viz render article
   -> infographic HTML / future PNG / future PDF
 ```
 
@@ -35,9 +35,9 @@ Local data files become browser-presentable slide decks:
 
 ```text
 CSV / TSV / XLSX / JSON
-  -> miao-viz profile
+  -> miao-viz data profile
   -> AI writes DeckSpec
-  -> miao-viz deck
+  -> miao-viz render deck
   -> browser slide deck / print-to-PDF
 ```
 
@@ -54,7 +54,7 @@ Priority: High
 
 ### CLI Workflow
 
-- [ ] Add human-readable `miao-viz profile` summary output.
+- [ ] Add human-readable `miao-viz data profile` summary output.
 - [ ] Improve validation errors with repair hints.
 - [ ] Add golden examples for sales, marketing, product, finance, and operations.
 - [ ] Keep generated specs short and token-efficient for agents.
@@ -89,7 +89,7 @@ Priority: High
 
 Detailed plan: [Article-to-Infographic Implementation Plan](../article-to-infographic-implementation-plan.md)
 
-- [x] Implement or finalize `miao-viz article`.
+- [x] Implement or finalize `miao-viz render article`.
 - [x] Keep URL fetching in the agent/skill layer; CLI accepts local Markdown/text.
 - [x] Add a deterministic local article parser and dedicated `InfographicSpec`.
 - [x] Output HTML first, with JSON and Markdown debug/fallback formats.

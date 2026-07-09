@@ -4,7 +4,7 @@ Use this workflow when the user asks for slides, a presentation, a PPT/PPTX-like
 
 ## Workflow
 
-1. Run `miao-viz profile <file>` to inspect the data.
+1. Run `miao-viz data profile <file>` to inspect the data.
 2. Read the profile JSON and decide the story arc: opening claim, key metrics, supporting chart, and closing implication.
 3. Create a DeckSpec YAML using `references/vizspec.md`.
 4. **Choose theme** — ask the user which theme they want (or default to `magazine` if unsure):
@@ -19,10 +19,10 @@ Use this workflow when the user asks for slides, a presentation, a PPT/PPTX-like
    | `bloomberg` | Bloomberg Terminal — monospace, green-on-black, data-dense |
    | `tableau` | Tableau-style BI dashboard — orange/blue palette, clean cards, tool-like |
 
-5. Render the deck directly with the chosen theme. Do not run `miao-viz validate`; DeckSpec uses its own schema inside the `deck` command.
+5. Render the deck directly with the chosen theme. Do not run `miao-viz spec validate`; DeckSpec uses its own schema inside the `render deck` command.
 
 ```bash
-miao-viz deck \
+miao-viz render deck \
   --input /path/to/data.csv \
   --spec /tmp/miao-vision/deck.yaml \
   --theme <chosen-theme> \
@@ -33,7 +33,7 @@ miao-viz deck \
 
 ## Error Repair
 
-If `miao-viz deck` returns `INVALID_DECK_SPEC`, read the `errors` array and fix the reported `path` first. Common fixes:
+If `miao-viz render deck` returns `INVALID_DECK_SPEC`, read the `errors` array and fix the reported `path` first. Common fixes:
 
 - Add `charts` to `text-chart`, `metrics-chart`, and `chart-full` slides.
 - Add 1-4 `metrics` to each `metrics-chart` slide.

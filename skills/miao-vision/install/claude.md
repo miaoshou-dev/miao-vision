@@ -11,7 +11,7 @@ npm install -g @miao-vision/cli
 Verify:
 
 ```bash
-miao-viz catalog
+miao-viz spec catalog
 ```
 
 ## 2. Quick Install (Recommended)
