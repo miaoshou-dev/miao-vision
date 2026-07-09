@@ -16,7 +16,7 @@
 </tr>
 </table>
 
-Give Miao Vision a CSV, spreadsheet, or article. You get a self-contained HTML file — KPI cards, charts, tables, insights — ready to open, share, or email. No server. No login. No expiry.
+Give Miao Vision a CSV, spreadsheet, or article. It inspects the schema, runs aggregation queries, and renders a self-contained HTML file — KPI cards, charts, tables, insights — ready to open, share, or email. No server. No login. No expiry.
 
 Built for **analysts and developers** who want a polished output in minutes, not a dashboard to maintain forever.
 
@@ -31,6 +31,30 @@ Built for **analysts and developers** who want a polished output in minutes, not
 **Article infographic** — paste in an article URL or Markdown file; get back a static visual summary you can drop into any document.
 
 All outputs are a single `.html` file. Open it anywhere, share it with anyone, archive it forever.
+
+---
+
+## Inspect and query your data
+
+Before rendering, you can understand your data locally — no upload, no backend. Three commands read files in-process:
+
+```bash
+miao-viz data profile ./sales.csv      # fields, types, distributions, correlations, quality
+miao-viz data query ./sales.csv \       # SQL-style aggregation with filter / groupBy / orderby
+  --groupby region \
+  --measure "sum(sales) as total, count(*) as cnt" \
+  --filter "year>=2023" \
+  --orderby "total desc"
+miao-viz data analyze ./sales.csv \     # evidence pack + chart catalog for grounded reports
+  --intent "monthly trend and top regions" \
+  --output /tmp/context.json
+```
+
+- **`profile`** — reveals column types, roles, statistics (min/max/mean/median/stddev/skewness), outliers, correlations, data-quality issues, and auto-suggested chart shapes. `--summary` for a lightweight schema peek.
+- **`query`** — runs real aggregations (`sum`/`count`/`avg`/`min`/`max`) with filter, groupBy, orderby, and limit. Returns computed values **plus a generated SQL string** for traceability.
+- **`analyze`** — pre-computes a structured `context.json`: citable evidence IDs, derived metric candidates, a deterministic chart allowlist (with *blocked* charts and reasons), sample-size warnings, and prompt rules.
+
+Supported formats: **CSV, TSV, XLSX, JSON** — all read locally. Reports cite pre-computed evidence via `$evidence:` directives, so insights are grounded in real numbers, not invented ones.
 
 ---
 
