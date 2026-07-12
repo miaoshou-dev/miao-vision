@@ -71,7 +71,16 @@ export interface TemporalProfile {
 export interface ColumnProfile {
   name: string
   type: AgentColumnType
-  role?: 'measure' | 'dimension' | 'time' | 'id' | 'flag' | 'unknown'
+  role?: 'measure' | 'dimension' | 'time' | 'id' | 'status' | 'score' | 'flag' | 'text' | 'geo' | 'unknown'
+  semanticTags?: string[]
+  confidence?: number
+  rationale?: string[]
+  qualityFlags?: string[]
+  chartUsage?: {
+    asMeasure: 'recommended' | 'allowed' | 'discouraged' | 'forbidden'
+    asDimension: 'recommended' | 'allowed' | 'discouraged' | 'forbidden'
+    asDetailKey: 'recommended' | 'allowed' | 'discouraged' | 'forbidden'
+  }
   total: number
   nonNullCount: number
   nullCount: number
@@ -179,11 +188,17 @@ export interface AgentReportInteractions {
   globalFilters?: AgentGlobalFilter[]
 }
 
+export type AgentInsightType = 'total' | 'rank' | 'share' | 'trend' | 'delta' | 'correlation' | 'distribution' | 'data_quality'
+export type AgentInsightCheck = 'evidence_ref_exists' | 'rank_position' | 'delta_formula' | 'sample_size' | 'caveat_present'
+
 export type AgentInsight =
   | string
   | {
       text: string
+      type?: AgentInsightType
       evidence?: string[]
+      derivedFrom?: string[]
+      check?: AgentInsightCheck
       caveat?: string
       severity?: 'info' | 'warning'
     }

@@ -32,8 +32,23 @@ export function generatePatchHints(
       const chartType = detail?.['chartType'] as string | undefined
       const chartIdx = findChartIndex(spec, chartType)
       if (chartIdx < 0 || !catalogCharts?.length) return undefined
-      const suggestion = catalogCharts[0]
+      const suggestion = preferredChartReplacement(chartType, catalogCharts)
       return [{ op: 'replace', path: `/charts/${chartIdx}/type`, value: suggestion }]
+    }
+
+    case 'ID_AS_MEASURE': {
+      const chartId = detail?.['chartId'] as string | undefined
+      const field = detail?.['field'] as string | undefined
+      const chartIdx = findChartIndex(spec, chartId)
+      if (chartIdx < 0 || !field) return undefined
+      const chart = spec.charts[chartIdx]
+      const patches: JsonPatch[] = []
+      for (const [channel, encoding] of Object.entries(chart.encoding ?? {})) {
+        if (encoding?.field === field) {
+          patches.push({ op: 'replace', path: `/charts/${chartIdx}/encoding/${channel}/field`, value: '?' })
+        }
+      }
+      return patches.length ? patches : undefined
     }
 
     case 'DUPLICATE_CHART_ID': {
@@ -74,9 +89,48 @@ export function generatePatchHints(
       return [{ op: 'replace', path: `/charts/${chartIdx}/encoding/x/type`, value: 'nominal' }]
     }
 
+    case 'STRICT_VERIFY_FAILED':
+      return strictVerifyPatches(error, spec)
+
     default:
       return undefined
   }
+}
+
+function strictVerifyPatches(error: AgentError, spec: AgentReportSpec): JsonPatch[] | undefined {
+  const issues = error.issues as Array<{ code?: string; message?: string }> | undefined
+  if (!issues?.length) return undefined
+  const patches: JsonPatch[] = []
+  for (const issue of issues) {
+    if (issue.code !== 'INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT' || !issue.message) continue
+    const type = issue.message.match(/INSIGHT_REQUIRED_EVIDENCE_MISSING: ([a-z_]+) insight/)?.[1]
+    const missing = issue.message.match(/requires evidence ([^:]+):/)?.[1]
+      ?.split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+    if (!type || !missing?.length) continue
+    const insightIdx = (spec.insights ?? []).findIndex(insight => typeof insight !== 'string' && insight.type === type)
+    if (insightIdx < 0) continue
+    const insight = spec.insights?.[insightIdx]
+    if (!insight || typeof insight === 'string') continue
+    if (!insight.evidence) {
+      patches.push({ op: 'add', path: `/insights/${insightIdx}/evidence`, value: missing })
+    } else {
+      for (const evidenceId of missing.filter(id => !insight.evidence?.includes(id))) {
+        patches.push({ op: 'add', path: `/insights/${insightIdx}/evidence/-`, value: evidenceId })
+      }
+    }
+  }
+  return patches.length ? patches : undefined
+}
+
+function preferredChartReplacement(chartType: string | undefined, catalogCharts: string[]): string {
+  const preferred = chartType === 'line'
+    ? ['bar', 'table', 'bigvalue']
+    : chartType === 'pie'
+      ? ['bar', 'table']
+      : ['bar', 'table', 'bigvalue']
+  return preferred.find(type => catalogCharts.includes(type)) ?? catalogCharts[0]
 }
 
 // Collect RFC 6902 patches for warning-level catalog issues that have a machine-derivable fix.

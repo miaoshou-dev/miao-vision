@@ -17,6 +17,8 @@ export interface ReportTemplateResolver {
   blocks: string[]
   density: 'compact' | 'medium' | 'full'
   qualityNotes: string[]
+  requiredEvidence: string[]
+  qualityConstraints: string[]
   canUse(ctx: BlockMatchContext): TemplateDecision
   instantiate(ctx: BlockMatchContext): AgentReportSpec
 }
@@ -28,6 +30,8 @@ export interface ReportTemplateInfo {
   blocks: string[]
   density: 'compact' | 'medium' | 'full'
   qualityNotes: string[]
+  requiredEvidence: string[]
+  qualityConstraints: string[]
 }
 
 function scoreForRequirements(ctx: BlockMatchContext, requires: ReportTemplateResolver['requires']): TemplateDecision {
@@ -35,7 +39,7 @@ function scoreForRequirements(ctx: BlockMatchContext, requires: ReportTemplateRe
     if (role === 'measure' && !ctx.fields.some(f => f.role === 'measure' || f.role === 'score')) {
       return { ok: false, score: 0, reason: 'missing required measure' }
     }
-    if (role === 'dimension' && !ctx.fields.some(f => f.role === 'dimension' || f.role === 'status')) {
+    if (role === 'dimension' && !ctx.fields.some(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')) {
       return { ok: false, score: 0, reason: 'missing required dimension' }
     }
     if (role === 'time') {
@@ -82,6 +86,8 @@ export const TEMPLATE_REGISTRY: ReportTemplateResolver[] = [
     blocks: ['kpi-summary', 'snapshot-ranking'],
     density: 'compact',
     qualityNotes: ['Use for static comparisons without requiring a trend.', 'Add sample caveats when sampleWarnings are present.'],
+    requiredEvidence: ['total', 'by_dimension'],
+    qualityConstraints: ['requires one measure and one readable dimension'],
     canUse: ctx => scoreForRequirements(ctx, ['measure', 'dimension']),
     instantiate: ctx => compileBlocks(['kpi-summary', 'snapshot-ranking'], ctx)
   },
@@ -92,6 +98,8 @@ export const TEMPLATE_REGISTRY: ReportTemplateResolver[] = [
     blocks: ['trend-ranking'],
     density: 'full',
     qualityNotes: ['Requires at least 3 time periods.', 'Combines KPI, trend, and ranking views.'],
+    requiredEvidence: ['total', 'by_time', 'by_dimension'],
+    qualityConstraints: ['requires at least 3 time periods'],
     canUse: ctx => scoreForRequirements(ctx, ['measure', 'dimension', 'time']),
     instantiate: ctx => compileBlocks(['trend-ranking'], ctx)
   },
@@ -102,6 +110,8 @@ export const TEMPLATE_REGISTRY: ReportTemplateResolver[] = [
     blocks: ['full-detail-report'],
     density: 'full',
     qualityNotes: ['Use for comprehensive reviews where detail table is acceptable.', 'Keep total chart count within report limits.'],
+    requiredEvidence: ['total', 'by_time', 'by_dimension'],
+    qualityConstraints: ['requires at least 3 time periods and a readable dimension'],
     canUse: ctx => scoreForRequirements(ctx, ['measure', 'dimension', 'time']),
     instantiate: ctx => compileBlocks(['full-detail-report'], ctx)
   },
@@ -112,6 +122,8 @@ export const TEMPLATE_REGISTRY: ReportTemplateResolver[] = [
     blocks: ['kpi-summary', 'comparison-breakdown'],
     density: 'medium',
     qualityNotes: ['Use for share or composition analysis.', 'Avoid when the primary dimension has too many categories for pie.'],
+    requiredEvidence: ['total', 'by_dimension'],
+    qualityConstraints: ['requires small category count for part-to-whole view'],
     canUse: ctx => scoreForRequirements(ctx, ['measure', 'dimension']),
     instantiate: ctx => compileBlocks(['kpi-summary', 'comparison-breakdown'], ctx)
   }
@@ -128,7 +140,9 @@ export function templateInfo(template: ReportTemplateResolver): ReportTemplateIn
     requires: template.requires,
     blocks: template.blocks,
     density: template.density,
-    qualityNotes: template.qualityNotes
+    qualityNotes: template.qualityNotes,
+    requiredEvidence: template.requiredEvidence,
+    qualityConstraints: template.qualityConstraints
   }
 }
 
@@ -142,7 +156,9 @@ export function toCatalogTemplateEntry(
     bestFor: resolver.bestFor,
     requires: resolver.requires,
     blocks: resolver.blocks,
-    density: resolver.density
+    density: resolver.density,
+    requiredEvidence: resolver.requiredEvidence,
+    qualityConstraints: resolver.qualityConstraints
   }
 }
 

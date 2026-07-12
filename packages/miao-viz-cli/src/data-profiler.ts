@@ -9,6 +9,7 @@ import type {
   ProfileHint,
   TemporalProfile
 } from './types'
+import { inferFieldSemantics } from './field-semantics'
 
 export interface ProfilingOptions {
   /** Return only file, rows, and column names+types — no statistics. */
@@ -38,7 +39,9 @@ export function profileDataset(dataset: LoadedDataset, options: ProfilingOptions
 
   const columns = targetCols.map(col => profileColumn(col, dataset.rows, options.reliableOnly))
 
-  const numericNames = columns.filter(c => c.type === 'number').map(c => c.name)
+  const numericNames = columns
+    .filter(c => c.type === 'number' && c.chartUsage?.asMeasure !== 'forbidden')
+    .map(c => c.name)
   const rawCorrelations = numericNames.length >= 2
     ? computeCorrelations(numericNames, dataset.rows)
     : undefined
@@ -116,7 +119,21 @@ function profileColumn(name: string, rows: Record<string, unknown>[], reliableOn
     }
   }
 
-  profile.role = inferColumnRole(profile)
+  const semantics = inferFieldSemantics({
+    name: profile.name,
+    type: profile.type,
+    nonNullCount: profile.nonNullCount,
+    nullRate: profile.nullRate,
+    uniqueRate: profile.uniqueRate,
+    distinctCount: profile.distinctCount,
+    samples: profile.samples
+  })
+  profile.role = semantics.role
+  profile.semanticTags = semantics.semanticTags
+  profile.confidence = semantics.confidence
+  profile.rationale = semantics.rationale
+  profile.qualityFlags = semantics.qualityFlags
+  profile.chartUsage = semantics.chartUsage
   return profile
 }
 
@@ -306,8 +323,8 @@ export function buildCatalogHints(
   correlations: Array<{ a: string; b: string; r: number; n: number; reliable: boolean }>
 ): ProfileHint[] {
   const hints: ProfileHint[] = []
-  const nums = columns.filter(c => c.type === 'number')
-  const strs = columns.filter(c => c.type === 'string')
+  const nums = columns.filter(c => c.type === 'number' && c.chartUsage?.asMeasure !== 'forbidden')
+  const strs = columns.filter(c => c.type === 'string' && (c.role === 'dimension' || c.role === 'status' || c.role === 'geo'))
   const dates = columns.filter(c => c.type === 'date')
 
   for (const col of nums) {
@@ -359,7 +376,7 @@ function computeDataQuality(columns: ColumnProfile[], rowCount: number): DataQua
     highNullColumns: columns.filter(col => col.nullRate >= 0.2).map(col => col.name),
     likelyIdColumns: columns.filter(col => col.role === 'id').map(col => col.name),
     duplicateProneDimensions: columns
-      .filter(col => col.role === 'dimension' && col.distinctCount <= Math.max(20, rowCount * 0.2))
+      .filter(col => (col.role === 'dimension' || col.role === 'status' || col.role === 'geo') && col.distinctCount <= Math.max(20, rowCount * 0.2))
       .map(col => col.name)
   }
 }
@@ -420,19 +437,6 @@ function generateProfileInsights(
   }
 
   return insights.slice(0, 12)
-}
-
-function inferColumnRole(profile: ColumnProfile): ColumnProfile['role'] {
-  if (profile.type === 'date') return 'time'
-  if (profile.type === 'boolean') return 'flag'
-  if (profile.type === 'number') return 'measure'
-  if (profile.type === 'unknown') return 'unknown'
-
-  const lowerName = profile.name.toLowerCase()
-  const looksLikeId = /\b(id|uuid|guid|key|code)\b/.test(lowerName) || /(_id|id)$/.test(lowerName)
-  if (looksLikeId || (profile.uniqueRate >= 0.98 && profile.nonNullCount >= 10)) return 'id'
-
-  return 'dimension'
 }
 
 function inferColumnType(values: unknown[]): AgentColumnType {

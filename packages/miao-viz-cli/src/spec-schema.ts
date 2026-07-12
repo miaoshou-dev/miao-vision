@@ -65,11 +65,17 @@ const chartInteractionSchema = z.object({
   select: z.enum(['filter', 'detail']).optional()
 })
 
+const insightTypeSchema = z.enum(['total', 'rank', 'share', 'trend', 'delta', 'correlation', 'distribution', 'data_quality'])
+const insightCheckSchema = z.enum(['evidence_ref_exists', 'rank_position', 'delta_formula', 'sample_size', 'caveat_present'])
+
 const insightSchema = z.union([
   z.string(),
   z.object({
     text: z.string().min(1),
+    type: insightTypeSchema.optional(),
     evidence: z.array(z.string().min(1)).optional(),
+    derivedFrom: z.array(z.string().min(1)).optional(),
+    check: insightCheckSchema.optional(),
     caveat: z.string().optional(),
     severity: z.enum(['info', 'warning']).optional()
   })

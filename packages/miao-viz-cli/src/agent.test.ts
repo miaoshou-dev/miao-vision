@@ -12,7 +12,7 @@ import { renderChartSvg } from './svg-renderer'
 import { MVP_CHART_TYPES } from './spec-schema'
 import { applyEncodingAggregates } from './data-transform'
 import { applyInteractiveFilters, selectDetailRows, shouldEnableInteractiveRuntime } from './interactive-runtime'
-import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings } from './spec-validator'
+import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings, strictVerifyError } from './spec-validator'
 import { parseEvidenceRefs, resolveEvidencePath, resolveDirectives } from './directive-resolver'
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { generateInfographicFromFile, infographicSpecSchema, strictInfographicSpecSchema } from './article-infographic'
@@ -73,6 +73,40 @@ describe('agent data loader and profiler', () => {
     expect(profile.quality?.completeness).toBe(1)
     expect(profile.hints?.some(hint => hint.type === 'time-series')).toBe(true)
     expect(profile.insights?.some(insight => insight.title.includes('Strong relationship'))).toBe(true)
+  })
+
+  it('assigns report intelligence field semantics and usage policy', () => {
+    const dataset: LoadedDataset = {
+      file: 'semantics.csv',
+      columns: ['order_id', 'revenue_amount', 'conversion_rate', 'status', 'homepage_url', 'city'],
+      rows: Array.from({ length: 12 }, (_, i) => ({
+        order_id: `ord_${i + 1}`,
+        revenue_amount: 100 + i,
+        conversion_rate: 0.1 + i / 100,
+        status: i % 2 === 0 ? 'open' : 'closed',
+        homepage_url: `https://example.com/${i}`,
+        city: i % 2 === 0 ? 'Shanghai' : 'Beijing'
+      }))
+    }
+    const profile = profileDataset(dataset)
+    const orderId = profile.columns.find(c => c.name === 'order_id')
+    const revenue = profile.columns.find(c => c.name === 'revenue_amount')
+    const rate = profile.columns.find(c => c.name === 'conversion_rate')
+    const url = profile.columns.find(c => c.name === 'homepage_url')
+    const city = profile.columns.find(c => c.name === 'city')
+
+    expect(orderId?.role).toBe('id')
+    expect(orderId?.chartUsage?.asMeasure).toBe('forbidden')
+    expect(revenue?.semanticTags).toContain('currency')
+    expect(rate?.semanticTags).toContain('percentage')
+    expect(url?.role).toBe('text')
+    expect(url?.semanticTags).toContain('url')
+    expect(city?.role).toBe('geo')
+
+    const context = analyzeDataset(dataset)
+    const field = context.fields.find(f => f.name === 'order_id')
+    expect(field?.confidence).toBeGreaterThan(0.8)
+    expect(field?.chartUsage?.asMeasure).toBe('forbidden')
   })
 
   it('returns summary and targeted reliable profiles for agent context control', () => {
@@ -384,6 +418,43 @@ describe('agent spec validation and HTML rendering', () => {
     expect(html).toContain('data-miao-chart="sales_by_region"')
     expect(html).toContain('data-miao-mark="true"')
     expect(html).toContain('data-field="region"')
+  })
+
+  it('injects runtime data for sortable tables', () => {
+    const dataset = loadDataset(csvPath)
+    expect(dataset.ok).toBe(true)
+    if (!dataset.ok) return
+
+    const profile = profileDataset(dataset.value)
+    const spec: AgentReportSpec = {
+      title: 'Sortable Sales',
+      charts: [{
+        id: 'sales_detail',
+        type: 'table',
+        title: 'Sales detail',
+        sortable: true,
+        data: {
+          transform: [
+            {
+              type: 'aggregate',
+              groupBy: ['order_date', 'region', 'category'],
+              measures: [
+                { field: 'sales', op: 'sum', as: 'total_sales' },
+                { field: 'orders', op: 'sum', as: 'total_orders' }
+              ]
+            },
+            { type: 'sort', field: 'order_date', order: 'asc' }
+          ]
+        }
+      }]
+    }
+
+    expect(shouldEnableInteractiveRuntime(spec)).toBe(true)
+
+    const html = renderStaticHtml(spec, profile, dataset.value.rows)
+    expect(html).toContain('id="miao-viz-data"')
+    expect(html).toContain('data-sortable="true"')
+    expect(html).toContain('data-sort-field="total_sales"')
   })
 
   it('returns structured interactive validation errors', () => {
@@ -1704,6 +1775,34 @@ describe('validate semantic warnings (T24–T28)', () => {
     expect(withContextWarnings[0]).toContain("blockedCharts")
   })
 
+  it('warns for context-aware chart semantic anti-patterns', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [
+        { name: 'order_id', role: 'id' as const, type: 'number' as const, distinctCount: 20, chartUsage: { asMeasure: 'forbidden' as const, asDimension: 'discouraged' as const, asDetailKey: 'recommended' as const } },
+        { name: 'region', role: 'dimension' as const, type: 'string' as const, distinctCount: 10 },
+        { name: 'category', role: 'dimension' as const, type: 'string' as const, distinctCount: 8 },
+        { name: 'sales', role: 'measure' as const, type: 'number' as const }
+      ],
+      evidence: [],
+      catalog: { charts: ['bar', 'table'], blockedCharts: [], recommendedPlan: [] },
+      sampleWarnings: [],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      charts: [
+        { id: 'id_metric', type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'order_id', type: 'quantitative' } } },
+        { id: 'bad_line', type: 'line', encoding: { x: { field: 'region', type: 'nominal' }, y: { field: 'sales' } } },
+        { id: 'wide_pie', type: 'pie', encoding: { label: { field: 'category' }, value: { field: 'sales' } } }
+      ]
+    }
+
+    const warnings = collectValidationWarnings(spec, profile, context)
+    expect(warnings.some(w => w.includes('ID_AS_MEASURE'))).toBe(true)
+    expect(warnings.some(w => w.includes('LINE_REQUIRES_TIME_OR_ORDERED_X'))).toBe(true)
+    expect(warnings.some(w => w.includes('TOO_MANY_SLICES'))).toBe(true)
+  })
+
   // T27 + T26 strict: CLI-level tests requiring file I/O
   it('fails with INVALID_CONTEXT when context.json is malformed', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-validate-ctx-'))
@@ -2023,9 +2122,35 @@ describe('collectVerifyWarnings (T47–T49)', () => {
   it('passes insights with no forbidden words', () => {
     const spec: AgentReportSpec = {
       charts: [],
-      insights: ['East contributed 2400 (53%) of total sales (based on 4 rows only).']
+      insights: [{ text: 'East contributed $evidence:by_dimension.rows[0].total_sales of total sales.', evidence: ['by_dimension'] }]
     }
     expect(collectVerifyWarnings(spec)).toHaveLength(0)
+  })
+
+  it('flags trend language when context lacks a usable time field', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'partial' as const, assumptions: [] },
+      fields: [{ name: 'region', role: 'dimension' as const, type: 'string' as const }],
+      evidence: [],
+      catalog: { charts: ['bar'], blockedCharts: [{ type: 'line', reason: 'NO_TIME_FIELD: no time field detected' }], recommendedPlan: [] },
+      sampleWarnings: [],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      insights: [{ text: 'Sales show a trend by region.', evidence: [] }],
+      charts: [{ type: 'bar', title: 'Sales trend', encoding: { x: { field: 'region' }, y: { field: 'sales' } } }]
+    }
+    const warnings = collectVerifyWarnings(spec, context)
+    expect(warnings.some(w => w.includes('INSIGHT_TREND_WITHOUT_TIME'))).toBe(true)
+  })
+
+  it('flags strong claims without evidence', () => {
+    const spec: AgentReportSpec = {
+      charts: [],
+      insights: ['Discounts drive sales growth.']
+    }
+    const warnings = collectVerifyWarnings(spec)
+    expect(warnings.some(w => w.includes('INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE'))).toBe(true)
   })
 
   it('warns when sampleWarnings exist but no caveat in insights', () => {
@@ -2054,9 +2179,198 @@ describe('collectVerifyWarnings (T47–T49)', () => {
     }
     const spec: AgentReportSpec = {
       charts: [],
-      insights: ['East leads (based on 4 rows only).']
+      insights: ['East leads (based on limited rows only).']
     }
     expect(collectVerifyWarnings(spec, context)).toHaveLength(0)
+  })
+
+  it('passes typed total/rank/trend/delta insights when required evidence exists', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [{ name: 'month', role: 'time' as const, type: 'date' as const, timePeriods: 3 }],
+      evidence: [
+        { id: 'total', query: 'total', values: { total_sales: 100 } },
+        { id: 'by_dimension', query: 'by dimension', rows: [{ region: 'East', total_sales: 70 }] },
+        { id: 'by_time', query: 'by time', rows: [{ month: '2025-01', total_sales: 40 }, { month: '2025-02', total_sales: 60 }] }
+      ],
+      catalog: { charts: ['bigvalue', 'bar', 'line'], blockedCharts: [], recommendedPlan: [] },
+      sampleWarnings: [],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      charts: [{ type: 'bigvalue', encoding: { value: { field: 'sales' } } }],
+      insights: [
+        { type: 'total', text: 'Total $evidence:total.values.total_sales', evidence: ['total'] },
+        { type: 'rank', text: 'Top $evidence:by_dimension.rows[0].region', evidence: ['by_dimension'] },
+        { type: 'trend', text: 'Trend $evidence:by_time.rows[0].total_sales', evidence: ['by_time'] },
+        { type: 'delta', text: 'Period-over-period increased 50%', evidence: ['by_time'] }
+      ]
+    }
+    expect(collectVerifyWarnings(spec, context)).toHaveLength(0)
+  })
+
+  it('classifies typed rank insight missing by_dimension evidence', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [],
+      evidence: [{ id: 'total', query: 'total', values: { total_sales: 100 } }],
+      catalog: { charts: ['bigvalue'], blockedCharts: [], recommendedPlan: [] },
+      sampleWarnings: [],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      charts: [{ type: 'bigvalue', encoding: { value: { field: 'sales' } } }],
+      insights: [{ type: 'rank', text: 'East leads sales.', evidence: ['total'] }]
+    }
+    const strict = strictVerifyError(collectVerifyWarnings(spec, context))
+    expect(strict.ok).toBe(false)
+    if (!strict.ok) {
+      expect(strict.issues).toContainEqual(expect.objectContaining({ code: 'INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT' }))
+    }
+  })
+
+  it('classifies typed trend insight missing by_time evidence', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [{ name: 'month', role: 'time' as const, type: 'date' as const, timePeriods: 3 }],
+      evidence: [{ id: 'total', query: 'total', values: { total_sales: 100 } }],
+      catalog: { charts: ['bigvalue'], blockedCharts: [], recommendedPlan: [] },
+      sampleWarnings: [],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      charts: [{ type: 'bigvalue', encoding: { value: { field: 'sales' } } }],
+      insights: [{ type: 'trend', text: 'Sales trend is visible.', evidence: ['total'] }]
+    }
+    const strict = strictVerifyError(collectVerifyWarnings(spec, context))
+    expect(strict.ok).toBe(false)
+    if (!strict.ok) {
+      expect(strict.issues).toContainEqual(expect.objectContaining({ code: 'INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT' }))
+    }
+  })
+
+  it('classifies insight type not allowed by matched block', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [],
+      evidence: [
+        { id: 'total', query: 'total', values: { total_sales: 100 } },
+        { id: 'by_dimension', query: 'by dimension', rows: [{ region: 'East', total_sales: 70 }] }
+      ],
+      catalog: {
+        charts: ['bigvalue'],
+        blockedCharts: [],
+        recommendedPlan: [],
+        blocks: [{
+          id: 'kpi-summary',
+          score: 0.9,
+          description: '',
+          bestFor: [],
+          density: 'compact' as const,
+          examplePrompt: '',
+          charts: ['bigvalue'],
+          variables: {},
+          qualityChecks: [],
+          requiredEvidence: ['total'],
+          validInsightTypes: ['total']
+        }]
+      },
+      sampleWarnings: [],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      charts: [{ type: 'bigvalue', encoding: { value: { field: 'sales' } } }],
+      insights: [{ type: 'rank', text: 'East leads sales.', evidence: ['by_dimension'] }]
+    }
+    const strict = strictVerifyError(collectVerifyWarnings(spec, context))
+    expect(strict.ok).toBe(false)
+    if (!strict.ok) {
+      expect(strict.issues).toContainEqual(expect.objectContaining({ code: 'INSIGHT_TYPE_NOT_ALLOWED_STRICT' }))
+    }
+  })
+
+  it('classifies missing block and template required evidence', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [],
+      evidence: [{ id: 'total', query: 'total', values: { total_sales: 100 } }],
+      catalog: {
+        charts: ['bigvalue', 'bar'],
+        blockedCharts: [],
+        recommendedPlan: [],
+        blocks: [{
+          id: 'snapshot-ranking',
+          score: 0.9,
+          description: '',
+          bestFor: [],
+          density: 'compact' as const,
+          examplePrompt: '',
+          charts: ['bigvalue', 'bar'],
+          variables: {},
+          qualityChecks: [],
+          requiredEvidence: ['total', 'by_dimension'],
+          validInsightTypes: ['total', 'rank']
+        }],
+        templates: [{
+          id: 'snapshot-overview',
+          score: 0.9,
+          bestFor: [],
+          requires: ['measure' as const, 'dimension' as const],
+          blocks: ['snapshot-ranking'],
+          density: 'compact' as const,
+          requiredEvidence: ['total', 'by_dimension'],
+          qualityConstraints: []
+        }]
+      },
+      sampleWarnings: [],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      charts: [
+        { type: 'bigvalue', encoding: { value: { field: 'sales' } } },
+        { type: 'bar', encoding: { x: { field: 'region' }, y: { field: 'sales' } } }
+      ],
+      insights: [{ type: 'total', text: 'Total sales.', evidence: ['total'] }]
+    }
+    const strict = strictVerifyError(collectVerifyWarnings(spec, context))
+    expect(strict.ok).toBe(false)
+    if (!strict.ok) {
+      expect(strict.issues).toContainEqual(expect.objectContaining({ code: 'BLOCK_REQUIRED_EVIDENCE_MISSING_STRICT' }))
+      expect(strict.issues).toContainEqual(expect.objectContaining({ code: 'TEMPLATE_REQUIRED_EVIDENCE_MISSING_STRICT' }))
+    }
+  })
+
+  it('keeps legacy string insights compatible with inferred type warnings only', () => {
+    const context = {
+      intent: { raw: 'test', coverage: 'full' as const, assumptions: [] },
+      fields: [],
+      evidence: [{ id: 'total', query: 'total', values: { total_sales: 100 } }],
+      catalog: {
+        charts: ['bigvalue'],
+        blockedCharts: [],
+        recommendedPlan: [],
+        blocks: [{
+          id: 'kpi-summary',
+          score: 0.9,
+          description: '',
+          bestFor: [],
+          density: 'compact' as const,
+          examplePrompt: '',
+          charts: ['bigvalue'],
+          variables: {},
+          qualityChecks: [],
+          requiredEvidence: ['total'],
+          validInsightTypes: ['total']
+        }]
+      },
+      sampleWarnings: [],
+      promptRules: []
+    }
+    const spec: AgentReportSpec = {
+      charts: [{ type: 'bigvalue', encoding: { value: { field: 'sales' } } }],
+      insights: ['Top region by sales is East.']
+    }
+    expect(collectVerifyWarnings(spec, context).some(w => w.includes('INSIGHT_TYPE_NOT_ALLOWED'))).toBe(false)
   })
 })
 
@@ -2121,6 +2435,25 @@ describe('generatePatchHints (T40)', () => {
     const patches = generatePatchHints(err, spec)
     expect(patches).toBeDefined()
     expect(patches![0]).toMatchObject({ op: 'replace', path: '/charts/0/encoding/x/type', value: 'nominal' })
+  })
+
+  it('generates patch for typed insight missing required evidence', () => {
+    const spec: AgentReportSpec = {
+      charts: [{ type: 'bigvalue', encoding: { value: { field: 'sales' } } }],
+      insights: [{ type: 'rank', text: 'East leads sales.', evidence: ['total'] }]
+    }
+    const err = {
+      ok: false as const,
+      code: 'STRICT_VERIFY_FAILED',
+      message: 'Strict verify failed',
+      issues: [{
+        code: 'INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT',
+        message: 'INSIGHT_REQUIRED_EVIDENCE_MISSING: rank insight requires evidence by_dimension: "East leads sales."'
+      }]
+    }
+    expect(generatePatchHints(err, spec)).toEqual([
+      { op: 'add', path: '/insights/0/evidence/-', value: 'by_dimension' }
+    ])
   })
 })
 
@@ -2461,7 +2794,13 @@ describe('report stability features', () => {
     expect(verbose.ok).toBe(true)
     expect(verbose.value.catalog.blocks[0].variables).toBeDefined()
     expect(verbose.value.catalog.blocks[0].qualityChecks).toBeDefined()
+    expect(verbose.value.catalog.blocks[0].requiredEvidence).toBeDefined()
+    expect(verbose.value.catalog.blocks[0].validInsightTypes).toBeDefined()
     expect(compact.value.format).toBe('compact-v1')
+    expect(compact.value.fields.some((field: unknown[]) => {
+      const meta = field[5] as { confidence?: number; tags?: string[] } | null | undefined
+      return meta?.confidence !== undefined || meta?.tags !== undefined
+    })).toBe(true)
     expect(Array.isArray(compact.value.catalog.blocks[0])).toBe(true)
     expect(compact.value.catalog.blocks[0].variables).toBeUndefined()
   })
@@ -2530,6 +2869,7 @@ describe('report stability features', () => {
     expect(inspect.ok).toBe(true)
     expect(inspect.value.id).toBe('snapshot-overview')
     expect(inspect.value.qualityNotes.length).toBeGreaterThan(0)
+    expect(inspect.value.requiredEvidence).toContain('by_dimension')
     expect(inspect.value.canUse).toBeUndefined()
   })
 

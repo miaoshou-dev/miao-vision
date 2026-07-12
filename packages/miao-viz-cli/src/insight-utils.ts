@@ -1,8 +1,11 @@
-import type { AgentInsight } from './types'
+import type { AgentInsight, AgentInsightCheck, AgentInsightType } from './types'
 
 export interface NormalizedInsight {
   text: string
+  type?: AgentInsightType
   evidence: string[]
+  derivedFrom: string[]
+  check?: AgentInsightCheck
   caveat?: string
   severity?: 'info' | 'warning'
   original: AgentInsight
@@ -10,11 +13,14 @@ export interface NormalizedInsight {
 
 export function normalizeInsight(insight: AgentInsight): NormalizedInsight {
   if (typeof insight === 'string') {
-    return { text: insight, evidence: [], original: insight }
+    return { text: insight, evidence: [], derivedFrom: [], original: insight }
   }
   return {
     text: insight.text,
+    type: insight.type,
     evidence: insight.evidence ?? [],
+    derivedFrom: insight.derivedFrom ?? [],
+    check: insight.check,
     caveat: insight.caveat,
     severity: insight.severity,
     original: insight

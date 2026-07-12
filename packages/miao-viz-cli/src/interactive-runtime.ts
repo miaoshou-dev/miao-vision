@@ -18,7 +18,7 @@ export function shouldEnableInteractiveRuntime(spec: AgentReportSpec, options: I
   if (options.enabled === true) return true
   if (options.enabled === false) return false
   if ((spec.interactions?.globalFilters?.length ?? 0) > 0) return true
-  return spec.charts.some(chart => Boolean(chart.interaction || chart.drilldownPreset))
+  return spec.charts.some(chart => Boolean(chart.interaction || chart.drilldownPreset || chart.sortable))
 }
 
 export function applyInteractiveFilters(

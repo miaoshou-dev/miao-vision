@@ -5,8 +5,8 @@ import type { BlockMatchContext } from './report-block-registry'
 import { BLOCK_REGISTRY } from './report-block-registry'
 import type { AgentInsight } from './types'
 
-function asObj(insight: AgentInsight): { text: string; evidence?: string[] } {
-  return insight as { text: string; evidence?: string[] }
+function asObj(insight: AgentInsight): Exclude<AgentInsight, string> {
+  return insight as Exclude<AgentInsight, string>
 }
 
 describe('insightTotal', () => {
@@ -14,6 +14,9 @@ describe('insightTotal', () => {
     const result = asObj(insightTotal('sales'))
     expect(result.text).toContain('$evidence:total.values.total_sales')
     expect(result.evidence).toEqual(['total'])
+    expect(result.type).toBe('total')
+    expect(result.derivedFrom).toEqual(['total'])
+    expect(result.check).toBe('evidence_ref_exists')
   })
 })
 
@@ -24,6 +27,9 @@ describe('insightTopN', () => {
     expect(result.text).toContain('$evidence:by_dimension.rows[0].total_sales')
     expect(result.text).toContain('Top 10')
     expect(result.evidence).toEqual(['by_dimension'])
+    expect(result.type).toBe('rank')
+    expect(result.derivedFrom).toEqual(['by_dimension'])
+    expect(result.check).toBe('rank_position')
   })
 })
 
@@ -35,6 +41,9 @@ describe('insightTrend', () => {
       expect(result.text).toContain('$evidence:by_time.rows[0].total_sales')
       expect(result.text).toContain('$evidence:by_time.rows[last].total_sales')
       expect(result.evidence).toEqual(['by_time'])
+      expect(result.type).toBe('trend')
+      expect(result.derivedFrom).toEqual(['by_time'])
+      expect(result.check).toBe('evidence_ref_exists')
     }
   })
 
@@ -116,6 +125,9 @@ describe('insightPeriodChange', () => {
       expect(result.text).toContain('increased')
       expect(result.text).toContain('25.0')
       expect(result.evidence).toEqual(['by_time'])
+      expect(result.type).toBe('delta')
+      expect(result.derivedFrom).toEqual(['by_time'])
+      expect(result.check).toBe('delta_formula')
     }
   })
 

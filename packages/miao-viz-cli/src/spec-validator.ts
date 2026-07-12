@@ -3,24 +3,14 @@ import { MVP_CHART_TYPES, OUTPUT_FORMATS, reportSpecSchema } from './spec-schema
 import { parseEvidenceRefs, resolveEvidencePath } from './directive-resolver'
 import { getCatalogItem } from './chart-catalog'
 import { countChartsByType } from './spec-utils'
-import { insightPreview, normalizeInsights } from './insight-utils'
+import { normalizeInsights } from './insight-utils'
+import { collectChartSemanticWarnings } from './spec-validator-intelligence'
 import type { AnalyzeContext } from './context-schema'
 import type { AgentChartSpec, AgentOutputFormat, AgentResult, AgentReportSpec, DataProfile } from './types'
 
-const FORBIDDEN_WORDS: Array<{ pattern: RegExp; word: string }> = [
-  { pattern: /\b(trend|趋势)\b/i, word: 'trend/趋势' },
-  { pattern: /\b(drive|drives|drove|driven|驱动)\b/i, word: 'drive/驱动' },
-  { pattern: /\b(significant|显著)\b/i, word: 'significant/显著' },
-  { pattern: /strong\s+correlation|强相关/i, word: 'strong correlation/强相关' },
-  { pattern: /\bshould\b|应该/i, word: 'should/应该' }
-]
+export { collectVerifyWarnings, strictVerifyError, type VerifyIssue } from './spec-validator-intelligence'
 
 const DRILLDOWN_CHART_TYPES = ['bar', 'pie', 'table'] as const
-
-export interface VerifyIssue {
-  code: 'INSIGHT_FORBIDDEN_WORD_STRICT' | 'INSIGHT_MISSING_CAVEAT_STRICT' | 'INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE_STRICT'
-  message: string
-}
 
 export function validateReportSpec(
   spec: unknown,
@@ -157,6 +147,9 @@ export function collectValidationWarnings(
           'Choose a type from catalog.charts instead.'
         )
       }
+
+      const semanticWarnings = collectChartSemanticWarnings(chart, chartLabel, context)
+      warnings.push(...semanticWarnings)
     }
 
     // Catalog warning rules (V03/V04 MISSING_SORT_TRANSFORM, TOO_MANY_CATEGORIES, TOO_MANY_SLICES, etc.)
@@ -211,73 +204,6 @@ export function validateEvidencePaths(
     }
   }
   return ok(undefined)
-}
-
-// T47–T49: forbidden-word and caveat-propagation checks (--verify mode)
-export function collectVerifyWarnings(
-  spec: AgentReportSpec,
-  context?: AnalyzeContext
-): string[] {
-  const warnings: string[] = []
-  const insights = normalizeInsights(spec.insights)
-
-  // T49: forbidden word detection in insights
-  for (const insight of insights) {
-    for (const { pattern, word } of FORBIDDEN_WORDS) {
-      if (pattern.test(insight.text)) {
-        warnings.push(
-          `insight contains forbidden word '${word}': ${insightPreview(insight.text)} — ` +
-          'use only when backed by statistical evidence in context.evidence[]'
-        )
-      }
-    }
-
-    if (typeof insight.original !== 'string' && /\d/.test(insight.text) && insight.evidence.length === 0) {
-      warnings.push(
-        `insight contains numeric claim without structured evidence: ${insightPreview(insight.text)}`
-      )
-    }
-  }
-
-  // T48: sampleWarning caveat propagation — if sampleWarnings exist, at least one insight must contain a caveat
-  if (context?.sampleWarnings.length) {
-    const CAVEAT_PATTERNS = [
-      /仅供参考|样本量|有限数据|based on.*rows?|N-row sample|limited data|small sample/i,
-      /环比变化|period.over.period/i
-    ]
-    const hasCaveat = insights.some(insight =>
-      Boolean(insight.caveat) || CAVEAT_PATTERNS.some(p => p.test(insight.text))
-    )
-    if (insights.length > 0 && !hasCaveat) {
-      const codes = context.sampleWarnings.map(w => w.code).join(', ')
-      warnings.push(
-        `sampleWarnings present (${codes}) but no insight contains a required caveat. ` +
-        'Add "(based on N rows only)" or "仅供参考，样本量极小" to data-backed insights.'
-      )
-    }
-  }
-
-  return warnings
-}
-
-export function strictVerifyError(warnings: string[]): AgentResult<void> {
-  if (warnings.length === 0) return ok(undefined)
-  const issues = warnings.map(warningToVerifyIssue)
-  return agentError(
-    'STRICT_VERIFY_FAILED',
-    `Strict verify failed with ${warnings.length} warning(s).`,
-    { warnings, issues }
-  )
-}
-
-function warningToVerifyIssue(message: string): VerifyIssue {
-  if (message.includes('forbidden word')) {
-    return { code: 'INSIGHT_FORBIDDEN_WORD_STRICT', message }
-  }
-  if (message.includes('numeric claim without structured evidence')) {
-    return { code: 'INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE_STRICT', message }
-  }
-  return { code: 'INSIGHT_MISSING_CAVEAT_STRICT', message }
 }
 
 function validateChartType(chart: AgentChartSpec): AgentResult<AgentChartSpec> {

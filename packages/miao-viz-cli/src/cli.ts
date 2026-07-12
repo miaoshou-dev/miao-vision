@@ -229,7 +229,12 @@ function runValidate(args: CliArgs): unknown {
     warnings.push(...verifyWarnings)
     if (args.flags['strict'] === true) {
       const strictResult = strictVerifyError(verifyWarnings)
-      if (isAgentError(strictResult)) return fail(strictResult)
+      if (isAgentError(strictResult)) {
+        if (args.flags['patch-hints'] === true) {
+          return fail({ ...strictResult, patches: generatePatchHints(strictResult, result.value) })
+        }
+        return fail(strictResult)
+      }
     }
   }
 

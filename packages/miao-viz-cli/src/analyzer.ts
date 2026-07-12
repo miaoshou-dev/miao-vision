@@ -46,11 +46,15 @@ export function analyzeDataset(dataset: LoadedDataset, options: AnalyzerOptions 
 
 function buildAnalyzeFields(columns: ColumnProfile[]): AnalyzeField[] {
   return columns.map(col => {
-    const role = refineRole(col)
     const field: AnalyzeField = {
       name: col.name,
-      role,
+      role: col.role ?? 'unknown',
       type: mapType(col.type),
+      ...(col.semanticTags ? { semanticTags: col.semanticTags } : {}),
+      ...(col.confidence !== undefined ? { confidence: col.confidence } : {}),
+      ...(col.rationale ? { rationale: col.rationale } : {}),
+      ...(col.qualityFlags ? { qualityFlags: col.qualityFlags } : {}),
+      ...(col.chartUsage ? { chartUsage: col.chartUsage } : {}),
       distinctCount: col.distinctCount
     }
     if (col.type === 'number') {
@@ -63,24 +67,6 @@ function buildAnalyzeFields(columns: ColumnProfile[]): AnalyzeField[] {
     }
     return field
   })
-}
-
-function refineRole(col: ColumnProfile): AnalyzeField['role'] {
-  if (col.type === 'date') return 'time'
-  if (col.type === 'boolean') return 'status'
-  if (col.role === 'id') return 'id'
-  if (col.type === 'number') {
-    const name = col.name.toLowerCase()
-    if (/\b(score|rating|grade|rank|level|index)\b/.test(name)) return 'score'
-    return 'measure'
-  }
-  if (col.type === 'string') {
-    const name = col.name.toLowerCase()
-    if (/\b(status|state|phase|stage|flag|type|category|tier)\b/.test(name) &&
-        col.distinctCount <= 10) return 'status'
-    return 'dimension'
-  }
-  return 'unknown'
 }
 
 function mapType(t: string): AnalyzeField['type'] {
@@ -105,7 +91,7 @@ function parseIntent(
   correctAssumption?: string
 ): AnalyzeContext['intent'] {
   const measures = fields.filter(f => f.role === 'measure' || f.role === 'score')
-  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status')
+  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
   const times = fields.filter(f => f.role === 'time')
 
   let primaryMeasure = measures[0]?.name
@@ -176,7 +162,7 @@ function runStandardQueries(
 ): AnalyzeEvidence[] {
   const evidence: AnalyzeEvidence[] = []
   const measures = fields.filter(f => f.role === 'measure' || f.role === 'score')
-  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status')
+  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
   const times = fields.filter(f => f.role === 'time')
 
   const primaryMeasure = measures[0]
@@ -311,7 +297,7 @@ function buildCatalog(
   metricCandidates: MetricCandidate[]
 ): AnalyzeCatalog {
   const measures = fields.filter(f => f.role === 'measure' || f.role === 'score')
-  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status')
+  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
   const times = fields.filter(f => f.role === 'time')
   const timePeriods = times[0]?.timePeriods ?? 0
   const primaryDimension = dimensions[0]
@@ -322,7 +308,7 @@ function buildCatalog(
   // bar chart
   if (primaryDimension && primaryDimension.distinctCount !== undefined) {
     if (primaryDimension.distinctCount > 30) {
-      blockedCharts.push({ type: 'bar', reason: `distinctCount=${primaryDimension.distinctCount} > 30 for primary dimension; use table` })
+      blockedCharts.push({ type: 'bar', reason: `TOO_MANY_CATEGORIES: distinctCount=${primaryDimension.distinctCount} > 30 for primary dimension; use table` })
     } else if (primaryDimension.distinctCount >= 2) {
       charts.push('bar')
     }
@@ -331,20 +317,20 @@ function buildCatalog(
   // line chart
   if (times.length > 0) {
     if (timePeriods < 3) {
-      blockedCharts.push({ type: 'line', reason: `timePeriods=${timePeriods} < 3; need at least 3 to show a line trend` })
+      blockedCharts.push({ type: 'line', reason: `INSUFFICIENT_TIME_PERIODS: timePeriods=${timePeriods} < 3; need at least 3 to show a line trend` })
     } else {
       charts.push('line')
       charts.push('area')
     }
   } else {
-    blockedCharts.push({ type: 'line', reason: 'no time field detected in dataset' })
+    blockedCharts.push({ type: 'line', reason: 'NO_TIME_FIELD: no time field detected in dataset' })
   }
 
   // pie chart
   if (primaryDimension) {
     const dc = primaryDimension.distinctCount ?? 0
     if (dc > 7) {
-      blockedCharts.push({ type: 'pie', reason: `distinctCount=${dc} > 7 slices; use bar chart instead` })
+      blockedCharts.push({ type: 'pie', reason: `TOO_MANY_SLICES: distinctCount=${dc} > 7 slices; use bar chart instead` })
     } else if (dc >= 2 && measures.length > 0) {
       charts.push('pie')
     }
@@ -352,14 +338,14 @@ function buildCatalog(
 
   // histogram
   if (rowCount < 20) {
-    blockedCharts.push({ type: 'histogram', reason: `rows=${rowCount} < 20; distribution is unreliable` })
+    blockedCharts.push({ type: 'histogram', reason: `SMALL_SAMPLE_DISTRIBUTION: rows=${rowCount} < 20; distribution is unreliable` })
   } else if (measures.length > 0) {
     charts.push('histogram')
   }
 
   // scatter
   if (measures.length < 2) {
-    blockedCharts.push({ type: 'scatter', reason: 'fewer than 2 numeric measure fields; scatter requires x and y measures' })
+    blockedCharts.push({ type: 'scatter', reason: 'NEEDS_TWO_MEASURES: fewer than 2 numeric measure fields; scatter requires x and y measures' })
   } else {
     charts.push('scatter')
   }
@@ -392,7 +378,7 @@ function buildRecommendedPlan(
 ): Array<{ type: string; note?: string }> {
   const plan: Array<{ type: string; note?: string }> = []
   const measures = fields.filter(f => f.role === 'measure' || f.role === 'score')
-  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status')
+  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
   const times = fields.filter(f => f.role === 'time')
 
   if (charts.includes('bigvalue') && measures.length > 0) {
@@ -415,7 +401,7 @@ function buildRecommendedPlan(
 function buildMetricCandidates(fields: AnalyzeField[], evidence: AnalyzeEvidence[]): MetricCandidate[] {
   const candidates: MetricCandidate[] = []
   const measures = fields.filter(f => f.role === 'measure' || f.role === 'score')
-  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status')
+  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
 
   const totalEvidence = evidence.find(e => e.id === 'total')
   const byDimEvidence = evidence.find(e => e.id === 'by_dimension')

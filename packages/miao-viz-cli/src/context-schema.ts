@@ -1,18 +1,26 @@
 import { z } from 'zod'
-
+const fieldRoleValues = ['measure', 'dimension', 'time', 'id', 'status', 'score', 'flag', 'text', 'geo', 'unknown'] as const
+const chartUsageValues = ['recommended', 'allowed', 'discouraged', 'forbidden'] as const
 // Compact field descriptor — only fields useful for spec writing, not full ColumnProfile
 export interface AnalyzeField {
   name: string
-  role: 'measure' | 'dimension' | 'time' | 'id' | 'status' | 'score' | 'unknown'
+  role: 'measure' | 'dimension' | 'time' | 'id' | 'status' | 'score' | 'flag' | 'text' | 'geo' | 'unknown'
   type: 'number' | 'string' | 'date' | 'boolean' | 'unknown'
+  semanticTags?: string[]
+  confidence?: number
+  rationale?: string[]
+  qualityFlags?: string[]
+  chartUsage?: {
+    asMeasure: 'recommended' | 'allowed' | 'discouraged' | 'forbidden'
+    asDimension: 'recommended' | 'allowed' | 'discouraged' | 'forbidden'
+    asDetailKey: 'recommended' | 'allowed' | 'discouraged' | 'forbidden'
+  }
   min?: number
   max?: number
   distinctCount?: number
   timePeriods?: number  // only for time role
   span?: string         // only for time role, e.g. "2024-01 – 2024-12"
 }
-
-// A single evidence entry from a precomputed query
 export interface AnalyzeEvidence {
   id: string            // e.g. "total", "by_region", "by_time"
   query: string         // human-readable query description
@@ -20,7 +28,6 @@ export interface AnalyzeEvidence {
   values?: Record<string, unknown>
   rows?: Record<string, unknown>[]
 }
-
 export interface CatalogBlockEntry {
   id: string
   score: number
@@ -38,8 +45,10 @@ export interface CatalogBlockEntry {
     max?: number
   }>
   qualityChecks: string[]
+  requiredEvidence?: string[]
+  validInsightTypes?: string[]
+  dataQualityConstraints?: string[]
 }
-
 export interface BlockedBlockEntry {
   id: string
   reason: string
@@ -71,6 +80,8 @@ export interface CatalogTemplateEntry {
   requires: Array<'measure' | 'dimension' | 'time'>
   blocks: string[]
   density: 'compact' | 'medium' | 'full'
+  requiredEvidence?: string[]
+  qualityConstraints?: string[]
 }
 
 export interface BlockedTemplateEntry {
@@ -130,7 +141,18 @@ export interface CompactAnalyzeContext {
   format: 'compact-v1'
   intent: { raw: string; coverage: 'full' | 'partial' }
   assumptions: Array<[AnalyzeAssumption['key'], string, number, (string[] | null)?]>
-  fields: Array<[string, AnalyzeField['role'], AnalyzeField['type'], (number | null)?, (number | null)?]>
+  fields: Array<[
+    string,
+    AnalyzeField['role'],
+    AnalyzeField['type'],
+    (number | null)?,
+    (number | null)?,
+    ({
+      tags?: string[]
+      confidence?: number
+      usage?: [string, string, string]
+    } | null)?
+  ]>
   evidence: Array<[string, Record<string, unknown> | Record<string, unknown>[]]>
   metricCandidates: Array<[string, MetricCandidate['type'], string, (number | null)?]>
   catalog: {
@@ -148,8 +170,17 @@ export interface CompactAnalyzeContext {
 // Zod runtime schema — used by validate --context to verify the file format
 const analyzeFieldSchema = z.object({
   name: z.string().min(1),
-  role: z.enum(['measure', 'dimension', 'time', 'id', 'status', 'score', 'unknown']),
+  role: z.enum(fieldRoleValues),
   type: z.enum(['number', 'string', 'date', 'boolean', 'unknown']),
+  semanticTags: z.array(z.string()).optional(),
+  confidence: z.number().min(0).max(1).optional(),
+  rationale: z.array(z.string()).optional(),
+  qualityFlags: z.array(z.string()).optional(),
+  chartUsage: z.object({
+    asMeasure: z.enum(chartUsageValues),
+    asDimension: z.enum(chartUsageValues),
+    asDetailKey: z.enum(chartUsageValues)
+  }).optional(),
   min: z.number().optional(),
   max: z.number().optional(),
   distinctCount: z.number().int().nonnegative().optional(),
@@ -184,7 +215,10 @@ const catalogBlockEntrySchema = z.object({
   examplePrompt: z.string(),
   charts: z.array(z.string()),
   variables: z.record(z.string(), catalogBlockVariableSchema),
-  qualityChecks: z.array(z.string())
+  qualityChecks: z.array(z.string()),
+  requiredEvidence: z.array(z.string()).optional(),
+  validInsightTypes: z.array(z.string()).optional(),
+  dataQualityConstraints: z.array(z.string()).optional()
 })
 
 const blockedBlockEntrySchema = z.object({
@@ -198,7 +232,9 @@ const catalogTemplateEntrySchema = z.object({
   bestFor: z.array(z.string()),
   requires: z.array(z.enum(['measure', 'dimension', 'time'])),
   blocks: z.array(z.string()),
-  density: z.enum(['compact', 'medium', 'full'])
+  density: z.enum(['compact', 'medium', 'full']),
+  requiredEvidence: z.array(z.string()).optional(),
+  qualityConstraints: z.array(z.string()).optional()
 })
 
 const blockedTemplateEntrySchema = z.object({
@@ -291,10 +327,15 @@ export const compactAnalyzeContextSchema: z.ZodType<CompactAnalyzeContext> = z.o
   ])),
   fields: z.array(z.tuple([
     z.string(),
-    z.enum(['measure', 'dimension', 'time', 'id', 'status', 'score', 'unknown']),
+    z.enum(fieldRoleValues),
     z.enum(['number', 'string', 'date', 'boolean', 'unknown']),
     z.number().nullable().optional(),
-    z.number().nullable().optional()
+    z.number().nullable().optional(),
+    z.object({
+      tags: z.array(z.string()).optional(),
+      confidence: z.number().optional(),
+      usage: z.tuple([z.string(), z.string(), z.string()]).optional()
+    }).nullable().optional()
   ])),
   evidence: z.array(z.tuple([z.string(), z.union([
     z.record(z.string(), z.unknown()),
@@ -329,7 +370,22 @@ export function toCompactAnalyzeContext(ctx: AnalyzeContext): CompactAnalyzeCont
     format: 'compact-v1',
     intent: { raw: ctx.intent.raw, coverage: ctx.intent.coverage },
     assumptions: ctx.intent.assumptions.map(a => [a.key, a.value, a.confidence, a.alternatives]),
-    fields: ctx.fields.map(f => [f.name, f.role, f.type, f.distinctCount, f.timePeriods]),
+    fields: ctx.fields.map(f => [
+      f.name,
+      f.role,
+      f.type,
+      f.distinctCount,
+      f.timePeriods,
+      (f.semanticTags?.length || f.confidence !== undefined || f.chartUsage)
+        ? {
+            ...(f.semanticTags?.length ? { tags: f.semanticTags } : {}),
+            ...(f.confidence !== undefined ? { confidence: f.confidence } : {}),
+            ...(f.chartUsage ? {
+              usage: [f.chartUsage.asMeasure, f.chartUsage.asDimension, f.chartUsage.asDetailKey] as [string, string, string]
+            } : {})
+          }
+        : null
+    ]),
     evidence: ctx.evidence.map(e => [e.id, e.values ?? e.rows ?? {}]),
     metricCandidates: (ctx.metricCandidates ?? []).map(m => [m.id, m.type, m.formula, m.value]),
     catalog: {
@@ -363,10 +419,19 @@ export function fromCompactAnalyzeContext(ctx: CompactAnalyzeContext): AnalyzeCo
       alternatives: alternatives ?? undefined
       }))
     },
-    fields: ctx.fields.map(([name, role, type, distinctCount, timePeriods]) => ({
+    fields: ctx.fields.map(([name, role, type, distinctCount, timePeriods, meta]) => ({
       name,
       role,
       type,
+      ...(meta?.tags ? { semanticTags: meta.tags } : {}),
+      ...(meta?.confidence !== undefined ? { confidence: meta.confidence } : {}),
+      ...(meta?.usage ? {
+        chartUsage: {
+          asMeasure: meta.usage[0] as AnalyzeField['chartUsage']['asMeasure'],
+          asDimension: meta.usage[1] as AnalyzeField['chartUsage']['asDimension'],
+          asDetailKey: meta.usage[2] as AnalyzeField['chartUsage']['asDetailKey']
+        }
+      } : {}),
       ...(distinctCount !== undefined && distinctCount !== null ? { distinctCount } : {}),
       ...(timePeriods !== undefined && timePeriods !== null ? { timePeriods } : {})
     })),

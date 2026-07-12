@@ -38,6 +38,9 @@ export interface ReportBlockResolver {
   examplePrompt: string
   variables: Record<string, BlockVariableDef>
   qualityChecks: string[]
+  requiredEvidence: string[]
+  validInsightTypes: string[]
+  dataQualityConstraints: string[]
 
   canUse(ctx: BlockMatchContext): BlockDecision
   defaultVariables(ctx: BlockMatchContext): Record<string, unknown>
@@ -68,6 +71,15 @@ function scoreTimePeriods(fields: AnalyzeField[]): number {
   return Math.min(periods / 3, 1) * 0.1
 }
 
+function withContextCaveats(insights: AgentInsight[], ctx: BlockMatchContext): AgentInsight[] {
+  if (ctx.sampleWarnings.length === 0) return insights
+  const caveat = ctx.sampleWarnings.map(w => w.message).join(' ')
+  return insights.map(insight => {
+    if (typeof insight === 'string') return { text: insight, evidence: [], caveat, severity: 'info' }
+    return insight.caveat ? insight : { ...insight, caveat, severity: insight.severity ?? 'info' }
+  })
+}
+
 // ---- Resolver implementations ----
 
 const kpiSummary: ReportBlockResolver = {
@@ -80,6 +92,9 @@ const kpiSummary: ReportBlockResolver = {
     primaryMeasure: { type: 'field', role: 'measure', description: 'Main metric to display as KPI', required: true }
   },
   qualityChecks: ['Do not exceed 4 bigvalue cards per report'],
+  requiredEvidence: ['total'],
+  validInsightTypes: ['total', 'delta'],
+  dataQualityConstraints: ['measure field must not be an identifier'],
 
   canUse(ctx) {
     const measures = ctx.fields.filter(f => f.role === 'measure' || f.role === 'score')
@@ -104,7 +119,7 @@ const kpiSummary: ReportBlockResolver = {
       const pc = insightPeriodChange(change)
       if (pc) insights.push(pc)
     }
-    return { charts: [buildKpiChart(measure)], insights }
+    return { charts: [buildKpiChart(measure)], insights: withContextCaveats(insights, ctx) }
   }
 }
 
@@ -124,10 +139,13 @@ const snapshotRanking: ReportBlockResolver = {
     'Do not exceed 4 bigvalue cards',
     'Add caveat if context.json contains sampleWarnings'
   ],
+  requiredEvidence: ['total', 'by_dimension'],
+  validInsightTypes: ['total', 'rank', 'share'],
+  dataQualityConstraints: ['dimension should stay within top-N readability limits'],
 
   canUse(ctx) {
     const measures = ctx.fields.filter(f => f.role === 'measure' || f.role === 'score')
-    const dimensions = ctx.fields.filter(f => f.role === 'dimension' || f.role === 'status')
+    const dimensions = ctx.fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
     if (measures.length === 0) return { ok: false, score: 0, reason: 'no numeric measure field' }
     if (dimensions.length === 0) return { ok: false, score: 0, reason: 'no dimension field' }
     const score = 0.5
@@ -139,11 +157,11 @@ const snapshotRanking: ReportBlockResolver = {
 
   defaultVariables(ctx) {
     const measure = ctx.fields.find(f => f.role === 'measure' || f.role === 'score')
-    const dimension = ctx.fields.find(f => f.role === 'dimension' || f.role === 'status')
+    const dimension = ctx.fields.find(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', topN: 10 }
   },
 
-  compile(variables, _ctx) {
+  compile(variables, ctx) {
     const measure = String(variables.primaryMeasure)
     const dimension = String(variables.primaryDimension)
     const topN = Number(variables.topN ?? 10)
@@ -153,7 +171,7 @@ const snapshotRanking: ReportBlockResolver = {
     ]
     return {
       charts: [buildKpiChart(measure), buildBarChart(measure, dimension, topN)],
-      insights
+      insights: withContextCaveats(insights, ctx)
     }
   }
 }
@@ -172,6 +190,9 @@ const trendOverview: ReportBlockResolver = {
     'line chart has sort asc on time field — already included',
     'Add caveat if timePeriods is limited (< 6)'
   ],
+  requiredEvidence: ['total', 'by_time'],
+  validInsightTypes: ['total', 'trend', 'delta'],
+  dataQualityConstraints: ['requires at least 3 time periods'],
 
   canUse(ctx) {
     const measures = ctx.fields.filter(f => f.role === 'measure' || f.role === 'score')
@@ -205,7 +226,7 @@ const trendOverview: ReportBlockResolver = {
     if (trend) insights.push(trend)
     return {
       charts: [buildKpiChart(measure), buildLineChart(measure, timeField)],
-      insights
+      insights: withContextCaveats(insights, ctx)
     }
   }
 }
@@ -225,10 +246,13 @@ const comparisonBreakdown: ReportBlockResolver = {
     'pie chart limited to ≤7 slices — already enforced',
     'bar top-N for long-tail dimensions'
   ],
+  requiredEvidence: ['total', 'by_dimension'],
+  validInsightTypes: ['total', 'rank', 'share'],
+  dataQualityConstraints: ['pie requires a small part-to-whole dimension'],
 
   canUse(ctx) {
     const measures = ctx.fields.filter(f => f.role === 'measure' || f.role === 'score')
-    const dimensions = ctx.fields.filter(f => f.role === 'dimension' || f.role === 'status')
+    const dimensions = ctx.fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
     if (measures.length === 0) return { ok: false, score: 0, reason: 'no numeric measure field' }
     if (dimensions.length === 0) return { ok: false, score: 0, reason: 'no dimension field' }
     const dim = dimensions[0]
@@ -243,11 +267,11 @@ const comparisonBreakdown: ReportBlockResolver = {
 
   defaultVariables(ctx) {
     const measure = ctx.fields.find(f => f.role === 'measure' || f.role === 'score')
-    const dimension = ctx.fields.find(f => f.role === 'dimension' || f.role === 'status')
+    const dimension = ctx.fields.find(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', topN: 10 }
   },
 
-  compile(variables, _ctx) {
+  compile(variables, ctx) {
     const measure = String(variables.primaryMeasure)
     const dimension = String(variables.primaryDimension)
     const topN = Number(variables.topN ?? 10)
@@ -257,7 +281,7 @@ const comparisonBreakdown: ReportBlockResolver = {
     ]
     return {
       charts: [buildBarChart(measure, dimension, topN), buildPieChart(measure, dimension)],
-      insights
+      insights: withContextCaveats(insights, ctx)
     }
   }
 }
@@ -279,10 +303,13 @@ const trendRanking: ReportBlockResolver = {
     'bar chart sort desc + limit — already included',
     'Add caveat if sampleWarnings present'
   ],
+  requiredEvidence: ['total', 'by_time', 'by_dimension'],
+  validInsightTypes: ['total', 'trend', 'delta', 'rank'],
+  dataQualityConstraints: ['requires at least 3 time periods and readable dimension cardinality'],
 
   canUse(ctx) {
     const measures = ctx.fields.filter(f => f.role === 'measure' || f.role === 'score')
-    const dimensions = ctx.fields.filter(f => f.role === 'dimension' || f.role === 'status')
+    const dimensions = ctx.fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
     const times = ctx.fields.filter(f => f.role === 'time')
     if (measures.length === 0) return { ok: false, score: 0, reason: 'no numeric measure field' }
     if (dimensions.length === 0) return { ok: false, score: 0, reason: 'no dimension field' }
@@ -298,7 +325,7 @@ const trendRanking: ReportBlockResolver = {
 
   defaultVariables(ctx) {
     const measure = ctx.fields.find(f => f.role === 'measure' || f.role === 'score')
-    const dimension = ctx.fields.find(f => f.role === 'dimension' || f.role === 'status')
+    const dimension = ctx.fields.find(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
     const time = ctx.fields.find(f => f.role === 'time')
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', timeField: time?.name ?? '', topN: 5 }
   },
@@ -320,7 +347,7 @@ const trendRanking: ReportBlockResolver = {
         buildLineChart(measure, timeField),
         buildBarChart(measure, dimension, topN)
       ],
-      insights
+      insights: withContextCaveats(insights, ctx)
     }
   }
 }
@@ -344,10 +371,13 @@ const fullDetailReport: ReportBlockResolver = {
     'Add caveat if sampleWarnings present',
     'Table shows aggregated rows, not raw rows'
   ],
+  requiredEvidence: ['total', 'by_time', 'by_dimension'],
+  validInsightTypes: ['total', 'trend', 'delta', 'rank', 'data_quality'],
+  dataQualityConstraints: ['requires at least 3 time periods and a dimension for detail review'],
 
   canUse(ctx) {
     const measures = ctx.fields.filter(f => f.role === 'measure' || f.role === 'score')
-    const dimensions = ctx.fields.filter(f => f.role === 'dimension' || f.role === 'status')
+    const dimensions = ctx.fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
     const times = ctx.fields.filter(f => f.role === 'time')
     if (measures.length === 0) return { ok: false, score: 0, reason: 'no numeric measure field' }
     if (dimensions.length === 0) return { ok: false, score: 0, reason: 'no dimension field' }
@@ -363,7 +393,7 @@ const fullDetailReport: ReportBlockResolver = {
 
   defaultVariables(ctx) {
     const measure = ctx.fields.find(f => f.role === 'measure' || f.role === 'score')
-    const dimension = ctx.fields.find(f => f.role === 'dimension' || f.role === 'status')
+    const dimension = ctx.fields.find(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
     const time = ctx.fields.find(f => f.role === 'time')
     return { primaryMeasure: measure?.name ?? '', primaryDimension: dimension?.name ?? '', timeField: time?.name ?? '', topN: 5 }
   },
@@ -386,7 +416,7 @@ const fullDetailReport: ReportBlockResolver = {
         buildBarChart(measure, dimension, topN),
         buildTableChart(measure, dimension)
       ],
-      insights
+      insights: withContextCaveats(insights, ctx)
     }
   }
 }
@@ -433,6 +463,9 @@ export function toCatalogBlockEntry(
     examplePrompt: resolver.examplePrompt,
     charts: compiled.charts.map(c => c.type as string),
     variables,
-    qualityChecks: resolver.qualityChecks
+    qualityChecks: resolver.qualityChecks,
+    requiredEvidence: resolver.requiredEvidence,
+    validInsightTypes: resolver.validInsightTypes,
+    dataQualityConstraints: resolver.dataQualityConstraints
   }
 }
