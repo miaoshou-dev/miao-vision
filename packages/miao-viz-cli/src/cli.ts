@@ -6,7 +6,7 @@ import { loadDataset } from './data-loader'
 import { profileDataset, profileSummary } from './data-profiler'
 import { queryDataset } from './data-query'
 import { renderStaticHtml } from './html-export'
-import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyWarnings, strictVerifyError } from './spec-validator'
+import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyIssues, strictVerifyError } from './spec-validator'
 import { parseAnalyzeContext, toCompactAnalyzeContext } from './context-schema'
 import { renderChartSvg } from './svg-renderer'
 import { renderDeckHtml } from './deck-renderer'
@@ -225,10 +225,11 @@ function runValidate(args: CliArgs): unknown {
   }
 
   if (args.flags['verify'] === true) {
-    const verifyWarnings = collectVerifyWarnings(result.value, context)
+    const verifyIssues = collectVerifyIssues(result.value, context)
+    const verifyWarnings = verifyIssues.map(issue => issue.message)
     warnings.push(...verifyWarnings)
     if (args.flags['strict'] === true) {
-      const strictResult = strictVerifyError(verifyWarnings)
+      const strictResult = strictVerifyError(verifyIssues)
       if (isAgentError(strictResult)) {
         if (args.flags['patch-hints'] === true) {
           return fail({ ...strictResult, patches: generatePatchHints(strictResult, result.value) })

@@ -12,7 +12,9 @@ export interface ValidationIssue {
 export interface ChartRule {
   code: string
   severity: 'error' | 'warning'
+  /** @deprecated Use expressionHint for documentation-only expressions. */
   expression: string
+  expressionHint?: string
   message: string
   validate?: (chart: AgentChartSpec, ctx?: AnalyzeContext) => ValidationIssue | null
 }

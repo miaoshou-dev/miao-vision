@@ -14,6 +14,8 @@ import { BLOCK_REGISTRY, toCatalogBlockEntry } from './report-block-registry'
 import type { BlockMatchContext } from './report-block-registry'
 import { buildTemplateCatalog } from './report-template-registry'
 import { buildClarificationQuestions } from './analyze-clarifications'
+import { parseIntent } from './analyzer-intent'
+import { CHART_THRESHOLDS } from './chart-catalog-thresholds'
 
 export interface AnalyzerOptions {
   intent?: string
@@ -81,76 +83,6 @@ function countTimePeriods(col: ColumnProfile): number {
   if (!col.temporal) return 0
   // Approximate: use distinctCount as a proxy for time periods
   return col.distinctCount ?? 0
-}
-
-// ---- Intent parsing ----
-
-function parseIntent(
-  raw: string,
-  fields: AnalyzeField[],
-  correctAssumption?: string
-): AnalyzeContext['intent'] {
-  const measures = fields.filter(f => f.role === 'measure' || f.role === 'score')
-  const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
-  const times = fields.filter(f => f.role === 'time')
-
-  let primaryMeasure = measures[0]?.name
-  let primaryDimension = dimensions[0]?.name
-  let timeField = times[0]?.name
-
-  // Apply user corrections
-  if (correctAssumption) {
-    const m = correctAssumption.match(/^primary_measure=([\w-]+)$/)
-    const d = correctAssumption.match(/^primary_dimension=([\w-]+)$/)
-    const t = correctAssumption.match(/^time_field=([\w-]+)$/)
-    if (m) primaryMeasure = m[1]
-    if (d) primaryDimension = d[1]
-    if (t) timeField = t[1]
-  }
-
-  const assumptions: AnalyzeContext['intent']['assumptions'] = []
-  if (primaryMeasure) {
-    assumptions.push({
-      key: 'primary_measure',
-      value: primaryMeasure,
-      confidence: measures.length > 1 ? 0.62 : 0.9,
-      alternatives: measures.filter(f => f.name !== primaryMeasure).map(f => f.name),
-      reason: measures.length > 1 ? 'multiple numeric measures detected' : 'single clear numeric measure'
-    })
-  }
-  if (primaryDimension) {
-    assumptions.push({
-      key: 'primary_dimension',
-      value: primaryDimension,
-      confidence: dimensions.length > 1 ? 0.72 : 0.9,
-      alternatives: dimensions.filter(f => f.name !== primaryDimension).map(f => f.name),
-      reason: dimensions.length > 1 ? 'multiple dimensions detected' : 'single clear dimension'
-    })
-  }
-  if (times.length > 0) {
-    assumptions.push({
-      key: 'time_field',
-      value: timeField ?? times[0].name,
-      confidence: times.length > 1 ? 0.7 : 0.9,
-      alternatives: times.filter(f => f.name !== timeField).map(f => f.name),
-      reason: times.length > 1 ? 'multiple time fields detected' : 'single clear time field'
-    })
-  }
-  if (measures.length === 0) {
-    assumptions.push({
-      key: 'primary_measure',
-      value: '',
-      confidence: 0,
-      reason: 'no numeric measure detected'
-    })
-  }
-
-  const rawLower = raw.toLowerCase()
-  const wantsTrend = /trend|over time|by month|by year/.test(rawLower)
-  const timePeriods = times[0] ? (times[0].timePeriods ?? 0) : 0
-  const coverage = (wantsTrend && timePeriods < 3) ? 'partial' : 'full'
-
-  return { raw: raw || '(no intent specified)', coverage, assumptions }
 }
 
 // ---- Standard queries ----
@@ -234,7 +166,7 @@ function runExtraQuery(
   extraQuery: string,
   existingCount: number
 ): AnalyzeEvidence | null {
-  // extraQuery format: "groupby=col,measure=fn(col) as alias,filter=col>=val"
+  // extraQuery format: "groupby=col;measure=fn(col) as alias;filter=col>=val"
   const parts: Record<string, string> = {}
   for (const part of extraQuery.split(';')) {
     const idx = part.indexOf('=')
@@ -307,8 +239,8 @@ function buildCatalog(
 
   // bar chart
   if (primaryDimension && primaryDimension.distinctCount !== undefined) {
-    if (primaryDimension.distinctCount > 30) {
-      blockedCharts.push({ type: 'bar', reason: `TOO_MANY_CATEGORIES: distinctCount=${primaryDimension.distinctCount} > 30 for primary dimension; use table` })
+    if (primaryDimension.distinctCount > CHART_THRESHOLDS.bar.hardMaxCategories) {
+      blockedCharts.push({ type: 'bar', reason: `TOO_MANY_CATEGORIES: distinctCount=${primaryDimension.distinctCount} > ${CHART_THRESHOLDS.bar.hardMaxCategories} for primary dimension; use table` })
     } else if (primaryDimension.distinctCount >= 2) {
       charts.push('bar')
     }
@@ -316,8 +248,8 @@ function buildCatalog(
 
   // line chart
   if (times.length > 0) {
-    if (timePeriods < 3) {
-      blockedCharts.push({ type: 'line', reason: `INSUFFICIENT_TIME_PERIODS: timePeriods=${timePeriods} < 3; need at least 3 to show a line trend` })
+    if (timePeriods < CHART_THRESHOLDS.line.minTimePeriods) {
+      blockedCharts.push({ type: 'line', reason: `INSUFFICIENT_TIME_PERIODS: timePeriods=${timePeriods} < ${CHART_THRESHOLDS.line.minTimePeriods}; need at least ${CHART_THRESHOLDS.line.minTimePeriods} to show a line trend` })
     } else {
       charts.push('line')
       charts.push('area')
@@ -329,23 +261,23 @@ function buildCatalog(
   // pie chart
   if (primaryDimension) {
     const dc = primaryDimension.distinctCount ?? 0
-    if (dc > 7) {
-      blockedCharts.push({ type: 'pie', reason: `TOO_MANY_SLICES: distinctCount=${dc} > 7 slices; use bar chart instead` })
+    if (dc > CHART_THRESHOLDS.pie.maxSlices) {
+      blockedCharts.push({ type: 'pie', reason: `TOO_MANY_SLICES: distinctCount=${dc} > ${CHART_THRESHOLDS.pie.maxSlices} slices; use bar chart instead` })
     } else if (dc >= 2 && measures.length > 0) {
       charts.push('pie')
     }
   }
 
   // histogram
-  if (rowCount < 20) {
-    blockedCharts.push({ type: 'histogram', reason: `SMALL_SAMPLE_DISTRIBUTION: rows=${rowCount} < 20; distribution is unreliable` })
+  if (rowCount < CHART_THRESHOLDS.histogram.minRows) {
+    blockedCharts.push({ type: 'histogram', reason: `SMALL_SAMPLE_DISTRIBUTION: rows=${rowCount} < ${CHART_THRESHOLDS.histogram.minRows}; distribution is unreliable` })
   } else if (measures.length > 0) {
     charts.push('histogram')
   }
 
   // scatter
-  if (measures.length < 2) {
-    blockedCharts.push({ type: 'scatter', reason: 'NEEDS_TWO_MEASURES: fewer than 2 numeric measure fields; scatter requires x and y measures' })
+  if (measures.length < CHART_THRESHOLDS.scatter.minMeasures) {
+    blockedCharts.push({ type: 'scatter', reason: `NEEDS_TWO_MEASURES: fewer than ${CHART_THRESHOLDS.scatter.minMeasures} numeric measure fields; scatter requires x and y measures` })
   } else {
     charts.push('scatter')
   }

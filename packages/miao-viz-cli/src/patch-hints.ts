@@ -19,63 +19,43 @@ export function generatePatchHints(
 
   switch (error.code) {
     case 'UNSUPPORTED_TRANSFORM': {
-      const chartId = detail?.['chartId'] as string | undefined
+      const chartId = detail?.['chartId'] as string | undefined ?? error.chartId as string | undefined
+      const transformType = detail?.['transformType'] as string | undefined ?? error.transformType as string | undefined
       const chartIndex = findChartIndex(spec, chartId)
-      if (chartIndex < 0) return undefined
+      if (chartIndex < 0 || !transformType) return undefined
       const transforms = spec.charts[chartIndex].data?.transform ?? []
-      const tIdx = transforms.findIndex(t => t.type === 'filter')
+      const tIdx = transforms.findIndex(t => t.type === transformType)
       if (tIdx < 0) return undefined
       return [{ op: 'remove', path: `/charts/${chartIndex}/data/transform/${tIdx}` }]
     }
 
     case 'BLOCKED_CHART_STRICT': {
-      const chartType = detail?.['chartType'] as string | undefined
+      const chartType = detail?.['chartType'] as string | undefined ?? error.chartType as string | undefined
       const chartIdx = findChartIndex(spec, chartType)
       if (chartIdx < 0 || !catalogCharts?.length) return undefined
-      const suggestion = preferredChartReplacement(chartType, catalogCharts)
+      const suggestion = preferredChartReplacement(spec.charts[chartIdx], catalogCharts)
       return [{ op: 'replace', path: `/charts/${chartIdx}/type`, value: suggestion }]
     }
 
     case 'ID_AS_MEASURE': {
-      const chartId = detail?.['chartId'] as string | undefined
-      const field = detail?.['field'] as string | undefined
-      const chartIdx = findChartIndex(spec, chartId)
-      if (chartIdx < 0 || !field) return undefined
-      const chart = spec.charts[chartIdx]
-      const patches: JsonPatch[] = []
-      for (const [channel, encoding] of Object.entries(chart.encoding ?? {})) {
-        if (encoding?.field === field) {
-          patches.push({ op: 'replace', path: `/charts/${chartIdx}/encoding/${channel}/field`, value: '?' })
-        }
-      }
-      return patches.length ? patches : undefined
+      return undefined
     }
 
     case 'DUPLICATE_CHART_ID': {
-      const dupId = detail?.['chartId'] as string | undefined
+      const dupId = detail?.['chartId'] as string | undefined ?? error.chartId as string | undefined
       if (!dupId) return undefined
       const lastIdx = findLastChartIndexById(spec, dupId)
       if (lastIdx < 0) return undefined
-      return [{ op: 'replace', path: `/charts/${lastIdx}/id`, value: `${dupId}_2` }]
+      return [{ op: 'replace', path: `/charts/${lastIdx}/id`, value: nextChartId(spec, dupId) }]
     }
 
     case 'MISSING_ENCODING': {
-      const chartType = detail?.['chartType'] as string | undefined
-      const required = detail?.['requiredEncodings'] as string[] | undefined
-      const chartIdx = findChartIndex(spec, chartType)
-      if (chartIdx < 0 || !required?.length) return undefined
-      const existing = Object.keys(spec.charts[chartIdx].encoding ?? {})
-      const missing = required.filter(enc => !existing.includes(enc))
-      return missing.map(enc => ({
-        op: 'add' as const,
-        path: `/charts/${chartIdx}/encoding/${enc}`,
-        value: { field: '?', type: 'quantitative' }
-      }))
+      return undefined
     }
 
     case 'X_MUST_BE_TEMPORAL': {
       // line/area x.type='nominal' → change to 'temporal'
-      const chartId = detail?.['chartId'] as string | undefined
+      const chartId = detail?.['chartId'] as string | undefined ?? error.chartId as string | undefined
       const chartIdx = findChartIndex(spec, chartId)
       if (chartIdx < 0) return undefined
       return [{ op: 'replace', path: `/charts/${chartIdx}/encoding/x/type`, value: 'temporal' }]
@@ -83,7 +63,7 @@ export function generatePatchHints(
 
     case 'X_MUST_BE_DIMENSION': {
       // bar x.type='temporal' → change to 'nominal'
-      const chartId = detail?.['chartId'] as string | undefined
+      const chartId = detail?.['chartId'] as string | undefined ?? error.chartId as string | undefined
       const chartIdx = findChartIndex(spec, chartId)
       if (chartIdx < 0) return undefined
       return [{ op: 'replace', path: `/charts/${chartIdx}/encoding/x/type`, value: 'nominal' }]
@@ -97,14 +77,21 @@ export function generatePatchHints(
   }
 }
 
+function nextChartId(spec: AgentReportSpec, base: string): string {
+  const used = new Set(spec.charts.map(chart => chart.id).filter((id): id is string => Boolean(id)))
+  let suffix = 2
+  while (used.has(`${base}_${suffix}`)) suffix += 1
+  return `${base}_${suffix}`
+}
+
 function strictVerifyPatches(error: AgentError, spec: AgentReportSpec): JsonPatch[] | undefined {
-  const issues = error.issues as Array<{ code?: string; message?: string }> | undefined
+  const issues = error.issues as Array<{ code?: string; message?: string; insightType?: string; requiredEvidence?: string[] }> | undefined
   if (!issues?.length) return undefined
   const patches: JsonPatch[] = []
   for (const issue of issues) {
-    if (issue.code !== 'INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT' || !issue.message) continue
-    const type = issue.message.match(/INSIGHT_REQUIRED_EVIDENCE_MISSING: ([a-z_]+) insight/)?.[1]
-    const missing = issue.message.match(/requires evidence ([^:]+):/)?.[1]
+    if (issue.code !== 'INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT') continue
+    const type = issue.insightType ?? issue.message?.match(/INSIGHT_REQUIRED_EVIDENCE_MISSING: ([a-z_]+) insight/)?.[1]
+    const missing = issue.requiredEvidence ?? issue.message?.match(/requires evidence ([^:]+):/)?.[1]
       ?.split(',')
       .map(s => s.trim())
       .filter(Boolean)
@@ -124,10 +111,14 @@ function strictVerifyPatches(error: AgentError, spec: AgentReportSpec): JsonPatc
   return patches.length ? patches : undefined
 }
 
-function preferredChartReplacement(chartType: string | undefined, catalogCharts: string[]): string {
-  const preferred = chartType === 'line'
-    ? ['bar', 'table', 'bigvalue']
-    : chartType === 'pie'
+function preferredChartReplacement(chart: AgentReportSpec['charts'][number], catalogCharts: string[]): string {
+  const xType = chart.encoding?.x?.type
+  const chartType = chart.type
+  const preferred = chartType === 'line' && xType === 'temporal'
+    ? ['table', 'bigvalue', 'bar']
+    : chartType === 'line'
+      ? ['bar', 'table', 'bigvalue']
+      : chartType === 'pie'
       ? ['bar', 'table']
       : ['bar', 'table', 'bigvalue']
   return preferred.find(type => catalogCharts.includes(type)) ?? catalogCharts[0]

@@ -5,10 +5,11 @@ import { getCatalogItem } from './chart-catalog'
 import { countChartsByType } from './spec-utils'
 import { normalizeInsights } from './insight-utils'
 import { collectChartSemanticWarnings } from './spec-validator-intelligence'
+import { VALIDATOR_ERROR_CODES } from './error-codes'
 import type { AnalyzeContext } from './context-schema'
-import type { AgentChartSpec, AgentOutputFormat, AgentResult, AgentReportSpec, DataProfile } from './types'
+import type { AgentChartSpec, AgentDataTransform, AgentOutputFormat, AgentResult, AgentReportSpec, DataProfile } from './types'
 
-export { collectVerifyWarnings, strictVerifyError, type VerifyIssue } from './spec-validator-intelligence'
+export { collectVerifyIssues, collectVerifyWarnings, strictVerifyError, type VerifyIssue } from './spec-validator-intelligence'
 
 const DRILLDOWN_CHART_TYPES = ['bar', 'pie', 'table'] as const
 
@@ -174,36 +175,74 @@ export function validateEvidencePaths(
   context: AnalyzeContext
 ): AgentResult<void> {
   const availableIds = context.evidence.map(e => e.id)
+  const issues: Array<{ code: string; message: string; evidenceId: string; path?: string; location: string; availableIds: string[] }> = []
   for (const insight of normalizeInsights(spec.insights)) {
     for (const evidenceId of insight.evidence) {
       if (!availableIds.includes(evidenceId)) {
-        return agentError(
-          'INSIGHT_EVIDENCE_NOT_FOUND',
-          `insight.evidence id '${evidenceId}' not found in context.evidence. Available ids: ${availableIds.join(', ') || '(none)'}`,
-          { evidenceId, availableIds }
-        )
+        issues.push({
+          code: VALIDATOR_ERROR_CODES.INSIGHT_EVIDENCE_NOT_FOUND,
+          message: `insight.evidence id '${evidenceId}' not found in context.evidence.`,
+          evidenceId,
+          location: 'insights[].evidence',
+          availableIds
+        })
       }
     }
   }
 
-  const texts: string[] = [
-    ...normalizeInsights(spec.insights).map(insight => insight.text),
-    ...spec.charts.map(c => c.title).filter((t): t is string => Boolean(t))
-  ]
-  for (const text of texts) {
+  for (const { location, text } of collectEvidenceTextFields(spec)) {
     for (const ref of parseEvidenceRefs(text)) {
       const { found } = resolveEvidencePath(context.evidence, ref.id, ref.path)
       if (!found) {
-        return agentError(
-          'EVIDENCE_PATH_NOT_FOUND',
-          `$evidence:${ref.id}.${ref.path} not found in context.evidence. ` +
-          `Available ids: ${context.evidence.map(e => e.id).join(', ') || '(none)'}`,
-          { evidenceId: ref.id, path: ref.path, availableIds: context.evidence.map(e => e.id) }
-        )
+        issues.push({
+          code: VALIDATOR_ERROR_CODES.EVIDENCE_PATH_NOT_FOUND,
+          message: `$evidence:${ref.id}.${ref.path} not found in context.evidence.`,
+          evidenceId: ref.id,
+          path: ref.path,
+          location,
+          availableIds
+        })
       }
     }
   }
+  if (issues.length > 0) {
+    const first = issues[0]
+    return agentError(
+      first.code,
+      `${first.message} ${issues.length > 1 ? `(${issues.length} evidence issue(s) total.) ` : ''}` +
+      `Available ids: ${availableIds.join(', ') || '(none)'}`,
+      { evidenceId: first.evidenceId, path: first.path, availableIds, issues }
+    )
+  }
   return ok(undefined)
+}
+
+function collectEvidenceTextFields(spec: AgentReportSpec): Array<{ location: string; text: string }> {
+  const texts: Array<{ location: string; text: string }> = []
+  if (spec.title) texts.push({ location: 'title', text: spec.title })
+  if (spec.description) texts.push({ location: 'description', text: spec.description })
+  normalizeInsights(spec.insights).forEach((insight, index) => {
+    texts.push({ location: `insights[${index}].text`, text: insight.text })
+    if (insight.caveat) texts.push({ location: `insights[${index}].caveat`, text: insight.caveat })
+  })
+  spec.charts.forEach((chart, chartIndex) => {
+    if (chart.title) texts.push({ location: `charts[${chartIndex}].title`, text: chart.title })
+    const description = (chart as AgentChartSpec & { description?: string }).description
+    if (description) texts.push({ location: `charts[${chartIndex}].description`, text: description })
+    for (const [channel, encoding] of Object.entries(chart.encoding ?? {})) {
+      if (encoding?.format) texts.push({ location: `charts[${chartIndex}].encoding.${channel}.format`, text: encoding.format })
+    }
+    collectStringLeaves(chart.style, `charts[${chartIndex}].style`, texts)
+  })
+  return texts
+}
+
+function collectStringLeaves(value: unknown, path: string, out: Array<{ location: string; text: string }>): void {
+  if (typeof value === 'string') {
+    out.push({ location: path, text: value })
+  } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+    for (const [key, child] of Object.entries(value)) collectStringLeaves(child, `${path}.${key}`, out)
+  }
 }
 
 function validateChartType(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
@@ -310,7 +349,43 @@ function validateChartInteraction(chart: AgentChartSpec): AgentResult<AgentChart
 }
 
 function validateTransforms(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
+  const catalogItem = getCatalogItem(chart.type)
+  if (!catalogItem) return ok(chart)
+  const allowed = new Set(catalogItem.allowedTransforms)
+  for (const transform of chart.data?.transform ?? []) {
+    if (!allowed.has(transform.type)) {
+      const detail = { chartId: chart.id, chartType: chart.type, transformType: transform.type, allowedTransforms: catalogItem.allowedTransforms }
+      return agentError(
+        VALIDATOR_ERROR_CODES.UNSUPPORTED_TRANSFORM,
+        `Transform '${transform.type}' is not supported for chart type '${chart.type}'. Allowed transforms: ${catalogItem.allowedTransforms.join(', ') || '(none)'}.`,
+        { detail, ...detail }
+      )
+    }
+    const malformed = validateTransformShape(transform)
+    if (malformed) {
+      const detail = { chartId: chart.id, chartType: chart.type, transformType: transform.type, reason: malformed }
+      return agentError(VALIDATOR_ERROR_CODES.INVALID_TRANSFORM, malformed, { detail, ...detail })
+    }
+  }
   return ok(chart)
+}
+
+function validateTransformShape(transform: AgentDataTransform): string | null {
+  if (transform.type === 'aggregate') {
+    const hasGroupBy = Boolean(transform.groupBy?.length)
+    const hasMeasures = Boolean(transform.measures?.length)
+    if (!hasGroupBy && !hasMeasures) return 'aggregate transform requires groupBy or measures.'
+    for (const measure of transform.measures ?? []) {
+      if (!measure.field || !measure.op || !measure.as) return 'aggregate measures require field, op, and as.'
+    }
+  } else if (transform.type === 'sort' && !transform.field) {
+    return 'sort transform requires field.'
+  } else if (transform.type === 'limit' && (!Number.isInteger(transform.value) || Number(transform.value) <= 0)) {
+    return 'limit transform requires a positive integer value.'
+  } else if (transform.type === 'derive-month' && (!transform.field || !transform.as)) {
+    return 'derive-month transform requires field and as.'
+  }
+  return null
 }
 
 // Simulate the output field set after all transforms run.

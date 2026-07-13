@@ -320,6 +320,7 @@ const trendRanking: ReportBlockResolver = {
       + scoreCatalogCoverage(['bigvalue', 'line', 'bar'], ctx)
       + scoreTimePeriods(ctx.fields)
       + scoreDimQuality(dimensions[0])
+      + scoreEvidenceCoverage(ctx)
     return { ok: true, score: Math.min(score, 1) }
   },
 
@@ -388,6 +389,7 @@ const fullDetailReport: ReportBlockResolver = {
       + scoreCatalogCoverage(['bigvalue', 'line', 'bar', 'table'], ctx)
       + scoreTimePeriods(ctx.fields)
       + scoreDimQuality(dimensions[0])
+      + scoreEvidenceCoverage(ctx)
     return { ok: true, score: Math.min(score, 1) }
   },
 

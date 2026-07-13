@@ -3,6 +3,9 @@ import { insightPreview, normalizeInsights } from './insight-utils'
 import type { AnalyzeContext, CatalogBlockEntry, CatalogTemplateEntry } from './context-schema'
 import type { AgentChartSpec, AgentInsightType, AgentResult, AgentReportSpec } from './types'
 import { agentError, ok } from './errors'
+import { CHART_THRESHOLDS } from './chart-catalog-thresholds'
+import type { VerifyIssueCode } from './error-codes'
+import { VERIFY_ISSUE_CODES } from './error-codes'
 
 const FORBIDDEN_WORDS: Array<{ pattern: RegExp; word: string }> = [
   { pattern: /\b(trend|趋势)\b/i, word: 'trend/趋势' },
@@ -13,21 +16,24 @@ const FORBIDDEN_WORDS: Array<{ pattern: RegExp; word: string }> = [
 ]
 
 export interface VerifyIssue {
-  code:
-    | 'INSIGHT_FORBIDDEN_WORD_STRICT'
-    | 'INSIGHT_MISSING_CAVEAT_STRICT'
-    | 'INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE_STRICT'
-    | 'INSIGHT_TREND_WITHOUT_TIME_STRICT'
-    | 'INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE_STRICT'
-    | 'INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT'
-    | 'INSIGHT_TYPE_NOT_ALLOWED_STRICT'
-    | 'BLOCK_REQUIRED_EVIDENCE_MISSING_STRICT'
-    | 'TEMPLATE_REQUIRED_EVIDENCE_MISSING_STRICT'
+  code: VerifyIssueCode
   message: string
+  severity?: 'warning' | 'error'
+  chartId?: string
+  chartType?: string
+  insightType?: AgentInsightType
+  field?: string
+  evidenceId?: string
+  requiredEvidence?: string[]
+  payload?: Record<string, unknown>
 }
 
 export function collectVerifyWarnings(spec: AgentReportSpec, context?: AnalyzeContext): string[] {
-  const warnings: string[] = []
+  return collectVerifyIssues(spec, context).map(issue => issue.message)
+}
+
+export function collectVerifyIssues(spec: AgentReportSpec, context?: AnalyzeContext): VerifyIssue[] {
+  const issues: VerifyIssue[] = []
   const insights = normalizeInsights(spec.insights)
   const timeField = context?.fields.find(f => f.role === 'time')
   const timePeriods = timeField?.timePeriods ?? 0
@@ -39,14 +45,21 @@ export function collectVerifyWarnings(spec: AgentReportSpec, context?: AnalyzeCo
       const evidenceIds = collectContextEvidenceIds(context)
       for (const evidenceId of insight.evidence) {
         if (!evidenceIds.has(evidenceId)) {
-          warnings.push(`INSIGHT_REQUIRED_EVIDENCE_MISSING: insight references evidence '${evidenceId}' but context.evidence does not contain it: ${insightPreview(insight.text)}`)
+          issues.push(issue(VERIFY_ISSUE_CODES.INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT, `INSIGHT_REQUIRED_EVIDENCE_MISSING: insight references evidence '${evidenceId}' but context.evidence does not contain it: ${insightPreview(insight.text)}`, {
+            evidenceId,
+            insightType: type,
+            requiredEvidence: [evidenceId]
+          }))
         }
       }
       if (insight.type) {
         const required = requiredEvidenceForInsightType(insight.type)
         const missing = required.filter(id => !insight.evidence.includes(id) && parseEvidenceRefs(insight.text).every(ref => ref.id !== id))
         if (missing.length) {
-          warnings.push(`INSIGHT_REQUIRED_EVIDENCE_MISSING: ${insight.type} insight requires evidence ${missing.join(', ')}: ${insightPreview(insight.text)}`)
+          issues.push(issue(VERIFY_ISSUE_CODES.INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT, `INSIGHT_REQUIRED_EVIDENCE_MISSING: ${insight.type} insight requires evidence ${missing.join(', ')}: ${insightPreview(insight.text)}`, {
+            insightType: insight.type,
+            requiredEvidence: missing
+          }))
         }
       }
     }
@@ -54,28 +67,37 @@ export function collectVerifyWarnings(spec: AgentReportSpec, context?: AnalyzeCo
     for (const { pattern, word } of FORBIDDEN_WORDS) {
       if (word === 'trend/趋势' && type === 'trend' && hasTrendSupport && insight.evidence.includes('by_time')) continue
       if (pattern.test(insight.text)) {
-        warnings.push(`insight contains forbidden word '${word}': ${insightPreview(insight.text)} — use only when backed by statistical evidence in context.evidence[]`)
+        issues.push(issue(VERIFY_ISSUE_CODES.INSIGHT_FORBIDDEN_WORD_STRICT, `insight contains forbidden word '${word}': ${insightPreview(insight.text)} — use only when backed by statistical evidence in context.evidence[]`, {
+          insightType: type,
+          payload: { word }
+        }))
       }
     }
     if (/\d/.test(insight.text) && insight.evidence.length === 0 && parseEvidenceRefs(insight.text).length === 0) {
-      warnings.push(`INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE: insight contains numeric claim without structured evidence: ${insightPreview(insight.text)}`)
+      issues.push(issue(VERIFY_ISSUE_CODES.INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE_STRICT, `INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE: insight contains numeric claim without structured evidence: ${insightPreview(insight.text)}`, { insightType: type }))
     }
     if (/\b(trend|trending|趋势)\b/i.test(insight.text) && context && !hasTrendSupport) {
       const reason = timeField ? `timePeriods=${timePeriods} < 3` : 'no time field detected'
-      warnings.push(`INSIGHT_TREND_WITHOUT_TIME: insight describes a trend but context has ${reason}: ${insightPreview(insight.text)}`)
+      issues.push(issue(VERIFY_ISSUE_CODES.INSIGHT_TREND_WITHOUT_TIME_STRICT, `INSIGHT_TREND_WITHOUT_TIME: insight describes a trend but context has ${reason}: ${insightPreview(insight.text)}`, {
+        insightType: type,
+        payload: { reason }
+      }))
     }
     if (isStrongClaim(insight.text) && insight.evidence.length === 0 && parseEvidenceRefs(insight.text).length === 0) {
-      warnings.push(`INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE: strong causal/statistical language requires supporting evidence: ${insightPreview(insight.text)}`)
+      issues.push(issue(VERIFY_ISSUE_CODES.INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE_STRICT, `INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE: strong causal/statistical language requires supporting evidence: ${insightPreview(insight.text)}`, { insightType: type }))
     }
     if (context && insight.type && type) {
-      warnings.push(...collectInsightTypeWarnings(type, insight.text, spec, context))
+      issues.push(...collectInsightTypeIssues(type, insight.text, spec, context))
     }
   }
 
   for (const title of spec.charts.map(c => c.title).filter((t): t is string => Boolean(t))) {
     if (/\b(trend|trending|趋势)\b/i.test(title) && context && !hasTrendSupport) {
       const reason = timeField ? `timePeriods=${timePeriods} < 3` : 'no time field detected'
-      warnings.push(`INSIGHT_TREND_WITHOUT_TIME: chart title describes a trend but context has ${reason}: ${insightPreview(title)}`)
+      issues.push(issue(VERIFY_ISSUE_CODES.INSIGHT_TREND_WITHOUT_TIME_STRICT, `INSIGHT_TREND_WITHOUT_TIME: chart title describes a trend but context has ${reason}: ${insightPreview(title)}`, {
+        chartId: spec.charts.find(c => c.title === title)?.id,
+        payload: { reason }
+      }))
     }
   }
 
@@ -84,16 +106,21 @@ export function collectVerifyWarnings(spec: AgentReportSpec, context?: AnalyzeCo
     const hasCaveat = insights.some(insight => Boolean(insight.caveat) || caveats.some(p => p.test(insight.text)))
     if (insights.length > 0 && !hasCaveat) {
       const codes = context.sampleWarnings.map(w => w.code).join(', ')
-      warnings.push(`sampleWarnings present (${codes}) but no insight contains a required caveat. Add "(based on N rows only)" or "仅供参考，样本量极小" to data-backed insights.`)
+      issues.push(issue(VERIFY_ISSUE_CODES.INSIGHT_MISSING_CAVEAT_STRICT, `sampleWarnings present (${codes}) but no insight contains a required caveat. Add "(based on N rows only)" or "仅供参考，样本量极小" to data-backed insights.`, {
+        payload: { sampleWarningCodes: context.sampleWarnings.map(w => w.code) }
+      }))
     }
   }
-  if (context) warnings.push(...collectBlockTemplateEvidenceWarnings(spec, context))
-  return warnings
+  if (context) issues.push(...collectBlockTemplateEvidenceIssues(spec, context))
+  return issues
 }
 
-export function strictVerifyError(warnings: string[]): AgentResult<void> {
-  if (warnings.length === 0) return ok(undefined)
-  const issues = warnings.map(warningToVerifyIssue)
+export function strictVerifyError(warningsOrIssues: string[] | VerifyIssue[]): AgentResult<void> {
+  if (warningsOrIssues.length === 0) return ok(undefined)
+  const issues = typeof warningsOrIssues[0] === 'string'
+    ? (warningsOrIssues as string[]).map(warningToVerifyIssue)
+    : warningsOrIssues as VerifyIssue[]
+  const warnings = issues.map(i => i.message)
   return agentError('STRICT_VERIFY_FAILED', `Strict verify failed with ${warnings.length} warning(s).`, { warnings, issues })
 }
 
@@ -121,8 +148,8 @@ export function collectChartSemanticWarnings(chart: AgentChartSpec, chartLabel: 
   if (chart.type === 'pie') {
     const labelField = chart.encoding?.label?.field
     const field = labelField ? context.fields.find(f => f.name === labelField) : undefined
-    if (field?.distinctCount !== undefined && field.distinctCount > 7) {
-      warnings.push(`${chartLabel}: TOO_MANY_SLICES pie label field '${labelField}' has ${field.distinctCount} values (>7). Use bar chart or table.`)
+    if (field?.distinctCount !== undefined && field.distinctCount > CHART_THRESHOLDS.pie.maxSlices) {
+      warnings.push(`${chartLabel}: TOO_MANY_SLICES pie label field '${labelField}' has ${field.distinctCount} values (>${CHART_THRESHOLDS.pie.maxSlices}). Use bar chart or table.`)
     }
   }
   return warnings
@@ -158,35 +185,47 @@ export function requiredEvidenceForInsightType(type: AgentInsightType): string[]
 }
 
 export function collectBlockTemplateEvidenceWarnings(spec: AgentReportSpec, context: AnalyzeContext): string[] {
+  return collectBlockTemplateEvidenceIssues(spec, context).map(i => i.message)
+}
+
+export function collectBlockTemplateEvidenceIssues(spec: AgentReportSpec, context: AnalyzeContext): VerifyIssue[] {
   const warnings: string[] = []
+  const issues: VerifyIssue[] = []
   const evidenceIds = collectContextEvidenceIds(context)
   for (const block of matchingBlocks(spec, context)) {
     const missing = (block.requiredEvidence ?? []).filter(id => !evidenceIds.has(id))
     if (missing.length) {
-      warnings.push(`BLOCK_REQUIRED_EVIDENCE_MISSING: block '${block.id}' requires context evidence ${missing.join(', ')}.`)
+      issues.push(issue(VERIFY_ISSUE_CODES.BLOCK_REQUIRED_EVIDENCE_MISSING_STRICT, `BLOCK_REQUIRED_EVIDENCE_MISSING: block '${block.id}' requires context evidence ${missing.join(', ')}.`, {
+        requiredEvidence: missing,
+        payload: { blockId: block.id }
+      }))
     }
   }
   for (const template of matchingTemplates(spec, context)) {
     const missing = (template.requiredEvidence ?? []).filter(id => !evidenceIds.has(id))
     if (missing.length) {
-      warnings.push(`TEMPLATE_REQUIRED_EVIDENCE_MISSING: template '${template.id}' requires context evidence ${missing.join(', ')}.`)
+      issues.push(issue(VERIFY_ISSUE_CODES.TEMPLATE_REQUIRED_EVIDENCE_MISSING_STRICT, `TEMPLATE_REQUIRED_EVIDENCE_MISSING: template '${template.id}' requires context evidence ${missing.join(', ')}.`, {
+        requiredEvidence: missing,
+        payload: { templateId: template.id }
+      }))
     }
   }
-  return warnings
+  return issues
 }
 
-function collectInsightTypeWarnings(
+function collectInsightTypeIssues(
   type: AgentInsightType,
   text: string,
   spec: AgentReportSpec,
   context: AnalyzeContext
-): string[] {
+): VerifyIssue[] {
   const matched = matchingBlocks(spec, context).filter(block => block.validInsightTypes?.length)
   if (matched.length === 0) return []
   const allowedByAny = matched.some(block => block.validInsightTypes?.includes(type))
-  return allowedByAny ? [] : [
-    `INSIGHT_TYPE_NOT_ALLOWED: insight type '${type}' is not allowed by matched block candidates (${matched.map(b => b.id).join(', ')}): ${insightPreview(text)}`
-  ]
+  return allowedByAny ? [] : [issue(VERIFY_ISSUE_CODES.INSIGHT_TYPE_NOT_ALLOWED_STRICT, `INSIGHT_TYPE_NOT_ALLOWED: insight type '${type}' is not allowed by matched block candidates (${matched.map(b => b.id).join(', ')}): ${insightPreview(text)}`, {
+    insightType: type,
+    payload: { blockIds: matched.map(b => b.id) }
+  })]
 }
 
 function matchingBlocks(spec: AgentReportSpec, context: AnalyzeContext): CatalogBlockEntry[] {
@@ -207,17 +246,21 @@ function matchingTemplates(spec: AgentReportSpec, context: AnalyzeContext): Cata
 }
 
 function warningToVerifyIssue(message: string): VerifyIssue {
-  if (message.includes('INSIGHT_REQUIRED_EVIDENCE_MISSING')) return { code: 'INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT', message }
-  if (message.includes('INSIGHT_TYPE_NOT_ALLOWED')) return { code: 'INSIGHT_TYPE_NOT_ALLOWED_STRICT', message }
-  if (message.includes('BLOCK_REQUIRED_EVIDENCE_MISSING')) return { code: 'BLOCK_REQUIRED_EVIDENCE_MISSING_STRICT', message }
-  if (message.includes('TEMPLATE_REQUIRED_EVIDENCE_MISSING')) return { code: 'TEMPLATE_REQUIRED_EVIDENCE_MISSING_STRICT', message }
-  if (message.includes('INSIGHT_TREND_WITHOUT_TIME')) return { code: 'INSIGHT_TREND_WITHOUT_TIME_STRICT', message }
-  if (message.includes('INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE')) return { code: 'INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE_STRICT', message }
-  if (message.includes('forbidden word')) return { code: 'INSIGHT_FORBIDDEN_WORD_STRICT', message }
-  if (message.includes('numeric claim without structured evidence')) return { code: 'INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE_STRICT', message }
-  return { code: 'INSIGHT_MISSING_CAVEAT_STRICT', message }
+  if (message.includes('INSIGHT_REQUIRED_EVIDENCE_MISSING')) return issue(VERIFY_ISSUE_CODES.INSIGHT_REQUIRED_EVIDENCE_MISSING_STRICT, message)
+  if (message.includes('INSIGHT_TYPE_NOT_ALLOWED')) return issue(VERIFY_ISSUE_CODES.INSIGHT_TYPE_NOT_ALLOWED_STRICT, message)
+  if (message.includes('BLOCK_REQUIRED_EVIDENCE_MISSING')) return issue(VERIFY_ISSUE_CODES.BLOCK_REQUIRED_EVIDENCE_MISSING_STRICT, message)
+  if (message.includes('TEMPLATE_REQUIRED_EVIDENCE_MISSING')) return issue(VERIFY_ISSUE_CODES.TEMPLATE_REQUIRED_EVIDENCE_MISSING_STRICT, message)
+  if (message.includes('INSIGHT_TREND_WITHOUT_TIME')) return issue(VERIFY_ISSUE_CODES.INSIGHT_TREND_WITHOUT_TIME_STRICT, message)
+  if (message.includes('INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE')) return issue(VERIFY_ISSUE_CODES.INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE_STRICT, message)
+  if (message.includes('forbidden word')) return issue(VERIFY_ISSUE_CODES.INSIGHT_FORBIDDEN_WORD_STRICT, message)
+  if (message.includes('numeric claim without structured evidence')) return issue(VERIFY_ISSUE_CODES.INSIGHT_NUMERIC_CLAIM_WITHOUT_EVIDENCE_STRICT, message)
+  return issue(VERIFY_ISSUE_CODES.INSIGHT_MISSING_CAVEAT_STRICT, message)
 }
 
 function isStrongClaim(text: string): boolean {
   return /\b(significant|prove|proves|proved|causes?|caused|drives?|drove|driven|predicts?|prediction|forecast|strong correlation)\b|显著|证明|导致|因果|驱动|预测|强相关/i.test(text)
+}
+
+function issue(code: VerifyIssueCode, message: string, fields: Omit<VerifyIssue, 'code' | 'message'> = {}): VerifyIssue {
+  return { code, message, severity: 'warning', ...fields }
 }

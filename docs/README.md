@@ -25,6 +25,7 @@ Miao Vision is now focused on three product directions around `miao-viz-cli`:
 - [Architecture Overview](./architecture/ARCHITECTURE_OVERVIEW.md)
 - [CLI Agent Intelligence Design](./architecture/CLI_AGENT_INTELLIGENCE_DESIGN.md)
 - [Evidence-Grounded Visualization Generation](./evidence-grounded-visualization-generation.md)
+- [Report Intelligence Validation Fix Plan](./report-intelligence-validation-fix-plan.md)
 - [Report Visual Audit PRD](./report-visual-audit-prd.md)
 - [Agent Skill PRD](./miao-vision-agent-skill-prd.md)
 - [Agent Skill Implementation Plan](./miao-vision-agent-skill-implementation-plan.md)

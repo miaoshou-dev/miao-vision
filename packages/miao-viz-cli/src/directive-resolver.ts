@@ -14,17 +14,22 @@ export function parseEvidenceRefs(text: string): EvidenceRef[] {
   const re = new RegExp(EVIDENCE_RE.source, 'g')
   let m: RegExpExecArray | null
   while ((m = re.exec(text)) !== null) {
-    refs.push({ id: m[1], path: m[2], raw: m[0] })
+    const { path } = splitTrailingPunctuation(m[2])
+    refs.push({ id: m[1], path, raw: m[0] })
   }
   return refs
 }
 
 function getNestedValue(obj: unknown, path: string): unknown {
-  const parts = path.replace(/\[(\d+)\]/g, '.$1').split('.').filter(Boolean)
+  const parts = path.replace(/\[(\d+|last)\]/g, '.$1').split('.').filter(Boolean)
   let cur: unknown = obj
   for (const part of parts) {
     if (cur === null || cur === undefined) return undefined
-    cur = (cur as Record<string, unknown>)[part]
+    if (Array.isArray(cur) && part === 'last') {
+      cur = cur[cur.length - 1]
+    } else {
+      cur = (cur as Record<string, unknown>)[part]
+    }
   }
   return cur
 }
@@ -57,7 +62,14 @@ export function resolveEvidencePath(
 // Interpolate all $evidence directives in a string; unknown paths become [?id.path]
 export function resolveDirectives(text: string, evidence: AnalyzeEvidence[]): string {
   return text.replace(new RegExp(EVIDENCE_RE.source, 'g'), (_, id: string, path: string) => {
-    const { found, value } = resolveEvidencePath(evidence, id, path)
-    return found ? String(value) : `[?${id}.${path}]`
+    const split = splitTrailingPunctuation(path)
+    const { found, value } = resolveEvidencePath(evidence, id, split.path)
+    return `${found ? String(value) : `[?${id}.${split.path}]`}${split.trailing}`
   })
+}
+
+function splitTrailingPunctuation(path: string): { path: string; trailing: string } {
+  const match = path.match(/^(.+?)(\.+)$/)
+  if (!match) return { path, trailing: '' }
+  return { path: match[1], trailing: match[2] }
 }
