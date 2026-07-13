@@ -6,6 +6,8 @@ import {
   type CompactAnalyzeContext
 } from './context-schema'
 
+type AnalyzeFieldChartUsage = NonNullable<AnalyzeField['chartUsage']>
+
 export function toCompactAnalyzeContext(ctx: AnalyzeContext): CompactAnalyzeContext {
   return {
     format: 'compact-v1',
@@ -70,9 +72,9 @@ export function fromCompactAnalyzeContext(ctx: CompactAnalyzeContext): AnalyzeCo
       ...(meta?.confidence !== undefined ? { confidence: meta.confidence } : {}),
       ...(meta?.usage ? {
         chartUsage: {
-          asMeasure: meta.usage[0] as AnalyzeField['chartUsage']['asMeasure'],
-          asDimension: meta.usage[1] as AnalyzeField['chartUsage']['asDimension'],
-          asDetailKey: meta.usage[2] as AnalyzeField['chartUsage']['asDetailKey']
+          asMeasure: meta.usage[0] as AnalyzeFieldChartUsage['asMeasure'],
+          asDimension: meta.usage[1] as AnalyzeFieldChartUsage['asDimension'],
+          asDetailKey: meta.usage[2] as AnalyzeFieldChartUsage['asDetailKey']
         }
       } : {}),
       ...(distinctCount !== undefined && distinctCount !== null ? { distinctCount } : {}),

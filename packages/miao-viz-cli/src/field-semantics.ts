@@ -92,7 +92,7 @@ export function inferFieldSemantics(input: FieldSemanticsInput): FieldSemantics 
     role = 'text'
     confidence = 0.9
     rationale.push('sample values look like URLs')
-  } else if (idByName || (input.uniqueRate >= 0.98 && input.nonNullCount >= 10 && input.type !== 'date')) {
+  } else if (idByName || (input.uniqueRate >= 0.98 && input.nonNullCount >= 10)) {
     role = 'id'
     confidence = idByName ? 0.94 : 0.86
   } else if (input.type === 'number') {

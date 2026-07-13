@@ -1,22 +1,25 @@
-export type InfographicVisualType =
-  | 'kpi-strip'
-  | 'metric-bars'
-  | 'process-flow'
-  | 'concept-contrast'
-  | 'timeline-path'
-  | 'part-to-whole'
-  | 'before-after'
-  | 'tradeoff-matrix'
-  | 'ranked-list-chart'
-  | 'system-diagram'
-  | 'callout-diagram'
-  | 'icon-cluster'
-  | 'quadrant-priority'
-  | 'roadmap-sequence'
-  | 'hierarchy-tree'
-  | 'relation-flow'
-  | 'pyramid-list'
-  | 'grid-list'
+export const INFOGRAPHIC_VISUAL_TYPES = [
+  'kpi-strip',
+  'metric-bars',
+  'process-flow',
+  'concept-contrast',
+  'timeline-path',
+  'part-to-whole',
+  'before-after',
+  'tradeoff-matrix',
+  'ranked-list-chart',
+  'system-diagram',
+  'callout-diagram',
+  'icon-cluster',
+  'quadrant-priority',
+  'roadmap-sequence',
+  'hierarchy-tree',
+  'relation-flow',
+  'pyramid-list',
+  'grid-list'
+] as const
+
+export type InfographicVisualType = (typeof INFOGRAPHIC_VISUAL_TYPES)[number]
 
 export interface KpiItemData {
   label: string

@@ -189,7 +189,6 @@ export function collectBlockTemplateEvidenceWarnings(spec: AgentReportSpec, cont
 }
 
 export function collectBlockTemplateEvidenceIssues(spec: AgentReportSpec, context: AnalyzeContext): VerifyIssue[] {
-  const warnings: string[] = []
   const issues: VerifyIssue[] = []
   const evidenceIds = collectContextEvidenceIds(context)
   for (const block of matchingBlocks(spec, context)) {

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { InfographicVisualType } from './types'
+import { INFOGRAPHIC_VISUAL_TYPES, type InfographicVisualType } from './types'
 
 export const COMPOSITION_CONFIDENCE_THRESHOLD = 0.65
 
@@ -52,7 +52,7 @@ export const compositionDecisionSchema = z.object({
     reason: z.string().min(1)
   })).default([]),
   visualRecommendations: z.array(z.object({
-    visualType: z.string().min(1),
+    visualType: z.enum(INFOGRAPHIC_VISUAL_TYPES),
     score: z.number().min(0).max(1),
     reason: z.string().min(1),
     signals: z.array(z.string().min(1)).default([]),
