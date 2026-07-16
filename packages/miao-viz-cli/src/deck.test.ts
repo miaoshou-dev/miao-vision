@@ -56,6 +56,46 @@ describe('deckSpecSchema', () => {
     expect(result.success).toBe(true)
   })
 
+  it('accepts optional Deck Knowledge metadata', () => {
+    const result = deckSpecSchema.safeParse({
+      intent: 'executive-brief',
+      caveats: [{ text: 'Limited sample.', warningRefs: ['small_sample'] }],
+      slides: [{
+        layout: 'title-only',
+        slideRole: 'cover-claim',
+        claim: 'Revenue increased.',
+        claimType: 'delta',
+        evidence: ['by_time'],
+        derivedFrom: ['$evidence:by_time.rows[0].revenue'],
+        check: 'delta_formula',
+        caveat: 'Two comparable periods were used.',
+        warningRefs: ['two_period_only'],
+        recommendation: {
+          text: 'Collect more periods.',
+          kind: 'analytical-next-step',
+          caveat: 'Additional data may change the conclusion.'
+        }
+      }]
+    })
+    expect(result.success).toBe(true)
+  })
+
+  it('rejects invalid Deck Knowledge enums', () => {
+    const result = deckSpecSchema.safeParse({
+      intent: 'marketing-pitch',
+      slides: [{
+        layout: 'title-only',
+        claimType: 'recommendation',
+        recommendation: {
+          text: 'Act now.',
+          kind: 'strategic-recommendation',
+          caveat: 'Unknown.'
+        }
+      }]
+    })
+    expect(result.success).toBe(false)
+  })
+
   it('rejects chart layouts without charts', () => {
     const result = parseDeckSpec({ slides: [{ layout: 'chart-full', title: 'Missing chart' }] })
     expect(result.ok).toBe(false)

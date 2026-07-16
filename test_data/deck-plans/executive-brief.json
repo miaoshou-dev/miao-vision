@@ -1,0 +1,42 @@
+{
+  "deckPlan": {
+    "intent": "executive-brief",
+    "audience": "executives",
+    "primaryQuestion": "What changed and what needs attention?",
+    "mainClaim": {
+      "text": "Revenue increased from the previous period.",
+      "claimType": "delta",
+      "evidence": ["by_time"],
+      "derivedFrom": [
+        "$evidence:by_time.rows[0].revenue",
+        "$evidence:by_time.rows[1].revenue"
+      ],
+      "check": "delta_formula"
+    },
+    "slideOutline": [
+      {
+        "role": "cover-claim",
+        "purpose": "State the verified conclusion.",
+        "evidence": ["by_time"]
+      },
+      {
+        "role": "kpi-snapshot",
+        "purpose": "Show current scale.",
+        "evidence": ["total"]
+      },
+      {
+        "role": "ranking-slide",
+        "purpose": "Show the leading segment.",
+        "evidence": ["by_dimension"]
+      }
+    ],
+    "blockedClaims": [],
+    "assumptions": [
+      {
+        "key": "primary_measure",
+        "value": "revenue",
+        "reason": "Highest-confidence metric candidate."
+      }
+    ]
+  }
+}

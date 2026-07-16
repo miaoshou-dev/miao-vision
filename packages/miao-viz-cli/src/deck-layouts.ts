@@ -84,6 +84,16 @@ function renderCallout(text: string): string {
   return `<div class="slide-callout">${escapeHtml(text)}</div>`
 }
 
+function renderRecommendation(slide: SlideSpec): string {
+  if (!slide.recommendation) return ''
+  return `<div class="slide-recommendation">${escapeHtml(slide.recommendation.text)}</div>`
+}
+
+function renderCaveat(slide: SlideSpec): string {
+  if (!slide.caveat) return ''
+  return `<div class="slide-caveat">${escapeHtml(slide.caveat)}</div>`
+}
+
 function pageFooter(index: number, _total: number, mark?: string): string {
   return `
     <div class="slide-footer-mark">${escapeHtml(mark ?? 'miao-vision')}</div>
@@ -115,6 +125,8 @@ export function renderCoverSlide(slide: SlideSpec, _rows: Record<string, unknown
     </div>
     <div class="slide-cover-right">${COVER_DECO}</div>
   </div>
+  ${renderRecommendation(slide)}
+  ${renderCaveat(slide)}
   ${pageFooter(index, total)}
 </div>`
 }
@@ -124,6 +136,8 @@ export function renderTitleOnlySlide(slide: SlideSpec, _rows: Record<string, unk
   ${slide.eyebrow ? renderEyebrow(slide.eyebrow) : ''}
   <div class="slide-title" style="font-size:64px">${escapeHtml(slide.title ?? '')}</div>
   ${slide.claim ? `<div class="slide-claim">${escapeHtml(slide.claim)}</div>` : ''}
+  ${renderRecommendation(slide)}
+  ${renderCaveat(slide)}
   ${pageFooter(index, total)}
 </div>`
 }
@@ -135,6 +149,8 @@ export function renderTextPointsSlide(slide: SlideSpec, _rows: Record<string, un
   ${slide.claim ? `<div class="slide-claim">${escapeHtml(slide.claim)}</div>` : ''}
   ${slide.bullets?.length ? renderBullets(slide.bullets) : ''}
   ${slide.callout ? renderCallout(slide.callout) : ''}
+  ${renderRecommendation(slide)}
+  ${renderCaveat(slide)}
   ${pageFooter(index, total)}
 </div>`
 }
@@ -154,6 +170,8 @@ export function renderTextChartSlide(slide: SlideSpec, rows: Record<string, unkn
     </div>
     <div class="slide-chart-full" data-miao-chart="${escapeHtml(chartId)}" data-slide-index="${index}" data-chart-index="0"><div class="miao-render-slot">${chartHtml}</div></div>
   </div>
+  ${renderRecommendation(slide)}
+  ${renderCaveat(slide)}
   ${pageFooter(index, total)}
 </div>`
 }
@@ -167,6 +185,8 @@ export function renderMetricsChartSlide(slide: SlideSpec, rows: Record<string, u
   <div class="slide-title" style="margin-bottom:16px">${escapeHtml(slide.title ?? '')}</div>
   ${slide.metrics?.length ? renderMetricsRow(slide.metrics, rows) : ''}
   <div class="slide-chart-full" style="flex:1" data-miao-chart="${escapeHtml(chartId)}" data-slide-index="${index}" data-chart-index="0"><div class="miao-render-slot">${chartHtml}</div></div>
+  ${renderRecommendation(slide)}
+  ${renderCaveat(slide)}
   ${pageFooter(index, total)}
 </div>`
 }
@@ -179,6 +199,8 @@ export function renderChartFullSlide(slide: SlideSpec, rows: Record<string, unkn
   ${slide.eyebrow ? renderEyebrow(slide.eyebrow) : ''}
   <div class="slide-title" style="margin-bottom:16px">${escapeHtml(slide.title ?? '')}</div>
   <div class="slide-chart-full" style="flex:1" data-miao-chart="${escapeHtml(chartId)}" data-slide-index="${index}" data-chart-index="0"><div class="miao-render-slot">${chartHtml}</div></div>
+  ${renderRecommendation(slide)}
+  ${renderCaveat(slide)}
   ${pageFooter(index, total)}
 </div>`
 }
@@ -191,6 +213,8 @@ export function renderTableFullSlide(slide: SlideSpec, rows: Record<string, unkn
   ${slide.eyebrow ? renderEyebrow(slide.eyebrow) : ''}
   <div class="slide-title" style="margin-bottom:16px">${escapeHtml(slide.title ?? '')}</div>
   <div style="flex:1;overflow:hidden" data-miao-chart="${escapeHtml(chartId)}" data-slide-index="${index}" data-chart-index="0"><div class="miao-render-slot">${tableHtml}</div></div>
+  ${renderRecommendation(slide)}
+  ${renderCaveat(slide)}
   ${pageFooter(index, total)}
 </div>`
 }
@@ -200,6 +224,8 @@ export function renderEndingSlide(slide: SlideSpec, _rows: Record<string, unknow
   <h2>${escapeHtml(slide.title ?? 'Thank you')}</h2>
   <div class="line"></div>
   ${slide.claim ? `<div class="sub">${escapeHtml(slide.claim)}</div>` : ''}
+  ${renderRecommendation(slide)}
+  ${renderCaveat(slide)}
   ${pageFooter(index, total)}
 </div>`
 }

@@ -9,8 +9,6 @@ import { renderStaticHtml } from './html-export'
 import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyIssues, strictVerifyError } from './spec-validator'
 import { parseAnalyzeContext, toCompactAnalyzeContext } from './context-schema'
 import { renderChartSvg } from './svg-renderer'
-import { renderDeckHtml } from './deck-renderer'
-import { parseDeckSpec, validateDeckFields } from './deck-validator'
 import { runArticle } from './cli-article'
 import { analyzeDataset } from './analyzer'
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
@@ -18,6 +16,7 @@ import { printHelp } from './cli-help'
 import { runCatalog, runBlock } from './cli-block'
 import { runTemplate } from './cli-template'
 import { runInspect } from './cli-inspect'
+import { runDeckCommand, runDeckRender } from './cli-deck'
 import {
   parseArgs, requiredFlag, stringFlag, numberFlag,
   formatOutputPath, writeOutput, fail, printJson,
@@ -57,12 +56,15 @@ async function main(): Promise<void> {
         return runData(args)
       case 'spec':
         return runSpec(args)
+      case 'deck':
+        printJson(runDeckCommand(args))
+        return
       case 'render':
         return runRenderGroup(args)
     }
 
     printJson(agentError('UNKNOWN_COMMAND', `Unknown command: ${args.command ?? '(none)'}`, {
-      commands: ['data', 'spec', 'render']
+      commands: ['data', 'spec', 'deck', 'render']
     }))
     process.exitCode = 1
   } catch (error) {
@@ -120,7 +122,7 @@ async function runRenderGroup(args: CliArgs): Promise<void> {
       printJson(runRender(args))
       return
     case 'deck':
-      printJson(runDeck(args))
+      printJson(runDeckRender(args))
       return
     case 'article':
       printJson(await runArticle(args))
@@ -317,34 +319,6 @@ function runRender(args: CliArgs): unknown {
   }
 
   return { ok: true, value: { output: written, profile } }
-}
-
-function runDeck(args: CliArgs): unknown {
-  const input = requiredFlag(args, 'input')
-  const specPath = requiredFlag(args, 'spec')
-  const output = requiredFlag(args, 'output')
-  if (isAgentError(input)) return fail(input)
-  if (isAgentError(specPath)) return fail(specPath)
-  if (isAgentError(output)) return fail(output)
-
-  const dataset = loadDataset(input, {
-    sheet: stringFlag(args, 'sheet'),
-    limit: numberFlag(args, 'limit')
-  })
-  if (isAgentError(dataset)) return fail(dataset)
-
-  const raw = readSpec(specPath)
-  const parsed = parseDeckSpec(raw)
-  if (isAgentError(parsed)) return fail(parsed)
-
-  const profile = profileDataset(dataset.value)
-  const validation = validateDeckFields(parsed.value, profile)
-  if (isAgentError(validation)) return fail(validation)
-
-  const themeFlag = stringFlag(args, 'theme') as 'standard-white' | 'magazine' | 'standard-dark' | 'minimal' | 'nyt' | 'bloomberg' | 'tableau' | undefined
-  const html = renderDeckHtml(validation.value, dataset.value.rows, themeFlag)
-  writeOutput(output, html)
-  return { ok: true, value: { output, slides: validation.value.slides.length } }
 }
 
 function runQuery(args: CliArgs): unknown {

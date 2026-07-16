@@ -86,8 +86,21 @@ Options:
   --spec <file>     Path to deck spec YAML/JSON
   --output <file>   Output file path
   --theme <name>    Theme: standard-white, magazine, standard-dark, minimal, nyt, bloomberg, tableau
+  --context <file>  AnalyzeContext used for claim, evidence, and caveat checks
+  --verify          Request deck knowledge verification
+  --strict          Treat high-risk deck knowledge warnings as errors; requires --context
   --sheet <name>    Sheet name (Excel only)
   --limit <n>       Max rows to read
+`,
+  'deck.validate': `Usage: miao-viz deck validate --spec <file> --context <file> [options]
+
+Validate a DeckSpec against AnalyzeContext evidence and quality warnings.
+
+Options:
+  --spec <file>     Path to deck spec YAML/JSON
+  --context <file>  Path to context.json from "miao-viz data analyze"
+  --verify          Verify claim grounding, evidence paths, and caveat coverage
+  --strict          Treat high-risk deck knowledge warnings as errors
 `,
   'render.article': `Usage:
   miao-viz render article <file> --output <file> [options]
@@ -157,6 +170,14 @@ Commands:
   template  List, inspect, or instantiate report templates
   inspect   Inspect chart transforms and evidence usage
 `,
+  deck: `
+Usage: miao-viz deck <command> [options]
+
+Plan and validate browser deck specs.
+
+Commands:
+  validate  Validate a DeckSpec against AnalyzeContext
+`,
   render: `
 Usage: miao-viz render <command> [options]
 
@@ -192,6 +213,7 @@ Usage:
 Groups:
   data    Inspect and query data files
   spec    Author, validate, and debug visualization specs
+  deck    Plan and validate browser deck specs
   render  Generate HTML output (reports, decks, infographics)
 
 Run "miao-viz <group> --help" for group-specific commands.

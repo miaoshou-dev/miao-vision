@@ -55,6 +55,8 @@ const SLIDE_CSS = `
   .slide-pts li { counter-increment: pts; font-size: 16px; line-height: 1.55; color: var(--mv-soft); padding-left: 22px; position: relative; margin-bottom: 10px; }
   .slide-pts li::before { content: counter(pts) "."; position: absolute; left: 0; color: var(--mv-brand); font-weight: 500; font-family: var(--mv-mono); font-size: 13px; }
   .slide-callout { border-left: 2px solid var(--mv-brand); padding: 8px 0 8px 16px; font-family: var(--mv-serif); font-size: 15px; line-height: 1.55; color: var(--mv-soft); margin-top: auto; }
+  .slide-recommendation { border-left: 2px solid var(--mv-brand); padding: 7px 0 7px 14px; font-family: var(--mv-serif); font-size: 14px; line-height: 1.45; color: var(--mv-soft); margin-top: 10px; }
+  .slide-caveat { position: absolute; left: 80px; right: 80px; bottom: 38px; font-family: var(--mv-mono); font-size: 9px; line-height: 1.35; color: var(--mv-muted); }
   .slide-annotation { font-family: var(--mv-serif); font-size: 14px; color: var(--mv-muted); line-height: 1.55; margin-bottom: 14px; font-style: italic; }
   .slide-body-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
   .slide-chart-full { display: flex; align-items: center; overflow: hidden; }
@@ -201,8 +203,15 @@ export function renderDeckHtml(
   const hasFilters = Boolean(spec.interactions?.globalFilters?.length)
   const filterBtn = hasFilters ? '<button id="btn-filter" title="Filters">&#x2630;</button>' : ''
 
+  const caveatTarget = deckCaveatTarget(spec)
+  const deckCaveat = spec.caveats?.map(caveat => caveat.text).join(' ')
   const slidesHtml = spec.slides
-    .map((slide, i) => renderSlide(slide, rows, theme.svg, i, total, spec.description))
+    .map((slide, i) => {
+      const effectiveSlide = i === caveatTarget && deckCaveat
+        ? { ...slide, caveat: [slide.caveat, deckCaveat].filter(Boolean).join(' ') }
+        : slide
+      return renderSlide(effectiveSlide, rows, theme.svg, i, total, spec.description)
+    })
     .join('\n')
 
   return `<!doctype html>
@@ -238,4 +247,14 @@ export function renderDeckHtml(
 
 function jsonScript(value: unknown): string {
   return JSON.stringify(value).replace(/</g, '\\u003c')
+}
+
+function deckCaveatTarget(spec: DeckSpec): number {
+  if (!spec.caveats?.length) return -1
+  const qualitySlide = spec.slides.findIndex(slide => slide.slideRole === 'data-quality-slide')
+  if (qualitySlide >= 0) return qualitySlide
+  for (let index = spec.slides.length - 1; index >= 0; index -= 1) {
+    if (spec.slides[index].layout !== 'ending') return index
+  }
+  return 0
 }

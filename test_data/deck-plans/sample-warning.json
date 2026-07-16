@@ -1,0 +1,33 @@
+{
+  "deckPlan": {
+    "intent": "executive-brief",
+    "audience": "executives",
+    "primaryQuestion": "What can be concluded from the available sample?",
+    "slideOutline": [
+      {
+        "role": "cover-claim",
+        "purpose": "Frame the limited evidence."
+      },
+      {
+        "role": "kpi-snapshot",
+        "purpose": "Show descriptive totals.",
+        "evidence": ["total"],
+        "warningRefs": ["small_sample"]
+      },
+      {
+        "role": "data-quality-slide",
+        "purpose": "Explain the sample limitation.",
+        "warningRefs": ["small_sample"]
+      }
+    ],
+    "blockedClaims": [
+      {
+        "text": "The result applies to the full population.",
+        "reasonCode": "small_sample",
+        "reason": "The available sample is too small to generalize."
+      }
+    ],
+    "assumptions": [],
+    "warningRefs": ["small_sample"]
+  }
+}

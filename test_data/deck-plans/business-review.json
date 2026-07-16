@@ -1,0 +1,36 @@
+{
+  "deckPlan": {
+    "intent": "business-review",
+    "audience": "operations leadership",
+    "primaryQuestion": "How did the period perform across time and segments?",
+    "slideOutline": [
+      {
+        "role": "cover-claim",
+        "purpose": "Frame the review."
+      },
+      {
+        "role": "kpi-snapshot",
+        "purpose": "Show period totals.",
+        "evidence": ["total"]
+      },
+      {
+        "role": "trend-overview-slide",
+        "purpose": "Show the multi-period pattern.",
+        "evidence": ["by_time"]
+      },
+      {
+        "role": "ranking-slide",
+        "purpose": "Compare segments.",
+        "evidence": ["by_dimension"]
+      }
+    ],
+    "blockedClaims": [],
+    "assumptions": [
+      {
+        "key": "time_field",
+        "value": "month",
+        "reason": "Detected time field with at least three periods."
+      }
+    ]
+  }
+}

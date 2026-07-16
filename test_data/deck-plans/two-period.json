@@ -1,0 +1,40 @@
+{
+  "deckPlan": {
+    "intent": "business-review",
+    "audience": "operations leadership",
+    "primaryQuestion": "What changed between the two available periods?",
+    "mainClaim": {
+      "text": "Revenue changed between the two available periods.",
+      "claimType": "delta",
+      "evidence": ["by_time"],
+      "derivedFrom": [
+        "$evidence:by_time.rows[0].revenue",
+        "$evidence:by_time.rows[1].revenue"
+      ],
+      "check": "delta_formula",
+      "caveat": "Only two periods are available; this is not a trend."
+    },
+    "slideOutline": [
+      {
+        "role": "cover-claim",
+        "purpose": "Frame the two-period comparison.",
+        "evidence": ["by_time"],
+        "warningRefs": ["two_period_only"]
+      },
+      {
+        "role": "kpi-snapshot",
+        "purpose": "Show the current values.",
+        "evidence": ["total"]
+      }
+    ],
+    "blockedClaims": [
+      {
+        "text": "Revenue is trending upward.",
+        "reasonCode": "time_periods_lt_3",
+        "reason": "Only two periods are available."
+      }
+    ],
+    "assumptions": [],
+    "warningRefs": ["two_period_only"]
+  }
+}

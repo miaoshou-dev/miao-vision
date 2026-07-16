@@ -20,11 +20,55 @@ export interface SlideMetric {
   }
 }
 
+export type DeckIntent = 'executive-brief' | 'business-review'
+
+export type DeckClaimType =
+  | 'descriptive'
+  | 'rank'
+  | 'delta'
+  | 'trend'
+  | 'share'
+  | 'comparative'
+  | 'evaluative'
+  | 'causal'
+  | 'predictive'
+
+export type DeckClaimCheck =
+  | 'evidence_ref_exists'
+  | 'value_match'
+  | 'rank_position'
+  | 'delta_formula'
+  | 'trend_periods'
+  | 'share_formula'
+  | 'benchmark_present'
+  | 'caveat_present'
+
+export interface DeckRecommendation {
+  text: string
+  kind: 'analytical-next-step' | 'operational-recommendation'
+  evidence?: string[]
+  derivedFrom?: string[]
+  caveat: string
+}
+
+export interface DeckCaveat {
+  text: string
+  warningRefs: string[]
+}
+
 export interface SlideSpec {
   layout: SlideLayout
+  slideRole?: string
   eyebrow?: string
   title?: string
   claim?: string
+  claimType?: DeckClaimType
+  evidence?: string[]
+  derivedFrom?: string[]
+  check?: DeckClaimCheck
+  caveat?: string
+  warningRefs?: string[]
+  recommendation?: DeckRecommendation
   bullets?: string[]
   callout?: string
   annotation?: string
@@ -39,6 +83,8 @@ export interface DeckInteractions {
 export interface DeckSpec {
   title?: string
   description?: string
+  intent?: DeckIntent
+  caveats?: DeckCaveat[]
   theme?: ThemeName
   interactions?: DeckInteractions
   slides: SlideSpec[]
