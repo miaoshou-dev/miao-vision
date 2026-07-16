@@ -2,6 +2,12 @@
 
 Use this workflow when the user asks for a report, analysis, dashboard, charts, visualizations, or detailed findings from a local CSV, TSV, XLSX, or JSON data file.
 
+Also read:
+
+- `references/report-intelligence.md` for field semantics, evidence, block/template rules.
+- `references/chart-selection.md` before choosing chart types manually.
+- `references/anti-patterns.md` before final validation fixes.
+
 ## Step 0: Intent Routing
 
 Before running any CLI command, classify the user's intent to narrow the candidate blocks for spec generation.
@@ -74,7 +80,7 @@ Read `context.json` and use these fields before writing the spec:
 
 | Field | How to use |
 |---|---|
-| `fields[]` | Column roles and types; use `role` to understand each column |
+| `fields[]` | Column roles, types, semantic tags, confidence, rationale, quality flags, and chart usage policy |
 | `evidence[]` | Precomputed query results; cite `id` in insights |
 | `catalog.charts` | Allowed chart types; only use types listed here |
 | `catalog.blockedCharts` | Blocked chart types with reasons; do not use these |
@@ -122,6 +128,8 @@ Use only types in `catalog.charts`. Never use a type in `catalog.blockedCharts`.
 Read `references/vizspec.md` before writing specs. Key rules:
 
 - Use only fields from `context.json fields[]`, or fields created earlier in the same transform chain.
+- Do not use fields where `chartUsage.asMeasure` is `forbidden` as quantitative encodings.
+- Prefer `semanticTags` for formatting decisions: `currency`, `percentage`, `url`, and geo tags.
 - KPI bigvalues come first, then time-series, ranking, comparison, and table last if useful.
 - Default maximum is 6 charts per report; 4 `bigvalue` blocks count as 1.
 - Two charts of the same type must cover clearly different dimensions.

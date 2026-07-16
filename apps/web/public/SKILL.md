@@ -65,7 +65,7 @@ Read only the reference needed for the user's task.
 | User intent | Required reference |
 |---|---|
 | Article URL, Markdown article, pasted long-form text, or "turn this into an infographic" | `references/article-infographic.md` and `references/composition-playbook.md` — **Use the atomic bundle path as default for non-trivial articles. Auto-extract is for quick drafts only.** |
-| Local CSV/TSV/XLSX/JSON data report, analysis, dashboard, chart, visualization, or detailed findings | `references/data-report.md` |
+| Local CSV/TSV/XLSX/JSON data report, analysis, dashboard, chart, visualization, or detailed findings | `references/data-report.md`, `references/report-intelligence.md`, `references/chart-selection.md`, and `references/anti-patterns.md` |
 | Slides, presentation, PPT, deck, 演示, 演示文稿, 汇报, 给老板看, meeting brief, or executive briefing | `references/browser-deck.md` |
 
 If the request mixes report and presentation, prefer the explicitly named output format. If the output format is ambiguous, ask one concise clarification question before running CLI commands.
