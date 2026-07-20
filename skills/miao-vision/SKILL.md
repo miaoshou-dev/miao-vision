@@ -1,6 +1,5 @@
 ---
 name: miao-vision
-version: 0.1.21
 description: Use when a user asks an agent such as Codex or Claude to turn an article URL, Markdown file, or long-form text into an infographic artifact with Miao Vision, or to visualize a local CSV, TSV, XLSX, or JSON data file, inspect data fields, generate an HTML chart/report, validate a visualization spec, choose charts from natural language, or produce a browser-presentable slide deck from data.
 ---
 
@@ -10,24 +9,16 @@ Use Miao Vision as a local-first infographic and visualization workflow for agen
 
 ## Agent Self-Install
 
-Install via `npx skills add` (recommended):
+Install the skill via `npx skills add` (recommended):
 
 ```bash
-# 1. Install the CLI
-npm install -g @miao-vision/cli
-
-# 2. Install the skill
 npx skills add miaoshou-dev/miao-vision
 ```
 
 Or install from a GitHub Release ZIP:
 
 ```bash
-# 1. Install the CLI
-npm install -g @miao-vision/cli
-
-# 2. Install the skill
-SKILL_VERSION=$(npm show @miao-vision/cli version)
+SKILL_VERSION=0.1.21
 mkdir -p ~/.claude/skills
 curl -fsSL "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v${SKILL_VERSION}/miao-vision-skill.zip" \
   -o /tmp/miao-vision-skill.zip
@@ -37,27 +28,40 @@ rm /tmp/miao-vision-skill.zip
 
 After installation, the skill is available at `~/.claude/skills/miao-vision/SKILL.md`.
 
-## Requirement
+## CLI Bootstrap
 
-The `miao-viz` CLI must be installed and available on `PATH`.
+Prefer the skill-private CLI at `bin/miao-viz`. If it is absent, reuse a compatible `miao-viz` already available on `PATH`, including one installed with `npm install -g @miao-vision/cli`.
 
-Check:
-
-```bash
-miao-viz spec catalog
-```
-
-To get a machine-readable catalog of chart types and infographic templates with rules, encodings, and anti-patterns:
+Before the first visualization task, resolve the CLI in this order:
 
 ```bash
-miao-viz spec catalog --for-llm
+# 1. Skill-private binary
+test -x ./bin/miao-viz
+
+# 2. Existing global installation
+command -v miao-viz
 ```
 
-If the command is missing, tell the user to install:
+Resolve `./bin` relative to this `SKILL.md`, not the user's current working directory. Run `scripts/check-miao-viz.mjs` to apply this resolution order. If neither executable exists, ask for approval to access the network and write inside the installed skill directory, then run the platform installer:
 
 ```bash
-npm install -g @miao-vision/cli
+# macOS or Linux
+./scripts/install-miao-viz.sh
+
+# Windows PowerShell
+./scripts/install-miao-viz.ps1
 ```
+
+The installer downloads the matching release asset, verifies its SHA-256 checksum, and writes `bin/miao-viz` (or `bin/miao-viz.exe`). After installation, verify it:
+
+```bash
+./bin/miao-viz --version
+./bin/miao-viz spec catalog
+```
+
+Use the resolved executable consistently for the entire task. In command examples below, `miao-viz` means either the absolute skill-private path or the global executable found on `PATH`. Do not download a private copy when a working global installation already exists.
+
+To get a machine-readable catalog of chart types and infographic templates with rules, encodings, and anti-patterns, run `miao-viz spec catalog --for-llm`.
 
 ## Route The Request
 

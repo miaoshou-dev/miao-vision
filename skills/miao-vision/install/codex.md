@@ -1,29 +1,21 @@
 # Install Miao Vision Skill for Codex
 
-## 1. Install the CLI
-
-```bash
-npm install -g @miao-vision/cli
-```
-
-Verify:
-
-```bash
-miao-viz spec catalog
-```
-
-## 2. Quick Install (Recommended)
+## 1. Quick Install (Recommended)
 
 ```bash
 npx skills add miaoshou-dev/miao-vision
 ```
 
-## 3. Local Checkout Install
+## 2. Local Checkout Install
 
 ```bash
 mkdir -p ~/.codex/skills
 cp -R skills/miao-vision ~/.codex/skills/miao-vision
 ```
+
+## 3. Install the private CLI
+
+On first use, the skill reuses an existing global `miao-viz` when available. Otherwise, approve its request to download and verify the matching release binary into `bin/miao-viz`. A global npm installation is optional and is not duplicated.
 
 ## 4. Restart Codex
 

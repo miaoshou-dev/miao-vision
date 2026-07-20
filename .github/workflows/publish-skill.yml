@@ -23,12 +23,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Build native CLI binaries
+        run: npm run build:cli:native
+
       - name: Pack skill ZIP
         run: npm run pack:skill
 
       - name: Extract version from tag
         id: version
         run: echo "version=${GITHUB_REF_NAME#skill-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify release versions
+        run: |
+          test "$(tr -d '[:space:]' < skills/miao-vision/VERSION)" = "${{ steps.version.outputs.version }}"
+          test "$(node -p "require('./packages/miao-viz-cli/package.json').version")" = "${{ steps.version.outputs.version }}"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -38,12 +49,7 @@ jobs:
           body: |
             ## Install
 
-            **Step 1 — Install the CLI**
-            ```bash
-            npm install -g @miao-vision/cli
-            ```
-
-            **Step 2 — Install the skill**
+            Install the skill, then let it download the matching private CLI binary into `bin/miao-viz` on first use.
 
             For Claude Code:
             ```bash
@@ -58,6 +64,8 @@ jobs:
             ```
 
             See `install/claude.md` and `install/codex.md` inside the ZIP for full instructions.
-          files: dist/skills/miao-vision-skill.zip
+          files: |
+            dist/skills/miao-vision-skill.zip
+            dist/native/miao-viz-*
           draft: false
           prerelease: false

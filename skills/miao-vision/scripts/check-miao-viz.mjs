@@ -1,15 +1,20 @@
 #!/usr/bin/env node
 
+import { existsSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
-const result = spawnSync('miao-viz', ['spec', 'catalog'], {
+const skillRoot = resolve(import.meta.dirname, '..')
+const privateExecutable = resolve(skillRoot, 'bin', process.platform === 'win32' ? 'miao-viz.exe' : 'miao-viz')
+const executable = existsSync(privateExecutable) ? privateExecutable : 'miao-viz'
+
+const result = spawnSync(executable, ['spec', 'catalog'], {
   encoding: 'utf8'
 })
 
 if (result.error?.code === 'ENOENT') {
-  console.error('miao-viz is not installed or not available on PATH.')
-  console.error('Install it with:')
-  console.error('npm install -g @miao-vision/cli')
+  console.error(`No miao-viz CLI found at ${privateExecutable} or on PATH.`)
+  console.error('Run scripts/install-miao-viz.sh (macOS/Linux) or scripts/install-miao-viz.ps1 (Windows).')
   process.exit(1)
 }
 

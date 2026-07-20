@@ -40,3 +40,7 @@ playwright-report/
 test-results/
 
 videos/
+
+# Skill-private CLI downloaded on first use
+skills/miao-vision/bin/miao-viz
+skills/miao-vision/bin/miao-viz.exe

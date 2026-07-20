@@ -43,6 +43,7 @@
     "test:e2e:report": "playwright show-report",
     "miao-viz": "node scripts/miao-viz.mjs",
     "build:cli": "node packages/miao-viz-cli/scripts/build.mjs",
+    "build:cli:native": "node packages/miao-viz-cli/scripts/build-native.mjs",
     "publish:cli": "cd packages/miao-viz-cli && npm publish",
     "publish:skill": "npm run pack:skill",
     "pack:skill": "node scripts/pack-miao-vision-skill.mjs",

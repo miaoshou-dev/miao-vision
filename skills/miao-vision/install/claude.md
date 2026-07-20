@@ -2,25 +2,13 @@
 
 Miao Vision requires an environment where Claude can run local shell commands. For local files and the `miao-viz` CLI, Claude Code is the recommended surface.
 
-## 1. Install the CLI
-
-```bash
-npm install -g @miao-vision/cli
-```
-
-Verify:
-
-```bash
-miao-viz spec catalog
-```
-
-## 2. Quick Install (Recommended)
+## 1. Quick Install (Recommended)
 
 ```bash
 npx skills add miaoshou-dev/miao-vision
 ```
 
-## 3. Local Checkout Install
+## 2. Local Checkout Install
 
 ```bash
 mkdir -p ~/.claude/skills
@@ -28,6 +16,10 @@ cp -R skills/miao-vision ~/.claude/skills/miao-vision
 ```
 
 If your Claude Code version uses a different skills directory, use that configured directory instead.
+
+## 3. Install the private CLI
+
+On first use, the skill reuses an existing global `miao-viz` when available. Otherwise, approve its request to download and verify the matching release binary into `bin/miao-viz`. A global npm installation is optional and is not duplicated.
 
 ## 4. Claude App / Web ZIP Install
 
