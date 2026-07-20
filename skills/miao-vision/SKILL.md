@@ -18,7 +18,7 @@ npx skills add miaoshou-dev/miao-vision
 Or install from a GitHub Release ZIP:
 
 ```bash
-SKILL_VERSION=0.1.21
+SKILL_VERSION=0.1.22
 mkdir -p ~/.claude/skills
 curl -fsSL "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v${SKILL_VERSION}/miao-vision-skill.zip" \
   -o /tmp/miao-vision-skill.zip
