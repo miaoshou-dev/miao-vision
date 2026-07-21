@@ -1,0 +1,4 @@
+interface:
+  display_name: "Miao Vision"
+  short_description: "Create local-first visual reports and infographics"
+  default_prompt: "Use $miao-vision to turn this article or local dataset into a self-contained visual artifact."

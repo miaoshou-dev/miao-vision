@@ -24,5 +24,5 @@ Restart Codex or open a new thread.
 ## 5. Use
 
 ```text
-使用 miao-vision 分析 ~/data/sales.csv，生成 HTML 可视化报告。
+Use miao-vision to analyze ~/data/sales.csv and generate an HTML visualization report.
 ```

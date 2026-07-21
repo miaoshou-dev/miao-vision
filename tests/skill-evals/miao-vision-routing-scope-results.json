@@ -1,0 +1,26 @@
+{
+  "skill": "miao-vision",
+  "evaluation": "isolated post-trigger routing and scope recovery",
+  "summary": {
+    "supportedRouteAccuracy": 1,
+    "unsupportedStopAccuracy": 1,
+    "ambiguousClarificationAccuracy": 1,
+    "maximumClarificationQuestions": 1
+  },
+  "decisions": {
+    "R01": { "action": "route", "route": "article", "references": ["references/article-infographic.md", "references/composition-playbook.md"] },
+    "R02": { "action": "route", "route": "report", "references": ["references/data-report.md", "references/report-intelligence.md", "references/chart-selection.md", "references/anti-patterns.md"] },
+    "R03": { "action": "route", "route": "deck", "references": ["references/browser-deck.md"] },
+    "R04": { "action": "route", "route": "chart-selection", "references": ["references/chart-selection.md", "references/anti-patterns.md"] },
+    "R05": { "action": "route", "route": "spec-validation", "references": ["references/vizspec.md", "references/data-report.md"] },
+    "R06": { "action": "route", "route": "spec-validation", "references": ["references/vizspec.md", "references/browser-deck.md"] },
+    "S01": { "action": "stop" },
+    "S02": { "action": "stop" },
+    "S03": { "action": "stop" },
+    "S04": { "action": "stop" },
+    "S05": { "action": "stop" },
+    "S06": { "action": "stop" },
+    "A01": { "action": "clarify", "questionCount": 1 },
+    "A02": { "action": "clarify", "questionCount": 1 }
+  }
+}
