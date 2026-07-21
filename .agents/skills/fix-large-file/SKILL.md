@@ -1,6 +1,8 @@
 ---
 name: fix-large-file
 description: Split files exceeding 500 lines into smaller files. Use when pre-commit fails with file size error, or when refactoring large Svelte components, TypeScript files. Helps extract styles, data, types, and sub-components.
+metadata:
+  internal: true
 ---
 
 # Fix Large Files

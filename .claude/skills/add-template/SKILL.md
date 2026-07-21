@@ -1,6 +1,8 @@
 ---
 name: add-template
 description: Add new infographic-section templates for rendering. Use when creating new visualization templates like KPI, timeline, pie, grid, comparison layouts. Includes renderer, adapter, registry, and AI mapping.
+metadata:
+  internal: true
 ---
 
 # Add Infographic Template

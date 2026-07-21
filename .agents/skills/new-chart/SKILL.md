@@ -1,6 +1,8 @@
 ---
 name: new-chart
 description: Create new pure SVG chart components following project specifications. Use when adding new visualization types like bar chart, line chart, pie chart, radar, heatmap to data-display plugins. Includes types, definition, registration, and tests.
+metadata:
+  internal: true
 ---
 
 # Create New Chart Component
