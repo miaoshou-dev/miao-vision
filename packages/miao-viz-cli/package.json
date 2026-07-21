@@ -1,6 +1,6 @@
 {
   "name": "@miao-vision/cli",
-  "version": "0.1.24",
+  "version": "0.1.25",
   "description": "Miao Vision local data visualization CLI for agent workflows",
   "license": "MIT",
   "type": "module",
