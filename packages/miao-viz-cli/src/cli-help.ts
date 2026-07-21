@@ -72,8 +72,8 @@ Options:
   --format <fmt>    Output format: html, svg (default: html)
   --theme <name>    Theme: standard-white, magazine, standard-dark, minimal, nyt, bloomberg, tableau
   --context <file>  Path to context.json (output of "analyze") — resolves $evidence: directives in insights[]
-  --interactive     Force interactive runtime for HTML output
-  --no-interactive  Force static HTML output
+  --interactive     Explicitly enable the interactive runtime (HTML default)
+  --no-interactive  Disable the runtime and force static HTML output
   --sheet <name>    Sheet name (Excel only)
   --limit <n>       Max rows to read
 `,

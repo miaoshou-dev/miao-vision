@@ -592,6 +592,7 @@ describe('miao-viz CLI', () => {
     const dir = mkdtempSync(join(tmpdir(), 'miao-interactive-cli-'))
     const specPath = join(dir, 'interactive.yaml')
     const outputPath = join(dir, 'interactive.html')
+    const defaultOutputPath = join(dir, 'interactive-default.html')
     const staticOutputPath = join(dir, 'static.html')
     writeFileSync(specPath, `
 title: Interactive CLI
@@ -629,6 +630,16 @@ charts:
     expect(JSON.parse(run).ok).toBe(true)
     expect(readFileSync(outputPath, 'utf8')).toContain('id="miao-viz-data"')
 
+    const defaultRun = execFileSync(process.execPath, [
+      'scripts/miao-viz.mjs',
+      'render', 'report',
+      '--input', csvPath,
+      '--spec', specPath,
+      '--output', defaultOutputPath
+    ], { encoding: 'utf8' })
+    expect(JSON.parse(defaultRun).value.interactive).toBe(true)
+    expect(readFileSync(defaultOutputPath, 'utf8')).toContain('id="miao-viz-data"')
+
     const staticRun = execFileSync('npm', [
       'run',
       '--silent',
@@ -644,6 +655,7 @@ charts:
       '--no-interactive'
     ], { encoding: 'utf8' })
     expect(JSON.parse(staticRun).ok).toBe(true)
+    expect(JSON.parse(staticRun).value.interactive).toBe(false)
     expect(readFileSync(staticOutputPath, 'utf8')).not.toContain('id="miao-viz-data"')
   })
 

@@ -292,11 +292,9 @@ function runRender(args: CliArgs): unknown {
   }
 
   const themeFlag = stringFlag(args, 'theme') as 'standard-white' | 'magazine' | 'standard-dark' | 'minimal' | 'nyt' | 'bloomberg' | 'tableau' | undefined
-  const interactive = args.flags['interactive'] === true
-    ? true
-    : args.flags['no-interactive'] === true
-      ? false
-      : undefined
+  // HTML reports are interactive by default. Keep --interactive as a
+  // backwards-compatible explicit opt-in and --no-interactive as the opt-out.
+  const interactive = args.flags['no-interactive'] !== true
 
   const written: string[] = []
   for (const format of formats) {
@@ -318,7 +316,7 @@ function runRender(args: CliArgs): unknown {
     }
   }
 
-  return { ok: true, value: { output: written, profile } }
+  return { ok: true, value: { output: written, profile, interactive: formats.includes('html') ? interactive : false } }
 }
 
 function runQuery(args: CliArgs): unknown {

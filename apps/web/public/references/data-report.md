@@ -242,9 +242,10 @@ miao-viz render report \
   --context /tmp/miao-vision/context.json \
   --theme <chosen-theme> \
   --format html \
-  --interactive \
   --output /tmp/miao-vision/report.html
 ```
+
+HTML reports include the interactive runtime by default. Use `--no-interactive` only when the user explicitly requests a static artifact.
 
 Return the generated HTML path to the user.
 
