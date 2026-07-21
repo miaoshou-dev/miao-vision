@@ -242,6 +242,7 @@ miao-viz render report \
   --context /tmp/miao-vision/context.json \
   --theme <chosen-theme> \
   --format html \
+  --interactive \
   --output /tmp/miao-vision/report.html
 ```
 

@@ -1,6 +1,8 @@
 import { parseEvidenceRefs, resolveEvidencePath } from './directive-resolver'
 import type { AnalyzeContext } from './context-schema'
 import type { DeckSpec, SlideSpec } from './deck-types'
+import { executeClaimCheck, type ClaimCheckResult } from './claim-check'
+import { DECK_KNOWLEDGE_RULES } from './knowledge-rules'
 
 export type DeckValidationSeverity = 'warning' | 'error'
 
@@ -10,6 +12,7 @@ export interface DeckKnowledgeIssue {
   path: string
   message: string
   hint: string
+  details?: ClaimCheckResult
 }
 
 const HEADLINE_RISKS: Array<{ pattern: RegExp; label: string }> = [
@@ -49,6 +52,7 @@ export function collectDeckKnowledgeIssues(
 
   spec.slides.forEach((slide, slideIndex) => {
     const base = `slides[${slideIndex}]`
+    const issueStart = issues.length
     collectWarningRefs(slide.warningRefs ?? [], `${base}.warningRefs`, warningCodes, coveredWarnings, issues)
     validateEvidenceIds(slide, base, evidenceIds, issues)
     validateDerivedPaths(slide, base, context, issues)
@@ -56,6 +60,7 @@ export function collectDeckKnowledgeIssues(
     validateRecommendation(slide, base, strict, issues)
     validateDensity(slide, base, strict, issues)
     collectHeadlineWarnings(slide, base, issues)
+    applyEscape(slide, issueStart, issues)
   })
 
   for (const warning of context.sampleWarnings) {
@@ -71,6 +76,13 @@ export function collectDeckKnowledgeIssues(
   }
 
   return issues
+}
+
+function applyEscape(slide: SlideSpec, start: number, issues: DeckKnowledgeIssue[]): void {
+  if (!slide.escape?.acknowledged) return
+  const escapable = new Set(Object.values(DECK_KNOWLEDGE_RULES).filter(rule => rule.escapePolicy === 'acknowledged-caveat').map(rule => rule.code))
+  const retained = issues.slice(start).filter(item => !escapable.has(item.code))
+  issues.splice(start, issues.length - start, ...retained)
 }
 
 function collectWarningRefs(
@@ -199,6 +211,18 @@ function validateClaim(
     ))
   }
 
+  if (slide.check && !['evidence_ref_exists', 'caveat_present'].includes(slide.check)) {
+    if (slide.claimArgs) {
+      const result = executeClaimCheck(slide.check, slide.claimArgs, context.evidence)
+      if (!result.ok) {
+        issues.push({
+          ...issue('DECK_CLAIM_CHECK_FAILED', severity(strict), `${base}.claimArgs`, result.message ?? `Claim check '${slide.check}' did not match its evidence.`, 'Correct the claim, expected value, or evidence paths.'),
+          details: result
+        })
+      }
+    }
+  }
+
   if (slide.claimType === 'causal') {
     issues.push(issue(
       'DECK_CAUSAL_CLAIM_UNSUPPORTED',
@@ -221,8 +245,7 @@ function validateClaim(
 }
 
 function hasBenchmarkEvidence(slide: SlideSpec): boolean {
-  const refs = [...(slide.evidence ?? []), ...(slide.derivedFrom ?? [])]
-  return refs.some(ref => /\b(benchmark|target|baseline|goal|historical)\b/i.test(ref))
+  return Boolean(slide.claimArgs?.value && slide.claimArgs?.benchmark)
 }
 
 function validateRecommendation(

@@ -102,6 +102,10 @@ Options:
   --verify          Verify claim grounding, evidence paths, and caveat coverage
   --strict          Treat high-risk deck knowledge warnings as errors
 `,
+  'deck.instantiate': `Usage: miao-viz deck instantiate <executive-brief|business-review> --context <file> [--output <file>]
+
+Instantiate a deterministic DeckSpec from AnalyzeContext knowledge candidates.
+`,
   'render.article': `Usage:
   miao-viz render article <file> --output <file> [options]
   miao-viz render article --spec-input <spec.json> --output <file> [options]

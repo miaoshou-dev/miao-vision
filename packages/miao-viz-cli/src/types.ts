@@ -1,3 +1,5 @@
+import type { DeckClaimArgs } from './deck-types'
+
 export type AgentColumnType = 'string' | 'number' | 'boolean' | 'date' | 'unknown'
 export type AgentOutputFormat = 'html' | 'svg' | 'png' | 'pdf'
 export type VizType =
@@ -189,7 +191,7 @@ export interface AgentReportInteractions {
 }
 
 export type AgentInsightType = 'total' | 'rank' | 'share' | 'trend' | 'delta' | 'correlation' | 'distribution' | 'data_quality'
-export type AgentInsightCheck = 'evidence_ref_exists' | 'rank_position' | 'delta_formula' | 'sample_size' | 'caveat_present'
+export type AgentInsightCheck = 'evidence_ref_exists' | 'value_match' | 'rank_position' | 'delta_formula' | 'trend_periods' | 'share_formula' | 'benchmark_present' | 'sample_size' | 'caveat_present'
 
 export type AgentInsight =
   | string
@@ -199,6 +201,7 @@ export type AgentInsight =
       evidence?: string[]
       derivedFrom?: string[]
       check?: AgentInsightCheck
+      claimArgs?: DeckClaimArgs
       caveat?: string
       severity?: 'info' | 'warning'
     }

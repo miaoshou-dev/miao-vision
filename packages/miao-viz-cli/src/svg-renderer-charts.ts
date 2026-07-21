@@ -9,9 +9,12 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
   const xField = chart.encoding?.x?.field ?? ''
   const yField = chart.encoding?.y?.field ?? ''
   const colorField = chart.encoding?.color?.field ?? ''
-  const width = numberStyle(chart, 'width', 720)
-  const height = numberStyle(chart, 'height', 420)
-  const margin = { top: 24, right: 24, bottom: 48, left: 72 }
+  const hasSeries = Boolean(colorField)
+  const width = numberStyle(chart, 'width', hasSeries ? 900 : 720)
+  const height = numberStyle(chart, 'height', hasSeries ? 460 : 420)
+  const margin = hasSeries
+    ? { top: 24, right: 140, bottom: 88, left: 72 }
+    : { top: 24, right: 24, bottom: 48, left: 72 }
   const chartWidth = width - margin.left - margin.right
   const chartHeight = height - margin.top - margin.bottom
   const values = rows.map(row => Number(row[yField])).filter(Number.isFinite)
@@ -67,7 +70,7 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
 
     const xLabels = xValues.map((val, xi) => {
       const x = margin.left + xi * (xBarWidth + barGap) + xBarWidth / 2
-      return `<text x="${x.toFixed(1)}" y="${(margin.top + chartHeight + 18).toFixed(1)}" text-anchor="middle" fill="${theme.labelColor}" font-size="11">${escapeHtml(val.substring(0, 12))}</text>`
+      return renderBarAxisLabel(val, x, margin.top + chartHeight + 34, theme, true)
     }).join('')
 
     return svgFrame(width, height, theme.background, `
@@ -85,7 +88,7 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
 
   const bars = xValues.flatMap((xVal, xi) => {
     const baseX = margin.left + xi * (groupWidth + barGap) + groupStartX
-    xLabels.push(`<text x="${(baseX + groupWidth / 2 - barGap / 2).toFixed(1)}" y="${(margin.top + chartHeight + 18).toFixed(1)}" text-anchor="middle" fill="${theme.labelColor}" font-size="11">${escapeHtml(xVal.substring(0, 12))}</text>`)
+    xLabels.push(renderBarAxisLabel(xVal, baseX + groupWidth / 2 - barGap / 2, margin.top + chartHeight + 34, theme, true))
     return colorValues.map((cVal, ci) => {
       const raw = rowMap.get(`${xVal}|${cVal}`) ?? 0
       const barHeight = (raw / yMax) * chartHeight
@@ -294,12 +297,13 @@ export function renderPieChart(chart: AgentChartSpec, rows: Record<string, unkno
 
 export function renderLegend(
   svgWidth: number,
-  margin: { top: number },
+  margin: { top: number; right?: number },
   colorValues: string[],
   colors: string[],
   theme: SvgTheme
 ): string {
-  const legendX = svgWidth - 200
+  const hasReservedLegendArea = (margin.right ?? 0) >= 120
+  const legendX = hasReservedLegendArea ? svgWidth - (margin.right ?? 0) + 16 : svgWidth - 200
   return colorValues.map((val, i) => {
     const y = margin.top + i * 20
     return `<g>
@@ -307,6 +311,18 @@ export function renderLegend(
       <text x="${legendX + 16}" y="${y}" fill="${theme.labelColor}" font-size="11">${escapeHtml(val.substring(0, 16))}</text>
     </g>`
   }).join('')
+}
+
+function renderBarAxisLabel(value: string, x: number, y: number, theme: SvgTheme, rotate = false): string {
+  const label = truncateAxisLabel(value, rotate ? 18 : 12)
+  if (!rotate) {
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" fill="${theme.labelColor}" font-size="11">${escapeHtml(label)}</text>`
+  }
+  return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" transform="rotate(-35 ${x.toFixed(1)} ${y.toFixed(1)})" fill="${theme.labelColor}" font-size="11">${escapeHtml(label)}</text>`
+}
+
+function truncateAxisLabel(value: string, maxLength: number): string {
+  return value.length > maxLength ? `${value.slice(0, maxLength - 3)}...` : value
 }
 
 function describeDonutArc(

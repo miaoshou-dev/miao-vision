@@ -1,3 +1,5 @@
+import { DECK_VIEW_STATE_JS } from './deck-view-state-assets'
+
 export const DECK_INTERACTIVE_JS = `
 (function() {
   var md = window.miaoData;
@@ -266,7 +268,7 @@ export const DECK_INTERACTIVE_JS = `
   }
 
   function renderChart(container, chart, sourceRows) {
-    if (!chart || ['bar', 'pie', 'table'].indexOf(chart.type) === -1) return;
+    if (!chart) return;
     var slot = container.querySelector('.miao-render-slot');
     if (!slot) return;
     var chartId = container.getAttribute('data-miao-chart');
@@ -277,8 +279,11 @@ export const DECK_INTERACTIVE_JS = `
       });
     }
     var chartRows = md.prepareRows(data, chart);
-    if (chart.type === 'bar') slot.innerHTML = md.renderBar(chart, chartRows, chartId);
+    if (!chartRows.length) slot.innerHTML = md.renderNoData();
+    else if (chart.type === 'bar') slot.innerHTML = md.renderBar(chart, chartRows, chartId);
+    else if (['line','area','scatter'].indexOf(chart.type) !== -1) slot.innerHTML = md.renderXY(chart, chartRows, chartId);
     else if (chart.type === 'pie') slot.innerHTML = md.renderPie(chart, chartRows, chartId);
+    else if (chart.type === 'bigvalue') slot.innerHTML = md.renderBigValue(chart, chartRows);
     else if (chart.type === 'table') {
       var sortState = state.sort[chartId] || null;
       slot.innerHTML = md.renderTable(chart, chartRows, chartId, sortState);
@@ -300,8 +305,7 @@ export const DECK_INTERACTIVE_JS = `
       state.sort[chartId] = newOrder ? { field: field, order: newOrder } : null;
       updateActiveSlide();
     };
-    container.removeEventListener('click', handler);
-    container.addEventListener('click', handler);
+    container.onclick = handler;
   }
 
   function canSelect(chart) {
@@ -310,6 +314,8 @@ export const DECK_INTERACTIVE_JS = `
 
   function bindMarks() {
     document.querySelectorAll('.slide.active [data-miao-mark]').forEach(function(mark) {
+      if (mark.getAttribute('data-miao-bound') === 'true') return;
+      mark.setAttribute('data-miao-bound', 'true');
       var chart = getChartSpec(
         Number(mark.getAttribute('data-slide-index')),
         Number(mark.getAttribute('data-chart-index'))
@@ -392,7 +398,11 @@ export const DECK_INTERACTIVE_JS = `
     });
 
     renderDrilldownBreadcrumb();
+    renderMetrics(filtered);
+    renderViewState(filtered);
   }
+
+${DECK_VIEW_STATE_JS}
 
   function renderDetail(container, filtered) {
     var chartId = container.getAttribute('data-miao-chart');
@@ -464,6 +474,10 @@ export const DECK_INTERACTIVE_JS = `
     });
   }
 
+  try { if(location.hash.indexOf('#miao=')===0) { var saved=JSON.parse(decodeURIComponent(location.hash.slice(6))); state.filters=saved.filters||{}; } } catch (_) {}
+  var printFilters=null;
+  window.addEventListener('beforeprint',function(){printFilters=JSON.parse(JSON.stringify(state.filters));state.filters={};updateActiveSlide();});
+  window.addEventListener('afterprint',function(){state.filters=printFilters||{};printFilters=null;updateActiveSlide();});
   renderFilterPanel();
   updateActiveSlide();
   watchSlideChanges();

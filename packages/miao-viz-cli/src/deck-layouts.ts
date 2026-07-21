@@ -71,9 +71,9 @@ function renderBullets(items: string[]): string {
   return `<ul class="slide-pts">${lis}</ul>`
 }
 
-function renderMetricsRow(metrics: SlideMetric[], rows: Record<string, unknown>[]): string {
-  const items = metrics.map(m => `
-    <div class="slide-metric">
+function renderMetricsRow(metrics: SlideMetric[], rows: Record<string, unknown>[], slideIndex: number): string {
+  const items = metrics.map((m, metricIndex) => `
+    <div class="slide-metric" data-miao-metric="true" data-slide-index="${slideIndex}" data-metric-index="${metricIndex}">
       <div class="v">${escapeHtml(resolveMetricValue(m, rows))}</div>
       <div class="l">${escapeHtml(m.label)}</div>
     </div>`).join('')
@@ -183,7 +183,7 @@ export function renderMetricsChartSlide(slide: SlideSpec, rows: Record<string, u
   return `<div class="slide">
   ${slide.eyebrow ? renderEyebrow(slide.eyebrow) : ''}
   <div class="slide-title" style="margin-bottom:16px">${escapeHtml(slide.title ?? '')}</div>
-  ${slide.metrics?.length ? renderMetricsRow(slide.metrics, rows) : ''}
+  ${slide.metrics?.length ? renderMetricsRow(slide.metrics, rows, index) : ''}
   <div class="slide-chart-full" style="flex:1" data-miao-chart="${escapeHtml(chartId)}" data-slide-index="${index}" data-chart-index="0"><div class="miao-render-slot">${chartHtml}</div></div>
   ${renderRecommendation(slide)}
   ${renderCaveat(slide)}

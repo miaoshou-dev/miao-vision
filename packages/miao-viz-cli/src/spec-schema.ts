@@ -66,7 +66,14 @@ const chartInteractionSchema = z.object({
 })
 
 const insightTypeSchema = z.enum(['total', 'rank', 'share', 'trend', 'delta', 'correlation', 'distribution', 'data_quality'])
-const insightCheckSchema = z.enum(['evidence_ref_exists', 'rank_position', 'delta_formula', 'sample_size', 'caveat_present'])
+const insightCheckSchema = z.enum(['evidence_ref_exists', 'value_match', 'rank_position', 'delta_formula', 'trend_periods', 'share_formula', 'benchmark_present', 'sample_size', 'caveat_present'])
+const insightClaimArgsSchema = z.object({
+  expected: z.union([z.string(), z.number()]).optional(), value: z.string().optional(), rows: z.string().optional(), series: z.string().optional(),
+  subjectField: z.string().optional(), valueField: z.string().optional(), subject: z.string().optional(), expectedRank: z.number().int().positive().optional(),
+  order: z.enum(['asc', 'desc']).optional(), from: z.string().optional(), to: z.string().optional(), mode: z.enum(['absolute', 'percent', 'percentage-point']).optional(),
+  minimumPeriods: z.number().int().positive().optional(), direction: z.enum(['up', 'down', 'flat']).optional(), numerator: z.string().optional(), denominator: z.string().optional(),
+  benchmark: z.string().optional(), tolerance: z.number().positive().optional()
+})
 
 const insightSchema = z.union([
   z.string(),
@@ -76,6 +83,7 @@ const insightSchema = z.union([
     evidence: z.array(z.string().min(1)).optional(),
     derivedFrom: z.array(z.string().min(1)).optional(),
     check: insightCheckSchema.optional(),
+    claimArgs: insightClaimArgsSchema.optional(),
     caveat: z.string().optional(),
     severity: z.enum(['info', 'warning']).optional()
   })

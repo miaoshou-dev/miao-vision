@@ -1,4 +1,5 @@
 import type { AgentInsight, AgentInsightCheck, AgentInsightType } from './types'
+import type { DeckClaimArgs } from './deck-types'
 
 export interface NormalizedInsight {
   text: string
@@ -6,6 +7,7 @@ export interface NormalizedInsight {
   evidence: string[]
   derivedFrom: string[]
   check?: AgentInsightCheck
+  claimArgs?: DeckClaimArgs
   caveat?: string
   severity?: 'info' | 'warning'
   original: AgentInsight
@@ -21,6 +23,7 @@ export function normalizeInsight(insight: AgentInsight): NormalizedInsight {
     evidence: insight.evidence ?? [],
     derivedFrom: insight.derivedFrom ?? [],
     check: insight.check,
+    claimArgs: insight.claimArgs,
     caveat: insight.caveat,
     severity: insight.severity,
     original: insight

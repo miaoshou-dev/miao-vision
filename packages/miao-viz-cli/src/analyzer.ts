@@ -16,6 +16,7 @@ import { buildTemplateCatalog } from './report-template-registry'
 import { buildClarificationQuestions } from './analyze-clarifications'
 import { parseIntent } from './analyzer-intent'
 import { CHART_THRESHOLDS } from './chart-catalog-thresholds'
+import { buildDeckCatalog } from './deck-knowledge-registry'
 
 export interface AnalyzerOptions {
   intent?: string
@@ -41,7 +42,9 @@ export function analyzeDataset(dataset: LoadedDataset, options: AnalyzerOptions 
   const promptRules = buildPromptRules(catalog.charts, sampleWarnings)
   const clarificationQuestions = buildClarificationQuestions(fields, options.intent ?? '')
 
-  return { intent, fields, evidence, catalog, sampleWarnings, promptRules, metricCandidates, clarificationQuestions }
+  const context: AnalyzeContext = { intent, fields, evidence, catalog, sampleWarnings, promptRules, metricCandidates, clarificationQuestions }
+  Object.assign(context.catalog, buildDeckCatalog(context))
+  return context
 }
 
 // ---- Field role identification ----
@@ -59,6 +62,7 @@ function buildAnalyzeFields(columns: ColumnProfile[]): AnalyzeField[] {
       ...(col.chartUsage ? { chartUsage: col.chartUsage } : {}),
       distinctCount: col.distinctCount
     }
+    field.comparison = buildComparisonMetadata(col, field)
     if (col.type === 'number') {
       if (col.min !== undefined) field.min = col.min
       if (col.max !== undefined) field.max = col.max
@@ -69,6 +73,18 @@ function buildAnalyzeFields(columns: ColumnProfile[]): AnalyzeField[] {
     }
     return field
   })
+}
+
+function buildComparisonMetadata(col: ColumnProfile, field: AnalyzeField): NonNullable<AnalyzeField['comparison']> {
+  const tags = new Set(col.semanticTags ?? [])
+  const unit = tags.has('currency') ? 'currency' : tags.has('percentage') ? 'percentage' : /count|qty|quantity|orders?|units?/i.test(col.name) ? 'count' : col.type === 'number' ? 'number' : undefined
+  const aggregationPolicy = field.role === 'time' || field.role === 'dimension' ? 'none' : unit === 'percentage' ? 'avg' : unit === 'count' ? 'sum' : field.role === 'measure' || field.role === 'score' ? 'sum' : 'none'
+  return {
+    ...(unit ? { unit } : {}),
+    ...(col.temporal?.granularity ? { timeGrain: col.temporal.granularity } : {}),
+    aggregationPolicy,
+    comparableGroup: `${unit ?? field.type}:${aggregationPolicy}`
+  }
 }
 
 function mapType(t: string): AnalyzeField['type'] {

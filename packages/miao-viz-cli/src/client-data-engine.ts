@@ -22,6 +22,12 @@ export const CLIENT_DATA_ENGINE_CSS = `
 .miao-detail th, .miao-detail td { padding: 7px 9px; border-bottom: 1px solid rgba(128,128,128,0.12); text-align: left; white-space: nowrap; }
 .miao-detail th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.64; }
 .miao-tooltip { position: fixed; z-index: 9999; pointer-events: none; padding: 6px 8px; border-radius: 4px; background: rgba(20,20,19,0.92); color: #fff; font: 12px/1.35 system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,0.18); transform: translate(10px, 10px); }
+.miao-view-state { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 16px; padding:8px 12px; border:1px solid rgba(128,128,128,.18); border-radius:4px; font-size:11px; }
+.miao-view-state button { border:0; background:transparent; color:inherit; cursor:pointer; text-decoration:underline; }
+.miao-no-data { display:grid; place-items:center; min-height:180px; color:#64748b; font:13px system-ui,sans-serif; border:1px dashed rgba(128,128,128,.25); border-radius:4px; }
+.miao-view-derived { font-size:10px; text-transform:uppercase; letter-spacing:.06em; opacity:.55; }
+[data-view-scope="base-evidence"]::after { content:'Based on full dataset'; display:block; margin-top:6px; font-size:10px; text-transform:uppercase; letter-spacing:.06em; opacity:.5; }
+@media print { .miao-interactive-controls,.deck-filter-btn,.deck-filter-panel,.deck-overlay,.miao-view-state,.miao-drilldown-bar { display:none !important; } }
 `
 
 export const CLIENT_DATA_ENGINE_JS = `
@@ -319,6 +325,39 @@ export const CLIENT_DATA_ENGINE_JS = `
 
     return svgFrame(width, height, body + xLabels.join('') + miaoData.renderLegend(width, margin.top, colorValues));
   };
+
+  miaoData.renderXY = function(chart, chartRows, chartId) {
+    var xField = (chart.encoding && chart.encoding.x && chart.encoding.x.field) || '';
+    var yField = (chart.encoding && chart.encoding.y && chart.encoding.y.field) || '';
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : 720;
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : 420;
+    var margin = { top: 24, right: 24, bottom: 48, left: 64 };
+    var w = width - margin.left - margin.right, h = height - margin.top - margin.bottom;
+    var values = chartRows.map(function(row) { return Number(row[yField]); }).filter(Number.isFinite);
+    if (!values.length) return miaoData.renderNoData();
+    var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+    if (min === max) { min = Math.min(0, min); max = max || 1; }
+    var points = chartRows.map(function(row, index) {
+      var x = margin.left + (chartRows.length <= 1 ? w / 2 : index / (chartRows.length - 1) * w);
+      var value = Number(row[yField]);
+      var y = margin.top + h - ((value - min) / (max - min || 1) * h);
+      return { x:x, y:y, row:row, index:index, value:value };
+    }).filter(function(point) { return Number.isFinite(point.value); });
+    var line = points.map(function(point, index) { return (index ? 'L ' : 'M ') + fixed(point.x) + ' ' + fixed(point.y); }).join(' ');
+    var body = '';
+    if (chart.type === 'area' && points.length) body += '<path d="' + line + ' L ' + fixed(points[points.length-1].x) + ' ' + fixed(margin.top+h) + ' L ' + fixed(points[0].x) + ' ' + fixed(margin.top+h) + ' Z" fill="' + color(0) + '" opacity=".18" />';
+    if (chart.type !== 'scatter') body += '<path d="' + line + '" fill="none" stroke="' + color(0) + '" stroke-width="3" />';
+    body += points.map(function(point) { var label=String(point.row[xField] == null ? '' : point.row[xField]); return '<circle ' + markAttrs(chartId,xField,point.row[xField],point.index,label+': '+point.value) + ' cx="'+fixed(point.x)+'" cy="'+fixed(point.y)+'" r="5" fill="'+color(0)+'" />'; }).join('');
+    return svgFrame(width,height,body);
+  };
+
+  miaoData.renderBigValue = function(chart, chartRows) {
+    var field = (chart.encoding && chart.encoding.value && chart.encoding.value.field) || '';
+    var value = chartRows[0] && chartRows[0][field];
+    return '<div class="miao-bigvalue"><div style="font-size:42px;font-weight:700">' + escapeHtml(value == null ? '—' : String(value)) + '</div><div class="miao-view-derived">Current filter</div></div>';
+  };
+
+  miaoData.renderNoData = function() { return '<div class="miao-no-data">No data for the current view</div>'; };
 
   miaoData.renderPie = function(chart, chartRows, chartId) {
     var labelField = (chart.encoding && chart.encoding.label && chart.encoding.label.field) || '';

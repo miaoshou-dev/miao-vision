@@ -6,6 +6,7 @@ import { countChartsByType } from './spec-utils'
 import { normalizeInsights } from './insight-utils'
 import { collectChartSemanticWarnings } from './spec-validator-intelligence'
 import { VALIDATOR_ERROR_CODES } from './error-codes'
+import { interactionCapabilities } from './interaction-capabilities'
 import type { AnalyzeContext } from './context-schema'
 import type { AgentChartSpec, AgentDataTransform, AgentOutputFormat, AgentResult, AgentReportSpec, DataProfile } from './types'
 
@@ -286,6 +287,10 @@ function validateReportInteractions(
   profile: DataProfile,
   availableFields: string[]
 ): AgentResult<AgentReportSpec> {
+  if ((spec.interactions?.globalFilters?.length ?? 0) > 0) {
+    const unsupported = spec.charts.find(chart => !interactionCapabilities(chart.type).filter)
+    if (unsupported) return agentError('INTERACTION_CHART_NOT_FILTERABLE', `Chart type '${unsupported.type}' cannot be updated by global filters.`, { chartId: unsupported.id, chartType: unsupported.type })
+  }
   for (const filter of spec.interactions?.globalFilters ?? []) {
     const column = profile.columns.find(candidate => candidate.name === filter.field)
     if (!column) {

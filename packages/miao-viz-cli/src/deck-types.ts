@@ -43,6 +43,33 @@ export type DeckClaimCheck =
   | 'benchmark_present'
   | 'caveat_present'
 
+export interface DeckClaimArgs {
+  expected?: string | number
+  value?: string
+  rows?: string
+  series?: string
+  subjectField?: string
+  valueField?: string
+  subject?: string
+  expectedRank?: number
+  order?: 'asc' | 'desc'
+  from?: string
+  to?: string
+  mode?: 'absolute' | 'percent' | 'percentage-point'
+  minimumPeriods?: number
+  direction?: 'up' | 'down' | 'flat'
+  numerator?: string
+  denominator?: string
+  benchmark?: string
+  tolerance?: number
+}
+
+export interface KnowledgeEscape {
+  acknowledged: true
+  reason: string
+  caveat: string
+}
+
 export interface DeckRecommendation {
   text: string
   kind: 'analytical-next-step' | 'operational-recommendation'
@@ -66,6 +93,8 @@ export interface SlideSpec {
   evidence?: string[]
   derivedFrom?: string[]
   check?: DeckClaimCheck
+  claimArgs?: DeckClaimArgs
+  escape?: KnowledgeEscape
   caveat?: string
   warningRefs?: string[]
   recommendation?: DeckRecommendation

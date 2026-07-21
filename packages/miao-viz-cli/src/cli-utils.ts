@@ -10,7 +10,7 @@ const GROUPS = new Set(['data', 'spec', 'deck', 'render'])
 const GROUP_SUBCOMMANDS: Record<string, Set<string>> = {
   data:   new Set(['profile', 'query', 'analyze']),
   spec:   new Set(['validate', 'catalog', 'block', 'template', 'inspect']),
-  deck:   new Set(['validate']),
+  deck:   new Set(['validate', 'instantiate']),
   render: new Set(['report', 'deck', 'article']),
 }
 

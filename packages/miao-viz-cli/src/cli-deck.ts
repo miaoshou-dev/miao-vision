@@ -7,13 +7,16 @@ import { loadDataset } from './data-loader'
 import { profileDataset } from './data-profiler'
 import { fail, readJson, readSpec, requiredFlag, stringFlag, writeOutput } from './cli-utils'
 import type { CliArgs } from './cli-utils'
+import { instantiateDeck } from './deck-knowledge-registry'
+import * as YAML from 'yaml'
 
 export function runDeckCommand(args: CliArgs): unknown {
+  if (args.subcommand === 'instantiate') return runDeckInstantiate(args)
   if (args.subcommand !== 'validate') {
     return fail(agentError(
       'UNKNOWN_SUBCOMMAND',
-      `Unknown deck subcommand: ${args.subcommand ?? '(none)'}. Available: validate`,
-      { subcommand: args.subcommand, available: ['validate'] }
+      `Unknown deck subcommand: ${args.subcommand ?? '(none)'}. Available: instantiate, validate`,
+      { subcommand: args.subcommand, available: ['instantiate', 'validate'] }
     ))
   }
 
@@ -45,6 +48,21 @@ export function runDeckCommand(args: CliArgs): unknown {
       issues
     }
   }
+}
+
+function runDeckInstantiate(args: CliArgs): unknown {
+  const intent = args.positional[0]
+  if (intent !== 'executive-brief' && intent !== 'business-review') {
+    return fail(agentError('INVALID_DECK_INTENT', "Deck intent must be 'executive-brief' or 'business-review'.", { intent }))
+  }
+  const contextPath = requiredFlag(args, 'context')
+  if (isAgentError(contextPath)) return fail(contextPath)
+  const context = parseAnalyzeContext(readJson<unknown>(contextPath))
+  if (!context) return fail(agentError('INVALID_CONTEXT', 'context.json format is invalid.', { contextPath }))
+  const spec = instantiateDeck(intent, context)
+  const output = stringFlag(args, 'output')
+  if (output) writeOutput(output, YAML.stringify(spec))
+  return { ok: true, value: { spec, ...(output ? { output } : {}) } }
 }
 
 export function runDeckRender(args: CliArgs): unknown {

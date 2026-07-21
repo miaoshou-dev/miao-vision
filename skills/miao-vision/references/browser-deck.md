@@ -12,7 +12,17 @@ miao-viz data analyze /path/to/data.csv \
   --output /tmp/miao-vision/context.json
 ```
 
-2. Read `context.json` and write a Deck Plan before writing DeckSpec.
+2. Instantiate a deterministic DeckSpec from the context.
+
+```bash
+miao-viz deck instantiate executive-brief \
+  --context /tmp/miao-vision/context.json \
+  --output /tmp/miao-vision/deck.yaml
+```
+
+Use `business-review` instead when the user needs a longer periodic review. The CLI selects applicable slide blocks and omits blocked trend or ranking slides. Review the generated spec before validation; do not replace its evidence metadata with newly calculated values.
+
+For a custom narrative, read `context.json` and write a Deck Plan before editing DeckSpec.
 
 The plan must include:
 
@@ -57,7 +67,7 @@ deckPlan:
       reason: Highest-confidence metric candidate.
 ```
 
-3. Choose an intent and narrative pattern.
+3. Confirm the intent and narrative pattern.
 
 | Intent | Length | Default sequence |
 |---|---:|---|

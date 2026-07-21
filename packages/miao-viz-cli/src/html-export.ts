@@ -117,7 +117,10 @@ function renderDefaultCard(chart: AgentChartSpec, index: number, svg: string, ch
 }
 
 function renderKpiGroup(charts: AgentChartSpec[], rows: Record<string, unknown>[], theme: ReportTheme): string {
-  const items = charts.map(chart => renderChartSvg(chart, rows, theme.svg)).join('\n')
+  const items = charts.map((chart, index) => {
+    const chartId = chartIdFor(chart, index)
+    return `<div data-miao-chart="${escapeHtml(chartId)}"><div class="miao-render-slot">${renderChartSvg(chart, rows, theme.svg, { chartId })}</div></div>`
+  }).join('\n')
   return `<section class="chart-card kpi-group">
     <div class="chart-label">KEY METRICS</div>
     <div class="kpi-grid">${items}</div>

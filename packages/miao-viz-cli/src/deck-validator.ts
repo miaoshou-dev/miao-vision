@@ -4,6 +4,7 @@ import { MVP_CHART_TYPES } from './spec-schema'
 import { deckSpecSchema } from './deck-schema'
 import type { AgentChartSpec, AgentDataTransform, AgentError, AgentResult, DataProfile } from './types'
 import type { DeckSpec, SlideMetric } from './deck-types'
+import { interactionCapabilities } from './interaction-capabilities'
 
 const REQUIRED_ENCODINGS: Record<string, string[]> = {
   bar: ['x', 'y'],
@@ -115,6 +116,12 @@ export function validateDeckFields(spec: DeckSpec, profile: DataProfile): AgentR
 
 function validateDeckInteractions(spec: DeckSpec, sourceFields: Set<string>): AgentResult<void> {
   const filters = spec.interactions?.globalFilters ?? []
+  if (filters.length > 0) {
+    for (let slideIndex = 0; slideIndex < spec.slides.length; slideIndex += 1) {
+      const unsupported = spec.slides[slideIndex].charts?.find(chart => !interactionCapabilities(chart.type).filter)
+      if (unsupported) return deckFieldError(`slides[${slideIndex}].charts`, unsupported.type, `Chart type '${unsupported.type}' cannot be updated by global filters.`)
+    }
+  }
   for (let i = 0; i < filters.length; i += 1) {
     const filter = filters[i]
     if (!sourceFields.has(filter.field)) {

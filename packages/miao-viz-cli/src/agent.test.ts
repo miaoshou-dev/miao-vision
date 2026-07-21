@@ -2592,6 +2592,27 @@ describe('renderChartSvg — all MVP_CHART_TYPES have a renderer (no renderUnsup
       expect(output).not.toContain('not implemented yet')
     })
   }
+
+  it('reserves legend space and rotates labels for grouped bar charts', () => {
+    const output = renderChartSvg({
+      type: 'bar',
+      encoding: {
+        x: { field: 'age' },
+        y: { field: 'population' },
+        color: { field: 'state' }
+      }
+    }, [
+      { age: 'Under 5 Years', state: 'CA', population: 2700000 },
+      { age: 'Under 5 Years', state: 'TX', population: 2000000 },
+      { age: '25 to 44 Years', state: 'CA', population: 10600000 },
+      { age: '25 to 44 Years', state: 'TX', population: 7200000 }
+    ])
+
+    expect(output).toContain('viewBox="0 0 900 460"')
+    expect(output).toContain('rotate(-35')
+    expect(output).toContain('x="776"')
+    expect(output).toContain('25 to 44 Years')
+  })
 })
 
 describe('applyEncodingAggregates', () => {

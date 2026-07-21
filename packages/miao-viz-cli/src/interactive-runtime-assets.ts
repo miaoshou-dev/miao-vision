@@ -221,7 +221,7 @@ export const INTERACTIVE_JS = `
   }
 
   function renderChart(container, chart, sourceRows) {
-    if (!chart || ['bar', 'pie', 'table'].indexOf(chart.type) === -1) return;
+    if (!chart) return;
     var slot = container.querySelector('.miao-render-slot');
     if (!slot) return;
     var chartId = container.getAttribute('data-miao-chart');
@@ -232,8 +232,11 @@ export const INTERACTIVE_JS = `
       });
     }
     var chartRows = md.prepareRows(data, chart);
-    if (chart.type === 'bar') slot.innerHTML = md.renderBar(chart, chartRows, chartId);
+    if (!chartRows.length) slot.innerHTML = md.renderNoData();
+    else if (chart.type === 'bar') slot.innerHTML = md.renderBar(chart, chartRows, chartId);
+    else if (['line','area','scatter'].indexOf(chart.type) !== -1) slot.innerHTML = md.renderXY(chart, chartRows, chartId);
     else if (chart.type === 'pie') slot.innerHTML = md.renderPie(chart, chartRows, chartId);
+    else if (chart.type === 'bigvalue') slot.innerHTML = md.renderBigValue(chart, chartRows);
     else if (chart.type === 'table') {
       var sortState = state.sort[chartId] || null;
       slot.innerHTML = md.renderTable(chart, chartRows, chartId, sortState);
@@ -255,12 +258,13 @@ export const INTERACTIVE_JS = `
       state.sort[chartId] = newOrder ? { field: field, order: newOrder } : null;
       update();
     };
-    container.removeEventListener('click', handler);
-    container.addEventListener('click', handler);
+    container.onclick = handler;
   }
 
   function bindMarks() {
     document.querySelectorAll('[data-miao-mark]').forEach(function(mark) {
+      if (mark.getAttribute('data-miao-bound') === 'true') return;
+      mark.setAttribute('data-miao-bound', 'true');
       var chart = chartSpec(mark.getAttribute('data-chart-id'));
       mark.addEventListener('mouseenter', function(event) {
         var text = mark.getAttribute('data-tooltip');
@@ -337,6 +341,20 @@ export const INTERACTIVE_JS = `
       renderDetail(container, filtered);
     });
     renderDrilldownBreadcrumb();
+    renderViewState(filtered);
+  }
+
+  function renderViewState(filtered) {
+    var main = document.querySelector('.miao-viz-report');
+    if (!main) return;
+    var el = document.getElementById('miao-view-state');
+    if (!el) { el=document.createElement('div'); el.id='miao-view-state'; el.className='miao-view-state'; var controls=main.querySelector('.miao-interactive-controls'); main.insertBefore(el, controls ? controls.nextSibling : main.firstChild); }
+    var active=Object.keys(state.filters).filter(function(key){ var value=state.filters[key]; return value !== '' && value != null && (!Array.isArray(value) || value.some(Boolean)); });
+    el.innerHTML='<span>View: '+filtered.length+' / '+rows.length+' rows</span>'+active.map(function(key){return '<span class="miao-chip">'+md.escapeHtml(key)+': '+md.escapeHtml(Array.isArray(state.filters[key])?state.filters[key].join(' – '):String(state.filters[key]))+'</span>';}).join('')+(active.length?'<button id="miao-view-copy">Copy view link</button><button id="miao-view-reset">Reset all</button>':'<span>Base evidence view</span>');
+    var reset=document.getElementById('miao-view-reset'); if(reset) reset.onclick=function(){state.filters={};state.selection=null;state.drilldown=null;document.querySelectorAll('.miao-interactive-controls select,.miao-interactive-controls input').forEach(function(input){input.value='';input.checked=false;});update();};
+    var copy=document.getElementById('miao-view-copy'); if(copy) copy.onclick=function(){if(navigator.clipboard)navigator.clipboard.writeText(location.href);};
+    document.querySelectorAll('.report-insights').forEach(function(insights){insights.setAttribute('data-view-scope',active.length?'base-evidence':'current');insights.title=active.length?'Claims are based on the complete dataset.':'';});
+    try { location.hash = active.length ? 'miao=' + encodeURIComponent(JSON.stringify({filters:state.filters})) : ''; } catch (_) {}
   }
 
   function renderDetail(container, filtered) {
@@ -387,6 +405,10 @@ export const INTERACTIVE_JS = `
     });
   }
 
+  try { if(location.hash.indexOf('#miao=')===0) { var saved=JSON.parse(decodeURIComponent(location.hash.slice(6))); state.filters=saved.filters||{}; } } catch (_) {}
+  var printState=null;
+  window.addEventListener('beforeprint',function(){printState=JSON.parse(JSON.stringify(state.filters));state.filters={};update();});
+  window.addEventListener('afterprint',function(){state.filters=printState||{};printState=null;update();});
   renderControls();
   update();
 })();

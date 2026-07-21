@@ -20,6 +20,13 @@ export interface AnalyzeField {
   distinctCount?: number
   timePeriods?: number  // only for time role
   span?: string         // only for time role, e.g. "2024-01 – 2024-12"
+  comparison?: {
+    unit?: 'currency' | 'percentage' | 'count' | 'number'
+    currency?: string
+    timeGrain?: 'day' | 'month' | 'quarter' | 'year'
+    aggregationPolicy: 'sum' | 'avg' | 'count' | 'none'
+    comparableGroup?: string
+  }
 }
 export interface AnalyzeEvidence {
   id: string            // e.g. "total", "by_region", "by_time"
@@ -54,6 +61,30 @@ export interface BlockedBlockEntry {
   reason: string
 }
 
+export type DeckPatternSummary = [id: 'executive-brief' | 'business-review', score: number, density: 'compact' | 'medium', blocks: string[]]
+export type DeckSlideBlockSummary = [id: string, score: number, requiredRoles: string[], requiredEvidence: string[]]
+export type BlockedDeckSlideBlockSummary = [id: string, reasonCode: string, reason: string]
+
+export interface DeckPatternEntry {
+  id: 'executive-brief' | 'business-review'
+  score: number
+  density: 'compact' | 'medium'
+  blocks: string[]
+}
+
+export interface DeckSlideBlockEntry {
+  id: string
+  score: number
+  requiredRoles: string[]
+  requiredEvidence: string[]
+}
+
+export interface BlockedDeckSlideBlockEntry {
+  id: string
+  reasonCode: string
+  reason: string
+}
+
 export type CatalogBlockSummary = [id: string, score: number, density: 'compact' | 'medium' | 'full', charts: string[]]
 export type CatalogTemplateSummary = [id: string, score: number, density: 'compact' | 'medium' | 'full', blocks: string[]]
 
@@ -71,6 +102,9 @@ export interface AnalyzeCatalog {
   blockedBlocks?: BlockedBlockEntry[]
   templates?: CatalogTemplateEntry[]
   blockedTemplates?: BlockedTemplateEntry[]
+  deckPatterns?: DeckPatternEntry[]
+  slideBlocks?: DeckSlideBlockEntry[]
+  blockedSlideBlocks?: BlockedDeckSlideBlockEntry[]
 }
 
 export interface CatalogTemplateEntry {
@@ -151,6 +185,7 @@ export interface CompactAnalyzeContext {
       tags?: string[]
       confidence?: number
       usage?: [string, string, string]
+      comparison?: AnalyzeField['comparison']
     } | null)?
   ]>
   evidence: Array<[string, Record<string, unknown> | Record<string, unknown>[], string?]>
@@ -163,6 +198,9 @@ export interface CompactAnalyzeContext {
     blockedBlocks?: Array<[string, string]>
     templates?: Array<[string, number, 'compact' | 'medium' | 'full', string[], (string[] | null)?]>
     blockedTemplates?: Array<[string, string]>
+    deckPatterns?: DeckPatternSummary[]
+    slideBlocks?: DeckSlideBlockSummary[]
+    blockedSlideBlocks?: BlockedDeckSlideBlockSummary[]
   }
   warnings: Array<[string, string]>
   promptRules?: string[]
@@ -188,6 +226,13 @@ const analyzeFieldSchema = z.object({
   distinctCount: z.number().int().nonnegative().optional(),
   timePeriods: z.number().int().nonnegative().optional(),
   span: z.string().optional()
+  ,comparison: z.object({
+    unit: z.enum(['currency', 'percentage', 'count', 'number']).optional(),
+    currency: z.string().optional(),
+    timeGrain: z.enum(['day', 'month', 'quarter', 'year']).optional(),
+    aggregationPolicy: z.enum(['sum', 'avg', 'count', 'none']),
+    comparableGroup: z.string().optional()
+  }).optional()
 })
 
 const analyzeEvidenceSchema = z.object({
@@ -244,6 +289,26 @@ const blockedTemplateEntrySchema = z.object({
   reason: z.string().min(1)
 })
 
+const deckPatternEntrySchema = z.object({
+  id: z.enum(['executive-brief', 'business-review']),
+  score: z.number().min(0).max(1),
+  density: z.enum(['compact', 'medium']),
+  blocks: z.array(z.string().min(1))
+})
+
+const deckSlideBlockEntrySchema = z.object({
+  id: z.string().min(1),
+  score: z.number().min(0).max(1),
+  requiredRoles: z.array(z.string()),
+  requiredEvidence: z.array(z.string())
+})
+
+const blockedDeckSlideBlockEntrySchema = z.object({
+  id: z.string().min(1),
+  reasonCode: z.string().min(1),
+  reason: z.string().min(1)
+})
+
 const analyzeCatalogSchema = z.object({
   charts: z.array(z.string().min(1)),
   blockedCharts: z.array(z.object({
@@ -258,6 +323,9 @@ const analyzeCatalogSchema = z.object({
   blockedBlocks: z.array(blockedBlockEntrySchema).optional(),
   templates: z.array(catalogTemplateEntrySchema).optional(),
   blockedTemplates: z.array(blockedTemplateEntrySchema).optional()
+  ,deckPatterns: z.array(deckPatternEntrySchema).optional()
+  ,slideBlocks: z.array(deckSlideBlockEntrySchema).optional()
+  ,blockedSlideBlocks: z.array(blockedDeckSlideBlockEntrySchema).optional()
 })
 
 const metricCandidateSchema = z.object({
@@ -337,6 +405,13 @@ export const compactAnalyzeContextSchema: z.ZodType<CompactAnalyzeContext> = z.o
       tags: z.array(z.string()).optional(),
       confidence: z.number().optional(),
       usage: z.tuple([z.string(), z.string(), z.string()]).optional()
+      ,comparison: z.object({
+        unit: z.enum(['currency', 'percentage', 'count', 'number']).optional(),
+        currency: z.string().optional(),
+        timeGrain: z.enum(['day', 'month', 'quarter', 'year']).optional(),
+        aggregationPolicy: z.enum(['sum', 'avg', 'count', 'none']),
+        comparableGroup: z.string().optional()
+      }).optional()
     }).nullable().optional()
   ])),
   evidence: z.array(z.tuple([z.string(), z.union([
@@ -360,6 +435,9 @@ export const compactAnalyzeContextSchema: z.ZodType<CompactAnalyzeContext> = z.o
     blockedBlocks: z.array(z.tuple([z.string(), z.string()])).optional(),
     templates: z.array(z.tuple([z.string(), z.number(), z.enum(['compact', 'medium', 'full']), z.array(z.string()), z.array(z.string()).nullable().optional()])).optional(),
     blockedTemplates: z.array(z.tuple([z.string(), z.string()])).optional()
+    ,deckPatterns: z.array(z.tuple([z.enum(['executive-brief', 'business-review']), z.number(), z.enum(['compact', 'medium']), z.array(z.string())])).optional()
+    ,slideBlocks: z.array(z.tuple([z.string(), z.number(), z.array(z.string()), z.array(z.string())])).optional()
+    ,blockedSlideBlocks: z.array(z.tuple([z.string(), z.string(), z.string()])).optional()
   }),
   warnings: z.array(z.tuple([z.string(), z.string()])),
   promptRules: z.array(z.string()).optional(),

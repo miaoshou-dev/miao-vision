@@ -6,6 +6,8 @@ import { agentError, ok } from './errors'
 import { CHART_THRESHOLDS } from './chart-catalog-thresholds'
 import type { VerifyIssueCode } from './error-codes'
 import { VERIFY_ISSUE_CODES } from './error-codes'
+import { executeClaimCheck } from './claim-check'
+import type { DeckClaimCheck } from './deck-types'
 
 const FORBIDDEN_WORDS: Array<{ pattern: RegExp; word: string }> = [
   { pattern: /\b(trend|趋势)\b/i, word: 'trend/趋势' },
@@ -41,6 +43,15 @@ export function collectVerifyIssues(spec: AgentReportSpec, context?: AnalyzeCont
 
   for (const insight of insights) {
     const type = insight.type ?? inferInsightType(insight)
+    if (context && insight.check && insight.claimArgs && insight.check !== 'sample_size') {
+      const check = executeClaimCheck(insight.check as DeckClaimCheck, insight.claimArgs, context.evidence)
+      if (!check.ok) {
+        issues.push(issue(VERIFY_ISSUE_CODES.INSIGHT_STRONG_CLAIM_WITHOUT_EVIDENCE_STRICT, `INSIGHT_CLAIM_CHECK_FAILED: ${check.message ?? `${insight.check} did not match evidence`}: ${insightPreview(insight.text)}`, {
+          insightType: type,
+          payload: { check: insight.check, result: check }
+        }))
+      }
+    }
     if (context) {
       const evidenceIds = collectContextEvidenceIds(context)
       for (const evidenceId of insight.evidence) {

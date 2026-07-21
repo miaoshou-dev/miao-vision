@@ -19,13 +19,14 @@ export function toCompactAnalyzeContext(ctx: AnalyzeContext): CompactAnalyzeCont
       f.type,
       f.distinctCount,
       f.timePeriods,
-      (f.semanticTags?.length || f.confidence !== undefined || f.chartUsage)
+      (f.semanticTags?.length || f.confidence !== undefined || f.chartUsage || f.comparison)
         ? {
             ...(f.semanticTags?.length ? { tags: f.semanticTags } : {}),
             ...(f.confidence !== undefined ? { confidence: f.confidence } : {}),
             ...(f.chartUsage ? {
               usage: [f.chartUsage.asMeasure, f.chartUsage.asDimension, f.chartUsage.asDetailKey] as [string, string, string]
-            } : {})
+            } : {}),
+            ...(f.comparison ? { comparison: f.comparison } : {})
           }
         : null
     ]),
@@ -39,6 +40,9 @@ export function toCompactAnalyzeContext(ctx: AnalyzeContext): CompactAnalyzeCont
       blockedBlocks: ctx.catalog.blockedBlocks?.map(b => [b.id, b.reason]),
       templates: ctx.catalog.templates?.map(t => [t.id, t.score, t.density, t.blocks, t.requiredEvidence ?? null]),
       blockedTemplates: ctx.catalog.blockedTemplates?.map(t => [t.id, t.reason])
+      ,deckPatterns: ctx.catalog.deckPatterns?.map(p => [p.id, p.score, p.density, p.blocks])
+      ,slideBlocks: ctx.catalog.slideBlocks?.map(b => [b.id, b.score, b.requiredRoles, b.requiredEvidence])
+      ,blockedSlideBlocks: ctx.catalog.blockedSlideBlocks?.map(b => [b.id, b.reasonCode, b.reason])
     },
     warnings: ctx.sampleWarnings.map(w => [w.code, w.message]),
     promptRules: ctx.promptRules,
@@ -77,6 +81,7 @@ export function fromCompactAnalyzeContext(ctx: CompactAnalyzeContext): AnalyzeCo
           asDetailKey: meta.usage[2] as AnalyzeFieldChartUsage['asDetailKey']
         }
       } : {}),
+      ...(meta?.comparison ? { comparison: meta.comparison } : {}),
       ...(distinctCount !== undefined && distinctCount !== null ? { distinctCount } : {}),
       ...(timePeriods !== undefined && timePeriods !== null ? { timePeriods } : {})
     })),
@@ -113,6 +118,9 @@ export function fromCompactAnalyzeContext(ctx: CompactAnalyzeContext): AnalyzeCo
         ...(requiredEvidence?.length ? { requiredEvidence } : {})
       })),
       blockedTemplates: ctx.catalog.blockedTemplates?.map(([id, reason]) => ({ id, reason }))
+      ,deckPatterns: ctx.catalog.deckPatterns?.map(([id, score, density, blocks]) => ({ id, score, density, blocks }))
+      ,slideBlocks: ctx.catalog.slideBlocks?.map(([id, score, requiredRoles, requiredEvidence]) => ({ id, score, requiredRoles, requiredEvidence }))
+      ,blockedSlideBlocks: ctx.catalog.blockedSlideBlocks?.map(([id, reasonCode, reason]) => ({ id, reasonCode, reason }))
     },
     sampleWarnings: ctx.warnings.map(([code, message]) => ({ code, message })),
     promptRules: ctx.promptRules ?? [],

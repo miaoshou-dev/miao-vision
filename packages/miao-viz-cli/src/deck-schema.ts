@@ -25,6 +25,27 @@ const deckRecommendationSchema = z.object({
   caveat: z.string().min(1)
 })
 
+const claimArgsSchema = z.object({
+  expected: z.union([z.string(), z.number()]).optional(),
+  value: z.string().optional(),
+  rows: z.string().optional(),
+  series: z.string().optional(),
+  subjectField: z.string().optional(),
+  valueField: z.string().optional(),
+  subject: z.string().optional(),
+  expectedRank: z.number().int().positive().optional(),
+  order: z.enum(['asc', 'desc']).optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  mode: z.enum(['absolute', 'percent', 'percentage-point']).optional(),
+  minimumPeriods: z.number().int().positive().optional(),
+  direction: z.enum(['up', 'down', 'flat']).optional(),
+  numerator: z.string().optional(),
+  denominator: z.string().optional(),
+  benchmark: z.string().optional(),
+  tolerance: z.number().positive().optional()
+})
+
 const metricTransformSchema = z.object({
   type: z.enum(['derive-month', 'aggregate', 'sort', 'limit', 'filter']),
   field: z.string().optional(),
@@ -58,6 +79,8 @@ const slideSpecSchema: z.ZodType<SlideSpec> = z.object({
   evidence: z.array(z.string().min(1)).optional(),
   derivedFrom: z.array(z.string().min(1)).optional(),
   check: deckClaimCheckSchema.optional(),
+  claimArgs: claimArgsSchema.optional(),
+  escape: z.object({ acknowledged: z.literal(true), reason: z.string().min(1), caveat: z.string().min(1) }).optional(),
   caveat: z.string().min(1).optional(),
   warningRefs: z.array(z.string().min(1)).optional(),
   recommendation: deckRecommendationSchema.optional(),
