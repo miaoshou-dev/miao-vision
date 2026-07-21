@@ -3,7 +3,6 @@ set -eu
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 SKILL_DIR=$(dirname "$SCRIPT_DIR")
-VERSION=$(tr -d '[:space:]' < "$SKILL_DIR/VERSION")
 REPOSITORY=${MIAO_VISION_RELEASE_REPOSITORY:-miaoshou-dev/miao-vision}
 
 case "$(uname -s)" in
@@ -19,7 +18,7 @@ case "$(uname -m)" in
 esac
 
 ASSET="miao-viz-$OS-$ARCH"
-BASE_URL="https://github.com/$REPOSITORY/releases/download/skill-v$VERSION"
+BASE_URL="https://github.com/$REPOSITORY/releases/latest/download"
 
 if [ "${1:-}" = "--print-url" ]; then
   printf '%s/%s\n' "$BASE_URL" "$ASSET"

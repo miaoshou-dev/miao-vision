@@ -38,7 +38,6 @@ jobs:
 
       - name: Verify release versions
         run: |
-          test "$(tr -d '[:space:]' < skills/miao-vision/VERSION)" = "${{ steps.version.outputs.version }}"
           test "$(node -p "require('./packages/miao-viz-cli/package.json').version")" = "${{ steps.version.outputs.version }}"
 
       - name: Create GitHub Release

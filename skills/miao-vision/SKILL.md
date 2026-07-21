@@ -27,9 +27,8 @@ global `miao-viz` npm executable.
 Or install from a GitHub Release ZIP:
 
 ```bash
-SKILL_VERSION=0.1.24
 mkdir -p ~/.claude/skills
-curl -fsSL "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v${SKILL_VERSION}/miao-vision-skill.zip" \
+curl -fsSL "https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-skill.zip" \
   -o /tmp/miao-vision-skill.zip
 unzip -o /tmp/miao-vision-skill.zip -d ~/.claude/skills/
 rm /tmp/miao-vision-skill.zip
@@ -39,7 +38,7 @@ After installation, the skill is available at `~/.claude/skills/miao-vision/SKIL
 
 ## CLI Bootstrap
 
-Prefer the skill-private CLI at `bin/miao-viz`. If it is absent, reuse a compatible `miao-viz` already available on `PATH`, including one installed with `npm install -g @miao-vision/cli`. A CLI is compatible only when its major version matches and its version is at least the version in this skill's `VERSION` file.
+Prefer the skill-private CLI at `bin/miao-viz`. If it is absent, reuse a compatible `miao-viz` already available on `PATH`, including one installed with `npm install -g @miao-vision/cli`. Compatibility is determined by required CLI capabilities rather than a duplicated version file.
 
 Before the first visualization task, resolve the CLI in this order:
 

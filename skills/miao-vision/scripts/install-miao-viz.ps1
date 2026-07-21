@@ -1,7 +1,6 @@
 $ErrorActionPreference = "Stop"
 
 $SkillDir = Split-Path -Parent $PSScriptRoot
-$Version = (Get-Content (Join-Path $SkillDir "VERSION") -Raw).Trim()
 $Repository = if ($env:MIAO_VISION_RELEASE_REPOSITORY) { $env:MIAO_VISION_RELEASE_REPOSITORY } else { "miaoshou-dev/miao-vision" }
 
 if ($env:PROCESSOR_ARCHITECTURE -notmatch 'AMD64') {
@@ -9,7 +8,7 @@ if ($env:PROCESSOR_ARCHITECTURE -notmatch 'AMD64') {
 }
 
 $Asset = "miao-viz-windows-x64.exe"
-$BaseUrl = "https://github.com/$Repository/releases/download/skill-v$Version"
+$BaseUrl = "https://github.com/$Repository/releases/latest/download"
 $TempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("miao-viz-install-" + [guid]::NewGuid())
 
 try {
