@@ -1,13 +1,26 @@
-import { spawnSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 const fixture = 'test_data/report_workflow_sales.csv'
+const cliPath = join(mkdtempSync(join(tmpdir(), 'miao-report-cli-')), 'cli.cjs')
+
+beforeAll(() => {
+  execFileSync('node_modules/esbuild/bin/esbuild', [
+    'packages/miao-viz-cli/src/cli.ts',
+    '--bundle',
+    '--platform=node',
+    '--format=cjs',
+    '--target=node20',
+    `--outfile=${cliPath}`,
+    '--log-level=warning'
+  ])
+})
 
 function runCli(args: string[]): unknown {
-  const result = spawnSync(process.execPath, ['scripts/miao-viz.mjs', ...args], { encoding: 'utf8' })
+  const result = spawnSync(process.execPath, [cliPath, ...args], { encoding: 'utf8' })
   const out = result.stdout.trim()
   if (!out) throw new Error(result.stderr || `miao-viz exited with ${result.status}`)
   return JSON.parse(out)
