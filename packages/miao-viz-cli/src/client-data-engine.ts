@@ -1,3 +1,5 @@
+import { CATEGORY_AXIS_LAYOUT_DEFAULTS } from './category-axis-layout'
+
 export const CLIENT_DATA_ENGINE_CSS = `
 .miao-chart-svg [data-miao-mark] { cursor: pointer; transition: opacity 0.15s ease, stroke-width 0.15s ease; }
 .miao-chart-svg [data-miao-mark]:hover { opacity: 0.78; }
@@ -33,6 +35,7 @@ export const CLIENT_DATA_ENGINE_CSS = `
 export const CLIENT_DATA_ENGINE_JS = `
 (function() {
   var miaoData = {};
+  var categoryAxisDefaults = ${JSON.stringify(CATEGORY_AXIS_LAYOUT_DEFAULTS)};
   var palette = ['#2563eb', '#16a34a', '#f97316', '#dc2626', '#7c3aed', '#0891b2'];
 
   function escapeHtml(value) {
@@ -250,9 +253,12 @@ export const CLIENT_DATA_ENGINE_JS = `
     var xField = (chart.encoding && chart.encoding.x && chart.encoding.x.field) || '';
     var yField = (chart.encoding && chart.encoding.y && chart.encoding.y.field) || '';
     var colorField = (chart.encoding && chart.encoding.color && chart.encoding.color.field) || '';
-    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : 720;
-    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : 420;
-    var margin = { top: 24, right: 24, bottom: 48, left: 72 };
+    var hasSeries = Boolean(colorField);
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : (hasSeries ? 900 : 720);
+    var rightMargin = hasSeries ? 140 : 24;
+    var axisLayout = miaoData.categoryAxisLayout(chartRows.map(function(row) { return String(row[xField] == null ? '' : row[xField]); }), width - 72 - rightMargin, hasSeries);
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : (axisLayout.rotate ? 460 : 420);
+    var margin = { top: 24, right: rightMargin, bottom: axisLayout.bottomMargin, left: 72 };
     var chartWidth = width - margin.left - margin.right;
     var chartHeight = height - margin.top - margin.bottom;
     var values = chartRows.map(function(row) { return Number(row[yField]); }).filter(Number.isFinite);
@@ -270,8 +276,7 @@ export const CLIENT_DATA_ENGINE_JS = `
         return '<g><rect ' + markAttrs(chartId, xField, row[xField], index, label + ': ' + value) +
           ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(barWidth) + '" height="' + fixed(barHeight) +
           '" rx="3" fill="' + color(index) + '" />' +
-          '<text x="' + fixed(x + barWidth / 2) + '" y="' + fixed(margin.top + chartHeight + 18) +
-          '" text-anchor="middle" fill="#475569" font-size="11">' + escapeHtml(label) + '</text></g>';
+          miaoData.renderBarAxisLabel(label, x + barWidth / 2, margin.top + chartHeight + (axisLayout.rotate ? 34 : 18), axisLayout) + '</g>';
       }).join('');
       return svgFrame(width, height, body);
     }
@@ -300,7 +305,8 @@ export const CLIENT_DATA_ENGINE_JS = `
             '" rx="1" fill="' + stackColors[ci] + '" />';
         }).join('');
       }).join('');
-      return svgFrame(width, height, body + miaoData.renderLegend(width, margin.top, colorValues));
+      var labels = xValues.map(function(value, index) { return miaoData.renderBarAxisLabel(value, margin.left + index * (xBarWidth + gap) + xBarWidth / 2, margin.top + chartHeight + 34, axisLayout); }).join('');
+      return svgFrame(width, height, body + labels + miaoData.renderLegend(width, margin.top, colorValues));
     }
 
     var groupWidth = (chartWidth - gap * Math.max(xValues.length - 1, 0)) / Math.max(xValues.length, 1);
@@ -310,8 +316,7 @@ export const CLIENT_DATA_ENGINE_JS = `
 
     var body = xValues.map(function(xVal, xi) {
       var baseX = margin.left + xi * (groupWidth + gap) + groupStartX;
-      xLabels.push('<text x="' + fixed(baseX + groupWidth / 2 - gap / 2) + '" y="' + fixed(margin.top + chartHeight + 18) +
-        '" text-anchor="middle" fill="#475569" font-size="11">' + escapeHtml(xVal.substring(0, 12)) + '</text>');
+      xLabels.push(miaoData.renderBarAxisLabel(xVal, baseX + groupWidth / 2 - gap / 2, margin.top + chartHeight + 34, axisLayout));
       return colorValues.map(function(cVal, ci) {
         var raw = rowMap.get(String(xVal) + '|' + String(cVal)) || 0;
         var barHeight = raw / yMax * chartHeight;
@@ -324,6 +329,21 @@ export const CLIENT_DATA_ENGINE_JS = `
     }).join('');
 
     return svgFrame(width, height, body + xLabels.join('') + miaoData.renderLegend(width, margin.top, colorValues));
+  };
+
+  miaoData.categoryAxisLayout = function(labels, plotWidth, forceRotate) {
+    var slotWidth = plotWidth / Math.max(labels.length, 1);
+    var longest = labels.reduce(function(max, label) { return Math.max(max, label.length); }, 0);
+    var rotate = Boolean(forceRotate) || longest * categoryAxisDefaults.estimatedCharacterWidth + categoryAxisDefaults.minimumLabelGap > slotWidth;
+    var horizontalFit = Math.max(4, Math.floor((slotWidth - categoryAxisDefaults.minimumLabelGap) / categoryAxisDefaults.estimatedCharacterWidth));
+    return { rotate:rotate, bottomMargin:rotate ? categoryAxisDefaults.rotatedBottomMargin : categoryAxisDefaults.horizontalBottomMargin, maxLabelLength:rotate ? categoryAxisDefaults.rotatedMaxLength : Math.min(categoryAxisDefaults.horizontalMaxLength,horizontalFit), rotationDegrees:categoryAxisDefaults.rotationDegrees };
+  };
+
+  miaoData.renderBarAxisLabel = function(value, x, y, layout) {
+    var raw = String(value == null ? '' : value);
+    var label = raw.length > layout.maxLabelLength ? raw.slice(0, layout.maxLabelLength - 3) + '...' : raw;
+    var transform = layout.rotate ? ' transform="rotate(' + layout.rotationDegrees + ' ' + fixed(x) + ' ' + fixed(y) + ')"' : '';
+    return '<text x="' + fixed(x) + '" y="' + fixed(y) + '" text-anchor="' + (layout.rotate ? 'end' : 'middle') + '"' + transform + ' fill="#475569" font-size="11">' + escapeHtml(label) + '</text>';
   };
 
   miaoData.renderXY = function(chart, chartRows, chartId) {

@@ -4,6 +4,7 @@ import {
   escapeHtml, svgFrame, markAttrs, numberStyle,
   buildAxis, describeArc, polarToCartesian
 } from './svg-renderer-utils'
+import { computeCategoryAxisLayout, type CategoryAxisLayout } from './category-axis-layout'
 
 export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: { chartId?: string }): string {
   const xField = chart.encoding?.x?.field ?? ''
@@ -11,10 +12,12 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
   const colorField = chart.encoding?.color?.field ?? ''
   const hasSeries = Boolean(colorField)
   const width = numberStyle(chart, 'width', hasSeries ? 900 : 720)
-  const height = numberStyle(chart, 'height', hasSeries ? 460 : 420)
+  const rightMargin = hasSeries ? 140 : 24
+  const axisLayout = computeCategoryAxisLayout(rows.map(row => String(row[xField] ?? '')), width - 72 - rightMargin, hasSeries)
+  const height = numberStyle(chart, 'height', axisLayout.rotate ? 460 : 420)
   const margin = hasSeries
-    ? { top: 24, right: 140, bottom: 88, left: 72 }
-    : { top: 24, right: 24, bottom: 48, left: 72 }
+    ? { top: 24, right: rightMargin, bottom: axisLayout.bottomMargin, left: 72 }
+    : { top: 24, right: rightMargin, bottom: axisLayout.bottomMargin, left: 72 }
   const chartWidth = width - margin.left - margin.right
   const chartHeight = height - margin.top - margin.bottom
   const values = rows.map(row => Number(row[yField])).filter(Number.isFinite)
@@ -34,7 +37,7 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
       const tooltip = `${label}: ${value}`
       return `<g>
         <rect ${markAttrs(options.chartId, xField, row[xField], index, tooltip)} x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" rx="3" fill="${color}" />
-        <text x="${(x + barWidth / 2).toFixed(1)}" y="${(margin.top + chartHeight + 18).toFixed(1)}" text-anchor="middle" fill="${theme.labelColor}" font-size="11">${escapeHtml(label)}</text>
+        ${renderBarAxisLabel(label, x + barWidth / 2, margin.top + chartHeight + (axisLayout.rotate ? 34 : 18), theme, axisLayout)}
       </g>`
     }).join('')
     return svgFrame(width, height, theme.background, `
@@ -70,7 +73,7 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
 
     const xLabels = xValues.map((val, xi) => {
       const x = margin.left + xi * (xBarWidth + barGap) + xBarWidth / 2
-      return renderBarAxisLabel(val, x, margin.top + chartHeight + 34, theme, true)
+      return renderBarAxisLabel(val, x, margin.top + chartHeight + 34, theme, axisLayout)
     }).join('')
 
     return svgFrame(width, height, theme.background, `
@@ -88,7 +91,7 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
 
   const bars = xValues.flatMap((xVal, xi) => {
     const baseX = margin.left + xi * (groupWidth + barGap) + groupStartX
-    xLabels.push(renderBarAxisLabel(xVal, baseX + groupWidth / 2 - barGap / 2, margin.top + chartHeight + 34, theme, true))
+    xLabels.push(renderBarAxisLabel(xVal, baseX + groupWidth / 2 - barGap / 2, margin.top + chartHeight + 34, theme, axisLayout))
     return colorValues.map((cVal, ci) => {
       const raw = rowMap.get(`${xVal}|${cVal}`) ?? 0
       const barHeight = (raw / yMax) * chartHeight
@@ -313,12 +316,12 @@ export function renderLegend(
   }).join('')
 }
 
-function renderBarAxisLabel(value: string, x: number, y: number, theme: SvgTheme, rotate = false): string {
-  const label = truncateAxisLabel(value, rotate ? 18 : 12)
-  if (!rotate) {
+function renderBarAxisLabel(value: string, x: number, y: number, theme: SvgTheme, layout: CategoryAxisLayout): string {
+  const label = truncateAxisLabel(value, layout.maxLabelLength)
+  if (!layout.rotate) {
     return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="middle" fill="${theme.labelColor}" font-size="11">${escapeHtml(label)}</text>`
   }
-  return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" transform="rotate(-35 ${x.toFixed(1)} ${y.toFixed(1)})" fill="${theme.labelColor}" font-size="11">${escapeHtml(label)}</text>`
+  return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="end" transform="rotate(${layout.rotationDegrees} ${x.toFixed(1)} ${y.toFixed(1)})" fill="${theme.labelColor}" font-size="11">${escapeHtml(label)}</text>`
 }
 
 function truncateAxisLabel(value: string, maxLength: number): string {

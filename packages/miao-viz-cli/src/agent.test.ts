@@ -9,6 +9,7 @@ import { profileDataset, profileSummary } from './data-profiler'
 import { queryDataset } from './data-query'
 import { renderStaticHtml } from './html-export'
 import { renderChartSvg } from './svg-renderer'
+import { CLIENT_DATA_ENGINE_JS } from './client-data-engine'
 import { MVP_CHART_TYPES } from './spec-schema'
 import { applyEncodingAggregates } from './data-transform'
 import { applyInteractiveFilters, selectDetailRows, shouldEnableInteractiveRuntime } from './interactive-runtime'
@@ -2624,6 +2625,24 @@ describe('renderChartSvg — all MVP_CHART_TYPES have a renderer (no renderUnsup
     expect(output).toContain('rotate(-35')
     expect(output).toContain('x="776"')
     expect(output).toContain('25 to 44 Years')
+  })
+
+  it('rotates dense category labels in static and interactive bar renderers', () => {
+    const chart = {
+      type: 'bar' as const,
+      encoding: { x: { field: 'age' }, y: { field: 'population' } }
+    }
+    const rows = [
+      { age: '14 to 17 Years', population: 10 }, { age: '18 to 24 Years', population: 20 },
+      { age: '25 to 44 Years', population: 30 }, { age: '45 to 64 Years', population: 25 },
+      { age: '5 to 13 Years', population: 15 }, { age: '65 Years and Over', population: 16 },
+      { age: 'Under 5 Years', population: 11 }
+    ]
+    expect(renderChartSvg(chart, rows)).toContain('rotate(-35')
+
+    const browserWindow: { miaoData?: { renderBar: (spec: typeof chart, data: typeof rows, id: string) => string } } = {}
+    Function('window', CLIENT_DATA_ENGINE_JS)(browserWindow)
+    expect(browserWindow.miaoData?.renderBar(chart, rows, 'age-chart')).toContain('rotate(-35')
   })
 })
 
