@@ -5,6 +5,10 @@ Install the skill for your agent:
 - **Codex (global):** `npx skills add miaoshou-dev/miao-vision -g -a codex -y`
 - **Claude Code (global):** `npx skills add miaoshou-dev/miao-vision -g -a claude-code -y`
 - **Other agents:** use `-a <agent-id>` only when that agent supports global skills; otherwise omit `-g` for a project install.
+
+`npx skills add` does not update a globally installed npm CLI. Upgrade that
+separately with `npm install -g @miao-vision/cli@latest`, or let the skill install
+its matching private CLI on first use.
 - Codex: see `codex.md`
 - Claude: see `claude.md`
 

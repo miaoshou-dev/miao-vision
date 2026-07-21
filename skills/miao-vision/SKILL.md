@@ -21,6 +21,8 @@ npx skills add miaoshou-dev/miao-vision --global --agent claude-code --yes
 
 Always name the target agent for global installs. Do not use `--agent '*'`: some
 targets, including PromptScript, only support project-level skill installation.
+`skills add` installs the instruction bundle; it does not update an existing
+global `miao-viz` npm executable.
 
 Or install from a GitHub Release ZIP:
 
@@ -37,7 +39,7 @@ After installation, the skill is available at `~/.claude/skills/miao-vision/SKIL
 
 ## CLI Bootstrap
 
-Prefer the skill-private CLI at `bin/miao-viz`. If it is absent, reuse a compatible `miao-viz` already available on `PATH`, including one installed with `npm install -g @miao-vision/cli`.
+Prefer the skill-private CLI at `bin/miao-viz`. If it is absent, reuse a compatible `miao-viz` already available on `PATH`, including one installed with `npm install -g @miao-vision/cli`. A CLI is compatible only when its major version matches and its version is at least the version in this skill's `VERSION` file.
 
 Before the first visualization task, resolve the CLI in this order:
 

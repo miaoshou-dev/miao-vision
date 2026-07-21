@@ -23,6 +23,10 @@ Verify:
 miao-viz spec catalog
 ```
 
+Installing or updating the skill does not update this global npm executable.
+Run `npm install -g @miao-vision/cli@latest` whenever you want the `miao-viz`
+command on `PATH` upgraded as well.
+
 ## Quick Install
 
 ```bash
