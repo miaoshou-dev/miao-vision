@@ -1,6 +1,7 @@
 import { CLIENT_DATA_ENGINE_CSS, CLIENT_DATA_ENGINE_JS } from './client-data-engine'
 import { DECK_INTERACTIVE_JS } from './deck-interactive-assets'
 import type { DeckSpec } from './deck-types'
+import type { SvgTheme } from './themes/types'
 
 function hasDeckInteractions(spec: DeckSpec): boolean {
   return Boolean(spec.interactions?.globalFilters?.length)
@@ -54,9 +55,10 @@ const DECK_INTERACTIVE_CSS = `
 .deck-overlay.visible { opacity: 1; pointer-events: auto; }
 `
 
-export function renderDeckInteractiveAssets(rows: Record<string, unknown>[]): string {
+export function renderDeckInteractiveAssets(rows: Record<string, unknown>[], theme: SvgTheme): string {
   return `
   <script type="application/json" id="miao-viz-data">${escapeScriptJson(rows)}</script>
+  <script type="application/json" id="miao-viz-runtime-theme">${escapeScriptJson(theme)}</script>
   <script>${CLIENT_DATA_ENGINE_JS}</script>
   <style>${CLIENT_DATA_ENGINE_CSS}${DECK_INTERACTIVE_CSS}</style>
   <script>${DECK_INTERACTIVE_JS}</script>`

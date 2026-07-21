@@ -77,7 +77,7 @@ export function renderStaticHtml(
   </main>
   <script type="application/json" id="miao-viz-spec">${jsonScript(spec)}</script>
   <script type="application/json" id="miao-viz-profile">${jsonScript(profile)}</script>
-  ${interactive ? renderInteractiveAssets(rows) : ''}
+  ${interactive ? renderInteractiveAssets(rows, theme.svg) : ''}
 </body>
 </html>`
 }

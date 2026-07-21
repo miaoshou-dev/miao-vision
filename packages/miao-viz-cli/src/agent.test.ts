@@ -640,6 +640,7 @@ charts:
     ], { encoding: 'utf8' })
     expect(JSON.parse(defaultRun).value.interactive).toBe(true)
     expect(readFileSync(defaultOutputPath, 'utf8')).toContain('id="miao-viz-data"')
+    expect(readFileSync(defaultOutputPath, 'utf8')).toContain('id="miao-viz-runtime-theme"')
 
     const staticRun = execFileSync('npm', [
       'run',
@@ -2643,6 +2644,22 @@ describe('renderChartSvg — all MVP_CHART_TYPES have a renderer (no renderUnsup
     const browserWindow: { miaoData?: { renderBar: (spec: typeof chart, data: typeof rows, id: string) => string } } = {}
     Function('window', CLIENT_DATA_ENGINE_JS)(browserWindow)
     expect(browserWindow.miaoData?.renderBar(chart, rows, 'age-chart')).toContain('rotate(-35')
+  })
+
+  it('uses injected theme colors when the interactive runtime redraws charts', () => {
+    const browserWindow: { miaoData?: { renderBar: (spec: any, data: any[], id: string) => string } } = {}
+    const browserDocument = {
+      getElementById(id: string) {
+        return id === 'miao-viz-runtime-theme'
+          ? { textContent: JSON.stringify({ palette: ['#123456'], background: '#faf0e6', axisColor: '#333333', labelColor: '#654321' }) }
+          : null
+      }
+    }
+    Function('window', 'document', CLIENT_DATA_ENGINE_JS)(browserWindow, browserDocument)
+    const output = browserWindow.miaoData?.renderBar({ type: 'bar', encoding: { x: { field: 'group' }, y: { field: 'value' } } }, [{ group: 'A', value: 10 }], 'themed') ?? ''
+    expect(output).toContain('fill="#123456"')
+    expect(output).toContain('fill="#faf0e6"')
+    expect(output).toContain('fill="#654321"')
   })
 })
 

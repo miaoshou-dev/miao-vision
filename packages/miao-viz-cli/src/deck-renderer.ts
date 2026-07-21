@@ -240,7 +240,7 @@ export function renderDeckHtml(
   </nav>
   <script type="application/json" id="miao-viz-deck">${jsonScript(spec)}</script>
   <script>${SLIDE_JS}</script>
-  ${interactive ? renderDeckInteractiveAssets(rows) : ''}
+  ${interactive ? renderDeckInteractiveAssets(rows, theme.svg) : ''}
 </body>
 </html>`
 }

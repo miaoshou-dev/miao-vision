@@ -36,7 +36,14 @@ export const CLIENT_DATA_ENGINE_JS = `
 (function() {
   var miaoData = {};
   var categoryAxisDefaults = ${JSON.stringify(CATEGORY_AXIS_LAYOUT_DEFAULTS)};
-  var palette = ['#2563eb', '#16a34a', '#f97316', '#dc2626', '#7c3aed', '#0891b2'];
+  var runtimeTheme = { palette:['#2563eb','#16a34a','#f97316','#dc2626','#7c3aed','#0891b2'], background:'#fff', axisColor:'#94a3b8', labelColor:'#475569' };
+  if (typeof document !== 'undefined') {
+    var runtimeThemeEl = document.getElementById('miao-viz-runtime-theme');
+    if (runtimeThemeEl) {
+      try { runtimeTheme = Object.assign(runtimeTheme, JSON.parse(runtimeThemeEl.textContent || '{}')); } catch (_) {}
+    }
+  }
+  var palette = runtimeTheme.palette;
 
   function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, function(char) {
@@ -70,7 +77,7 @@ export const CLIENT_DATA_ENGINE_JS = `
   function svgFrame(width, height, body) {
     return '<svg class="miao-chart-svg" viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height +
       '" role="img" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="' + width + '" height="' + height +
-      '" fill="#fff" />' + body + '</svg>';
+      '" fill="' + escapeAttr(runtimeTheme.background) + '" />' + body + '</svg>';
   }
 
   function markAttrs(chartId, markField, value, rowKey, tooltipText) {
@@ -233,7 +240,7 @@ export const CLIENT_DATA_ENGINE_JS = `
     return colorValues.map(function(val, i) {
       var y = marginTop + i * 20;
       return '<g><rect x="' + legendX + '" y="' + (y - 8) + '" width="10" height="10" rx="2" fill="' + color(i) +
-        '" /><text x="' + (legendX + 16) + '" y="' + y + '" fill="#475569" font-size="11">' + escapeHtml(val.substring(0, 16)) + '</text></g>';
+        '" /><text x="' + (legendX + 16) + '" y="' + y + '" fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(val.substring(0, 16)) + '</text></g>';
     }).join('');
   };
 
@@ -343,7 +350,7 @@ export const CLIENT_DATA_ENGINE_JS = `
     var raw = String(value == null ? '' : value);
     var label = raw.length > layout.maxLabelLength ? raw.slice(0, layout.maxLabelLength - 3) + '...' : raw;
     var transform = layout.rotate ? ' transform="rotate(' + layout.rotationDegrees + ' ' + fixed(x) + ' ' + fixed(y) + ')"' : '';
-    return '<text x="' + fixed(x) + '" y="' + fixed(y) + '" text-anchor="' + (layout.rotate ? 'end' : 'middle') + '"' + transform + ' fill="#475569" font-size="11">' + escapeHtml(label) + '</text>';
+    return '<text x="' + fixed(x) + '" y="' + fixed(y) + '" text-anchor="' + (layout.rotate ? 'end' : 'middle') + '"' + transform + ' fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(label) + '</text>';
   };
 
   miaoData.renderXY = function(chart, chartRows, chartId) {
@@ -400,7 +407,7 @@ export const CLIENT_DATA_ENGINE_JS = `
       var label = String(row[labelField] == null ? '' : row[labelField]);
       angle = nextAngle;
       return '<path ' + markAttrs(chartId, labelField, row[labelField], index, label + ': ' + value) +
-        ' d="' + path + '" fill="' + color(index) + '" stroke="#fff" stroke-width="2" />';
+        ' d="' + path + '" fill="' + color(index) + '" stroke="' + escapeAttr(runtimeTheme.background) + '" stroke-width="2" />';
     }).join('');
     return svgFrame(width, height, slices);
   };
