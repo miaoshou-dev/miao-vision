@@ -9,11 +9,18 @@ Use Miao Vision as a local-first infographic and visualization workflow for agen
 
 ## Agent Self-Install
 
-Install the skill via `npx skills add` (recommended):
+Install the skill globally for the active agent via `npx skills add` (recommended):
 
 ```bash
-npx skills add miaoshou-dev/miao-vision
+# Codex
+npx skills add miaoshou-dev/miao-vision --global --agent codex --yes
+
+# Claude Code
+npx skills add miaoshou-dev/miao-vision --global --agent claude-code --yes
 ```
+
+Always name the target agent for global installs. Do not use `--agent '*'`: some
+targets, including PromptScript, only support project-level skill installation.
 
 Or install from a GitHub Release ZIP:
 

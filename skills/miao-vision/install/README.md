@@ -2,7 +2,9 @@
 
 Install the skill for your agent:
 
-- **Quick install (all agents):** `npx skills add miaoshou-dev/miao-vision`
+- **Codex (global):** `npx skills add miaoshou-dev/miao-vision -g -a codex -y`
+- **Claude Code (global):** `npx skills add miaoshou-dev/miao-vision -g -a claude-code -y`
+- **Other agents:** use `-a <agent-id>` only when that agent supports global skills; otherwise omit `-g` for a project install.
 - Codex: see `codex.md`
 - Claude: see `claude.md`
 

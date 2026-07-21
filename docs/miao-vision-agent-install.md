@@ -23,11 +23,19 @@ Verify:
 miao-viz spec catalog
 ```
 
-## Quick Install (All Agents)
+## Quick Install
 
 ```bash
-npx skills add miaoshou-dev/miao-vision
+# Codex
+npx skills add miaoshou-dev/miao-vision --global --agent codex --yes
+
+# Claude Code
+npx skills add miaoshou-dev/miao-vision --global --agent claude-code --yes
 ```
+
+For another agent, pass its explicit `--agent` id only if it supports global
+skills. Otherwise omit `--global` and install at project scope. In particular,
+PromptScript does not support global skill installation.
 
 ## Install for Codex
 

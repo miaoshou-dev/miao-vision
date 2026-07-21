@@ -3,7 +3,7 @@
 ## 1. Quick Install (Recommended)
 
 ```bash
-npx skills add miaoshou-dev/miao-vision
+npx skills add miaoshou-dev/miao-vision --global --agent codex --yes
 ```
 
 ## 2. Local Checkout Install

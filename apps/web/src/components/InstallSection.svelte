@@ -11,7 +11,7 @@
   }
 
   let npmText = 'npm install -g @miao-vision/cli'
-  let npxText = 'npx skills add miaoshou-dev/miao-vision'
+  let npxText = 'npx skills add miaoshou-dev/miao-vision -g -a codex -y\n# Claude Code: replace codex with claude-code'
   let claudeZipText = 'curl -L https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip\nmkdir -p ~/.claude/skills && unzip skill.zip -d ~/.claude/skills/'
   let codexZipText = 'curl -L https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-skill.zip -o skill.zip\nmkdir -p ~/.codex/skills && unzip skill.zip -d ~/.codex/skills/'
 </script>
@@ -23,8 +23,8 @@
   </div>
   <div class="install-grid">
     <article class="install-card">
-      <h3>Quick Install &mdash; All Agents</h3>
-      <p>One-line CLI install plus universal skill setup via <code>npx skills add</code>. Works for Claude, Codex, and any skills-compatible agent.</p>
+      <h3>Quick Install &mdash; Codex / Claude</h3>
+      <p>One-line CLI install plus an explicit global skill target. Naming the agent avoids selecting project-only targets such as PromptScript.</p>
       <div class="install-steps">
         <div class="install-step">
           <span class="step-badge">1</span>

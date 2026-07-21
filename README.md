@@ -81,8 +81,9 @@ Once installed, just describe what you want:
 **Manual install** — install the skill for your agent:
 
 ```bash
-# Quick install (all agents)
-npx skills add miaoshou-dev/miao-vision
+# Global install: choose the agent explicitly
+npx skills add miaoshou-dev/miao-vision -g -a codex -y
+# or: npx skills add miaoshou-dev/miao-vision -g -a claude-code -y
 
 # Or from GitHub Releases ZIP
 # Download miao-vision-skill.zip from https://github.com/miaoshou-dev/miao-vision/releases

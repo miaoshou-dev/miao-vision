@@ -5,7 +5,7 @@ Miao Vision requires an environment where Claude can run local shell commands. F
 ## 1. Quick Install (Recommended)
 
 ```bash
-npx skills add miaoshou-dev/miao-vision
+npx skills add miaoshou-dev/miao-vision --global --agent claude-code --yes
 ```
 
 ## 2. Local Checkout Install
