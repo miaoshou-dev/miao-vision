@@ -3041,7 +3041,7 @@ function writeProfileFixture(dir: string, dataset: LoadedDataset): string {
 
 function runCliExpectFailure(args: string[]): string {
   try {
-    execFileSync('npm', ['run', '--silent', 'miao-viz', '--', ...args], { encoding: 'utf8' })
+    execFileSync(process.execPath, ['scripts/miao-viz.mjs', ...args], { encoding: 'utf8' })
   } catch (error) {
     const output = (error as { stdout?: Buffer | string }).stdout
     return Buffer.isBuffer(output) ? output.toString('utf8') : String(output ?? '')

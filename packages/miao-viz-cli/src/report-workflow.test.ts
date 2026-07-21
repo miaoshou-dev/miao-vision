@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 const fixture = 'test_data/report_workflow_sales.csv'
 
 function runCli(args: string[]): unknown {
-  const result = spawnSync('npm', ['run', '--silent', 'miao-viz', '--', ...args], { encoding: 'utf8' })
+  const result = spawnSync(process.execPath, ['scripts/miao-viz.mjs', ...args], { encoding: 'utf8' })
   const out = result.stdout.trim()
   if (!out) throw new Error(result.stderr || `miao-viz exited with ${result.status}`)
   return JSON.parse(out)
