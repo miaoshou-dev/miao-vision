@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { chmodSync, createHash, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
