@@ -30,6 +30,25 @@ export type VizType =
   | 'table'
   | 'pivot'
   | 'calendar'
+  | 'dot'
+  | 'bullet'
+  | 'range'
+  | 'pareto'
+  | 'combo-bar-line'
+
+export type VisualIntentFamily =
+  | 'summary'
+  | 'comparison'
+  | 'ranking'
+  | 'trend'
+  | 'change'
+  | 'composition'
+  | 'distribution'
+  | 'relationship'
+  | 'flow'
+  | 'target-attainment'
+  | 'uncertainty'
+  | 'geo'
 
 export interface AgentError {
   ok: false
@@ -155,6 +174,62 @@ export interface AgentFieldEncoding {
   type?: 'quantitative' | 'nominal' | 'temporal' | 'ordinal'
   aggregate?: 'sum' | 'avg' | 'count' | 'min' | 'max'
   format?: string
+  unit?: string
+}
+
+export interface AgentReferenceLayer {
+  id?: string
+  type: 'line' | 'band'
+  axis: 'x' | 'y'
+  value?: number | string
+  from?: number | string
+  to?: number | string
+  field?: string
+  aggregate?: 'sum' | 'avg' | 'count' | 'min' | 'max'
+  label?: string
+  evidence?: string
+}
+
+export type AgentAnnotationSelector =
+  | { op: 'first' | 'last' | 'max' | 'min'; field: string; orderBy?: string }
+  | { op: 'threshold'; field: string; comparison: 'gt' | 'gte' | 'lt' | 'lte'; value: number }
+  | { op: 'value'; field: string; value: string | number }
+  | { op: 'max-change'; mode: 'previous'; field: string; orderBy: string }
+  | { op: 'max-change'; mode: 'between-fields'; startField: string; endField: string }
+
+export interface AgentChartAnnotation {
+  type: 'point' | 'rule'
+  selector: AgentAnnotationSelector
+  text: string
+  evidence?: string
+  priority?: number
+}
+
+export interface AgentFacetSpec {
+  row?: AgentFieldEncoding
+  column?: AgentFieldEncoding
+  maxPanels?: number
+  scales?: 'shared' | 'independent'
+}
+
+export interface AgentColorScale {
+  type: 'qualitative' | 'sequential' | 'diverging' | 'status' | 'focus-context'
+  domain?: Array<string | number>
+  semantic?: 'unfavorable-neutral-favorable' | 'favorable-neutral-unfavorable'
+  focus?: Array<string | number>
+}
+
+export interface AgentChartPlacement {
+  span: 4 | 6 | 8 | 12
+  emphasis?: 'primary' | 'supporting'
+}
+
+export interface AgentQualityEncoding {
+  sampleSizeField?: string
+  estimatedField?: string
+  incompleteField?: string
+  lowSampleThreshold?: number
+  missingRateThreshold?: number
 }
 
 export interface AgentDataTransform {
@@ -209,6 +284,7 @@ export type AgentInsight =
 export interface AgentChartSpec {
   id?: string
   type: VizType
+  variant?: string
   title?: string
   sortable?: boolean
   interaction?: AgentChartInteraction
@@ -227,10 +303,18 @@ export interface AgentChartSpec {
     value?: AgentFieldEncoding
     [key: string]: AgentFieldEncoding | undefined
   }
+  references?: AgentReferenceLayer[]
+  annotations?: AgentChartAnnotation[]
+  facet?: AgentFacetSpec
+  colorScale?: AgentColorScale
+  placement?: AgentChartPlacement
+  quality?: AgentQualityEncoding
   style?: Record<string, unknown>
 }
 
 export interface AgentReportSpec {
+  specVersion?: 1
+  layout?: { preset: 'narrative' | 'executive' | 'analytical' | 'mosaic'; maxColumns?: 12 }
   title?: string
   description?: string
   theme?: 'standard-white' | 'magazine' | 'standard-dark' | 'minimal' | 'nyt' | 'bloomberg' | 'tableau'

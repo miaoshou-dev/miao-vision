@@ -2597,7 +2597,12 @@ describe('renderChartSvg — all MVP_CHART_TYPES have a renderer (no renderUnsup
     'infographic-list': { type: 'infographic-list', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
     'infographic-flow': { type: 'infographic-flow', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
     'infographic-hierarchy': { type: 'infographic-hierarchy', encoding: { label: { field: 'dim_x' }, value: { field: 'num_x' } } },
-    'infographic-comparison': { type: 'infographic-comparison', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } }
+    'infographic-comparison': { type: 'infographic-comparison', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    dot: { type: 'dot', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    bullet: { type: 'bullet', encoding: { value: { field: 'num_x' }, target: { field: 'num_y' } } },
+    range: { type: 'range', encoding: { x: { field: 'dim_x' }, lower: { field: 'num_x' }, upper: { field: 'num_y' } } },
+    pareto: { type: 'pareto', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    'combo-bar-line': { type: 'combo-bar-line', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' }, lineY: { field: 'num_y' } } }
   }
 
   for (const chartType of MVP_CHART_TYPES) {

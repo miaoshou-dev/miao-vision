@@ -11,7 +11,10 @@ type AnalyzeFieldChartUsage = NonNullable<AnalyzeField['chartUsage']>
 export function toCompactAnalyzeContext(ctx: AnalyzeContext): CompactAnalyzeContext {
   return {
     format: 'compact-v1',
-    intent: { raw: ctx.intent.raw, coverage: ctx.intent.coverage },
+    intent: {
+      raw: ctx.intent.raw, coverage: ctx.intent.coverage,
+      visualTasks: ctx.intent.visualTasks?.map(task => [task.family, task.confidence, task.fields ?? null, task.rationale ?? null])
+    },
     assumptions: ctx.intent.assumptions.map(a => [a.key, a.value, a.confidence, a.alternatives]),
     fields: ctx.fields.map(f => [
       f.name,
@@ -36,6 +39,7 @@ export function toCompactAnalyzeContext(ctx: AnalyzeContext): CompactAnalyzeCont
       charts: ctx.catalog.charts,
       blockedCharts: ctx.catalog.blockedCharts.map(c => [c.type, c.reason]),
       recommendedPlan: ctx.catalog.recommendedPlan.map(p => [p.type, p.note ?? null]),
+      recommendations: ctx.catalog.recommendations?.map(item => [item.intent, item.chartType, item.variant ?? null, item.score, item.reasons]),
       blocks: ctx.catalog.blocks?.map(b => [b.id, b.score, b.density, b.charts, b.requiredEvidence ?? null, b.validInsightTypes ?? null]),
       blockedBlocks: ctx.catalog.blockedBlocks?.map(b => [b.id, b.reason]),
       templates: ctx.catalog.templates?.map(t => [t.id, t.score, t.density, t.blocks, t.requiredEvidence ?? null]),
@@ -66,7 +70,8 @@ export function fromCompactAnalyzeContext(ctx: CompactAnalyzeContext): AnalyzeCo
         value,
         confidence,
         alternatives: alternatives ?? undefined
-      }))
+      })),
+      visualTasks: ctx.intent.visualTasks?.map(([family, confidence, fields, rationale]) => ({ family, confidence, ...(fields ? { fields } : {}), rationale: rationale ?? [] }))
     },
     fields: ctx.fields.map(([name, role, type, distinctCount, timePeriods, meta]) => ({
       name,
@@ -94,6 +99,7 @@ export function fromCompactAnalyzeContext(ctx: CompactAnalyzeContext): AnalyzeCo
       charts: ctx.catalog.charts,
       blockedCharts: ctx.catalog.blockedCharts.map(([type, reason]) => ({ type, reason })),
       recommendedPlan: (ctx.catalog.recommendedPlan ?? []).map(([type, note]) => ({ type, ...(note ? { note } : {}) })),
+      recommendations: ctx.catalog.recommendations?.map(([intent, chartType, variant, score, reasons]) => ({ intent, chartType, ...(variant ? { variant } : {}), score, reasons, alternatives: [] })),
       blocks: ctx.catalog.blocks?.map(([id, score, density, charts, requiredEvidence, validInsightTypes]) => ({
         id,
         score,

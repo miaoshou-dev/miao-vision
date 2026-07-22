@@ -18,6 +18,11 @@ export const INTERACTION_CAPABILITIES: Partial<Record<VizType, InteractionCapabi
   scatter: { filter: true, select: false, drilldown: false, sort: false, dynamicMetric: false },
   pie: { filter: true, select: true, drilldown: true, sort: false, dynamicMetric: false },
   table: { filter: true, select: true, drilldown: true, sort: true, dynamicMetric: false }
+  ,dot: { filter: true, select: false, drilldown: false, sort: false, dynamicMetric: false }
+  ,bullet: { filter: true, select: false, drilldown: false, sort: false, dynamicMetric: true }
+  ,range: { filter: true, select: false, drilldown: false, sort: false, dynamicMetric: false }
+  ,pareto: { filter: true, select: false, drilldown: false, sort: false, dynamicMetric: false }
+  ,'combo-bar-line': { filter: true, select: false, drilldown: false, sort: false, dynamicMetric: false }
 }
 
 export function interactionCapabilities(type: VizType): InteractionCapabilities {

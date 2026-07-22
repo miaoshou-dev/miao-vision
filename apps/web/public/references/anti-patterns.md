@@ -16,6 +16,17 @@ The validator enforces the high-risk cases. Treat these as hard rules unless the
 - Do not hide caveats for small samples, high missingness, or unreliable distributions.
 - Do not put unsupported conclusions in chart titles.
 - Do not write good/bad performance without a benchmark, target, or historical comparison.
+- Do not use a diverging bar without a meaningful zero or center.
+- Do not use dumbbell for more than two endpoints or more than 20 categories.
+- Do not use bullet without an explicit target.
+- Do not render a range where lower exceeds upper.
+- Do not derive a reference aggregate without binding evidence.
+- Do not facet on ID or high-cardinality fields, or compare magnitude across independent facet scales.
+- Do not repeat the same chart family when the views use equivalent fields and transforms; merge the redundant view first.
+- Do not use Pareto with negative values or without descending contribution order.
+- Do not use a bar-line combo for measures with the same unit or without explicit axis labels.
+- Do not interpret color as good/bad unless `colorScale.semantic` declares that business meaning.
+- Do not invent sample-size, estimated, incomplete, or missingness flags for quality styling.
 
 ## Required Evidence
 

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "rubric": "Two reviewers label preferred, acceptable, blocked, and requiredConditions. Preferred=1, acceptable=0.5, blocked=0.",
+  "families": [
+    {"intent":"summary","prompts":["summarize revenue","show key totals","overall performance","headline metrics","give me a snapshot"],"preferred":["bigvalue"],"acceptable":["bullet"],"blocked":[],"requiredConditions":["at least one measure"]},
+    {"intent":"comparison","prompts":["compare regions","category comparison","A versus B","compare channels","group differences"],"preferred":["dot.standard","bar.horizontal"],"acceptable":["bar.vertical"],"blocked":[],"requiredConditions":["dimension and measure"]},
+    {"intent":"ranking","prompts":["rank products","top regions","bottom channels","highest category","leaderboard"],"preferred":["dot.standard","bar.horizontal"],"acceptable":["table"],"blocked":[],"requiredConditions":["dimension and measure"]},
+    {"intent":"trend","prompts":["monthly trend","over time","yearly movement","time series","quarterly trajectory"],"preferred":["line.standard"],"acceptable":["area.standard"],"blocked":["bar.vertical"],"requiredConditions":["time field with at least three periods"]},
+    {"intent":"change","prompts":["before and after","period change","compare two years","largest delta","change by region"],"preferred":["dot.dumbbell","bar.diverging"],"acceptable":["bar.grouped"],"blocked":[],"requiredConditions":["two comparable measures or signed change"]},
+    {"intent":"composition","prompts":["share by category","composition","part to whole","category mix","percentage breakdown"],"preferred":["pie"],"acceptable":["bar.horizontal"],"blocked":[],"requiredConditions":["2-7 categories and meaningful whole"]},
+    {"intent":"distribution","prompts":["distribution","find outliers","value spread","frequency shape","quartile comparison"],"preferred":["histogram","boxplot"],"acceptable":["table"],"blocked":[],"requiredConditions":["numeric measure and reliable sample"]},
+    {"intent":"relationship","prompts":["correlation","relationship between metrics","x versus y","measure association","two-variable pattern"],"preferred":["scatter"],"acceptable":["bubble"],"blocked":[],"requiredConditions":["two measures"]},
+    {"intent":"flow","prompts":["conversion funnel","stage dropoff","process flow","pipeline stages","conversion journey"],"preferred":["funnel"],"acceptable":["bar.horizontal"],"blocked":[],"requiredConditions":["ordered stage dimension and measure"]},
+    {"intent":"target-attainment","prompts":["actual versus target","goal attainment","progress to goal","target performance","quota completion"],"preferred":["bullet.standard"],"acceptable":["progress","bigvalue"],"blocked":[],"requiredConditions":["actual and target"]},
+    {"intent":"uncertainty","prompts":["confidence interval","forecast range","uncertainty band","min max interval","prediction bounds"],"preferred":["range.standard"],"acceptable":["table"],"blocked":[],"requiredConditions":["ordered field and lower/upper measures"]},
+    {"intent":"geo","prompts":["performance by country","regional map","geographic comparison","sales by province","location performance"],"preferred":["bar.horizontal"],"acceptable":["table"],"blocked":[],"requiredConditions":["P0 local geographic category and measure; maps deferred"]}
+  ]
+}

@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import type { VisualIntentFamily, VizType } from './types'
+import { MVP_CHART_TYPES } from './spec-schema'
 const fieldRoleValues = ['measure', 'dimension', 'time', 'id', 'status', 'score', 'flag', 'text', 'geo', 'unknown'] as const
 const chartUsageValues = ['recommended', 'allowed', 'discouraged', 'forbidden'] as const
 // Compact field descriptor — only fields useful for spec writing, not full ColumnProfile
@@ -98,6 +100,7 @@ export interface AnalyzeCatalog {
     type: string
     note?: string       // e.g. "show top dimension by measure"
   }>
+  recommendations?: VisualRecommendation[]
   blocks?: CatalogBlockEntry[]
   blockedBlocks?: BlockedBlockEntry[]
   templates?: CatalogTemplateEntry[]
@@ -105,6 +108,15 @@ export interface AnalyzeCatalog {
   deckPatterns?: DeckPatternEntry[]
   slideBlocks?: DeckSlideBlockEntry[]
   blockedSlideBlocks?: BlockedDeckSlideBlockEntry[]
+}
+
+export interface VisualRecommendation {
+  intent: VisualIntentFamily
+  chartType: VizType
+  variant?: string
+  score: number
+  reasons: string[]
+  alternatives: Array<{ chartType: VizType; variant?: string; score: number }>
 }
 
 export interface CatalogTemplateEntry {
@@ -116,6 +128,8 @@ export interface CatalogTemplateEntry {
   density: 'compact' | 'medium' | 'full'
   requiredEvidence?: string[]
   qualityConstraints?: string[]
+  intents?: VisualIntentFamily[]
+  layoutPreset?: 'narrative' | 'executive' | 'analytical' | 'mosaic'
 }
 
 export interface BlockedTemplateEntry {
@@ -158,6 +172,12 @@ export interface AnalyzeIntent {
   raw: string
   coverage: 'full' | 'partial'
   assumptions: AnalyzeAssumption[]
+  visualTasks?: Array<{
+    family: VisualIntentFamily
+    fields?: string[]
+    confidence: number
+    rationale: string[]
+  }>
 }
 
 export interface AnalyzeContext {
@@ -173,7 +193,7 @@ export interface AnalyzeContext {
 
 export interface CompactAnalyzeContext {
   format: 'compact-v1'
-  intent: { raw: string; coverage: 'full' | 'partial' }
+  intent: { raw: string; coverage: 'full' | 'partial'; visualTasks?: Array<[VisualIntentFamily, number, (string[] | null)?, (string[] | null)?]> }
   assumptions: Array<[AnalyzeAssumption['key'], string, number, (string[] | null)?]>
   fields: Array<[
     string,
@@ -194,6 +214,7 @@ export interface CompactAnalyzeContext {
     charts: string[]
     blockedCharts: Array<[string, string]>
     recommendedPlan?: Array<[string, (string | null)?]>
+    recommendations?: Array<[VisualIntentFamily, VizType, string | null, number, string[]]>
     blocks?: Array<[string, number, 'compact' | 'medium' | 'full', string[], (string[] | null)?, (string[] | null)?]>
     blockedBlocks?: Array<[string, string]>
     templates?: Array<[string, number, 'compact' | 'medium' | 'full', string[], (string[] | null)?]>
@@ -282,6 +303,8 @@ const catalogTemplateEntrySchema = z.object({
   density: z.enum(['compact', 'medium', 'full']),
   requiredEvidence: z.array(z.string()).optional(),
   qualityConstraints: z.array(z.string()).optional()
+  ,intents: z.array(z.enum(['summary', 'comparison', 'ranking', 'trend', 'change', 'composition', 'distribution', 'relationship', 'flow', 'target-attainment', 'uncertainty', 'geo'])).optional()
+  ,layoutPreset: z.enum(['narrative', 'executive', 'analytical', 'mosaic']).optional()
 })
 
 const blockedTemplateEntrySchema = z.object({
@@ -319,6 +342,12 @@ const analyzeCatalogSchema = z.object({
     type: z.string().min(1),
     note: z.string().optional()
   })),
+  recommendations: z.array(z.object({
+    intent: z.enum(['summary', 'comparison', 'ranking', 'trend', 'change', 'composition', 'distribution', 'relationship', 'flow', 'target-attainment', 'uncertainty', 'geo']),
+    chartType: z.enum(MVP_CHART_TYPES),
+    variant: z.string().optional(), score: z.number().min(0).max(1), reasons: z.array(z.string()),
+    alternatives: z.array(z.object({ chartType: z.enum(MVP_CHART_TYPES), variant: z.string().optional(), score: z.number() }))
+  })).optional(),
   blocks: z.array(catalogBlockEntrySchema).optional(),
   blockedBlocks: z.array(blockedBlockEntrySchema).optional(),
   templates: z.array(catalogTemplateEntrySchema).optional(),
@@ -356,7 +385,11 @@ const legacyAssumptionSchema = z.string().transform((value): AnalyzeAssumption =
 const analyzeIntentSchema = z.object({
   raw: z.string().min(1),
   coverage: z.enum(['full', 'partial']),
-  assumptions: z.array(z.union([analyzeAssumptionSchema, legacyAssumptionSchema]))
+  assumptions: z.array(z.union([analyzeAssumptionSchema, legacyAssumptionSchema])),
+  visualTasks: z.array(z.object({
+    family: z.enum(['summary', 'comparison', 'ranking', 'trend', 'change', 'composition', 'distribution', 'relationship', 'flow', 'target-attainment', 'uncertainty', 'geo']),
+    fields: z.array(z.string()).optional(), confidence: z.number(), rationale: z.array(z.string())
+  })).optional()
 })
 
 const analyzeSampleWarningSchema = z.object({
@@ -387,7 +420,8 @@ export const compactAnalyzeContextSchema: z.ZodType<CompactAnalyzeContext> = z.o
   format: z.literal('compact-v1'),
   intent: z.object({
     raw: z.string(),
-    coverage: z.enum(['full', 'partial'])
+    coverage: z.enum(['full', 'partial']),
+    visualTasks: z.array(z.tuple([z.enum(['summary', 'comparison', 'ranking', 'trend', 'change', 'composition', 'distribution', 'relationship', 'flow', 'target-attainment', 'uncertainty', 'geo']), z.number(), z.array(z.string()).nullable().optional(), z.array(z.string()).nullable().optional()])).optional()
   }),
   assumptions: z.array(z.tuple([
     z.enum(['primary_measure', 'primary_dimension', 'time_field']),
@@ -431,6 +465,7 @@ export const compactAnalyzeContextSchema: z.ZodType<CompactAnalyzeContext> = z.o
     charts: z.array(z.string()),
     blockedCharts: z.array(z.tuple([z.string(), z.string()])),
     recommendedPlan: z.array(z.tuple([z.string(), z.string().nullable().optional()])).optional(),
+    recommendations: z.array(z.tuple([z.enum(['summary', 'comparison', 'ranking', 'trend', 'change', 'composition', 'distribution', 'relationship', 'flow', 'target-attainment', 'uncertainty', 'geo']), z.enum(MVP_CHART_TYPES), z.string().nullable(), z.number(), z.array(z.string())])).optional(),
     blocks: z.array(z.tuple([z.string(), z.number(), z.enum(['compact', 'medium', 'full']), z.array(z.string()), z.array(z.string()).nullable().optional(), z.array(z.string()).nullable().optional()])).optional(),
     blockedBlocks: z.array(z.tuple([z.string(), z.string()])).optional(),
     templates: z.array(z.tuple([z.string(), z.number(), z.enum(['compact', 'medium', 'full']), z.array(z.string()), z.array(z.string()).nullable().optional()])).optional(),

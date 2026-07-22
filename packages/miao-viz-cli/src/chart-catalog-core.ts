@@ -13,6 +13,15 @@ export const CHART_CATALOG: ChartCatalogItem[] = [
     insightPattern: 'top {dimension} by {measure}',
     requiredEncodings: ['x', 'y'],
     allowedTransforms: ['aggregate', 'sort', 'limit', 'derive-month', 'filter'],
+    intents: ['comparison', 'ranking', 'change', 'geo'],
+    variants: [
+      { id: 'vertical', requires: 'dimension+measure', bestFor: ['compact category comparison'] },
+      { id: 'horizontal', requires: 'dimension+measure', bestFor: ['rankings and long category labels'] },
+      { id: 'grouped', requires: 'dimension+measure+color', bestFor: ['multi-series category comparison'] },
+      { id: 'stacked', requires: 'dimension+measure+color', bestFor: ['composition within categories'] },
+      { id: 'diverging', requires: 'dimension+signed measure', bestFor: ['positive and negative contribution'], avoid: ['no meaningful zero baseline'] }
+    ],
+    fallback: [{ chartType: 'bar', variant: 'horizontal', reason: 'Use a standard horizontal comparison when a centered or multi-series variant is invalid.' }],
     bestFor: ['ranking by category', 'comparison across dimensions', 'top-N with limit', 'grouped/stacked multi-series via encoding.color'],
     antiPatterns: ['time series with many periods (use line)', 'more than 12 categories without top-N limit'],
     rules: [

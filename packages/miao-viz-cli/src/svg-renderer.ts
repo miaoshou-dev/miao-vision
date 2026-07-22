@@ -11,6 +11,10 @@ import type { AgentChartSpec } from './types'
 import type { SvgTheme } from './themes/types'
 import { escapeHtml, formatTick, svgFrame, buildAxis, markAttrs, numberStyle, renderUnsupported } from './svg-renderer-utils'
 import { renderBarChart, renderLineChart, renderPieChart } from './svg-renderer-charts'
+import { renderBulletChart, renderDivergingBarChart, renderDotChart, renderHorizontalBarChart, renderRangeChart } from './p0-charts'
+import { applyChartLayers, renderFacetedChart } from './chart-layers'
+import { renderComboBarLineChart, renderParetoChart } from './p1-charts'
+import { chartPalette } from './semantic-color'
 export { escapeHtml, svgFrame, buildAxis, formatTick, markAttrs, numberStyle }
 
 interface RenderOptions {
@@ -31,9 +35,25 @@ export function renderChartSvg(
   options: RenderOptions = {}
 ): string {
   const theme = svgTheme ?? DEFAULT_SVG_THEME
+  const semanticTheme = { ...theme, palette: chartPalette(chart, theme) }
   const data = prepareChartData(rows, chart)
+  const renderBase = (baseChart: AgentChartSpec, baseRows: Record<string, unknown>[]) => {
+    const rendered = renderPreparedChart(baseChart, baseRows, semanticTheme, options)
+    return applyChartLayers(rendered, baseChart, baseRows, semanticTheme)
+  }
+  return renderFacetedChart(chart, data, renderBase, semanticTheme)
+}
+
+function renderPreparedChart(
+  chart: AgentChartSpec,
+  data: Record<string, unknown>[],
+  theme: SvgTheme,
+  options: RenderOptions
+): string {
   if (chart.type === 'line' || chart.type === 'area') return renderLineChart(chart, data, theme, options)
-  if (chart.type === 'bar') return renderBarChart(chart, data, theme, options)
+  if (chart.type === 'bar' && chart.variant === 'diverging') return renderDivergingBarChart(chart, data, theme, options)
+  if (chart.type === 'bar' && chart.variant === 'horizontal') return renderHorizontalBarChart(chart, data, theme, options)
+  if (chart.type === 'bar') return renderBarChart(chart.variant === 'stacked' ? { ...chart, style: { ...chart.style, barMode: 'stacked' } } : chart, data, theme, options)
   if (chart.type === 'pie') return renderPieChart(chart, data, theme, options)
   if (chart.type === 'table') return renderTable(chart, data, options)
   if (chart.type === 'bigvalue') return renderBigValue(chart, data)
@@ -58,6 +78,11 @@ export function renderChartSvg(
   if (chart.type === 'infographic-flow') return renderInfographicFlow(chart, data)
   if (chart.type === 'infographic-hierarchy') return renderInfographicHierarchy(chart, data)
   if (chart.type === 'infographic-comparison') return renderInfographicComparison(chart, data)
+  if (chart.type === 'dot') return renderDotChart(chart, data, theme, options)
+  if (chart.type === 'bullet') return renderBulletChart(chart, data, theme, options)
+  if (chart.type === 'range') return renderRangeChart(chart, data, theme, options)
+  if (chart.type === 'pareto') return renderParetoChart(chart, data, theme, options)
+  if (chart.type === 'combo-bar-line') return renderComboBarLineChart(chart, data, theme, options)
   return renderUnsupported(chart)
 }
 
@@ -169,10 +194,12 @@ function renderScatterChart(chart: AgentChartSpec, rows: Record<string, unknown>
   const yValues = sample.map(row => Number(row[yField])).filter(Number.isFinite)
   if (xValues.length === 0 || yValues.length === 0) return renderUnsupported(chart)
 
-  const xMin = Math.min(...xValues)
-  const xMax = Math.max(...xValues)
-  const yMin = Math.min(...yValues)
-  const yMax = Math.max(...yValues)
+  const configuredXMin = Number(chart.style?.xDomainMin); const configuredXMax = Number(chart.style?.xDomainMax)
+  const configuredYMin = Number(chart.style?.yDomainMin); const configuredYMax = Number(chart.style?.yDomainMax)
+  const xMin = Number.isFinite(configuredXMin) ? configuredXMin : Math.min(...xValues)
+  const xMax = Number.isFinite(configuredXMax) ? configuredXMax : Math.max(...xValues)
+  const yMin = Number.isFinite(configuredYMin) ? configuredYMin : Math.min(...yValues)
+  const yMax = Number.isFinite(configuredYMax) ? configuredYMax : Math.max(...yValues)
   const xSpan = (xMax - xMin) || 1
   const ySpan = (yMax - yMin) || 1
   const x0 = margin.left

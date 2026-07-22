@@ -39,12 +39,45 @@ export function analyzeDataset(dataset: LoadedDataset, options: AnalyzerOptions 
 
   const metricCandidates = buildMetricCandidates(fields, evidence)
   const catalog = buildCatalog(fields, sampleWarnings, profile.rows, evidence, metricCandidates)
+  addP0Recommendations(catalog, intent, fields)
   const promptRules = buildPromptRules(catalog.charts, sampleWarnings)
   const clarificationQuestions = buildClarificationQuestions(fields, options.intent ?? '')
 
   const context: AnalyzeContext = { intent, fields, evidence, catalog, sampleWarnings, promptRules, metricCandidates, clarificationQuestions }
   Object.assign(context.catalog, buildDeckCatalog(context))
   return context
+}
+
+function addP0Recommendations(catalog: AnalyzeCatalog, intent: AnalyzeContext['intent'], fields: AnalyzeField[]): void {
+  const dimensions = fields.filter(field => ['dimension', 'status', 'flag', 'geo'].includes(field.role))
+  const measures = fields.filter(field => field.role === 'measure' || field.role === 'score')
+  const tasks = intent.visualTasks ?? []
+  const recommendations: NonNullable<AnalyzeCatalog['recommendations']> = []
+  const push = (family: typeof tasks[number]['family'], chartType: NonNullable<AnalyzeCatalog['recommendations']>[number]['chartType'], variant: string | undefined, score: number, reason: string) => {
+    recommendations.push({ intent: family, chartType, ...(variant ? { variant } : {}), score, reasons: [reason], alternatives: [] })
+  }
+  for (const task of tasks) {
+    if (task.family === 'summary' && measures.length) push(task.family, 'bigvalue', undefined, 0.9, 'quantitative measure detected')
+    if ((task.family === 'comparison' || task.family === 'ranking') && dimensions.length && measures.length) push(task.family, 'dot', 'standard', 0.86, 'dimension and quantitative measure detected')
+    if ((task.family === 'comparison' || task.family === 'ranking') && dimensions.length && measures.length) push(task.family, 'bar', 'horizontal', 0.82, 'category comparison is available')
+    if (task.family === 'change' && dimensions.length && measures.length >= 2) push(task.family, 'dot', 'dumbbell', 0.92, 'dimension and two comparable measures detected')
+    if (task.family === 'change' && dimensions.length && measures.length) push(task.family, 'bar', 'diverging', 0.78, 'signed measure can be compared around zero')
+    if (task.family === 'target-attainment' && measures.length >= 2) push(task.family, 'bullet', 'standard', 0.92, 'actual and target measures are available')
+    if (task.family === 'uncertainty' && measures.length >= 2) push(task.family, 'range', 'standard', 0.9, 'two quantitative interval endpoints are available')
+    if (task.family === 'trend' && catalog.charts.includes('line')) push(task.family, 'line', 'standard', 0.88, 'ordered time field has sufficient periods')
+    if ((task.family === 'ranking' || task.family === 'composition') && dimensions.length && measures.length && (measures[0].min ?? 0) >= 0) push(task.family, 'pareto', undefined, 0.82, 'non-negative ranked contribution supports cumulative share')
+    if (task.family === 'trend' && measures.length >= 2 && measures[0].comparison?.comparableGroup !== measures[1].comparison?.comparableGroup) push(task.family, 'combo-bar-line', undefined, 0.8, 'two measures with different comparison units share an ordered dimension')
+    if (task.family === 'composition' && dimensions.length && measures.length && dimensions[0].distinctCount !== undefined && dimensions[0].distinctCount <= 7) push(task.family, 'pie', undefined, 0.84, 'small part-to-whole category set detected')
+    if (task.family === 'distribution' && measures.length && catalog.charts.includes('histogram')) push(task.family, 'histogram', undefined, 0.88, 'reliable numeric distribution is available')
+    if (task.family === 'relationship' && measures.length >= 2) push(task.family, 'scatter', undefined, 0.9, 'two quantitative measures detected')
+    if (task.family === 'flow' && dimensions.length && measures.length) push(task.family, 'funnel', undefined, 0.8, 'ordered stage-like dimension and measure can express drop-off')
+    if (task.family === 'geo' && dimensions.some(field => field.role === 'geo') && measures.length) push(task.family, 'bar', 'horizontal', 0.72, 'P0 defers maps; rank geographic categories locally')
+  }
+  for (const recommendation of recommendations) {
+    if (!catalog.charts.includes(recommendation.chartType)) catalog.charts.push(recommendation.chartType)
+    recommendation.alternatives = recommendations.filter(other => other.intent === recommendation.intent && other !== recommendation).slice(0, 2).map(other => ({ chartType: other.chartType, variant: other.variant, score: other.score }))
+  }
+  catalog.recommendations = recommendations.sort((a, b) => b.score - a.score)
 }
 
 // ---- Field role identification ----

@@ -12,6 +12,17 @@ const INSIGHTS_CSS = `
   .insights-list li { margin: 5px 0; font-size: 13px; line-height: 1.55; opacity: 0.75; }
   .insight-warning { color: #8a4b00; }
   .insight-caveat { display: block; margin-top: 2px; font-size: 11px; opacity: 0.58; }
+  .miao-render-slot > svg { max-width: 100%; height: auto; }
+  @media print {
+    .chart-block, .chart-card, .miao-facet-svg { break-inside: avoid; page-break-inside: avoid; }
+    .miao-render-slot { overflow: visible; }
+  }
+  .report-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; align-items: start; }
+  .report-grid > .chart-block { margin: 0; grid-column: span var(--mv-span, 12); }
+  .report-grid > .emphasis-primary { border-top: 3px solid var(--mv-brand, #2563eb); }
+  .data-quality-badge { display: inline-block; margin: 0 0 8px; padding: 3px 8px; border: 1px solid #c2410c; border-radius: 999px; color: #9a3412; background: #fff7ed; font-size: 10px; font-weight: 700; }
+  .layout-narrative { display: block; }
+  @media (max-width: 720px) { .report-grid { display: block; } .report-grid > .chart-block { margin-bottom: 18px; } }
 `
 
 export function renderStaticHtml(
@@ -34,7 +45,15 @@ export function renderStaticHtml(
     : ''
 
   let charts: string
-  if (theme.layout === 'editorial') {
+  if (spec.layout) {
+    charts = `<div class="report-grid layout-${spec.layout.preset}">${spec.charts.map((chart, index) => {
+      const chartId = chartIdFor(chart, index)
+      const svg = renderChartSvg(chart, rows, theme.svg, { chartId })
+      const span = chart.placement?.span ?? (spec.layout?.preset === 'narrative' ? 12 : 6)
+      const emphasis = chart.placement?.emphasis === 'primary' ? ' emphasis-primary' : ''
+      return `<section class="chart-block${emphasis}" style="--mv-span:${span}" data-miao-chart="${escapeHtml(chartId)}"><h2>${escapeHtml(chart.title ?? `${chart.type} chart ${index + 1}`)}</h2>${renderQualityBadge(chart, profile)}<div class="miao-render-slot">${svg}</div></section>`
+    }).join('\n')}</div>`
+  } else if (theme.layout === 'editorial') {
     const sections: string[] = []
     let i = 0
     while (i < spec.charts.length) {
@@ -48,7 +67,7 @@ export function renderStaticHtml(
         const chart = spec.charts[i]
         const chartId = chartIdFor(chart, i)
         const svg = renderChartSvg(chart, rows, theme.svg, { chartId })
-        sections.push(renderEditorialCard(chart, i, svg, chartId))
+        sections.push(renderEditorialCard(chart, i, svg, chartId, renderQualityBadge(chart, profile)))
         i++
       }
     }
@@ -57,7 +76,7 @@ export function renderStaticHtml(
     charts = spec.charts.map((chart, index) => {
       const chartId = chartIdFor(chart, index)
       const svg = renderChartSvg(chart, rows, theme.svg, { chartId })
-      return renderDefaultCard(chart, index, svg, chartId)
+      return renderDefaultCard(chart, index, svg, chartId, renderQualityBadge(chart, profile))
     }).join('\n')
   }
 
@@ -108,11 +127,11 @@ function renderEditorialHeader(title: string, description: string | undefined, p
   </header>`
 }
 
-function renderDefaultCard(chart: AgentChartSpec, index: number, svg: string, chartId: string): string {
+function renderDefaultCard(chart: AgentChartSpec, index: number, svg: string, chartId: string, qualityBadge = ''): string {
   const chartTitle = chart.title ?? `${chart.type} chart ${index + 1}`
   return `<section class="chart-block" data-miao-chart="${escapeHtml(chartId)}">
     <h2>${escapeHtml(chartTitle)}</h2>
-    <div class="miao-render-slot">${svg}</div>
+    ${qualityBadge}<div class="miao-render-slot">${svg}</div>
   </section>`
 }
 
@@ -127,15 +146,22 @@ function renderKpiGroup(charts: AgentChartSpec[], rows: Record<string, unknown>[
   </section>`
 }
 
-function renderEditorialCard(chart: AgentChartSpec, index: number, svg: string, chartId: string): string {
+function renderEditorialCard(chart: AgentChartSpec, index: number, svg: string, chartId: string, qualityBadge = ''): string {
   const chartTitle = chart.title ?? `${chart.type} chart ${index + 1}`
   const caption = buildCaption(chart)
   return `<section class="chart-card" data-miao-chart="${escapeHtml(chartId)}">
     <div class="chart-label">${escapeHtml(chart.type.toUpperCase())} CHART</div>
     <h2>${escapeHtml(chartTitle)}</h2>
-    <div class="miao-render-slot">${svg}</div>
+    ${qualityBadge}<div class="miao-render-slot">${svg}</div>
     ${caption ? `<p class="chart-caption">${escapeHtml(caption)}</p>` : ''}
   </section>`
+}
+
+function renderQualityBadge(chart: AgentChartSpec, profile: DataProfile): string {
+  const threshold = chart.quality?.missingRateThreshold ?? 0.2
+  const fields = Object.values(chart.encoding ?? {}).map(encoding => encoding?.field).filter((field): field is string => Boolean(field))
+  const risky = profile.columns.filter(column => fields.includes(column.name) && column.nullRate >= threshold)
+  return risky.length ? `<span class="data-quality-badge">DATA QUALITY · ${escapeHtml(risky.map(column => `${column.name} ${(column.nullRate * 100).toFixed(0)}% missing`).join(', '))}</span>` : ''
 }
 
 function chartIdFor(chart: AgentChartSpec, index: number): string {

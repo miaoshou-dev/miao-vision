@@ -48,7 +48,27 @@ export function parseIntent(
   const timePeriods = times[0] ? (times[0].timePeriods ?? 0) : 0
   const coverage = (wantsTrend && timePeriods < 3) || invalidCorrections.length > 0 ? 'partial' : 'full'
 
-  return { raw: raw || '(no intent specified)', coverage, assumptions }
+  return { raw: raw || '(no intent specified)', coverage, assumptions, visualTasks: inferVisualTasks(rawLower, fields) }
+}
+
+function inferVisualTasks(raw: string, fields: AnalyzeField[]): NonNullable<AnalyzeContext['intent']['visualTasks']> {
+  const tasks: NonNullable<AnalyzeContext['intent']['visualTasks']> = []
+  const add = (family: NonNullable<AnalyzeContext['intent']['visualTasks']>[number]['family'], confidence: number, rationale: string) => {
+    if (!tasks.some(task => task.family === family)) tasks.push({ family, confidence, rationale: [rationale] })
+  }
+  if (/trend|over time|by month|by year|趋势|同比|环比/.test(raw)) add('trend', 0.92, 'time-oriented intent phrase detected')
+  if (/change|delta|before|after|变化|增减|前后/.test(raw)) add('change', 0.9, 'change intent phrase detected')
+  if (/target|goal|attainment|目标|达成/.test(raw)) add('target-attainment', 0.94, 'target intent phrase detected')
+  if (/rank|top|bottom|排名|最高|最低/.test(raw)) add('ranking', 0.9, 'ranking intent phrase detected')
+  if (/share|composition|占比|构成/.test(raw)) add('composition', 0.9, 'composition intent phrase detected')
+  if (/distribution|outlier|分布|异常/.test(raw)) add('distribution', 0.9, 'distribution intent phrase detected')
+  if (/correlation|relationship|相关|关系/.test(raw)) add('relationship', 0.9, 'relationship intent phrase detected')
+  if (/flow|funnel|conversion|流向|漏斗|转化/.test(raw)) add('flow', 0.9, 'flow intent phrase detected')
+  if (/interval|confidence|uncertainty|区间|置信|不确定/.test(raw)) add('uncertainty', 0.92, 'interval intent phrase detected')
+  if (/map|region|geographic|地图|地理/.test(raw) && fields.some(field => field.role === 'geo')) add('geo', 0.88, 'geographic intent and field detected')
+  if (/compare|versus| vs |比较|对比/.test(raw)) add('comparison', 0.9, 'comparison intent phrase detected')
+  if (tasks.length === 0) add(fields.some(field => field.role === 'dimension') ? 'comparison' : 'summary', 0.65, 'default inferred from available field roles')
+  return tasks
 }
 
 function parseCorrection(value: string): { key: 'primary_measure' | 'primary_dimension' | 'time_field'; value: string } | null {

@@ -5,6 +5,7 @@ import {
   buildAxis, describeArc, polarToCartesian
 } from './svg-renderer-utils'
 import { computeCategoryAxisLayout, type CategoryAxisLayout } from './category-axis-layout'
+import { stableCategoryColor } from './semantic-color'
 
 export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unknown>[], theme: SvgTheme, options: { chartId?: string }): string {
   const xField = chart.encoding?.x?.field ?? ''
@@ -21,8 +22,9 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
   const chartWidth = width - margin.left - margin.right
   const chartHeight = height - margin.top - margin.bottom
   const values = rows.map(row => Number(row[yField])).filter(Number.isFinite)
-  const yMax = Math.max(...values, 1)
-  const yMin = 0
+  const configuredMax = Number(chart.style?.yDomainMax); const configuredMin = Number(chart.style?.yDomainMin)
+  const yMax = Number.isFinite(configuredMax) ? configuredMax : Math.max(...values, 1)
+  const yMin = Number.isFinite(configuredMin) ? configuredMin : 0
   const barGap = 8
 
   if (!colorField) {
@@ -32,8 +34,8 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
       const barHeight = (value / yMax) * chartHeight
       const x = margin.left + index * (barWidth + barGap)
       const y = margin.top + chartHeight - barHeight
-      const color = theme.palette[index % theme.palette.length]
       const label = String(row[xField] ?? '')
+      const color = stableCategoryColor(label, theme.palette)
       const tooltip = `${label}: ${value}`
       return `<g>
         <rect ${markAttrs(options.chartId, xField, row[xField], index, tooltip)} x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${barHeight.toFixed(1)}" rx="3" fill="${color}" />
@@ -54,7 +56,7 @@ export function renderBarChart(chart: AgentChartSpec, rows: Record<string, unkno
   }
 
   const barMode = chart.style?.barMode
-  const stackColors = colorValues.map((_, ci) => theme.palette[ci % theme.palette.length])
+  const stackColors = colorValues.map(value => stableCategoryColor(value, theme.palette))
 
   if (barMode === 'stacked') {
     const xBarWidth = Math.max(8, (chartWidth - barGap * Math.max(xValues.length - 1, 0)) / Math.max(xValues.length, 1))
@@ -120,8 +122,9 @@ export function renderLineChart(chart: AgentChartSpec, rows: Record<string, unkn
   const chartWidth = width - margin.left - margin.right
   const chartHeight = height - margin.top - margin.bottom
   const values = rows.map(row => Number(row[yField])).filter(Number.isFinite)
-  const yMax = Math.max(...values, 1)
-  const yMin = Math.min(...values, 0)
+  const configuredMax = Number(chart.style?.yDomainMax); const configuredMin = Number(chart.style?.yDomainMin)
+  const yMax = Number.isFinite(configuredMax) ? configuredMax : Math.max(...values, 1)
+  const yMin = Number.isFinite(configuredMin) ? configuredMin : Math.min(...values, 0)
   const span = Math.max(yMax - yMin, 1)
 
   if (!colorField) {
@@ -192,7 +195,7 @@ export function renderLineChart(chart: AgentChartSpec, rows: Record<string, unkn
     })
 
     const areas = colorValues.map((_cv, si) => {
-      const color = theme.palette[si % theme.palette.length]
+      const color = stableCategoryColor(colorValues[si], theme.palette)
       const topPath = stacks.map((s, i) => {
         const y = baseline - s[si].top
         return `${i === 0 ? 'M' : 'L'} ${xPositions[i].x.toFixed(1)} ${y.toFixed(1)}`
@@ -211,7 +214,7 @@ export function renderLineChart(chart: AgentChartSpec, rows: Record<string, unkn
         return `<text x="${xPositions[i].x.toFixed(1)}" y="${height - 20}" text-anchor="middle" fill="${theme.labelColor}" font-size="11">${escapeHtml(label)}</text>`
       }).join('')
 
-    const legendColors = colorValues.map((_, i) => theme.palette[i % theme.palette.length])
+    const legendColors = colorValues.map(value => stableCategoryColor(value, theme.palette))
     return svgFrame(width, height, theme.background, `
       ${buildAxis(margin, chartWidth, chartHeight, xField, yField, yMin, yMax, theme)}
       ${areas}
@@ -231,13 +234,13 @@ export function renderLineChart(chart: AgentChartSpec, rows: Record<string, unkn
   }
 
   const paths = [...seriesPoints.entries()].map(([_cv, pts], si) => {
-    const color = theme.palette[si % theme.palette.length]
+    const color = stableCategoryColor(colorValues[si], theme.palette)
     const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
     return `<path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />`
   }).join('')
 
   const dots = [...seriesPoints.entries()].map(([cv, pts], si) => {
-    const color = theme.palette[si % theme.palette.length]
+    const color = stableCategoryColor(colorValues[si], theme.palette)
     return pts.map((p, i) =>
       `<circle ${markAttrs(options.chartId, xField, xIndex[i], si, `${xIndex[i]}, ${cv}: ${seriesMap.get(cv)?.[i].value ?? ''}`)} cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${color}" />`
     ).join('')
@@ -251,7 +254,7 @@ export function renderLineChart(chart: AgentChartSpec, rows: Record<string, unkn
       return `<text x="${x.toFixed(1)}" y="${height - 20}" text-anchor="middle" fill="${theme.labelColor}" font-size="11">${escapeHtml(label)}</text>`
     }).join('')
 
-  const legendColors = colorValues.map((_, i) => theme.palette[i % theme.palette.length])
+  const legendColors = colorValues.map(value => stableCategoryColor(value, theme.palette))
   return svgFrame(width, height, theme.background, `
     ${buildAxis(margin, chartWidth, chartHeight, xField, yField, yMin, yMax, theme)}
     ${paths}
@@ -280,8 +283,8 @@ export function renderPieChart(chart: AgentChartSpec, rows: Record<string, unkno
     const path = innerR > 0
       ? describeDonutArc(cx, cy, innerR, outerR, angle, nextAngle)
       : describeArc(cx, cy, outerR, angle, nextAngle)
-    const color = theme.palette[index % theme.palette.length]
     const label = String(row[labelField] ?? '')
+    const color = stableCategoryColor(label, theme.palette)
     const tooltip = `${label}: ${value}`
     angle = nextAngle
     return `<path ${markAttrs(options.chartId, labelField, row[labelField], index, tooltip)} d="${path}" fill="${color}" stroke="${theme.background}" stroke-width="2" />`
@@ -290,7 +293,7 @@ export function renderPieChart(chart: AgentChartSpec, rows: Record<string, unkno
   const legend = rows.map((row, index) => {
     const y = 72 + index * 24
     return `<g>
-      <rect x="${width - 210}" y="${y - 10}" width="10" height="10" fill="${theme.palette[index % theme.palette.length]}" />
+      <rect x="${width - 210}" y="${y - 10}" width="10" height="10" fill="${stableCategoryColor(String(row[labelField] ?? ''), theme.palette)}" />
       <text x="${width - 192}" y="${y}" fill="${theme.labelColor}" font-size="12">${escapeHtml(String(row[labelField] ?? ''))}</text>
     </g>`
   }).join('')

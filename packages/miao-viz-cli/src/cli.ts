@@ -9,6 +9,9 @@ import { renderStaticHtml } from './html-export'
 import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyIssues, strictVerifyError } from './spec-validator'
 import { parseAnalyzeContext, toCompactAnalyzeContext } from './context-schema'
 import { renderChartSvg } from './svg-renderer'
+import { collectArtifactSizeWarnings } from './artifact-budget'
+import { resolveChartEvidence } from './chart-evidence'
+import { collectVisualDiversityIssues } from './report-diversity-audit'
 import { runArticle } from './cli-article'
 import { analyzeDataset } from './analyzer'
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
@@ -167,7 +170,17 @@ function runValidate(args: CliArgs): unknown {
   const normalized = normalizeSpec(spec)
   if (isAgentError(normalized)) return fail(normalized)
 
-  const result = validateReportSpec(normalized, profile)
+  let context: AnalyzeContext | undefined
+  const contextPath = stringFlag(args, 'context')
+  if (contextPath) {
+    const raw = readJson<unknown>(contextPath)
+    const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true ? (raw as { value: unknown }).value : raw
+    const parsed = parseAnalyzeContext(unwrapped)
+    if (!parsed) return fail(agentError('INVALID_CONTEXT', 'context.json format is invalid.', { contextPath }))
+    context = parsed
+  }
+
+  const result = validateReportSpec(normalized, profile, ['html'], context)
   if (isAgentError(result)) {
     if (args.flags['patch-hints'] === true) {
       return fail({ ...result, patches: generatePatchHints(result, normalized as AgentReportSpec) })
@@ -175,26 +188,8 @@ function runValidate(args: CliArgs): unknown {
     return fail(result)
   }
 
-  // Optional context.json for catalog compliance and semantic checks (T26, T27)
-  let context: AnalyzeContext | undefined
-  const contextPath = stringFlag(args, 'context')
-  if (contextPath) {
-    const raw = readJson<unknown>(contextPath)
-    const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true
-      ? (raw as { value: unknown }).value
-      : raw
-    const parsed = parseAnalyzeContext(unwrapped)
-    if (!parsed) {
-      return fail(agentError(
-        'INVALID_CONTEXT',
-        'context.json format is invalid.',
-        { contextPath }
-      ))
-    }
-    context = parsed
-  }
-
   const warnings = collectValidationWarnings(result.value, profile, context)
+  const visualDiversityIssues = collectVisualDiversityIssues(result.value, context)
 
   // --strict: blockedChart violations become hard errors (T26)
   if (args.flags['strict'] === true && context) {
@@ -244,11 +239,11 @@ function runValidate(args: CliArgs): unknown {
   if (args.flags['patch-hints'] === true) {
     const warningPatches = collectWarningPatches(result.value)
     if (warningPatches.length > 0) {
-      return { ok: true, value: result.value, warnings, warningPatches }
+      return { ok: true, value: result.value, warnings, visualDiversityIssues, warningPatches }
     }
   }
 
-  return { ok: true, value: result.value, warnings }
+  return { ok: true, value: result.value, warnings, visualDiversityIssues }
 }
 
 function runRender(args: CliArgs): unknown {
@@ -273,22 +268,24 @@ function runRender(args: CliArgs): unknown {
   const normalized = normalizeSpec(spec)
   if (isAgentError(normalized)) return fail(normalized)
 
-  const validation = validateReportSpec(normalized, profile, formats)
+  const contextPath = stringFlag(args, 'context')
+  let renderContext: ReturnType<typeof parseAnalyzeContext> = null
+  if (contextPath) {
+    const raw = readJson<unknown>(contextPath)
+    const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true ? (raw as { value: unknown }).value : raw
+    renderContext = parseAnalyzeContext(unwrapped)
+    if (!renderContext) return fail(agentError('INVALID_CONTEXT', 'context.json format is invalid.', { contextPath }))
+  }
+
+  const resolvedSpec = renderContext ? resolveChartEvidence(normalized, renderContext) : normalized
+  const validation = validateReportSpec(resolvedSpec, profile, formats, renderContext ?? undefined)
   if (isAgentError(validation)) return fail(validation)
 
   // Resolve $evidence: directives in insights[] when --context is provided
-  const contextPath = stringFlag(args, 'context')
-  if (contextPath && validation.value.insights && validation.value.insights.length > 0) {
-    const raw = readJson<unknown>(contextPath)
-    const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true
-      ? (raw as { value: unknown }).value
-      : raw
-    const parsed = parseAnalyzeContext(unwrapped)
-    if (parsed) {
+  if (renderContext && validation.value.insights && validation.value.insights.length > 0) {
       validation.value.insights = validation.value.insights.map(insight =>
-        mapInsightText(insight, text => resolveDirectives(text, parsed.evidence))
+        mapInsightText(insight, text => resolveDirectives(text, renderContext!.evidence))
       )
-    }
   }
 
   const themeFlag = stringFlag(args, 'theme') as 'standard-white' | 'magazine' | 'standard-dark' | 'minimal' | 'nyt' | 'bloomberg' | 'tableau' | undefined
@@ -297,10 +294,13 @@ function runRender(args: CliArgs): unknown {
   const interactive = args.flags['no-interactive'] !== true
 
   const written: string[] = []
+  const warnings: string[] = []
   for (const format of formats) {
     if (format === 'html') {
       const htmlPath = formatOutputPath(output, 'html', formats.length > 1)
-      writeOutput(htmlPath, renderStaticHtml(validation.value, profile, dataset.value.rows, themeFlag, { enabled: interactive }))
+      const html = renderStaticHtml(validation.value, profile, dataset.value.rows, themeFlag, { enabled: interactive })
+      warnings.push(...collectArtifactSizeWarnings(html, interactive))
+      writeOutput(htmlPath, html)
       written.push(htmlPath)
     } else if (format === 'svg') {
       const svgPath = formatOutputPath(output, 'svg', formats.length > 1)
@@ -316,7 +316,7 @@ function runRender(args: CliArgs): unknown {
     }
   }
 
-  return { ok: true, value: { output: written, profile, interactive: formats.includes('html') ? interactive : false } }
+  return { ok: true, value: { output: written, profile, interactive: formats.includes('html') ? interactive : false }, ...(warnings.length ? { warnings } : {}) }
 }
 
 function runQuery(args: CliArgs): unknown {

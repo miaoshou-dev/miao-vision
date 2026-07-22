@@ -7,6 +7,9 @@ import { normalizeInsights } from './insight-utils'
 import { collectChartSemanticWarnings } from './spec-validator-intelligence'
 import { VALIDATOR_ERROR_CODES } from './error-codes'
 import { interactionCapabilities } from './interaction-capabilities'
+import { collectP0Warnings, validateP0ChartSpec } from './spec-validator-p0'
+import { collectVisualDiversityIssues } from './report-diversity-audit'
+import { validateP1ChartSpec } from './spec-validator-p1'
 import type { AnalyzeContext } from './context-schema'
 import type { AgentChartSpec, AgentDataTransform, AgentOutputFormat, AgentResult, AgentReportSpec, DataProfile } from './types'
 
@@ -20,6 +23,9 @@ export function validateReportSpec(
   formats: AgentOutputFormat[] = ['html'],
   context?: AnalyzeContext
 ): AgentResult<AgentReportSpec> {
+  if (typeof spec === 'object' && spec !== null && 'specVersion' in spec && Number((spec as { specVersion?: unknown }).specVersion) > 1) {
+    return agentError('UNSUPPORTED_SPEC_VERSION', `Unsupported specVersion: ${String((spec as { specVersion?: unknown }).specVersion)}.`, { supportedVersions: [1] })
+  }
   const parsed = reportSpecSchema.safeParse(spec)
   if (!parsed.success) {
     return agentError('INVALID_SPEC', parsed.error.issues.map(issue => issue.message).join('; '))
@@ -50,6 +56,11 @@ export function validateReportSpec(
 
     const chartTypeResult = validateChartType(chart)
     if (isAgentError(chartTypeResult)) return chartTypeResult
+
+    const p0Result = validateP0ChartSpec(chart, profile, context)
+    if (isAgentError(p0Result)) return p0Result
+    const p1Result = validateP1ChartSpec(chart, profile)
+    if (isAgentError(p1Result)) return p1Result
 
     const encodingResult = validateRequiredEncodings(chart)
     if (isAgentError(encodingResult)) return encodingResult
@@ -108,6 +119,7 @@ export function collectValidationWarnings(
   context?: AnalyzeContext
 ): string[] {
   const warnings: string[] = []
+  warnings.push(...collectVisualDiversityIssues(spec, context).map(issue => `${issue.code} ${issue.path}: ${issue.message} ${issue.suggestion}`))
 
   // V01: too many charts in a single report
   if (spec.charts.length > 6) {
@@ -126,6 +138,7 @@ export function collectValidationWarnings(
 
   for (const chart of spec.charts) {
     const chartLabel = chart.id ? `chart '${chart.id}'` : `${chart.type} chart`
+    warnings.push(...collectP0Warnings(chart, profile))
 
     // T24: derive-month applied to a string field (profile-based check)
     for (const t of chart.data?.transform ?? []) {
@@ -187,6 +200,17 @@ export function validateEvidencePaths(
           location: 'insights[].evidence',
           availableIds
         })
+      }
+    }
+  }
+  for (let chartIndex = 0; chartIndex < spec.charts.length; chartIndex++) {
+    for (const reference of spec.charts[chartIndex].references ?? []) {
+      for (const raw of [reference.value, reference.from, reference.to]) {
+        if (typeof raw !== 'string') continue
+        for (const ref of parseEvidenceRefs(raw)) {
+          const resolved = resolveEvidencePath(context.evidence, ref.id, ref.path)
+          if (!resolved.found) issues.push({ code: VALIDATOR_ERROR_CODES.EVIDENCE_PATH_NOT_FOUND, message: `Reference evidence path '${ref.raw}' does not exist.`, evidenceId: ref.id, path: ref.path, location: `charts[${chartIndex}].references`, availableIds })
+        }
       }
     }
   }
@@ -257,7 +281,7 @@ function validateChartType(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
 
 function validateRequiredEncodings(chart: AgentChartSpec): AgentResult<AgentChartSpec> {
   const catalogItem = getCatalogItem(chart.type)
-  const required = catalogItem?.requiredEncodings ?? []
+  const required = catalogItem?.variants?.find(variant => variant.id === (chart.variant ?? 'standard'))?.requiredEncodings ?? catalogItem?.requiredEncodings ?? []
   for (const encoding of required) {
     if (!chart.encoding?.[encoding]?.field) {
       return agentError('MISSING_ENCODING', `Chart type '${chart.type}' requires encoding '${encoding}'.`, {

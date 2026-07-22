@@ -3,6 +3,7 @@ import { getBlockById } from './report-block-registry'
 import type { BlockMatchContext } from './report-block-registry'
 import type { AgentReportSpec } from './types'
 import type { CatalogTemplateEntry } from './context-schema'
+import type { VisualIntentFamily } from './types'
 
 export interface TemplateDecision {
   ok: boolean
@@ -19,8 +20,44 @@ export interface ReportTemplateResolver {
   qualityNotes: string[]
   requiredEvidence: string[]
   qualityConstraints: string[]
+  intents?: VisualIntentFamily[]
+  layoutPreset?: 'narrative' | 'executive' | 'analytical' | 'mosaic'
   canUse(ctx: BlockMatchContext): TemplateDecision
   instantiate(ctx: BlockMatchContext): AgentReportSpec
+}
+
+function p1Fields(ctx: BlockMatchContext) {
+  return {
+    measures: ctx.fields.filter(field => field.role === 'measure' || field.role === 'score'),
+    dimension: ctx.fields.find(field => ['dimension', 'status', 'flag', 'geo'].includes(field.role)),
+    time: ctx.fields.find(field => field.role === 'time')
+  }
+}
+
+function p1Spec(ctx: BlockMatchContext, kind: string): AgentReportSpec {
+  const { measures, dimension, time } = p1Fields(ctx); const m = measures[0]?.name ?? ''; const m2 = measures[1]?.name ?? m; const d = dimension?.name ?? ''; const t = time?.name ?? d
+  const table = { type: 'table' as const, title: 'Evidence detail', encoding: {} }
+  const configs: Record<string, AgentReportSpec> = {
+    'executive-scorecard': { layout: { preset: 'executive', maxColumns: 12 }, charts: [
+      { type: 'bullet', title: 'Actual versus target', encoding: { value: { field: m }, target: { field: m2 } }, placement: { span: 4, emphasis: 'primary' } },
+      { type: 'bar', variant: 'horizontal', title: 'Performance ranking', encoding: { x: { field: d }, y: { field: m } }, placement: { span: 8, emphasis: 'supporting' } }, table] },
+    'distribution-diagnostics': { layout: { preset: 'analytical', maxColumns: 12 }, charts: [
+      { type: 'histogram', title: 'Distribution', encoding: { x: { field: m } }, placement: { span: 6, emphasis: 'primary' } },
+      { type: 'boxplot', title: 'Grouped distribution', encoding: { x: { field: d }, y: { field: m } }, placement: { span: 6, emphasis: 'supporting' } }, table] },
+    'conversion-journey': { layout: { preset: 'narrative', maxColumns: 12 }, charts: [
+      { type: 'funnel', title: 'Stage conversion', encoding: { x: { field: d }, y: { field: m } }, placement: { span: 12, emphasis: 'primary' } },
+      { type: 'bar', variant: 'horizontal', title: 'Stage detail', encoding: { x: { field: d }, y: { field: m } }, placement: { span: 12, emphasis: 'supporting' } }, table] },
+    'variance-bridge': { layout: { preset: 'analytical', maxColumns: 12 }, charts: [
+      { type: 'waterfall', title: 'Variance bridge', encoding: { x: { field: d }, y: { field: m } }, placement: { span: 6, emphasis: 'primary' } },
+      { type: 'bar', variant: 'diverging', title: 'Positive and negative contribution', encoding: { x: { field: d }, y: { field: m } }, placement: { span: 6, emphasis: 'supporting' } }, table] },
+    'cohort-comparison': { layout: { preset: 'mosaic', maxColumns: 12 }, charts: [
+      { type: 'line', title: 'Cohort trends', encoding: { x: { field: t }, y: { field: m } }, facet: { column: { field: d }, maxPanels: 8, scales: 'shared' }, placement: { span: 12, emphasis: 'primary' } },
+      { type: 'heatmap', title: 'Cohort matrix', encoding: { x: { field: t }, y: { field: d }, value: { field: m } }, placement: { span: 12, emphasis: 'supporting' } }, table] },
+    'relationship-analysis': { layout: { preset: 'analytical', maxColumns: 12 }, charts: [
+      { type: 'scatter', title: 'Measure relationship', encoding: { x: { field: m }, y: { field: m2 }, label: { field: d } }, placement: { span: 8, emphasis: 'primary' } },
+      { type: 'bubble', title: 'Weighted relationship', encoding: { x: { field: m }, y: { field: m2 }, size: { field: m } }, placement: { span: 4, emphasis: 'supporting' } }, table] }
+  }
+  return { title: 'Miao Vision Report', insights: [], ...configs[kind] }
 }
 
 export interface ReportTemplateInfo {
@@ -32,6 +69,8 @@ export interface ReportTemplateInfo {
   qualityNotes: string[]
   requiredEvidence: string[]
   qualityConstraints: string[]
+  intents?: VisualIntentFamily[]
+  layoutPreset?: 'narrative' | 'executive' | 'analytical' | 'mosaic'
 }
 
 function scoreForRequirements(ctx: BlockMatchContext, requires: ReportTemplateResolver['requires']): TemplateDecision {
@@ -127,6 +166,18 @@ export const TEMPLATE_REGISTRY: ReportTemplateResolver[] = [
     canUse: ctx => scoreForRequirements(ctx, ['measure', 'dimension']),
     instantiate: ctx => compileBlocks(['kpi-summary', 'comparison-breakdown'], ctx)
   }
+  ,...([
+    ['executive-scorecard', ['summary', 'target-attainment'], ['measure', 'dimension'], ['kpi-summary', 'snapshot-ranking'], 'executive'],
+    ['distribution-diagnostics', ['distribution'], ['measure', 'dimension'], ['distribution-diagnostics'], 'analytical'],
+    ['conversion-journey', ['flow'], ['measure', 'dimension'], ['conversion-journey'], 'narrative'],
+    ['variance-bridge', ['change'], ['measure', 'dimension'], ['variance-bridge'], 'analytical'],
+    ['cohort-comparison', ['comparison', 'trend'], ['measure', 'dimension', 'time'], ['cohort-comparison'], 'mosaic'],
+    ['relationship-analysis', ['relationship'], ['measure', 'dimension'], ['relationship-analysis'], 'analytical']
+  ] as const).map(([id, intents, requires, blocks, layoutPreset]) => ({
+    id, intents: [...intents], bestFor: [...intents], requires: [...requires], blocks: [...blocks], density: 'full' as const, layoutPreset,
+    qualityNotes: ['Use only when the declared intent and required roles are present.'], requiredEvidence: ['total'], qualityConstraints: ['All metrics must remain evidence-grounded.'],
+    canUse: (ctx: BlockMatchContext) => scoreForRequirements(ctx, [...requires]), instantiate: (ctx: BlockMatchContext) => p1Spec(ctx, id)
+  }))
 ]
 
 export function getTemplateById(id: string): ReportTemplateResolver | undefined {
@@ -143,6 +194,8 @@ export function templateInfo(template: ReportTemplateResolver): ReportTemplateIn
     qualityNotes: template.qualityNotes,
     requiredEvidence: template.requiredEvidence,
     qualityConstraints: template.qualityConstraints
+    ,intents: template.intents
+    ,layoutPreset: template.layoutPreset
   }
 }
 
@@ -159,6 +212,8 @@ export function toCatalogTemplateEntry(
     density: resolver.density,
     requiredEvidence: resolver.requiredEvidence,
     qualityConstraints: resolver.qualityConstraints
+    ,intents: resolver.intents
+    ,layoutPreset: resolver.layoutPreset
   }
 }
 

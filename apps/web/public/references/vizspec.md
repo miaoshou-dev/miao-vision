@@ -4,6 +4,7 @@
 
 ```yaml
 title: Sales Dashboard
+specVersion: 1
 description: Optional summary
 charts:
   - type: bar
@@ -30,6 +31,91 @@ charts:
 | `heatmap` | `x`, `y`, `value` | matrix intensity |
 | `table` | none | ranked or filtered row view — always pair with `aggregate + sort + limit` transforms |
 | `bigvalue` | `value` | KPI — **must** include `aggregate + sort + limit: 1` transforms to select one row |
+| `dot` | `x`, `y` | compact comparison; variants: `standard`, `lollipop`, `dumbbell` |
+| `bullet` | `value`, `target` | actual versus target |
+| `range` | `x`, `lower`, `upper` | interval or uncertainty |
+| `pareto` | `x`, `y` | ranked contribution with cumulative share |
+| `combo-bar-line` | `x`, `y`, `lineY` | volume and rate with explicitly different units |
+
+`specVersion` is optional and defaults to version 1. A consumer must reject a higher unsupported version rather than silently dropping fields.
+
+## P0 Variants
+
+```yaml
+# Two-endpoint comparison
+type: dot
+variant: dumbbell
+encoding:
+  x: { field: region, type: nominal }
+  start: { field: revenue_2025, type: quantitative }
+  end: { field: revenue_2026, type: quantitative }
+
+# Signed contribution around zero
+type: bar
+variant: diverging
+encoding:
+  x: { field: category, type: nominal }
+  y: { field: delta, type: quantitative }
+```
+
+## References, Annotations, And Facets
+
+```yaml
+type: line
+encoding:
+  x: { field: month, type: temporal }
+  y: { field: revenue, type: quantitative }
+references:
+  - type: line
+    axis: y
+    value: 100000
+    label: Target
+  - type: band
+    axis: y
+    from: 80000
+    to: 120000
+    label: Expected range
+annotations:
+  - type: point
+    selector: { op: max, field: revenue }
+    text: Peak
+facet:
+  column: { field: region, type: nominal }
+  maxPanels: 8
+  scales: shared
+```
+
+Data-derived references use `field + aggregate` and must include `evidence`. Explicit user-supplied constants do not require evidence. P0 does not infer units from field names.
+
+## Layout, Semantic Color, And Quality
+
+```yaml
+layout: { preset: analytical, maxColumns: 12 }
+charts:
+  - type: combo-bar-line
+    placement: { span: 8, emphasis: primary }
+    encoding:
+      x: { field: month, type: temporal }
+      y: { field: revenue, type: quantitative, unit: currency }
+      lineY: { field: conversion_rate, type: quantitative, unit: percentage }
+    colorScale:
+      type: qualitative
+    quality:
+      sampleSizeField: sample_size
+      estimatedField: estimated
+      incompleteField: incomplete_period
+      lowSampleThreshold: 10
+```
+
+Layout presets are `narrative`, `executive`, `analytical`, and `mosaic`. Placement spans are limited to 4, 6, 8, or 12 and collapse to one column on small screens. Combo `y` and `lineY` units must both be explicit (or profile-proven) and different. Quality fields must exist in the source or transformed schema.
+
+`max-change` selectors must use either:
+
+```yaml
+selector: { op: max-change, mode: previous, field: revenue, orderBy: month }
+# or
+selector: { op: max-change, mode: between-fields, startField: revenue_2025, endField: revenue_2026 }
+```
 
 ## Encodings
 
