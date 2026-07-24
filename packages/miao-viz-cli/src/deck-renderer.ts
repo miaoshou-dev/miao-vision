@@ -104,11 +104,11 @@ const SLIDE_CSS = `
     body { background: var(--mv-paper); }
     .slide-viewport { display: block; }
     .slide-canvas { transform: none !important; width: auto; height: auto; }
-    .slide { width: 297mm; height: 210mm; position: relative; visibility: visible !important; opacity: 1 !important; break-after: page; page-break-after: always; }
+    .slide { width: 13.333in; height: 7.5in; position: relative; visibility: visible !important; opacity: 1 !important; break-after: page; page-break-after: always; animation: none !important; transition: none !important; }
     .slide:last-child { break-after: auto; page-break-after: auto; }
     .slide-nav { display: none !important; }
   }
-  @page { size: A4 landscape; margin: 0; background: var(--mv-paper, #f5f4ed); }
+  @page { size: 13.333in 7.5in; margin: 0; background: var(--mv-paper, #f5f4ed); }
 `
 
 const SLIDE_JS = `
@@ -161,6 +161,7 @@ const SLIDE_JS = `
   window.addEventListener('resize', setScale);
   setScale();
   goTo(0);
+  Promise.resolve(document.fonts && document.fonts.ready).then(function(){document.documentElement.dataset.miaoRenderReady='true';});
 })();
 `
 

@@ -9,6 +9,7 @@ import { fail, readJson, readSpec, requiredFlag, stringFlag, writeOutput } from 
 import type { CliArgs } from './cli-utils'
 import { instantiateDeck } from './deck-knowledge-registry'
 import * as YAML from 'yaml'
+import { exportHtmlToPdf } from './pdf-export'
 
 export function runDeckCommand(args: CliArgs): unknown {
   if (args.subcommand === 'instantiate') return runDeckInstantiate(args)
@@ -65,7 +66,7 @@ function runDeckInstantiate(args: CliArgs): unknown {
   return { ok: true, value: { spec, ...(output ? { output } : {}) } }
 }
 
-export function runDeckRender(args: CliArgs): unknown {
+export async function runDeckRender(args: CliArgs): Promise<unknown> {
   const input = requiredFlag(args, 'input')
   const specPath = requiredFlag(args, 'spec')
   const output = requiredFlag(args, 'output')
@@ -111,7 +112,21 @@ export function runDeckRender(args: CliArgs): unknown {
   }
 
   const theme = stringFlag(args, 'theme') as Parameters<typeof renderDeckHtml>[2]
-  writeOutput(output, renderDeckHtml(validation.value, dataset.value.rows, theme))
+  const html = renderDeckHtml(validation.value, dataset.value.rows, theme)
+  const format = stringFlag(args, 'format') ?? 'html'
+  if (format !== 'html' && format !== 'pdf') {
+    return fail(agentError('UNSUPPORTED_OUTPUT_FORMAT', "Deck format must be 'html' or 'pdf'.", { format }))
+  }
+  if (format === 'pdf') {
+    const exported = await exportHtmlToPdf(html, output, {
+      mode: 'deck',
+      timeout: numberFlag(args, 'pdf-timeout'),
+      keepTemp: args.flags['keep-temp'] === true
+    })
+    if (!exported.ok) return fail(exported)
+  } else {
+    writeOutput(output, html)
+  }
   return {
     ok: true,
     value: {

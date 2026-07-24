@@ -269,7 +269,7 @@ describe('renderDeckHtml', () => {
   it('contains print-mode CSS', () => {
     const html = renderDeckHtml(MINIMAL_DECK, SAMPLE_ROWS)
     expect(html).toContain('@media print')
-    expect(html).toContain('A4 landscape')
+    expect(html).toContain('13.333in 7.5in')
   })
 
   it('contains keyboard navigation JS', () => {

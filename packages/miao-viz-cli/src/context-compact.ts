@@ -33,7 +33,7 @@ export function toCompactAnalyzeContext(ctx: AnalyzeContext): CompactAnalyzeCont
           }
         : null
     ]),
-    evidence: ctx.evidence.map(e => [e.id, e.values ?? e.rows ?? {}, e.query]),
+    evidence: ctx.evidence.map(e => [e.id, e.values ?? e.rows ?? {}, e.query, e.recipe]),
     metricCandidates: (ctx.metricCandidates ?? []).map(m => [m.id, m.type, m.formula, m.value ?? null, m.label, m.confidence, m.caveat ?? null]),
     catalog: {
       charts: ctx.catalog.charts,
@@ -90,9 +90,10 @@ export function fromCompactAnalyzeContext(ctx: CompactAnalyzeContext): AnalyzeCo
       ...(distinctCount !== undefined && distinctCount !== null ? { distinctCount } : {}),
       ...(timePeriods !== undefined && timePeriods !== null ? { timePeriods } : {})
     })),
-    evidence: ctx.evidence.map(([id, value, query]) => ({
+    evidence: ctx.evidence.map(([id, value, query, recipe]) => ({
       id,
       query: query ?? `compact evidence: ${id}`,
+      ...(recipe ? { recipe } : {}),
       ...(Array.isArray(value) ? { rows: value } : { values: value })
     })),
     catalog: {

@@ -30,6 +30,9 @@ import { mapInsightText } from './insight-utils'
 import type { CliArgs } from './cli-utils'
 import type { AnalyzeContext } from './context-schema'
 import type { AgentReportSpec } from './types'
+import { runReportCommand } from './cli-report'
+import { exportHtmlToPdf } from './pdf-export'
+import { join } from 'node:path'
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
@@ -64,10 +67,13 @@ async function main(): Promise<void> {
         return
       case 'render':
         return runRenderGroup(args)
+      case 'report':
+        printJson(await runReportCommand(args))
+        return
     }
 
     printJson(agentError('UNKNOWN_COMMAND', `Unknown command: ${args.command ?? '(none)'}`, {
-      commands: ['data', 'spec', 'deck', 'render']
+      commands: ['data', 'spec', 'deck', 'report', 'render']
     }))
     process.exitCode = 1
   } catch (error) {
@@ -122,10 +128,10 @@ function runSpec(args: CliArgs): void {
 async function runRenderGroup(args: CliArgs): Promise<void> {
   switch (args.subcommand) {
     case 'report':
-      printJson(runRender(args))
+      printJson(await runRender(args))
       return
     case 'deck':
-      printJson(runDeckRender(args))
+      printJson(await runDeckRender(args))
       return
     case 'article':
       printJson(await runArticle(args))
@@ -246,16 +252,18 @@ function runValidate(args: CliArgs): unknown {
   return { ok: true, value: result.value, warnings, visualDiversityIssues }
 }
 
-function runRender(args: CliArgs): unknown {
+async function runRender(args: CliArgs): Promise<unknown> {
   const input = requiredFlag(args, 'input')
   const specPath = requiredFlag(args, 'spec')
-  const output = requiredFlag(args, 'output')
   if (isAgentError(input)) return fail(input)
   if (isAgentError(specPath)) return fail(specPath)
-  if (isAgentError(output)) return fail(output)
 
   const formats = parseFormats(stringFlag(args, 'format'))
   if (isAgentError(formats)) return fail(formats)
+  const outputDir = stringFlag(args, 'output-dir')
+  const output = stringFlag(args, 'output')
+  if (formats.length > 1 && !outputDir) return fail(agentError('MISSING_FLAG', 'Multiple formats require --output-dir <directory>.'))
+  if (formats.length === 1 && !output) return fail(agentError('MISSING_FLAG', 'Missing required flag --output.'))
 
   const dataset = loadDataset(input, {
     sheet: stringFlag(args, 'sheet'),
@@ -295,15 +303,28 @@ function runRender(args: CliArgs): unknown {
 
   const written: string[] = []
   const warnings: string[] = []
+  const html = renderStaticHtml(validation.value, profile, dataset.value.rows, themeFlag, { enabled: interactive })
   for (const format of formats) {
     if (format === 'html') {
-      const htmlPath = formatOutputPath(output, 'html', formats.length > 1)
-      const html = renderStaticHtml(validation.value, profile, dataset.value.rows, themeFlag, { enabled: interactive })
+      const htmlPath = outputDir ? join(outputDir, 'report.html') : formatOutputPath(output!, 'html', false)
       warnings.push(...collectArtifactSizeWarnings(html, interactive))
       writeOutput(htmlPath, html)
       written.push(htmlPath)
+    } else if (format === 'pdf') {
+      const pdfPath = outputDir ? join(outputDir, 'report.pdf') : formatOutputPath(output!, 'pdf', false)
+      const result = await exportHtmlToPdf(html, pdfPath, {
+        mode: 'report',
+        pageSize: stringFlag(args, 'page-size') as 'A4' | 'Letter' | undefined,
+        orientation: stringFlag(args, 'orientation') as 'portrait' | 'landscape' | undefined,
+        margin: stringFlag(args, 'margin'),
+        timeout: numberFlag(args, 'pdf-timeout'),
+        keepTemp: args.flags['keep-temp'] === true
+      })
+      if (!result.ok) return fail(result)
+      written.push(pdfPath)
+      warnings.push(...result.value.warnings.map(issue => issue.message))
     } else if (format === 'svg') {
-      const svgPath = formatOutputPath(output, 'svg', formats.length > 1)
+      const svgPath = outputDir ? join(outputDir, 'report.svg') : formatOutputPath(output!, 'svg', false)
       if (validation.value.charts.length !== 1) {
         return fail(agentError('SVG_REQUIRES_SINGLE_CHART', 'SVG output currently supports a single chart spec.'))
       }
@@ -311,7 +332,7 @@ function runRender(args: CliArgs): unknown {
       written.push(svgPath)
     } else {
       return fail(agentError('OUTPUT_FORMAT_NOT_IMPLEMENTED', `Output format '${format}' is not implemented yet.`, {
-        implementedFormats: ['html', 'svg']
+        implementedFormats: ['html', 'svg', 'pdf']
       }))
     }
   }

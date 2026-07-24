@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { beforeAll, describe, expect, it } from 'vitest'
@@ -71,5 +71,28 @@ describe('report workflow smoke', () => {
     const result = runCli(['spec', 'validate', '--spec', specPath, '--profile', profilePath, '--context', contextPath, '--verify', '--strict'])
     expect(result).toMatchObject({ ok: false })
     expect(JSON.stringify(result)).toContain('BLOCKED_CHART_STRICT')
+  })
+
+  it('initializes, updates, inspects, and safely cleans a recurring report project', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-recurring-workflow-'))
+    const contextPath = join(dir, 'context.json')
+    const specPath = join(dir, 'report.yaml')
+    const project = join(dir, 'sales-weekly')
+    expect(runCli(['data', 'analyze', fixture, '--intent', 'sales performance', '--output', contextPath])).toMatchObject({ ok: true })
+    expect(runCli(['spec', 'block', 'instantiate', 'trend-ranking', '--context', contextPath, '--output', specPath])).toMatchObject({ ok: true })
+    expect(runCli(['report', 'init', project, '--input', fixture, '--spec', specPath, '--context', contextPath, '--period', '2026-W28', '--dry-run']))
+      .toMatchObject({ ok: true, value: { dryRun: true } })
+    expect(existsSync(project)).toBe(false)
+    expect(runCli(['report', 'init', project, '--input', fixture, '--spec', specPath, '--context', contextPath, '--period', '2026-W28']))
+      .toMatchObject({ ok: true, value: { status: 'ready' } })
+    expect(runCli(['report', 'update', project, '--input', fixture, '--period', '2026-W29']))
+      .toMatchObject({ ok: true, value: { status: 'ready' } })
+    const history = runCli(['report', 'history', project]) as { value: Array<{ specHash: string; evidencePlanHash: string }> }
+    expect(history.value).toHaveLength(2)
+    expect(new Set(history.value.map(run => run.specHash)).size).toBe(1)
+    expect(new Set(history.value.map(run => run.evidencePlanHash)).size).toBe(1)
+    expect(runCli(['report', 'info', project])).toMatchObject({ ok: true, value: { evidenceCount: 3 } })
+    expect(runCli(['report', 'clean', project, '--keep', '1'])).toMatchObject({ ok: true, value: { dryRun: true } })
+    expect(existsSync(join(project, 'runs', '2026-W28'))).toBe(true)
   })
 })

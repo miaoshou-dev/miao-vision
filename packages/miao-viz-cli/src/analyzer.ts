@@ -9,6 +9,7 @@ import type {
 } from './context-schema'
 import { profileDataset } from './data-profiler'
 import { queryDataset } from './data-query'
+import { queryOptionsToRecipe } from './query-recipe'
 import { isAgentError } from './errors'
 import { BLOCK_REGISTRY, toCatalogBlockEntry } from './report-block-registry'
 import type { BlockMatchContext } from './report-block-registry'
@@ -156,11 +157,13 @@ function runStandardQueries(
       .map(m => `sum(${m.name}) as total_${m.name}`)
       .concat(['count(*) as row_count'])
       .join(', ')
-    const result = queryDataset(dataset.rows, { measure: measureExpr })
+    const options = { measure: measureExpr }
+    const result = queryDataset(dataset.rows, options)
     if (!isAgentError(result) && result.rows.length > 0) {
       evidence.push({
         id: 'total',
         query: `Total aggregates: ${measureExpr}`,
+        recipe: recipeOf(options),
         values: result.rows[0]
       })
     }
@@ -169,11 +172,12 @@ function runStandardQueries(
   // Query 2: by_dimension
   if (primaryMeasure && primaryDimension) {
     const measureExpr = `sum(${primaryMeasure.name}) as total_${primaryMeasure.name}, count(*) as row_count`
-    const result = queryDataset(dataset.rows, {
+    const options = {
       groupby: primaryDimension.name,
       measure: measureExpr,
       orderby: `total_${primaryMeasure.name} desc`
-    })
+    }
+    const result = queryDataset(dataset.rows, options)
     if (!isAgentError(result) && result.rows.length > 0) {
       // Compute share
       const totalVal = result.rows.reduce((s, r) => s + Number(r[`total_${primaryMeasure.name}`] ?? 0), 0)
@@ -184,6 +188,7 @@ function runStandardQueries(
       evidence.push({
         id: 'by_dimension',
         query: `${primaryMeasure.name} by ${primaryDimension.name}, with share`,
+        recipe: withShare(recipeOf(options), `total_${primaryMeasure.name}`),
         rows
       })
     }
@@ -193,15 +198,17 @@ function runStandardQueries(
   const hasInsufficientTime = sampleWarnings.some(w => w.code === 'two_period_only' || w.code === 'one_period_only')
   if (primaryMeasure && primaryTime && !hasInsufficientTime) {
     const measureExpr = `sum(${primaryMeasure.name}) as total_${primaryMeasure.name}`
-    const result = queryDataset(dataset.rows, {
+    const options = {
       groupby: primaryTime.name,
       measure: measureExpr,
       orderby: `${primaryTime.name} asc`
-    })
+    }
+    const result = queryDataset(dataset.rows, options)
     if (!isAgentError(result) && result.rows.length > 0) {
       evidence.push({
         id: 'by_time',
         query: `${primaryMeasure.name} by ${primaryTime.name} (ascending)`,
+        recipe: recipeOf(options),
         rows: result.rows
       })
     }
@@ -233,8 +240,21 @@ function runExtraQuery(
   return {
     id: `extra_${existingCount + 1}`,
     query: `Custom query: ${extraQuery}`,
+    recipe: recipeOf({
+      groupby: parts.groupby, measure: parts.measure, filter: parts.filter,
+      orderby: parts.orderby, limit: parts.limit ? Number(parts.limit) : undefined
+    }),
     rows: result.rows
   }
+}
+
+function recipeOf(options: Parameters<typeof queryDataset>[1]) {
+  const recipe = queryOptionsToRecipe(options)
+  return isAgentError(recipe) ? undefined : recipe
+}
+
+function withShare(recipe: ReturnType<typeof recipeOf>, field: string) {
+  return recipe ? { ...recipe, share: { field, alias: 'share' } } : undefined
 }
 
 // ---- Sample warnings ----

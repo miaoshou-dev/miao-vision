@@ -5,12 +5,13 @@ import { agentError } from './errors'
 import { parseOutputFormats, singleOrReportSpecSchema } from './spec-schema'
 import type { AgentError, AgentOutputFormat, AgentReportSpec, DataProfile } from './types'
 
-const GROUPS = new Set(['data', 'spec', 'deck', 'render'])
+const GROUPS = new Set(['data', 'spec', 'deck', 'report', 'render'])
 
 const GROUP_SUBCOMMANDS: Record<string, Set<string>> = {
   data:   new Set(['profile', 'query', 'analyze']),
   spec:   new Set(['validate', 'catalog', 'block', 'template', 'inspect']),
   deck:   new Set(['validate', 'instantiate']),
+  report: new Set(['init', 'update', 'info', 'history', 'clean']),
   render: new Set(['report', 'deck', 'article']),
 }
 
@@ -24,6 +25,7 @@ export interface CliArgs {
 export const BOOLEAN_FLAGS = new Set([
   'h', 'help', 'summary', 'reliable-only', 'interactive', 'no-interactive',
   'strict', 'patch-hints', 'verify', 'for-llm', 'compact', 'verbose'
+  ,'dry-run', 'confirm', 'copy-input', 'keep-temp'
 ])
 
 function parseRest(args: string[]): { positional: string[]; flags: Record<string, string | boolean> } {

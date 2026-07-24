@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { VisualIntentFamily, VizType } from './types'
 import { MVP_CHART_TYPES } from './spec-schema'
+import { queryRecipeSchema, type QueryRecipe } from './query-recipe'
 const fieldRoleValues = ['measure', 'dimension', 'time', 'id', 'status', 'score', 'flag', 'text', 'geo', 'unknown'] as const
 const chartUsageValues = ['recommended', 'allowed', 'discouraged', 'forbidden'] as const
 // Compact field descriptor — only fields useful for spec writing, not full ColumnProfile
@@ -36,6 +37,7 @@ export interface AnalyzeEvidence {
   // Either a single-row summary (total) or multi-row results (by_dimension)
   values?: Record<string, unknown>
   rows?: Record<string, unknown>[]
+  recipe?: QueryRecipe
 }
 export interface CatalogBlockEntry {
   id: string
@@ -208,7 +210,7 @@ export interface CompactAnalyzeContext {
       comparison?: AnalyzeField['comparison']
     } | null)?
   ]>
-  evidence: Array<[string, Record<string, unknown> | Record<string, unknown>[], string?]>
+  evidence: Array<[string, Record<string, unknown> | Record<string, unknown>[], string?, QueryRecipe?]>
   metricCandidates: Array<[string, MetricCandidate['type'], string, (number | null)?, (string | null)?, (MetricCandidate['confidence'] | null)?, (string | null)?]>
   catalog: {
     charts: string[]
@@ -261,6 +263,7 @@ const analyzeEvidenceSchema = z.object({
   query: z.string().min(1),
   values: z.record(z.string(), z.unknown()).optional(),
   rows: z.array(z.record(z.string(), z.unknown())).optional()
+  ,recipe: queryRecipeSchema.optional()
 }).refine(e => e.values !== undefined || e.rows !== undefined, {
   message: 'Evidence entry must have either values or rows'
 })
@@ -451,7 +454,7 @@ export const compactAnalyzeContextSchema: z.ZodType<CompactAnalyzeContext> = z.o
   evidence: z.array(z.tuple([z.string(), z.union([
     z.record(z.string(), z.unknown()),
     z.array(z.record(z.string(), z.unknown()))
-  ]), z.string().optional()])),
+  ]), z.string().optional(), queryRecipeSchema.optional()])),
   metricCandidates: z.array(z.tuple([
     z.string(),
     z.enum(['unit_average', 'rate', 'share', 'period_change', 'difference']),

@@ -14,8 +14,13 @@ const INSIGHTS_CSS = `
   .insight-caveat { display: block; margin-top: 2px; font-size: 11px; opacity: 0.58; }
   .miao-render-slot > svg { max-width: 100%; height: auto; }
   @media print {
-    .chart-block, .chart-card, .miao-facet-svg { break-inside: avoid; page-break-inside: avoid; }
+    @page { margin: 12mm; }
+    .chart-block, .chart-card, .miao-facet-svg, h1, h2 { break-inside: avoid; page-break-inside: avoid; }
     .miao-render-slot { overflow: visible; }
+    .miao-viz-report button, .miao-view-state, [role="tooltip"], .evidence-drawer { display: none !important; }
+    table thead { display: table-header-group; }
+    a[href]::after { content: none !important; }
+    * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   }
   .report-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; align-items: start; }
   .report-grid > .chart-block { margin: 0; grid-column: span var(--mv-span, 12); }
@@ -97,6 +102,7 @@ export function renderStaticHtml(
   <script type="application/json" id="miao-viz-spec">${jsonScript(spec)}</script>
   <script type="application/json" id="miao-viz-profile">${jsonScript(profile)}</script>
   ${interactive ? renderInteractiveAssets(rows, theme.svg) : ''}
+  <script>Promise.resolve(document.fonts && document.fonts.ready).then(function(){document.documentElement.dataset.miaoRenderReady='true';});</script>
 </body>
 </html>`
 }

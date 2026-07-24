@@ -149,6 +149,31 @@ Options:
   --limit <n>         Max rows to return
   --sheet <name>      Sheet name (Excel only)
 `,
+  'report.init': `Usage: miao-viz report init <project> --input <file> --spec <file> --context <file> --period <id> [options]
+
+Create a reusable local report project. Use --dry-run to preview without writing.
+
+Options:
+  --dry-run       Preview contract, evidence plan, hashes, and risks
+  --copy-input    Copy the source file into the first run
+  --sheet <name>  Excel sheet name
+`,
+  'report.update': `Usage: miao-viz report update <project> --input <file> --period <id>
+
+Replay the saved evidence plan and report spec with new compatible data.
+`,
+  'report.info': `Usage: miao-viz report info <project>
+
+Inspect project health, contract, evidence count, hashes, and latest run.
+`,
+  'report.history': `Usage: miao-viz report history <project>
+
+List recurring report runs newest first.
+`,
+  'report.clean': `Usage: miao-viz report clean <project> --keep <n> [--confirm]
+
+Preview old runs by default. Use --confirm to delete, excluding the latest run.
+`,
 }
 
 const GROUP_HELP: Record<string, string> = {
@@ -173,6 +198,18 @@ Commands:
   block     Instantiate report blocks from analyze context
   template  List, inspect, or instantiate report templates
   inspect   Inspect chart transforms and evidence usage
+`,
+  report: `
+Usage: miao-viz report <command> [options]
+
+Create and replay local recurring report projects.
+
+Commands:
+  init      Create a project from a verified report
+  update    Replay it with a new period input
+  info      Inspect project health
+  history   List run history
+  clean     Preview or remove old runs safely
 `,
   deck: `
 Usage: miao-viz deck <command> [options]
