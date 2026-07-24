@@ -105,7 +105,7 @@ export function queryRecipeFields(recipe: QueryRecipe): string[] {
   ]))
 }
 
-function parseFilter(filter: string): QueryRecipe['filters'][number] | null {
+function parseFilter(filter: string): NonNullable<QueryRecipe['filters']>[number] | null {
   const match = filter.match(/^(\w+)\s*(>=|<=|>|<|=)\s*(.+)$/)
   if (!match) return null
   const operator = ({ '=': 'eq', '>=': 'gte', '<=': 'lte', '>': 'gt', '<': 'lt' } as const)[match[2] as '=' | '>=' | '<=' | '>' | '<']

@@ -1,7 +1,7 @@
 import {
   cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync
 } from 'node:fs'
-import { basename, dirname, join, relative, resolve } from 'node:path'
+import { basename, join, relative, resolve } from 'node:path'
 import * as YAML from 'yaml'
 import { agentError, isAgentError } from './errors'
 import { loadDataset } from './data-loader'
