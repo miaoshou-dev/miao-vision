@@ -83,6 +83,18 @@ Run `miao-viz spec catalog --for-llm` when machine-readable chart and infographi
 - Validate data reports before rendering.
 - Use `miao-viz render deck` for decks; DeckSpec validation runs inside that command.
 - Use `miao-viz spec catalog --for-llm` for article structure selection when compact workflow context is insufficient.
+- For recurring reports, replay the saved project with `report update`; do not redesign it or silently change field mappings.
+
+## Recurring Reports
+
+Treat weekly, monthly, quarterly, daily, previous-period, and "use the same format with a new file" requests as recurring-report intent.
+
+- After the first report passes validation, preview `miao-viz report init <project> ... --dry-run`, then initialize after the project summary is accepted.
+- Before an update, run `miao-viz report info <project>`, then `miao-viz report update <project> --input <file> --period <id>`.
+- Do not rewrite the saved Spec, change Evidence ids, invent Evidence, or guess required-field mappings.
+- Present structured contract mismatches for explicit repair or project-version upgrade.
+- Use `report history` for prior runs and preview `report clean --keep <n>` before adding `--confirm`.
+- PDF requires Playwright; recurring HTML updates remain available without it.
 
 ## Shared References
 
