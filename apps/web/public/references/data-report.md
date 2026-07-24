@@ -249,6 +249,74 @@ HTML reports include the interactive runtime by default. Use `--no-interactive` 
 
 Return the generated HTML path to the user.
 
+## PDF Export
+
+Keep HTML as the default. When the user requests a printable or archival report, render the same validated report directly to PDF:
+
+```bash
+miao-viz render report \
+  --input /path/to/data.csv \
+  --spec /tmp/miao-vision/report.yaml \
+  --context /tmp/miao-vision/context.json \
+  --theme <chosen-theme> \
+  --format pdf \
+  --output /tmp/miao-vision/report.pdf
+```
+
+For both artifacts, use `--output-dir`; do not combine multiple formats with `--output`:
+
+```bash
+miao-viz render report \
+  --input /path/to/data.csv \
+  --spec /tmp/miao-vision/report.yaml \
+  --context /tmp/miao-vision/context.json \
+  --format html,pdf \
+  --output-dir /tmp/miao-vision/report-output
+```
+
+Report PDF defaults to A4 portrait. Optional controls are `--page-size A4|Letter`, `--orientation portrait|landscape`, `--margin <css-length>`, `--pdf-timeout <milliseconds>`, and `--keep-temp`. Use `--keep-temp` only for export debugging because it retains temporary HTML, screenshots, and diagnostics.
+
+Surface structured `PDF_*` failures without falling back to a second layout engine. `PDF_CONTENT_DENSE` is a warning; overflow, timeout, missing browser, and output failures are blocking.
+
+## Recurring Report Projects
+
+Use this workflow when the user says weekly, monthly, quarterly, daily, update the previous report, use the same metrics/template, or regenerate with a new file.
+
+After the first report passes validation, preview project creation:
+
+```bash
+miao-viz report init /path/to/report-project \
+  --input /path/to/period-1.xlsx \
+  --spec /tmp/miao-vision/report.yaml \
+  --context /tmp/miao-vision/context.json \
+  --period 2026-W28 \
+  --dry-run
+```
+
+Present the generated contract, frozen Evidence ids, hashes, project path, and risks. If accepted, repeat without `--dry-run`. Do not add `--copy-input` unless the user explicitly requests source-file copies.
+
+Before every later run:
+
+```bash
+miao-viz report info /path/to/report-project
+miao-viz report update /path/to/report-project \
+  --input /path/to/period-2.xlsx \
+  --period 2026-W29 \
+  --format html
+```
+
+Use `--format html,pdf` only when both outputs are requested. Update replays the saved Evidence recipes and Spec; it must not trigger chart selection or rewrite the report.
+
+Maintenance commands:
+
+```bash
+miao-viz report history /path/to/report-project
+miao-viz report clean /path/to/report-project --keep 10
+miao-viz report clean /path/to/report-project --keep 10 --confirm
+```
+
+Always preview clean before `--confirm`. Never guess field mappings after `REPORT_DATA_CONTRACT_MISMATCH`; present `issues` and require an explicit project upgrade. Treat `EVIDENCE_PLAN_EXECUTION_FAILED`, `REPORT_UPDATE_VALIDATION_FAILED`, and PDF blocking errors as failed runs, and do not claim that `latest` advanced.
+
 ## Edit Mode
 
 Use Edit Mode when the user asks to change an existing report. The goal is minimum change; do not regenerate the whole spec.

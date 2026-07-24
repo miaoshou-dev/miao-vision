@@ -2,8 +2,9 @@
 name: miao-vision
 description: >
   Use Miao Vision to create article infographics from URLs, Markdown, or long-form
-  text; self-contained HTML charts or reports from local CSV, TSV, XLSX, or JSON;
-  browser-based data decks; chart recommendations; or Miao Vision spec validation.
+  text; self-contained HTML/PDF charts or reports from local CSV, TSV, XLSX, or JSON;
+  browser-based data decks with optional PDF export; recurring report projects;
+  chart recommendations; or Miao Vision spec validation.
   The agent fetches article URLs. Excludes text-only work, raster images, native
   PPTX, and live or remote-data dashboards.
 ---
@@ -16,7 +17,7 @@ Use Miao Vision as a local-first infographic and visualization workflow in agent
 
 Before reading workflow references, resolving the CLI, or requesting installation:
 
-1. Confirm that the request requires an article infographic, an HTML chart or report from local structured data, a browser-based data deck, a chart recommendation, or Miao Vision spec validation.
+1. Confirm that the request requires an article infographic, an HTML/PDF chart or report from local structured data, a recurring report project, a browser-based data deck, a chart recommendation, or Miao Vision spec validation.
 2. Stop and use an appropriate alternative when the request is text-only, requires a raster image or native `.pptx`, depends on a live or remote data source, or otherwise exceeds the limitations below.
 
 Ask one concise clarification question only when the required deliverable or file format is materially ambiguous.
@@ -38,8 +39,8 @@ Read only the references required for the selected workflow.
 | User intent | Required reference |
 |---|---|
 | Article URL, Markdown, or long-form text explicitly requested as an infographic | `references/article-infographic.md` and `references/composition-playbook.md` |
-| Local CSV/TSV/XLSX/JSON requested as an HTML chart, report, visualization, or evidence-backed findings artifact | `references/data-report.md`, `references/report-intelligence.md`, `references/chart-selection.md`, and `references/anti-patterns.md` |
-| Slides, presentation, deck, executive briefing, or meeting brief accepted as browser-based HTML | `references/browser-deck.md` |
+| Local CSV/TSV/XLSX/JSON requested as an HTML/PDF chart, report, visualization, evidence-backed findings artifact, or recurring report | `references/data-report.md`, `references/report-intelligence.md`, `references/chart-selection.md`, and `references/anti-patterns.md` |
+| Slides, presentation, deck, executive briefing, or meeting brief accepted as browser-based HTML or PDF | `references/browser-deck.md` |
 | Chart recommendation for local structured data | `references/chart-selection.md` and, when needed, `references/anti-patterns.md` |
 | Miao Vision report or deck spec validation | `references/vizspec.md` plus the relevant report or deck reference |
 
@@ -95,6 +96,7 @@ Treat weekly, monthly, quarterly, daily, previous-period, and "use the same form
 - Present structured contract mismatches for explicit repair or project-version upgrade.
 - Use `report history` for prior runs and preview `report clean --keep <n>` before adding `--confirm`.
 - PDF requires Playwright; recurring HTML updates remain available without it.
+- Use `--format html,pdf` for a recurring run only when the user requests both artifacts; a PDF failure must be reported and must not be treated as a ready run.
 
 ## Shared References
 

@@ -126,6 +126,25 @@ miao-viz render deck \
 
 8. Return the generated HTML path.
 
+## PDF Export
+
+When the user requests a PDF deck, render the same validated DeckSpec directly:
+
+```bash
+miao-viz render deck \
+  --input /path/to/data.csv \
+  --spec /tmp/miao-vision/deck.yaml \
+  --context /tmp/miao-vision/context.json \
+  --strict \
+  --theme <chosen-theme> \
+  --format pdf \
+  --output /tmp/miao-vision/deck.pdf
+```
+
+Deck PDF is fixed at 16:9 in the MVP. Each Slide must produce exactly one PDF page; navigation, interactive overlays, and speaker notes are excluded. Do not offer 4:3, `--include-notes`, or native PPTX as supported output.
+
+PDF export requires Playwright Chromium. Surface structured `PDF_*` errors and layout diagnostics. Do not replace the browser-deck renderer or ask the user to print manually when direct CLI export was requested.
+
 ## Claim And Recommendation Rules
 
 - Descriptive, rank, delta, trend, share, comparative, and evaluative claims need structured grounding.
