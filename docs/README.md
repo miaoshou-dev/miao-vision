@@ -39,6 +39,7 @@ Miao Vision is now focused on three product directions around `miao-viz-cli`:
 
 ## Current Artifact Capabilities
 
-- Data Display reports use VizSpec with profile-driven field validation, chart catalog guidance, and self-contained HTML output.
-- Presentation Decks use DeckSpec with structured `INVALID_DECK_SPEC` errors, profile-backed field validation, browser navigation, fullscreen, and print/PDF export through the browser.
+- Data Display reports use VizSpec with profile-driven field validation, chart catalog guidance, self-contained HTML, and direct A4/Letter PDF output.
+- Recurring Report Projects replay frozen Evidence recipes and Report Specs against contract-compatible new-period data while preserving run history and hashes.
+- Presentation Decks use DeckSpec with structured validation, browser navigation, fullscreen, and direct 16:9 PDF export with one Slide per page.
 - Deck examples are available for sales, product metrics, finance review, and operations update under `packages/miao-viz-cli/examples/`.

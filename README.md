@@ -16,7 +16,7 @@
 </tr>
 </table>
 
-Give Miao Vision a CSV, spreadsheet, or article. It inspects the schema, runs aggregation queries, and renders a self-contained HTML file — KPI cards, charts, tables, insights — ready to open, share, or email. No server. No login. No expiry.
+Give Miao Vision a CSV, spreadsheet, or article. It inspects the schema, runs aggregation queries, and renders a self-contained HTML or PDF artifact — KPI cards, charts, tables, insights — ready to open, share, print, or email. No server. No login. No expiry.
 
 Built for **analysts and developers** who want a polished output in minutes, not a dashboard to maintain forever.
 
@@ -24,13 +24,15 @@ Built for **analysts and developers** who want a polished output in minutes, not
 
 ## What you get
 
-**Data report** — KPI cards, bar charts, line trends, tables, and written insights, all in one HTML file.
+**Data report** — KPI cards, bar charts, line trends, tables, and written insights in self-contained HTML or printable PDF.
 
-**Presentation deck** — browser slides with keyboard navigation, fullscreen, and print-to-PDF. No PowerPoint required.
+**Recurring report** — save a verified report project once, then replay the same metrics, evidence recipes, layout, and theme on each new period’s data.
+
+**Presentation deck** — browser slides with keyboard navigation and fullscreen, plus direct 16:9 PDF export. No PowerPoint required.
 
 **Article infographic** — paste in an article URL or Markdown file; get back a static visual summary you can drop into any document.
 
-All outputs are a single `.html` file. Open it anywhere, share it with anyone, archive it forever.
+HTML remains the default. Reports and decks can also be exported directly to PDF for printing and archival.
 
 ---
 
@@ -75,6 +77,8 @@ Once installed, just describe what you want:
 | What you say | What you get |
 |---|---|
 | "analyze sales.csv and make a report" | Self-contained HTML data report |
+| "export this report as a printable A4 PDF" | Direct PDF report |
+| "update last week's report with this week's file" | A new run using the saved metrics and layout |
 | "turn this into a deck for Monday's meeting" | Browser slide deck |
 | "make an infographic from this article" | Static infographic HTML |
 
@@ -106,8 +110,8 @@ npm install -g @miao-vision/cli
 
 ```bash
 miao-viz data profile ./sales.csv
-miao-viz render report --input ./sales.csv --spec ./report.yaml --output ./report.html
-open ./report.html
+miao-viz render report --input ./sales.csv --spec ./report.yaml --format html,pdf --output-dir ./output
+open ./output/report.html
 ```
 
 ---
@@ -135,7 +139,7 @@ A four-step pipeline that constrains the agent to what it's good at — reasonin
 1. Analyze    miao-viz data analyze   → CLI inspects data, pre-computes summaries and evidence
 2. Draft      agent writes spec       → compact YAML citing pre-computed values, not invented ones
 3. Validate   miao-viz spec validate  → CLI checks the spec, returns machine-readable patch hints
-4. Render     miao-viz render report  → CLI produces a self-contained HTML file
+4. Render     miao-viz render report  → CLI produces self-contained HTML/PDF artifacts
 ```
 
 The agent never generates chart code. It writes a spec. The CLI renders it.
@@ -194,7 +198,7 @@ The agent applies the patch, re-validates, and renders. No human intervention re
 | **Evidence-grounded output** | Insights cite pre-computed evidence via `$evidence:` directives. Every path is validated before rendering. Hallucinated statistics fail fast. |
 | **Machine-readable fixes** | `spec validate --patch-hints` returns `patches[]` the agent applies directly. No retry loops, no free-form error parsing. |
 | **Your data stays local** | Nothing leaves your machine. No upload, no API call with your data. |
-| **One file to share** | Every output is a self-contained `.html` file — open it, email it, archive it. No viewer needed. |
+| **Files made to share** | HTML opens anywhere; direct PDF output is ready to print, email, or archive. No hosted viewer needed. |
 | **Not a dashboard** | No database to connect, no tiles to arrange, no filter panel to maintain. You get an artifact, not a workspace. |
 | **Looks good by default** | The magazine theme is designed to be clear and credible out of the box. |
 
@@ -221,7 +225,35 @@ You get: KPI cards, bar charts, trend lines, and data tables — styled and read
 
 ---
 
-### 2. Presentation deck
+### 2. Recurring report
+
+You have a weekly or monthly export and want the same trusted metrics, evidence, and layout every period.
+
+Ask your AI agent:
+```
+Use this week's new data to update last week's report with the same metrics and layout.
+```
+
+After the first report is verified, the CLI can save and replay the project:
+```bash
+miao-viz report init ./sales-weekly \
+  --input ./week-28.xlsx \
+  --spec ./report.yaml \
+  --context ./context.json \
+  --period 2026-W28 \
+  --dry-run
+
+miao-viz report update ./sales-weekly \
+  --input ./week-29.xlsx \
+  --period 2026-W29 \
+  --format html,pdf
+```
+
+You get: immutable run history, stable Evidence IDs and Spec hashes, data-contract checks, and fresh HTML/PDF artifacts without redesigning the report.
+
+---
+
+### 3. Presentation deck
 
 You have data and you need slides for a meeting — not a chart dump, but an actual narrative deck.
 
@@ -233,13 +265,14 @@ Use miao-vision to turn ~/data/sales.csv into a presentation deck for an executi
 Or use the CLI:
 ```bash
 miao-viz render deck --input ./sales.csv --spec ./sales-deck.yaml --output ./deck.html
+miao-viz render deck --input ./sales.csv --spec ./sales-deck.yaml --format pdf --output ./deck.pdf
 ```
 
-You get: a browser-based slide deck with cover, metrics, charts, and an ending slide. Arrow-key navigation, fullscreen, and print-to-PDF built in.
+You get: a browser-based slide deck with cover, metrics, charts, and an ending slide, or a 16:9 PDF with exactly one slide per page.
 
 ---
 
-### 3. Article infographic
+### 4. Article infographic
 
 You have an article URL or a Markdown file and you want a visual summary — not just a wall of text.
 
@@ -404,7 +437,7 @@ Supported layouts: `cover`, `title-only`, `text-points`, `text-chart`, `metrics-
 
 ## CLI reference
 
-Commands are organized into three groups:
+Commands are organized into four groups:
 
 ### data — Inspect and query data files
 
@@ -424,15 +457,25 @@ Commands are organized into three groups:
 | `miao-viz spec template` | List, inspect, or instantiate report templates |
 | `miao-viz spec inspect` | Debug chart transform pipelines and evidence usage |
 
-### render — Generate HTML output
+### report — Reuse verified reports
 
 | Command | What it does |
 |---|---|
-| `miao-viz render report` | Render a vizspec to self-contained HTML or SVG |
-| `miao-viz render deck` | Render a deck spec to HTML slides |
-| `miao-viz render article` | Convert a local Markdown/text file into a static infographic |
+| `miao-viz report init` | Create a recurring report project; use `--dry-run` to preview |
+| `miao-viz report update` | Replay saved Evidence recipes and Spec with new-period data |
+| `miao-viz report info` | Inspect project health, contract, hashes, and latest run |
+| `miao-viz report history` | List prior runs |
+| `miao-viz report clean` | Preview or remove old runs while protecting the latest run |
 
-Commands are grouped: `data` (profile, query, analyze), `spec` (validate, catalog, block, template, inspect), `render` (report, deck, article).
+### render — Generate artifacts
+
+| Command | What it does |
+|---|---|
+| `miao-viz render report` | Render a VizSpec to HTML, SVG, or PDF; supports `html,pdf` |
+| `miao-viz render deck` | Render a DeckSpec to HTML slides or a 16:9 PDF |
+| `miao-viz render article` | Convert local Markdown/text into HTML, PNG, PDF, JSON, or Markdown |
+
+Commands are grouped: `data` (profile, query, analyze), `spec` (validate, catalog, block, template, inspect), `report` (init, update, info, history, clean), and `render` (report, deck, article).
 
 ---
 
@@ -440,6 +483,7 @@ Commands are grouped: `data` (profile, query, analyze), `spec` (validate, catalo
 
 - [Product Overview](./docs/PRODUCT_OVERVIEW.md)
 - [Agent Install Guide](./docs/miao-vision-agent-install.md)
+- [Recurring Reports and PDF Export PRD](./docs/recurring-report-and-pdf-export-prd.md)
 - [Feature Roadmap](./docs/roadmap/FEATURE_ROADMAP.md)
 - [All docs](./docs/README.md)
 
