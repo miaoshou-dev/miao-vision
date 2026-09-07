@@ -13,6 +13,30 @@ description: >
 
 Use Miao Vision for local-first data reports, single-page data posters, article infographics, browser decks, recurring reports, and Miao Vision spec validation.
 
+## Start Here: Guide the User in Plain Language
+
+Most users do not need to know Miao Vision's internal terms. Translate their goal into one of the four deliverables below, and ask for only the missing choice when it materially changes the artifact:
+
+| User goal | Recommend | Natural-language aliases |
+|---|---|---|
+| One visual page for a ranking or comparison | Data poster | 海报、长图、单页图、排名图 |
+| Multiple charts, findings, or detail rows | Analysis report | 报告、分析、dashboard、数据看板 |
+| A multi-page presentation for speaking or sharing | Browser deck | Deck、演示稿、汇报、幻灯片 |
+| A visual summary of an article or long text | Article infographic | 信息图、文章长图、可视化摘要 |
+
+Give users copyable prompts when they appear unsure:
+
+```text
+$miao-vision + 上传 CSV + “做一张中文数据海报，突出排名和关键结论”
+$miao-vision + 上传 Excel + “生成一份带图表、结论和数据来源的分析报告”
+$miao-vision + 上传 CSV + “做成 5 页汇报演示稿，适合向管理层介绍”
+$miao-vision + 粘贴文章 URL + “把这篇文章做成中文信息图”
+```
+
+When a user explicitly invokes `$miao-vision` and supplies a tabular file without naming the output, acknowledge the file and offer the three relevant choices in one short message: “我看到你上传的是一份表格。你可以选择：数据海报、分析报告或演示稿；如果你不指定，我会按最适合数据的形式处理。” Do not expose CLI names, spec files, evidence ids, or temporary paths in this orientation step.
+
+When the user names an output informally, map it directly: “poster/海报/长图” → poster, “report/报告/分析/dashboard” → report, and “deck/PPT/演示稿/汇报” → deck. Preserve an explicit user choice even if another format might contain more detail.
+
 ## What Miao Vision Can Create
 
 Tell the agent which output you want; it will keep source data local and return a shareable artifact:
