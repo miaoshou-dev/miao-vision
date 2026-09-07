@@ -919,6 +919,7 @@ describe('article --bundle-input atomic bundle', () => {
     expect(html).toContain('FIG 01')
     expect(html).toContain('fig-03-market-structure')
     expect(html).toContain('miao-infographic-bundle-spec')
+    expect(html).toContain("document.documentElement.dataset.miaoRenderReady = 'true'")
   })
 
   it('renders bundle HTML and markdown through the CLI', () => {

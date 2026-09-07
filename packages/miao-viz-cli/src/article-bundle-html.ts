@@ -29,6 +29,7 @@ export function renderInfographicBundleHtml(spec: InfographicBundleSpec): string
     </div>
   </main>
   <script type="application/json" id="miao-infographic-bundle-spec">${jsonScript(spec)}</script>
+  <script>document.documentElement.dataset.miaoRenderReady = 'true'</script>
 </body>
 </html>`
 }
