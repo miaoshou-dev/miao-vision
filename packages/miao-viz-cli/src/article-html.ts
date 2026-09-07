@@ -40,6 +40,7 @@ export function renderInfographicHtml(spec: InfographicSpec): string {
     ${compositionHtml}
   </main>
   <script type="application/json" id="miao-infographic-spec">${jsonScript(spec)}</script>
+  <script>document.documentElement.dataset.miaoRenderReady = 'true'</script>
 </body>
 </html>`
 }

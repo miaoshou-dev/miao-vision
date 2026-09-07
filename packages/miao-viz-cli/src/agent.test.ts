@@ -975,6 +975,7 @@ describe('article infographic generation', () => {
     expect(html).toContain('<style>')
     expect(html).toContain('mv-fact-grid')
     expect(html).toContain('miao-infographic-spec')
+    expect(html).toContain("document.documentElement.dataset.miaoRenderReady = 'true'")
   })
 
   it('preserves full long article text in rendered item detail', () => {
