@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.6.5",
-  "recommendedCliVersion": "0.6.5",
+  "pluginVersion": "0.7.0",
+  "recommendedCliVersion": "0.7.0",
   "minimumCliVersion": "0.3.0",
   "maximumCliVersionExclusive": "0.7.0",
-  "releaseTag": "skill-v0.6.5",
+  "releaseTag": "skill-v0.7.0",
   "capabilityProbes": [
     {
       "args": ["artifact", "plan", "--help"],
