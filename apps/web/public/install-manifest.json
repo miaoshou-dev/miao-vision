@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "cliVersion": "0.6.3",
+  "cliVersion": "0.6.4",
   "requiredCliRange": ">=0.3.0 <0.7.0",
-  "releaseTag": "skill-v0.6.3",
-  "releaseUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.6.3",
+  "releaseTag": "skill-v0.6.4",
+  "releaseUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.6.4",
   "hosts": [
     {
       "host": "codex",
@@ -12,7 +12,7 @@
       "commands": [
         "下载 miao-vision-plugin.zip，并通过 Codex Plugin 面板安装"
       ],
-      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.6.3/miao-vision-plugin.zip",
+      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.6.4/miao-vision-plugin.zip",
       "verifyCommand": "miao-viz --version",
       "requiresAgent": true,
       "requiresApproval": true
@@ -25,7 +25,7 @@
         "claude plugin marketplace add miaoshou-dev/miao-vision",
         "claude plugin install miao-vision@miao-vision"
       ],
-      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.6.3/miao-vision-plugin.zip",
+      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.6.4/miao-vision-plugin.zip",
       "verifyCommand": "miao-viz --version",
       "requiresAgent": true,
       "requiresApproval": true
@@ -38,7 +38,7 @@
         "下载并安装 miao-vision-skill.zip",
         "miao-viz --version"
       ],
-      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.6.3/miao-vision-skill.zip",
+      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.6.4/miao-vision-skill.zip",
       "verifyCommand": "miao-viz --version",
       "requiresAgent": true,
       "requiresApproval": true
@@ -48,7 +48,7 @@
       "recommended": true,
       "title": "纯 CLI",
       "commands": [
-        "npm install -g @miao-vision/cli@0.6.3"
+        "npm install -g @miao-vision/cli@0.6.4"
       ],
       "verifyCommand": "miao-viz --version && which miao-viz",
       "requiresAgent": false,
@@ -59,6 +59,6 @@
     "id": "sales-report",
     "artifactUrl": "/examples/report.html",
     "sampleDataUrl": "/examples/sales.csv",
-    "cliVersion": "0.6.3"
+    "cliVersion": "0.6.4"
   }
 }
