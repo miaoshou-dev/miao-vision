@@ -1,6 +1,6 @@
 {
   "name": "miao-vision",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "AI-first local data visualization generator. Profile CSV/TSV/XLSX/JSON data, generate HTML reports with charts and evidence-backed insights, create browser slide decks, and turn articles into infographics.",
   "author": {
     "name": "Miao Vision Team",

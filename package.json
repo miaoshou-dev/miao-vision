@@ -1,6 +1,6 @@
 {
   "name": "miao-vision",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "AI-first local data visualization generator powered by miao-viz CLI",
   "author": "Miao Vision Team",
   "license": "MIT",
