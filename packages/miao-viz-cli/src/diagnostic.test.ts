@@ -3,6 +3,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 import { diagnoseEnvironment } from './diagnostic'
+import packageJson from '../package.json'
 
 describe('environment diagnostics', () => {
   it('returns safe metadata and a first-report action for a healthy environment', () => {
@@ -10,7 +11,7 @@ describe('environment diagnostics', () => {
     const input = join(root, 'sales.csv')
     writeFileSync(input, 'month,sales\n2026-01,1\n')
     const result = diagnoseEnvironment({ input, output: root, host: 'cli' })
-    expect(result).toMatchObject({ ok: true, value: { executable: expect.any(String), cliVersion: '0.6.0', input: { readable: true }, output: { writable: true } } })
+    expect(result).toMatchObject({ ok: true, value: { executable: expect.any(String), cliVersion: packageJson.version, input: { readable: true }, output: { writable: true } } })
     expect(JSON.stringify(result)).not.toContain('month,sales')
   })
 
