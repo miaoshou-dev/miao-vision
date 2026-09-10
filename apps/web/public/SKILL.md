@@ -13,6 +13,26 @@ description: >
 
 Use Miao Vision for local-first data reports, single-page data posters, article infographics, browser decks, recurring reports, and Miao Vision spec validation.
 
+## Language Selection
+
+Use the language explicitly requested by the user. Otherwise, reply in the primary
+language of the user's latest substantive request. Generate user-facing artifact
+content in the explicitly requested artifact language; when no artifact language is
+specified, use the conversation language. The conversation language and artifact
+language may differ.
+
+When editing an existing artifact, preserve its established language unless the user
+asks to change it. Use natural-language content in the source data only as a fallback
+when neither the user's language nor the artifact's language can be determined. Do not
+infer the output language from column names, file names, identifiers, codes, brand
+names, or isolated foreign-language values.
+
+For mixed-language requests, use the language in which the user expresses the artifact
+goal, audience, or delivery instructions. Keep CLI commands, parameters, schema fields,
+evidence paths, error codes, template ids, and other machine-readable identifiers
+unchanged. Avoid mixing languages in user-facing prose unless a technical term or
+proper noun must remain unchanged.
+
 ## Start Here: Guide the User in Plain Language
 
 Most users do not need to know Miao Vision's internal terms. Translate their goal into one of the four deliverables below, and ask for only the missing choice when it materially changes the artifact:
