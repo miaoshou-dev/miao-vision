@@ -60,10 +60,10 @@ export const installManifest = {
       requiresAgent: true, requiresApproval: true
     },
     {
-      host: 'cli' as const, recommended: true, title: '纯 CLI',
-      description: '不使用 Agent Plugin 也可以独立安装本地执行引擎。',
-      commands: [`npm install -g @miao-vision/cli@${cliVersion}`],
-      verifyCommand: 'miao-viz --version && which miao-viz', requiresAgent: false, requiresApproval: false
+      host: 'cli' as const, recommended: true, title: 'npx Skill',
+      description: '通过 npx 安装兼容 Skill，使用目标 Agent 调用本地执行引擎。',
+      commands: ['npx skills add miaoshou-dev/miao-vision -g -a codex -y'],
+      verifyCommand: 'miao-viz --version', requiresAgent: true, requiresApproval: true
     }
   ] satisfies InstallOption[],
   example: {

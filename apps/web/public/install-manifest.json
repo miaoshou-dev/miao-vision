@@ -46,13 +46,13 @@
     {
       "host": "cli",
       "recommended": true,
-      "title": "纯 CLI",
+      "title": "npx Skill",
       "commands": [
-        "npm install -g @miao-vision/cli@0.7.1"
+        "npx skills add miaoshou-dev/miao-vision -g -a codex -y"
       ],
-      "verifyCommand": "miao-viz --version && which miao-viz",
-      "requiresAgent": false,
-      "requiresApproval": false
+      "verifyCommand": "miao-viz --version",
+      "requiresAgent": true,
+      "requiresApproval": true
     }
   ],
   "example": {

@@ -14,7 +14,7 @@ const hosts = [
   { host: 'codex', recommended: true, title: 'Codex Plugin', commands: ['下载 miao-vision-plugin.zip，并通过 Codex Plugin 面板安装'], downloadUrl: `${releaseUrl}/miao-vision-plugin.zip`, verifyCommand: 'miao-viz --version', requiresAgent: true, requiresApproval: true },
   { host: 'claude-code', recommended: true, title: 'Claude Code Plugin', commands: ['claude plugin marketplace add miaoshou-dev/miao-vision', 'claude plugin install miao-vision@miao-vision'], downloadUrl: `${releaseUrl}/miao-vision-plugin.zip`, verifyCommand: 'miao-viz --version', requiresAgent: true, requiresApproval: true },
   { host: 'openclaw', recommended: true, title: 'OpenClaw Skill', commands: ['下载并安装 miao-vision-skill.zip', 'miao-viz --version'], downloadUrl: `${releaseUrl}/miao-vision-skill.zip`, verifyCommand: 'miao-viz --version', requiresAgent: true, requiresApproval: true },
-  { host: 'cli', recommended: true, title: '纯 CLI', commands: [`npm install -g @miao-vision/cli@${cli.version}`], verifyCommand: 'miao-viz --version && which miao-viz', requiresAgent: false, requiresApproval: false }
+  { host: 'cli', recommended: true, title: 'npx Skill', commands: ['npx skills add miaoshou-dev/miao-vision -g -a codex -y'], verifyCommand: 'miao-viz --version', requiresAgent: true, requiresApproval: true }
 ]
 const manifest = {
   schemaVersion: 1, cliVersion: cli.version,
