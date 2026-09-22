@@ -7,7 +7,7 @@ Miao Vision ships as a cross-host plugin backed by one local CLI:
 
 Current plugin release: [`v0.9.0`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.9.0).
 The release contains the plugin ZIP, compatibility Skill ZIP, checksums, and
-native CLI binaries. The recommended npm CLI remains `@miao-vision/cli@0.7.2`.
+native CLI binaries. The recommended npm CLI is `@miao-vision/cli@0.8.0`.
 
 ## Requirements
 

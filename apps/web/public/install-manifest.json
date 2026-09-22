@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "cliVersion": "0.7.2",
-  "requiredCliRange": ">=0.3.0 <0.8.0",
+  "cliVersion": "0.8.0",
+  "requiredCliRange": ">=0.3.0 <0.9.0",
   "releaseTag": "skill-v0.9.0",
   "releaseUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.9.0",
   "hosts": [
@@ -61,6 +61,6 @@
     "id": "sales-report",
     "artifactUrl": "/examples/report.html",
     "sampleDataUrl": "/examples/sales.csv",
-    "cliVersion": "0.7.2"
+    "cliVersion": "0.8.0"
   }
 }
