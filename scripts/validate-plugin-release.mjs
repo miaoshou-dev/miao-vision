@@ -10,6 +10,7 @@ const claude = readJson('.claude-plugin/plugin.json')
 const marketplace = readJson('.claude-plugin/marketplace.json')
 const cli = readJson('packages/miao-viz-cli/package.json')
 const compatibility = readJson('skills/miao-vision/cli-compatibility.json')
+const mediaCompatibility = readJson('skills/miao-vision/media-compatibility.json')
 const errors = []
 
 const expectedPluginVersion = codex.version
@@ -34,9 +35,25 @@ for (const path of [
   '.claude-plugin/plugin.json',
   'skills/miao-vision/SKILL.md',
   'skills/miao-vision/cli-compatibility.json',
+  'skills/miao-vision/media-compatibility.json',
+  'skills/miao-vision/references/media-image.md',
+  'skills/miao-vision/references/media-video.md',
+  'skills/miao-vision/references/media-setup.md',
+  'skills/miao-vision/scripts/ai-media-runtime.mjs',
+  'skills/miao-vision/scripts/run-ai-media.mjs',
   'LICENSE'
 ]) {
   if (!existsSync(resolve(repoRoot, path))) errors.push(`Missing plugin file: ${path}.`)
+}
+
+if (mediaCompatibility.schemaVersion !== 1 || mediaCompatibility.minimumNodeMajor !== 22) {
+  errors.push('Media compatibility must use schemaVersion 1 and Node.js 22 minimum.')
+}
+if (mediaCompatibility.credentialEnvironmentVariable !== 'AI_GATEWAY_API_KEY') {
+  errors.push('Media compatibility must use only AI_GATEWAY_API_KEY.')
+}
+if (!mediaCompatibility.image?.model || !mediaCompatibility.video?.models?.standard || !mediaCompatibility.video?.models?.high) {
+  errors.push('Media compatibility must define the fixed image and video models.')
 }
 
 const metadata = JSON.stringify({ codex, claude, marketplace })

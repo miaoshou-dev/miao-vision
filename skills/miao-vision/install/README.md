@@ -1,6 +1,6 @@
 # Miao Vision Plugin Installation
 
-Current compatible release: `v0.7.2` (`skill-v0.7.2`), with
+Current compatible plugin release: `v0.9.0` (`skill-v0.9.0`), with
 `@miao-vision/cli@0.7.2`. Download the cross-host bundle from:
 
 ```text
@@ -22,8 +22,12 @@ then `~/.miao-vision/bin/miao-viz`, then `PATH`. Only when no compatible CLI
 exists does it ask permission to download the versioned, checksum-verified
 binary. Plugin upgrades and uninstalls do not remove this shared CLI.
 
-All source data stays local. PDF browser dependencies are optional and are not
-downloaded with the plugin. To remove the shared CLI explicitly, delete
+All ordinary source-data workflows stay local. Optional data-story image/video
+generation requires Node.js 22+, `ai-cli`, `AI_GATEWAY_API_KEY`, remote upload
+confirmation, and separate Gateway fees. It sends only the displayed prompt
+and approved references; the original Node.js 20 workflows do not require it.
+PDF browser dependencies are optional and are not downloaded with the plugin.
+To remove the shared CLI explicitly, delete
 `~/.miao-vision`; plugin uninstall intentionally leaves it intact.
 
 ## Try It

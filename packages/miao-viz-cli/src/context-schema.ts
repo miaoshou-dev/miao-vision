@@ -6,6 +6,8 @@ import { blockedSceneEntrySchema, catalogSceneEntrySchema, type BlockedSceneEntr
 import { catalogProvenanceRecipeSchema, type CatalogProvenanceRecipe } from './context-provenance-schema'
 import { compactInteractionRecommendationSchema, interactionRecommendationSchema, type CompactInteractionRecommendation, type InteractionRecommendation } from './context-interaction-schema'
 import { clarificationQuestionSchema } from './context-clarification-schema'
+import { compactPosterContextSchema, posterContextSchema, type CompactPosterContext, type PosterContext } from './poster/poster-context'
+export type { CompactPosterContext, PosterContext } from './poster/poster-context'
 export type { BlockedSceneEntry, CatalogSceneEntry, CatalogSceneSummary } from './context-scene-schema'
 export type { CompactInteractionRecommendation, InteractionRecommendation } from './context-interaction-schema'
 const fieldRoleValues = ['measure', 'dimension', 'time', 'id', 'status', 'score', 'flag', 'text', 'geo', 'unknown'] as const
@@ -197,6 +199,7 @@ export interface AnalyzeContext {
   promptRules: string[]
   metricCandidates?: MetricCandidate[]
   clarificationQuestions?: ClarificationQuestion[]
+  poster?: PosterContext
 }
 
 export interface CompactAnalyzeContext {
@@ -237,6 +240,7 @@ export interface CompactAnalyzeContext {
   warnings: Array<[string, string]>
   promptRules?: string[]
   clarificationQuestions: Array<[string, string, string[], boolean, ClarificationQuestion['appliesTo']]>
+  poster?: CompactPosterContext
 }
 
 // Zod runtime schema — used by validate --context to verify the file format
@@ -344,7 +348,6 @@ const blockedDeckSlideBlockEntrySchema = z.object({
   reasonCode: z.string().min(1),
   reason: z.string().min(1)
 })
-
 const analyzeCatalogSchema = z.object({
   charts: z.array(z.string().min(1)),
   blockedCharts: z.array(z.object({
@@ -422,6 +425,7 @@ export const analyzeContextSchema: z.ZodType<AnalyzeContext> = z.object({
   promptRules: z.array(z.string()),
   metricCandidates: z.array(metricCandidateSchema).optional(),
   clarificationQuestions: z.array(clarificationQuestionSchema).optional()
+  ,poster: posterContextSchema.optional()
 })
 
 export const compactAnalyzeContextSchema: z.ZodType<CompactAnalyzeContext> = z.object({
@@ -487,13 +491,8 @@ export const compactAnalyzeContextSchema: z.ZodType<CompactAnalyzeContext> = z.o
   }),
   warnings: z.array(z.tuple([z.string(), z.string()])),
   promptRules: z.array(z.string()).optional(),
-  clarificationQuestions: z.array(z.tuple([
-    z.string(),
-    z.string(),
-    z.array(z.string()),
-    z.boolean(),
-    z.enum(['measure', 'dimension', 'time', 'template'])
-  ]))
+  clarificationQuestions: z.array(z.tuple([z.string(), z.string(), z.array(z.string()), z.boolean(), z.enum(['measure', 'dimension', 'time', 'template'])])),
+  poster: compactPosterContextSchema.optional()
 })
 
 export { fromCompactAnalyzeContext, parseAnalyzeContext, toCompactAnalyzeContext } from './context-compact'

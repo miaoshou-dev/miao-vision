@@ -10,8 +10,10 @@ import { validateReportInteractions } from './report-interaction-validator'
 import { collectP0Warnings, validateP0ChartSpec } from './spec-validator-p0'
 import { collectVisualDiversityIssues } from './report-diversity-audit'
 import { validateP1ChartSpec } from './spec-validator-p1'
+import { validatePosterSpec } from './poster/poster-validation'
 import type { AnalyzeContext } from './context-schema'
 import type { AgentChartSpec, AgentDataTransform, AgentOutputFormat, AgentResult, AgentReportSpec, DataProfile } from './types'
+import { normalizePosterSpec } from './poster/poster-normalizer'
 
 export { collectVerifyIssues, collectVerifyWarnings, strictVerifyError, type VerifyIssue } from './spec-validator-intelligence'
 export { validateProvenance, type ProvenanceCoverage, type ProvenanceValidation } from './provenance-validator'
@@ -27,12 +29,21 @@ export function validateReportSpec(
   if (typeof spec === 'object' && spec !== null && 'specVersion' in spec && Number((spec as { specVersion?: unknown }).specVersion) > 1) {
     return agentError('UNSUPPORTED_SPEC_VERSION', `Unsupported specVersion: ${String((spec as { specVersion?: unknown }).specVersion)}.`, { supportedVersions: [1] })
   }
+  const rawPoster = typeof spec === 'object' && spec !== null ? (spec as { poster?: { template?: unknown } }).poster : undefined
+  const posterTemplate = rawPoster?.template
+  const posterTemplates = ['data-poster-ranking', 'data-poster-share', 'data-poster-comparison', 'data-poster-trend', 'data-poster-flow', 'data-poster-geo', 'content-poster-timeline']
+  if (posterTemplate !== undefined && (typeof posterTemplate !== 'string' || !posterTemplates.includes(posterTemplate))) {
+    return agentError('POSTER_TEMPLATE_UNKNOWN', `Poster template '${String(posterTemplate)}' is not registered.`, {
+      path: 'poster.template', templateId: posterTemplate, availableIds: posterTemplates, repairHint: 'Use a registered poster template id.'
+    })
+  }
   const parsed = reportSpecSchema.safeParse(spec)
   if (!parsed.success) {
     return agentError('INVALID_SPEC', parsed.error.issues.map(issue => issue.message).join('; '))
   }
 
-  const posterResult = validatePosterSpec(parsed.data)
+  const normalizedSpec = normalizePosterSpec(parsed.data)
+  const posterResult = validatePosterSpec(normalizedSpec)
   if (isAgentError(posterResult)) return posterResult
 
   for (const format of formats) {
@@ -45,10 +56,10 @@ export function validateReportSpec(
 
   const availableFields = profile.columns.map(column => column.name)
   const chartIds = new Set<string>()
-  const interactionResult = validateReportInteractions(parsed.data, profile, availableFields)
+  const interactionResult = validateReportInteractions(normalizedSpec, profile, availableFields)
   if (isAgentError(interactionResult)) return interactionResult
 
-  for (const chart of parsed.data.charts) {
+  for (const chart of normalizedSpec.charts) {
     if (chart.id) {
       if (chartIds.has(chart.id)) {
         return agentError('DUPLICATE_CHART_ID', `Chart id '${chart.id}' is used more than once.`, {
@@ -93,30 +104,10 @@ export function validateReportSpec(
     if (isAgentError(finalSchemaResult)) return finalSchemaResult
   }
 
-  const drilldownResult = validateDrilldownCharts(parsed.data.charts)
+  const drilldownResult = validateDrilldownCharts(normalizedSpec.charts)
   if (isAgentError(drilldownResult)) return drilldownResult
 
-  return ok(parsed.data)
-}
-
-function validatePosterSpec(spec: AgentReportSpec): AgentResult<true> {
-  if (spec.layout?.preset !== 'poster') {
-    if (spec.poster) return agentError('POSTER_LAYOUT_MISMATCH', "poster config requires layout.preset: 'poster'.", { path: 'poster' })
-    return ok(true)
-  }
-  if (!spec.poster) return agentError('POSTER_CONFIG_MISSING', "layout.preset: 'poster' requires poster configuration.", { path: 'poster' })
-  const chartIndex = spec.charts.findIndex(chart => chart.id === spec.poster!.chartId)
-  if (chartIndex < 0) return agentError('POSTER_CHART_NOT_FOUND', `Poster chart '${spec.poster.chartId}' was not found in charts.`, { path: 'poster.chartId', chartId: spec.poster.chartId })
-  const chart = spec.charts[chartIndex]
-  if (chart.type !== 'bar' || chart.variant === 'horizontal' || chart.variant === 'diverging' || chart.variant === 'stacked') {
-    return agentError('POSTER_CHART_INVALID', 'Poster main chart must be a standard vertical bar chart.', { path: `charts[${chartIndex}]`, chartType: chart.type, variant: chart.variant })
-  }
-  const xField = chart.encoding?.x?.field
-  const yField = chart.encoding?.y?.field
-  if (!xField) return agentError('POSTER_CATEGORY_FIELD_MISSING', 'Poster chart requires a categorical x encoding.', { path: `charts[${chartIndex}].encoding.x.field` })
-  if (!yField) return agentError('POSTER_VALUE_FIELD_MISSING', 'Poster chart requires a quantitative y encoding.', { path: `charts[${chartIndex}].encoding.y.field` })
-  if (chart.encoding?.color?.field) return agentError('POSTER_CHART_INVALID', 'Poster ranking chart does not support a color series in the first version.', { path: `charts[${chartIndex}].encoding.color` })
-  return ok(true)
+  return ok(normalizedSpec)
 }
 
 export function getCatalogEntries(): Array<{

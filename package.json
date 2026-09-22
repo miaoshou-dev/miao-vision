@@ -48,7 +48,8 @@
     "publish:skill": "npm run pack:skill",
     "pack:plugin": "node scripts/pack-miao-vision-plugin.mjs",
     "pack:skill": "node scripts/pack-miao-vision-skill.mjs",
-    "test:skill-runtime": "node --test skills/miao-vision/scripts/cli-runtime.test.mjs",
+    "test:skill-runtime": "node --test skills/miao-vision/scripts/cli-runtime.test.mjs skills/miao-vision/scripts/ai-media-runtime.test.mjs",
+    "test:media-runtime": "node --test skills/miao-vision/scripts/ai-media-runtime.test.mjs",
     "validate:plugin": "node scripts/validate-plugin-release.mjs",
     "validate:install-manifest": "node scripts/generate-install-manifest.mjs",
     "prepare": "husky"

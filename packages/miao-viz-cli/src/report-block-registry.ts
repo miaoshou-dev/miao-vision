@@ -11,6 +11,8 @@ export interface BlockMatchContext {
   catalog: AnalyzeContext['catalog']
   sampleWarnings: AnalyzeContext['sampleWarnings']
   metricCandidates?: MetricCandidate[]
+  intent?: AnalyzeContext['intent']
+  userBrief?: string
 }
 
 export interface BlockDecision {

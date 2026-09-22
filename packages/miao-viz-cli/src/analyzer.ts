@@ -21,6 +21,7 @@ import { buildDeckCatalog } from './deck-knowledge-registry'
 import { buildSceneCatalog } from './report-scene-registry'
 import { buildAbTestEvidence } from './analyzer-ab-test'
 import { planInteractions } from './interaction-planner'
+import { buildPosterContext } from './poster/poster-context'
 
 export interface AnalyzerOptions {
   intent?: string
@@ -44,7 +45,7 @@ export function analyzeDataset(dataset: LoadedDataset, options: AnalyzerOptions 
   }
 
   const metricCandidates = buildMetricCandidates(fields, evidence)
-  const catalog = buildCatalog(fields, sampleWarnings, profile.rows, evidence, metricCandidates)
+  const catalog = buildCatalog(fields, sampleWarnings, profile.rows, evidence, metricCandidates, intent)
   addP0Recommendations(catalog, intent, fields)
   const promptRules = buildPromptRules(catalog.charts, sampleWarnings)
   const clarificationQuestions = buildClarificationQuestions(fields, options.intent ?? '')
@@ -55,6 +56,7 @@ export function analyzeDataset(dataset: LoadedDataset, options: AnalyzerOptions 
   }))
   Object.assign(context.catalog, buildDeckCatalog(context))
   context.catalog.interactions = planInteractions(context)
+  context.poster = buildPosterContext({ fields, evidence, catalog: context.catalog, sampleWarnings, metricCandidates, intent, userBrief: options.intent })
   return context
 }
 
@@ -305,7 +307,8 @@ function buildCatalog(
   warnings: AnalyzeSampleWarning[],
   rowCount: number,
   evidence: AnalyzeEvidence[],
-  metricCandidates: MetricCandidate[]
+  metricCandidates: MetricCandidate[],
+  intent: AnalyzeContext['intent']
 ): AnalyzeCatalog {
   const measures = fields.filter(f => f.role === 'measure' || f.role === 'score')
   const dimensions = fields.filter(f => f.role === 'dimension' || f.role === 'status' || f.role === 'geo' || f.role === 'flag')
@@ -364,7 +367,7 @@ function buildCatalog(
   const recommendedPlan = buildRecommendedPlan(charts, fields)
 
   const partialCatalog = { charts, blockedCharts, recommendedPlan }
-  const matchCtx: BlockMatchContext = { fields, evidence, catalog: partialCatalog, sampleWarnings: warnings, metricCandidates }
+  const matchCtx: BlockMatchContext = { fields, evidence, catalog: partialCatalog, sampleWarnings: warnings, metricCandidates, intent }
 
   const blocks: AnalyzeCatalog['blocks'] = []
   const blockedBlocks: AnalyzeCatalog['blockedBlocks'] = []

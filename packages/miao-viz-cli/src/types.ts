@@ -380,11 +380,39 @@ export interface AgentReportSpec {
 
 export interface AgentPosterSpec {
   chartId: string
+  secondaryChartId?: string
+  template?: 'data-poster-ranking' | 'data-poster-share' | 'data-poster-comparison' | 'data-poster-trend' | 'data-poster-flow' | 'data-poster-geo' | 'content-poster-timeline'
+  share?: { normalize: '100%'; categoryField?: string; seriesField?: string; valueField?: string }
+  geo?: { resourcePath?: string; nameField?: string; coverageThreshold?: number }
+  timeline?: { roles: { order: string; timeLabel: string; title: string; description: string; era?: string; mediaPath?: string; source?: string } }
+  composition?: string
+  theme?: string
+  themeOverride?: {
+    mood?: string
+    palette?: string
+    density?: 'compact' | 'balanced' | 'airy'
+  }
+  selection?: {
+    source: 'user' | 'auto'
+    rationale?: string[]
+    confidence?: number
+  }
+  slots?: PosterSlotSpec[]
   canvas?: { width?: number; height?: number }
   hero: { eyebrow?: string; title: string; subtitle?: string }
   footer: { source: string; date?: string }
   chart?: { sort?: 'asc' | 'desc'; maxItems?: number; yDomain?: [number, number]; valueFormat?: string }
   callouts?: AgentPosterCallout[]
+}
+
+export type PosterSlotRole = 'hero' | 'insight' | 'primary-visual' | 'ranking' | 'footer'
+export type PosterSlotBlock = 'hero' | 'callout' | 'chart' | 'decorative' | 'footer'
+export interface PosterSlotSpec {
+  id: string
+  role: PosterSlotRole
+  block: PosterSlotBlock
+  chartId?: string
+  calloutIndex?: number
 }
 
 export type AgentPosterCallout =

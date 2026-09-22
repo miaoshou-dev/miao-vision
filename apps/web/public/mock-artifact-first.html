@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Miao Vision · Artifact-first mock</title>
+  <style>
+    :root { --ink:#202124; --muted:#686d75; --line:#dfe4ee; --blue:#3978ed; --violet:#9b52e8; --cyan:#25b9d4; --paper:#f7f9fc; }
+    * { box-sizing:border-box; }
+    body { margin:0; color:var(--ink); background:linear-gradient(180deg,#fff 0%,#eef3ff 35%,#f8f9fb 75%,#fff 100%); font-family:"Avenir Next","PingFang SC",system-ui,sans-serif; }
+    a { color:inherit; text-decoration:none; }
+    .nav { position:sticky; top:0; z-index:5; display:flex; justify-content:space-between; align-items:center; padding:18px clamp(22px,5vw,72px); background:rgba(255,255,255,.82); backdrop-filter:blur(18px); border-bottom:1px solid #e8ebf1; }
+    .brand { display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:-.02em; }
+    .mark { display:grid; place-items:center; width:32px; height:32px; border-radius:50%; color:#fff; font:700 12px ui-monospace,monospace; background:linear-gradient(135deg,var(--blue),var(--violet),var(--cyan)); }
+    .links { display:flex; gap:25px; align-items:center; color:var(--muted); font-size:14px; }
+    .pill { padding:10px 17px; border-radius:99px; color:#fff; background:linear-gradient(135deg,var(--blue),var(--violet)); box-shadow:0 9px 22px #3978ed33; }
+    main { max-width:1240px; margin:auto; padding:70px 28px 100px; }
+    .hero { display:grid; grid-template-columns:.9fr 1.1fr; align-items:center; gap:64px; min-height:610px; }
+    .kicker { margin:0 0 18px; color:var(--blue); font-size:12px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    h1 { max-width:620px; margin:0; font-size:clamp(50px,6.2vw,82px); line-height:.98; letter-spacing:-.075em; white-space:nowrap; background:linear-gradient(90deg,#3978ed,#9b52e8 48%,#20b9cd); -webkit-background-clip:text; color:transparent; }
+    .lead { max-width:490px; margin:25px 0 0; color:#3e4146; font-size:20px; line-height:1.65; }
+    .actions { display:flex; gap:12px; flex-wrap:wrap; margin-top:30px; }
+    .button { display:inline-flex; align-items:center; gap:8px; padding:14px 19px; border:1px solid var(--line); border-radius:999px; font-size:15px; font-weight:700; background:#fff; }
+    .button.primary { color:#fff; border-color:transparent; background:linear-gradient(135deg,var(--blue),var(--violet)); }
+    .proof { display:flex; gap:17px; flex-wrap:wrap; margin-top:22px; color:var(--muted); font-size:13px; }
+    .proof span::before { content:"✓"; margin-right:6px; color:#12a678; font-weight:800; }
+    .stage { position:relative; min-height:505px; }
+    .sheet { position:absolute; width:75%; min-height:330px; padding:24px; border:1px solid #dce1ea; border-radius:20px; background:#fff; box-shadow:0 24px 50px #404b601c; }
+    .sheet h3 { margin:0; font-size:16px; letter-spacing:-.02em; }
+    .sheet small { color:var(--muted); }
+    .sheet.poster { z-index:2; top:92px; right:0; transform:rotate(3deg); background:#172d52; color:#fff; }
+    .sheet.report { z-index:3; top:18px; left:0; transform:rotate(-4deg); }
+    .sheet.deck { z-index:1; right:8%; bottom:4px; transform:rotate(1deg); background:#161a1e; color:#eef3f6; }
+    .poster .big { margin:35px 0 12px; font-size:70px; line-height:1; font-weight:850; letter-spacing:-.08em; }
+    .poster .bars { display:flex; align-items:end; gap:9px; height:96px; }
+    .poster .bars i { display:block; width:14%; border-radius:5px 5px 0 0; background:linear-gradient(#70d9e8,#3978ed); }
+    .report .metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:22px; }
+    .metric { padding:12px 9px; border-radius:10px; background:#f3f5f8; }
+    .metric b { display:block; font-size:22px; }
+    .metric span { color:var(--muted); font-size:10px; }
+    .report .chart { height:100px; margin-top:20px; border-bottom:2px solid #9fb7ef; background:linear-gradient(165deg,transparent 45%,#dfe9ff 46%,#dfe9ff 50%,transparent 51%); clip-path:polygon(0 75%,13% 63%,26% 68%,42% 31%,55% 42%,68% 23%,82% 35%,100% 5%,100% 100%,0 100%); }
+    .deck .deck-label { margin-top:70px; color:#86d8b3; font:12px ui-monospace,monospace; }
+    .deck .deck-title { margin-top:12px; max-width:280px; font-size:34px; line-height:1.02; letter-spacing:-.06em; }
+    section { margin-top:108px; }
+    .section-head { display:flex; justify-content:space-between; gap:20px; align-items:end; margin-bottom:24px; }
+    h2 { margin:0; font-size:42px; letter-spacing:-.06em; }
+    .section-head p { max-width:370px; margin:0; color:var(--muted); line-height:1.55; }
+    .cards { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .card { overflow:hidden; border:1px solid var(--line); border-radius:19px; background:#fff; box-shadow:0 12px 30px #404b600d; }
+    .thumb { display:flex; align-items:end; height:176px; padding:18px; }
+    .thumb.poster { background:#17325b; color:#fff; }
+    .thumb.report { background:#eef3ff; }
+    .thumb.deck { background:#171a1d; color:#fff; }
+    .thumb strong { font-size:27px; line-height:1; letter-spacing:-.06em; }
+    .card-body { padding:18px; }
+    .card-body h3 { margin:0 0 7px; font-size:18px; }
+    .card-body p { min-height:48px; margin:0; color:var(--muted); font-size:14px; line-height:1.5; }
+    .tag { display:inline-block; margin-top:14px; padding:5px 9px; border-radius:99px; color:#515661; background:#f0f2f5; font-size:11px; }
+    .how { display:grid; grid-template-columns:.8fr 1.2fr; gap:30px; align-items:start; padding:32px; border-radius:24px; color:#f4f7fb; background:#202124; }
+    .how h2 { color:#fff; }
+    .how p { color:#bec4cc; line-height:1.6; }
+    .steps { display:grid; gap:9px; }
+    .step { display:grid; grid-template-columns:35px 1fr; gap:12px; align-items:center; padding:14px; border:1px solid #3a3e44; border-radius:13px; background:#111315; }
+    .step b { display:grid; place-items:center; width:27px; height:27px; border-radius:8px; color:#9bc0ff; background:#293342; font:12px ui-monospace,monospace; }
+    .step span { color:#dce2e9; font-size:14px; }
+    footer { margin-top:80px; padding-top:24px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; }
+    @media (max-width:850px) { .links a:not(.pill) { display:none; } main { padding-top:35px; } .hero { grid-template-columns:1fr; gap:26px; min-height:0; } h1 { white-space:normal; } .stage { min-height:450px; } .sheet { width:83%; } .cards, .how { grid-template-columns:1fr; } h2 { font-size:34px; } .section-head { display:block; } .section-head p { margin-top:12px; } }
+    @media (max-width:520px) { .brand span:last-child { display:none; } main { padding-inline:18px; } h1 { font-size:56px; } .lead { font-size:17px; } .stage { min-height:370px; transform:scale(.9); transform-origin:top center; margin-bottom:-40px; } .sheet { min-height:260px; padding:17px; } .poster .big { margin-top:25px; font-size:52px; } }
+  </style>
+</head>
+<body>
+  <nav class="nav"><a class="brand" href="#"><span class="mark">MV</span><span>Miao Vision</span></a><div class="links"><a href="#cases">案例</a><a href="#install">安装</a><a class="pill" href="#how">开始生成</a></div></nav>
+  <main>
+    <header class="hero">
+      <div>
+        <p class="kicker">Local-first visual artifacts</p>
+        <h1>数据，直接成报告。</h1>
+        <p class="lead">海报、Deck，一句话生成。</p>
+        <div class="actions"><a class="button primary" href="#cases">查看报告示例 ↗</a><a class="button" href="#how">用我的文件生成</a></div>
+        <div class="proof"><span>数据留在本地</span><span>数字带证据</span><span>HTML 离线可开</span></div>
+      </div>
+      <div class="stage" aria-label="三种 Miao Vision 产物预览">
+        <article class="sheet report"><h3>销售经营报告</h3><small>Q3 business review · evidence attached</small><div class="metrics"><div class="metric"><b>¥2.4M</b><span>销售额</span></div><div class="metric"><b>+18%</b><span>同比增长</span></div><div class="metric"><b>华东</b><span>最佳区域</span></div></div><div class="chart"></div></article>
+        <article class="sheet poster"><h3>区域销售排名</h3><small>Sales ranking · 2026 Q3</small><div class="big">华东<br><small>#1 区域</small></div><div class="bars"><i style="height:92%"></i><i style="height:70%"></i><i style="height:48%"></i><i style="height:31%"></i><i style="height:22%"></i></div></article>
+        <article class="sheet deck"><div class="deck-label">01 / EXECUTIVE BRIEF</div><div class="deck-title">增长来自哪里？</div><small>Browser deck · keyboard ready</small></article>
+      </div>
+    </header>
+
+    <section id="cases"><div class="section-head"><div><p class="kicker">案例</p><h2>看看 Miao Vision 做出来的东西。</h2></div><p>每个案例都可以直接打开，先看结果，再决定哪一种适合你。</p></div><div class="cards">
+      <a class="card" href="#"><div class="thumb report"><strong>销售经营<br>报告</strong></div><div class="card-body"><h3>Data Report</h3><p>指标、趋势、洞察和明细表放在同一份可验证的 HTML 报告里。</p><span class="tag">CSV → HTML / PDF</span></div></a>
+      <a class="card" href="#"><div class="thumb poster"><strong>区域<br>销售排名</strong></div><div class="card-body"><h3>数据海报</h3><p>把一份 Excel 变成适合群聊、周报和会议分享的单页视觉结论。</p><span class="tag">Excel → 单页海报</span></div></a>
+      <a class="card" href="#"><div class="thumb deck"><strong>季度业务<br>汇报</strong></div><div class="card-body"><h3>浏览器演示稿</h3><p>从 briefing 和数据开始，生成能讲清楚故事的浏览器 Deck。</p><span class="tag">Markdown + CSV → Deck</span></div></a>
+      <a class="card" href="#"><div class="thumb report"><strong>文章<br>可视化摘要</strong></div><div class="card-body"><h3>文章信息图</h3><p>把文章或长文本整理成有叙事、有重点的可视化摘要。</p><span class="tag">URL / Markdown → Infographic</span></div></a>
+    </div></section>
+
+    <section id="how" class="how"><div><p class="kicker">One prompt is enough</p><h2>你说目标，Agent 做完剩下的。</h2><p>放入文件，用一句话描述你要讲清楚什么。Miao Vision 会完成分析、校验和渲染。</p></div><div class="steps"><div class="step"><b>01</b><span>放入本地 CSV、Excel、JSON 或 Markdown</span></div><div class="step"><b>02</b><span>告诉 Agent：做一张海报、报告或 Deck</span></div><div class="step"><b>03</b><span>得到可分享的 HTML、PDF 或 PNG 文件</span></div></div></section>
+
+    <section id="install"><div class="section-head"><div><p class="kicker">安装</p><h2>选你习惯的方式。</h2></div><p>可以通过技能市场安装，也可以在终端里手动安装 Skill 或 Plugin。</p></div><div class="cards">
+      <a class="card" href="https://clawhub.ai/" target="_blank" rel="noopener"><div class="thumb deck"><strong>ClawHub</strong></div><div class="card-body"><h3>从 ClawHub 安装</h3><p>适合 OpenClaw 用户，安装 Skill 后直接用自然语言生成产物。</p><span class="tag">打开 ClawHub ↗</span></div></a>
+      <a class="card" href="https://skillhub.cn/" target="_blank" rel="noopener"><div class="thumb poster"><strong>SkillHub</strong></div><div class="card-body"><h3>从 SkillHub 安装</h3><p>在技能市场找到 Miao Vision，安装后交给 Agent 完成工作流。</p><span class="tag">打开 SkillHub ↗</span></div></a>
+      <article class="card"><div class="thumb report"><strong>Skill /<br>Plugin</strong></div><div class="card-body"><h3>手工命令安装</h3><p>不使用技能市场，也可以用命令安装 Claude Code Plugin，或下载 ZIP 手动安装。</p><span class="tag">claude plugin install miao-vision@miao-vision</span></div></article>
+    </div></section>
+    <footer>一个文件，离线打开。数据不上传，结论有来源。</footer>
+  </main>
+</body>
+</html>

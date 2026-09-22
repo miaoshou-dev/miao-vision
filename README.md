@@ -66,7 +66,7 @@ Supported formats: **CSV, TSV, XLSX, JSON**: all read locally. Reports cite pre-
 
 Download [`miao-vision-plugin.zip`](https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-plugin.zip) from the
 [latest GitHub Release](https://github.com/miaoshou-dev/miao-vision/releases/latest). The current release is
-[`v0.6.0`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.6.0). It is
+[`v0.9.0`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.9.0). It is
 one bundle with one Skill and one CLI compatibility contract:
 
 | Host | Installation |
@@ -90,6 +90,13 @@ do not remove the shared CLI or generated artifacts. Delete
 `~/.miao-vision` separately only when you want to remove the shared CLI.
 Browser dependencies for PDF export remain optional and are not bundled with
 the plugin.
+
+Optional data-story images and single-shot videos require Node.js 22+, `ai-cli`,
+one `AI_GATEWAY_API_KEY`, and separately billed Vercel AI Gateway usage. The
+agent always shows the fixed model tier, catalog price summary, and upload scope
+before asking for confirmation. Without this optional setup, every original
+report, poster, deck, article, and validation workflow remains available on
+Node.js 20 and keeps source data local.
 
 Once installed, just describe what you want:
 

@@ -5,15 +5,35 @@ Miao Vision ships as a cross-host plugin backed by one local CLI:
 - `miao-viz` CLI: local data profiling, spec validation, and HTML rendering.
 - `miao-vision` plugin: shared Skill and metadata for Codex, Claude Code, and OpenClaw.
 
-Current release: [`v0.6.0`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.6.0).
+Current plugin release: [`v0.9.0`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.9.0).
 The release contains the plugin ZIP, compatibility Skill ZIP, checksums, and
-native CLI binaries. The npm CLI is `@miao-vision/cli@0.6.0`.
+native CLI binaries. The recommended npm CLI remains `@miao-vision/cli@0.7.2`.
 
 ## Requirements
 
 - Node.js 20 or newer
 - npm
 - An agent environment that can run local shell commands for local-file workflows
+
+Optional data-story image/video generation additionally requires Node.js 22 or
+newer, `ai-cli`, and `AI_GATEWAY_API_KEY`. It is remotely generated and billed
+separately. Users who remain on Node.js 20 retain all report, poster, deck,
+article, and validation workflows.
+
+## Optional AI Media
+
+Only after the user approves installation:
+
+```bash
+npm install -g ai-cli
+```
+
+Create a Vercel AI Gateway key, set `AI_GATEWAY_API_KEY` in the Agent's own
+environment, and restart the Agent environment. Do not paste the Key into a
+prompt or write it into this repository. Miao Vision checks setup without a
+paid generation call, then shows the fixed model tier, live catalog pricing
+summary, prompt/reference upload scope, and a confirmation question before
+every remote generation. It does not enable or modify automatic recharge.
 
 ## Shared CLI
 

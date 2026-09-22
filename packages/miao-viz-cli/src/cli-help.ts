@@ -158,6 +158,8 @@ Options:
   --viewport-height <px> PNG viewport height (default: 900)
   --scale <n>       PNG device scale factor (default: 1)
   --png-timeout <ms> PNG render timeout (default: 30000)
+  --review-url <url>  Publish review events to a running local Review Viewer
+  --review-run-id <id>  Stable run id used by the Review Viewer
 `,
   'render.deck': `Usage: miao-viz render deck --spec <file> --output <file> [options]
 
@@ -225,6 +227,20 @@ single-composition infographic.
 
 Note: png and pdf export requires Playwright. Install with:
   npm install --save-dev @playwright/test && npx playwright install chromium
+`,
+  'review.serve': `Usage: miao-viz review serve [options]
+
+Start the local Review Viewer server. The server binds to 127.0.0.1 and stays
+alive until SIGINT or SIGTERM.
+
+Options:
+  --port <n>              Port to bind (default: an available local port)
+  --artifact-root <dir>  Root directory allowed for artifact access (default: cwd)
+`,
+  'review.mcp': `Usage: miao-viz review mcp
+
+Start the stdio MCP server and the local Review Viewer. The MCP server exposes
+open_miao_vision_viewer and run_miao_viz.
 `,
   'data.query': `Usage: miao-viz data query <file> [options]
 

@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Miao Vision Review Viewer</title>
+  <style>
+    :root {
+      --canvas: #eeeae1;
+      --paper: #fbfaf6;
+      --paper-2: #f3f0e8;
+      --ink: #202522;
+      --muted: #727873;
+      --line: #dad8cf;
+      --blue: #315e70;
+      --amber: #c47a32;
+      --green: #39725c;
+      --red: #aa4e43;
+      --shadow: 0 18px 45px rgba(32, 37, 34, .10), 0 2px 7px rgba(32, 37, 34, .08);
+      --r-sm: 7px;
+      --r-md: 12px;
+      --r-lg: 18px;
+      font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Noto Sans SC", sans-serif;
+      color: var(--ink);
+      background: var(--canvas);
+      font-synthesis: none;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-width: 320px; background: var(--canvas); }
+    button { font: inherit; color: inherit; }
+    button:focus-visible { outline: 3px solid rgba(49, 94, 112, .35); outline-offset: 2px; }
+    .shell { min-height: 100vh; padding: 18px; }
+    .app-layout { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 18px; max-width: 1700px; min-height: calc(100vh - 36px); margin: 0 auto; }
+    .sidebar { display: flex; flex-direction: column; min-height: 100%; padding: 16px 12px; border-radius: var(--r-lg); background: #e4e0d6; }
+    .sidebar-brand { display: flex; align-items: center; gap: 9px; padding: 3px 8px 20px; }
+    .sidebar-brand .brand-mark { width: 24px; height: 24px; font-size: 12px; }
+    .sidebar-brand strong { font-size: 13px; letter-spacing: -.02em; }
+    .sidebar-brand small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; }
+    .side-new { width: 100%; display: flex; align-items: center; justify-content: space-between; margin-bottom: 19px; padding: 10px 11px; border: 1px solid #c9c7bd; border-radius: var(--r-sm); background: rgba(251, 250, 246, .64); cursor: pointer; font-size: 11px; font-weight: 750; }
+    .side-new span { color: var(--muted); font-size: 16px; font-weight: 400; line-height: 1; }
+    .side-label { margin: 0 9px 7px; color: #8b8e86; font-size: 9px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+    .side-list { display: grid; gap: 3px; }
+    .side-item { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 7px 9px; border: 0; border-radius: 7px; background: transparent; color: #5f665f; text-align: left; cursor: pointer; font-size: 11px; }
+    .side-item:hover { background: rgba(251, 250, 246, .5); }
+    .side-item.active { background: var(--paper); color: var(--ink); box-shadow: 0 2px 8px rgba(32, 37, 34, .07); }
+    .side-icon { width: 17px; color: #8b9089; font-size: 12px; text-align: center; }
+    .side-item.active .side-icon { color: var(--blue); }
+    .side-item-main { min-width: 0; flex: 1; }
+    .side-item-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .side-item-meta { margin-top: 2px; color: #9a9d96; font-size: 9px; }
+    .side-dot { width: 6px; height: 6px; margin-left: auto; border-radius: 50%; background: var(--green); }
+    .side-spacer { flex: 1; }
+    .side-footer { margin-top: 16px; padding: 12px 9px 2px; border-top: 1px solid #d0cec5; }
+    .side-status { display: flex; align-items: center; gap: 7px; color: #667069; font-size: 10px; }
+    .side-status .dot { width: 6px; height: 6px; color: var(--green); box-shadow: none; }
+    .side-footer p { margin-top: 6px; color: #969b94; font-size: 9px; line-height: 1.45; }
+    .content { min-width: 0; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; max-width: 1480px; margin: 0 auto 17px; }
+    .brand { display: flex; align-items: center; gap: 11px; }
+    .brand-mark { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 8px; background: var(--ink); color: var(--paper); font-size: 13px; font-weight: 800; letter-spacing: -.08em; }
+    .brand-name { font-size: 14px; font-weight: 760; letter-spacing: -.02em; }
+    .crumb { color: var(--muted); font-size: 12px; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .button { min-height: 38px; border: 1px solid var(--line); border-radius: var(--r-sm); background: rgba(251, 250, 246, .62); padding: 0 13px; cursor: pointer; font-size: 12px; font-weight: 700; transition: transform .16s ease, background-color .16s ease, border-color .16s ease; }
+    .button:hover { background: var(--paper); border-color: #c6c8c0; }
+    .button:active { transform: scale(.96); }
+    .button.primary { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+    .button.primary:hover { background: #343b37; }
+    .workspace { display: grid; grid-template-columns: minmax(280px, 348px) minmax(0, 1fr); gap: 18px; max-width: 1480px; margin: 0 auto; }
+    .rail, .preview { min-width: 0; border-radius: var(--r-lg); background: var(--paper); box-shadow: var(--shadow); }
+    .rail { padding: 22px; }
+    .eyebrow { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1, h2, h3, p { margin: 0; }
+    h1 { margin-top: 8px; font-family: Georgia, "Songti SC", "Noto Serif SC", serif; font-size: clamp(25px, 3vw, 34px); line-height: 1.06; letter-spacing: -.035em; font-weight: 600; text-wrap: balance; }
+    .subline { margin-top: 9px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .status-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 21px; padding: 12px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .status { display: inline-flex; align-items: center; gap: 7px; color: var(--green); font-size: 12px; font-weight: 760; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 14%, transparent); }
+    .run-meta { color: var(--muted); font: 11px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .section { margin-top: 23px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 11px; }
+    .section-head h2 { font-size: 12px; letter-spacing: -.01em; }
+    .section-head span { color: var(--muted); font-size: 10px; }
+    .timeline { display: grid; gap: 3px; }
+    .stage { position: relative; display: grid; grid-template-columns: 18px 1fr auto; gap: 9px; align-items: start; padding: 8px 0; }
+    .stage + .stage::before { content: ""; position: absolute; top: -6px; left: 8px; width: 1px; height: 8px; background: var(--line); }
+    .stage-icon { position: relative; z-index: 1; width: 17px; height: 17px; display: grid; place-items: center; border-radius: 50%; border: 1px solid var(--line); background: var(--paper); color: var(--muted); font-size: 9px; }
+    .stage.done .stage-icon { border-color: var(--green); background: var(--green); color: #fff; }
+    .stage.current .stage-icon { border-color: var(--amber); color: var(--amber); box-shadow: 0 0 0 4px rgba(196, 122, 50, .12); }
+    .stage-name { font-size: 11px; font-weight: 740; }
+    .stage-detail { margin-top: 2px; color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .stage-time { color: var(--muted); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .coverage { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .coverage-item { padding: 11px; border-radius: var(--r-sm); background: var(--paper-2); }
+    .coverage-item span { display: block; color: var(--muted); font-size: 10px; }
+    .coverage-item strong { display: block; margin-top: 4px; font: 700 19px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -.07em; }
+    .coverage-item strong.good { color: var(--green); }
+    .issue { display: flex; gap: 9px; padding: 11px; border-radius: var(--r-sm); background: #f8f0e6; color: #79512d; font-size: 10px; line-height: 1.45; }
+    .issue b { color: var(--amber); font-size: 12px; }
+    .issue button { margin-left: auto; align-self: start; border: 0; background: transparent; color: inherit; font-size: 10px; text-decoration: underline; cursor: pointer; }
+    .preview { overflow: hidden; background: #dcd9d0; }
+    .preview-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; height: 62px; padding: 0 22px; background: var(--paper); border-bottom: 1px solid var(--line); }
+    .preview-title { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .preview-title strong { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .file-chip { padding: 5px 8px; border-radius: 5px; background: var(--paper-2); color: var(--muted); font: 10px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .toolbar-right { display: flex; align-items: center; gap: 8px; }
+    .toolbar-right select { height: 34px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); padding: 0 8px; color: var(--muted); font-size: 11px; }
+    .artifact-frame { height: calc(100vh - 118px); min-height: 600px; overflow: auto; padding: clamp(20px, 4vw, 58px); }
+    .report { max-width: 910px; min-height: 850px; margin: 0 auto; padding: clamp(24px, 5vw, 62px); background: #fffdfa; box-shadow: 0 10px 32px rgba(32, 37, 34, .13); }
+    .report-kicker { color: var(--blue); font: 800 10px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .13em; text-transform: uppercase; }
+    .report h2 { max-width: 600px; margin-top: 16px; font-family: Georgia, "Songti SC", "Noto Serif SC", serif; font-size: clamp(31px, 5vw, 55px); line-height: .98; letter-spacing: -.055em; font-weight: 600; text-wrap: balance; }
+    .report-intro { max-width: 560px; margin-top: 17px; color: #69716c; font-size: 13px; line-height: 1.65; }
+    .report-rule { height: 1px; margin: 36px 0 26px; background: #d9d5cc; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+    .metric { padding: 14px 0; border-top: 2px solid var(--ink); }
+    .metric span { color: #7a817c; font-size: 10px; }
+    .metric strong { display: block; margin-top: 7px; font: 700 clamp(22px, 3vw, 29px) ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: -.07em; }
+    .metric small { display: block; margin-top: 7px; color: var(--green); font-size: 10px; }
+    .chart-block { display: grid; grid-template-columns: 1.4fr .8fr; gap: 30px; margin-top: 38px; }
+    .chart-title { font-size: 12px; font-weight: 760; }
+    .chart-caption { margin-top: 5px; color: #7a817c; font-size: 10px; line-height: 1.45; }
+    .bars { display: flex; align-items: end; gap: 13px; height: 190px; margin-top: 20px; padding: 0 3px; border-bottom: 1px solid #cfcac0; }
+    .bar-col { display: flex; flex: 1; height: 100%; flex-direction: column; justify-content: end; gap: 6px; }
+    .bar { position: relative; min-height: 10px; border-radius: 4px 4px 0 0; background: var(--blue); }
+    .bar:nth-child(2) { background: #5f8a91; }
+    .bar:nth-child(3) { background: #b57a47; }
+    .bar-col label { color: #8a8f8a; font-size: 9px; text-align: center; }
+    .insight { padding: 14px 0 0; border-top: 2px solid var(--amber); }
+    .insight-label { color: var(--amber); font: 800 10px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .12em; text-transform: uppercase; }
+    .insight p { margin-top: 12px; font-family: Georgia, "Songti SC", "Noto Serif SC", serif; font-size: 20px; line-height: 1.22; letter-spacing: -.025em; }
+    .insight button { margin-top: 17px; border: 0; border-bottom: 1px solid var(--amber); background: transparent; padding: 0 0 2px; color: #79512d; font-size: 10px; cursor: pointer; }
+    .evidence-pop { display: none; margin-top: 14px; padding: 12px; border-radius: 7px; background: #f8f0e6; color: #6d5b4a; font: 10px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .evidence-pop.open { display: block; }
+    .report-footer { display: flex; justify-content: space-between; gap: 20px; margin-top: 50px; padding-top: 12px; border-top: 1px solid #d9d5cc; color: #8a8f8a; font-size: 9px; }
+    .toast { position: fixed; right: 28px; bottom: 24px; transform: translateY(14px); opacity: 0; pointer-events: none; padding: 11px 14px; border-radius: 7px; background: var(--ink); color: var(--paper); font-size: 11px; box-shadow: var(--shadow); transition: opacity .2s ease, transform .2s ease; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    @media (max-width: 900px) {
+      .shell { padding: 17px; }
+      .app-layout { display: block; min-height: 0; }
+      .sidebar { min-height: 0; margin-bottom: 12px; padding: 10px; }
+      .sidebar-brand { padding: 2px 8px 10px; }
+      .side-new { width: auto; margin: 0 0 10px; }
+      .side-label, .side-spacer, .side-footer { display: none; }
+      .side-list { display: flex; gap: 5px; overflow-x: auto; padding-bottom: 1px; }
+      .side-item { min-width: 156px; background: rgba(251, 250, 246, .36); }
+      .side-item.active { background: var(--paper); }
+      .workspace { grid-template-columns: 1fr; }
+      .rail { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; }
+      .rail > :first-child, .rail > .status-row { grid-column: 1 / -1; }
+      .section { margin-top: 0; }
+      .artifact-frame { height: auto; min-height: 0; }
+    }
+    @media (max-width: 560px) {
+      .topbar { align-items: flex-start; gap: 13px; }
+      .crumb { display: none; }
+      .top-actions .button:first-child { display: none; }
+      .rail { display: block; }
+      .rail .section { margin-top: 23px; }
+      .preview-toolbar { height: auto; align-items: flex-start; flex-direction: column; padding: 16px; }
+      .toolbar-right { width: 100%; }
+      .toolbar-right select { flex: 1; }
+      .artifact-frame { padding: 12px; }
+      .report { padding: 24px 20px; }
+      .metrics, .chart-block { grid-template-columns: 1fr; }
+      .chart-block { gap: 27px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="app-layout">
+      <aside class="sidebar" aria-label="Review navigation">
+        <div class="sidebar-brand"><div class="brand-mark">mv</div><div><strong>Miao Vision</strong><small>Local review workspace</small></div></div>
+        <button class="side-new" id="newReview">New review <span>＋</span></button>
+        <div class="side-label">Recent runs</div>
+        <nav class="side-list">
+          <button class="side-item active"><span class="side-icon">◒</span><span class="side-item-main"><span class="side-item-title">Q3 revenue story</span><span class="side-item-meta">Ready · 2 min ago</span></span><span class="side-dot"></span></button>
+          <button class="side-item"><span class="side-icon">▧</span><span class="side-item-main"><span class="side-item-title">Retention deep dive</span><span class="side-item-meta">Needs review · 18 min ago</span></span></button>
+          <button class="side-item"><span class="side-icon">◫</span><span class="side-item-main"><span class="side-item-title">Market narrative</span><span class="side-item-meta">Deck · Yesterday</span></span></button>
+        </nav>
+        <div class="side-label" style="margin-top: 23px">Workspace</div>
+        <nav class="side-list">
+          <button class="side-item"><span class="side-icon">⌁</span><span class="side-item-main"><span class="side-item-title">All artifacts</span><span class="side-item-meta">12 generated files</span></span></button>
+          <button class="side-item"><span class="side-icon">⌘</span><span class="side-item-main"><span class="side-item-title">Evidence ledger</span><span class="side-item-meta">8 verified claims</span></span></button>
+        </nav>
+        <div class="side-spacer"></div>
+        <div class="side-footer"><div class="side-status"><span class="dot"></span> Local runtime ready</div><p>Files stay on this machine. No upload, no account.</p></div>
+      </aside>
+      <div class="content">
+        <header class="topbar">
+          <div class="brand"><div class="brand-name">Review Viewer <span class="crumb">/ Q3 revenue story</span></div></div>
+          <div class="top-actions"><button class="button" id="copyPath">Copy path</button><button class="button primary" id="openArtifact">Open artifact</button></div>
+        </header>
+
+        <section class="workspace" aria-label="Miao Vision review viewer">
+      <aside class="rail">
+        <div>
+          <div class="eyebrow">Reviewing a generated artifact</div>
+          <h1>Q3 revenue<br />story</h1>
+          <p class="subline">The report is ready to share. Check the evidence trail before handing it to the team.</p>
+        </div>
+        <div class="status-row"><div class="status"><span class="dot"></span> Ready to review</div><div class="run-meta">run-042 · 18.4s</div></div>
+
+        <section class="section">
+          <div class="section-head"><h2>Generation timeline</h2><span>7 / 7 complete</span></div>
+          <div class="timeline">
+            <div class="stage done"><span class="stage-icon">✓</span><div><div class="stage-name">Input resolved</div><div class="stage-detail">sales-q3.csv · 8,412 rows</div></div><span class="stage-time">0.3s</span></div>
+            <div class="stage done"><span class="stage-icon">✓</span><div><div class="stage-name">Data profiled</div><div class="stage-detail">18 fields · 0.7% missing</div></div><span class="stage-time">1.9s</span></div>
+            <div class="stage done"><span class="stage-icon">✓</span><div><div class="stage-name">Spec validated</div><div class="stage-detail">12 chart objects · no blocked types</div></div><span class="stage-time">3.2s</span></div>
+            <div class="stage done"><span class="stage-icon">✓</span><div><div class="stage-name">Evidence verified</div><div class="stage-detail">8 / 8 claims grounded</div></div><span class="stage-time">4.8s</span></div>
+            <div class="stage done"><span class="stage-icon">✓</span><div><div class="stage-name">Artifact rendered</div><div class="stage-detail">HTML + PDF + preview PNG</div></div><span class="stage-time">7.5s</span></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-head"><h2>Evidence coverage</h2><span>verified</span></div>
+          <div class="coverage"><div class="coverage-item"><span>Object coverage</span><strong class="good">100%</strong></div><div class="coverage-item"><span>Claim checks</span><strong class="good">100%</strong></div></div>
+        </section>
+
+        <section class="section">
+          <div class="section-head"><h2>One thing to review</h2><span>warning</span></div>
+          <div class="issue"><b>!</b><span>September has a partial sales day. The report keeps the point but marks the caveat.</span><button id="showIssue">See</button></div>
+        </section>
+      </aside>
+
+      <section class="preview" aria-label="Artifact preview">
+        <div class="preview-toolbar"><div class="preview-title"><strong>Sales performance review</strong><span class="file-chip">sales-q3.html</span></div><div class="toolbar-right"><select id="version" aria-label="Select run version"><option>Current · run-042</option><option>Previous · run-041</option></select><button class="button" id="refresh">Refresh</button></div></div>
+        <div class="artifact-frame">
+          <article class="report">
+            <div class="report-kicker">Quarterly revenue review · Q3 2026</div>
+            <h2>A stronger quarter, with one soft edge.</h2>
+            <p class="report-intro">Revenue grew across the core regions while September's partial day creates a small reporting caveat. The result is ready for a leadership readout.</p>
+            <div class="report-rule"></div>
+            <div class="metrics"><div class="metric"><span>Net revenue</span><strong>$684.2k</strong><small>↑ 14.8% vs Q2</small></div><div class="metric"><span>Gross margin</span><strong>43.7%</strong><small>↑ 2.1 pts</small></div><div class="metric"><span>Active accounts</span><strong>1,286</strong><small>↑ 8.4%</small></div></div>
+            <div class="chart-block"><div><div class="chart-title">Revenue by region</div><div class="chart-caption">Core markets carried the quarter. North Asia now contributes 31% of total revenue.</div><div class="bars"><div class="bar-col"><div class="bar" style="height: 66%"></div><label>North Asia</label></div><div class="bar-col"><div class="bar" style="height: 83%"></div><label>Europe</label></div><div class="bar-col"><div class="bar" style="height: 54%"></div><label>Americas</label></div><div class="bar-col"><div class="bar" style="height: 39%"></div><label>Other</label></div></div></div><div class="insight"><div class="insight-label">Evidence-backed insight</div><p>North Asia grew fastest, up 22.6% from the previous quarter.</p><button id="evidenceButton">Inspect evidence ↗</button><div class="evidence-pop" id="evidencePop">evidence_id: region_growth_q3<br />query: revenue_by_region_delta<br />check: value_match · passed</div></div></div>
+            <footer class="report-footer"><span>Prepared by Miao Vision</span><span>Evidence verified · data fingerprint 7e31…b82</span></footer>
+          </article>
+        </div>
+      </section>
+        </section>
+      </div>
+    </div>
+  </main>
+  <div class="toast" id="toast" role="status"></div>
+  <script>
+    const toast = document.querySelector('#toast');
+    let toastTimer;
+    function notify(message) { toast.textContent = message; toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => toast.classList.remove('show'), 2200); }
+    document.querySelector('#copyPath').addEventListener('click', () => notify('Artifact path copied'));
+    document.querySelector('#openArtifact').addEventListener('click', () => notify('Opening sales-q3.html'));
+    document.querySelector('#newReview').addEventListener('click', () => notify('New review workspace ready'));
+    document.querySelector('#refresh').addEventListener('click', () => notify('Viewer refreshed from run-042'));
+    document.querySelector('#showIssue').addEventListener('click', () => notify('Focused the September caveat'));
+    document.querySelector('#version').addEventListener('change', (event) => notify(event.target.value.includes('Previous') ? 'Previewing run-041' : 'Previewing run-042'));
+    document.querySelector('#evidenceButton').addEventListener('click', () => document.querySelector('#evidencePop').classList.toggle('open'));
+  </script>
+</body>
+</html>

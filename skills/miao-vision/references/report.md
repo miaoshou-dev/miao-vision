@@ -119,9 +119,49 @@ For a report PNG, use `--format png`; optional controls are `--viewport-width`,
 
 ## Data Poster
 
-Use a poster when one categorical dimension and one numeric measure should become a compact, shareable ranking or comparison. Prefer `data-poster-ranking` from `catalog.templates` when it is available and the dimension has 3–12 readable categories. Do not use a poster for high-cardinality data, multi-view analysis, time-series exploration, or a report that needs filters and detail tables.
+Poster 是证据驱动的自动叙事海报生成器：先根据用户意图和数据角色推荐模板，再用同一份 spec 验证并导出 HTML、PNG、PDF。用户不需要知道 composition 或 block id；只需在 `data analyze` 中描述目标。
 
-The poster spec uses `layout.preset: poster`, points `poster.chartId` at one standard vertical bar chart, and requires a portrait canvas plus a title and source footer:
+模板选择规则：
+
+| 用户意图 | 模板 | 输入要求 | 限制与 fallback |
+|---|---|---|---|
+| 单指标排名 | `data-poster-ranking` | 1 个类别字段 + 1 个数值字段，3–12 类 | 仅 vertical bar；不支持 stacked/horizontal/color series |
+| 构成/占比 | `data-poster-share` | 类别字段 + 系列字段 + 非负数值 | 受控归一化到 100%；系列过多或总和无效时 blocked |
+| 双指标对比 | `data-poster-comparison` | 1 个类别字段 + 2 个数值字段，3–12 类 | 无第二指标时 fallback 到 ranking |
+| 连续变化 | `data-poster-trend` | 时间字段至少 3 个时间点 + 数值字段 | 支持 line/area；超容量时返回聚合建议 |
+| 阶段流转 | `data-poster-flow` | 有序 stage + 数值字段 | 仅 funnel/sankey/infographic-flow 规则 |
+| 地理比较 | `data-poster-geo` | geo 字段 + 数值字段，3–12 个实体 | 当前默认 geo ranking；无本地地图资源时稳定降级 |
+| 历史/发展时间线 | `content-poster-timeline` | 本地 JSON 行数组：order、timeLabel、title、description | 图片仅读取本地路径；缺图降级为无图节点 |
+
+推荐、缺失角色、fallback 和 warning 都会出现在 `context.poster.templates`。若结果为 blocked，先补齐提示的字段或改用 fallback，不要手工猜测字段含义。
+
+典型工作流（以自动推荐为入口）：
+
+```bash
+miao-viz data analyze /path/to/data.csv \
+  --intent "比较各国家肉类供应结构，并输出可分享的占比海报" \
+  --output SYSTEM_TEMP/miao-vision/context.json
+
+miao-viz spec template instantiate data-poster-share \
+  --context SYSTEM_TEMP/miao-vision/context.json \
+  --output SYSTEM_TEMP/miao-vision/poster.yaml
+
+miao-viz data profile /path/to/data.csv > SYSTEM_TEMP/miao-vision/profile.json
+miao-viz spec validate \
+  --spec SYSTEM_TEMP/miao-vision/poster.yaml \
+  --profile SYSTEM_TEMP/miao-vision/profile.json \
+  --context SYSTEM_TEMP/miao-vision/context.json \
+  --verify --strict
+miao-viz render report \
+  --input /path/to/data.csv \
+  --spec SYSTEM_TEMP/miao-vision/poster.yaml \
+  --context SYSTEM_TEMP/miao-vision/context.json \
+  --format html,png,pdf --output-dir SYSTEM_TEMP/miao-vision/poster-output
+```
+
+当没有匹配的业务场景时，直接使用 `spec template instantiate <template-id>`；只有模板不可用时才退回 block。旧版 ranking spec 仍可直接验证和渲染。
+
+最小 ranking spec 如下，`template`、`composition` 和默认 slots 会在内存中补齐：
 
 ```yaml
 layout:
@@ -141,6 +181,14 @@ charts:
 ```
 
 Render the same validated spec with `miao-viz render report --format html,png,pdf`. Poster PNG output is cropped to the poster canvas; PDF output is a single portrait page. Keep derived measures in the input data or an earlier validated transform; do not invent values or execute arbitrary formulas in the poster spec.
+
+时间线输入必须先归一化为本地 JSON 行数组；CLI 不抓取 URL：
+
+```json
+[{"order":1,"timeLabel":"1901","title":"First event","description":"Evidence-backed description","era":"Early era","mediaPath":"./assets/event.png","source":"Local source"}]
+```
+
+建议持续统计结构化结果中的首次成功率、模板命中率、重试率、导出率、人工修改率，以及 blocked 原因分布；这些指标用于判断推荐是否真正降低了用户完成海报的成本。
 
 For schema-compatible files that should be appended row-wise, pass
 `--inputs /path/a.csv,/path/b.csv`. If source names differ, provide a JSON

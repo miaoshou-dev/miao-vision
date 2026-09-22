@@ -5,6 +5,7 @@ import {
   type AnalyzeField,
   type CompactAnalyzeContext
 } from './context-schema'
+import { fromCompactPosterContext, toCompactPosterContext } from './poster/poster-context'
 
 type AnalyzeFieldChartUsage = NonNullable<AnalyzeField['chartUsage']>
 
@@ -62,7 +63,8 @@ export function toCompactAnalyzeContext(ctx: AnalyzeContext): CompactAnalyzeCont
       q.options,
       q.blocking,
       q.appliesTo
-    ])
+    ]),
+    ...(ctx.poster ? { poster: toCompactPosterContext(ctx.poster) } : {})
   }
 }
 
@@ -162,7 +164,8 @@ export function fromCompactAnalyzeContext(ctx: CompactAnalyzeContext): AnalyzeCo
       options,
       blocking,
       appliesTo
-    }))
+    })),
+    ...(ctx.poster ? { poster: fromCompactPosterContext(ctx.poster) } : {})
   }
 }
 

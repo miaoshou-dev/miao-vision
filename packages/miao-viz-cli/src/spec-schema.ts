@@ -134,8 +134,33 @@ const posterCalloutSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('note'), text: z.string().min(1) }).strict(),
   z.object({ type: z.literal('threshold'), title: z.string().min(1), body: z.string().min(1) }).strict()
 ])
+const posterSlotSchema = z.object({
+  id: z.string().min(1),
+  role: z.enum(['hero', 'insight', 'primary-visual', 'ranking', 'footer']),
+  block: z.enum(['hero', 'callout', 'chart', 'decorative', 'footer']),
+  chartId: z.string().min(1).optional(),
+  calloutIndex: z.number().int().nonnegative().optional()
+}).strict()
 const posterSchema = z.object({
   chartId: z.string().min(1),
+  secondaryChartId: z.string().min(1).optional(),
+  template: z.enum(['data-poster-ranking', 'data-poster-share', 'data-poster-comparison', 'data-poster-trend', 'data-poster-flow', 'data-poster-geo', 'content-poster-timeline']).optional(),
+  share: z.object({ normalize: z.literal('100%'), categoryField: z.string().min(1).optional(), seriesField: z.string().min(1).optional(), valueField: z.string().min(1).optional() }).strict().optional(),
+  geo: z.object({ resourcePath: z.string().min(1).optional(), nameField: z.string().min(1).optional(), coverageThreshold: z.number().min(0).max(1).optional() }).strict().optional(),
+  timeline: z.object({ roles: z.object({ order: z.string().min(1), timeLabel: z.string().min(1), title: z.string().min(1), description: z.string().min(1), era: z.string().min(1).optional(), mediaPath: z.string().min(1).optional(), source: z.string().min(1).optional() }).strict() }).strict().optional(),
+  composition: z.string().min(1).optional(),
+  theme: z.string().min(1).optional(),
+  themeOverride: z.object({
+    mood: z.string().min(1).optional(),
+    palette: z.string().min(1).optional(),
+    density: z.enum(['compact', 'balanced', 'airy']).optional()
+  }).strict().optional(),
+  selection: z.object({
+    source: z.enum(['user', 'auto']),
+    rationale: z.array(z.string().min(1)).optional(),
+    confidence: z.number().min(0).max(1).optional()
+  }).strict().optional(),
+  slots: z.array(posterSlotSchema).max(8).optional(),
   canvas: z.object({ width: z.number().positive().default(1080), height: z.number().positive().default(1350) }).strict().default({ width: 1080, height: 1350 }),
   hero: z.object({ eyebrow: z.string().optional(), title: z.string().min(1), subtitle: z.string().optional() }).strict(),
   footer: z.object({ source: z.string().min(1), date: z.string().optional() }).strict(),

@@ -2,17 +2,18 @@
   "schemaVersion": 1,
   "cliVersion": "0.7.2",
   "requiredCliRange": ">=0.3.0 <0.8.0",
-  "releaseTag": "skill-v0.7.2",
-  "releaseUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.7.2",
+  "releaseTag": "skill-v0.9.0",
+  "releaseUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.9.0",
   "hosts": [
     {
       "host": "codex",
       "recommended": true,
       "title": "Codex Plugin",
+      "description": "推荐给 Codex 用户。核心产物调用本地 CLI；可选本地 Review Viewer 用于查看进度和 artifact 预览，媒体能力需要 Node.js 22+、ai-cli、Gateway Key 和独立费用。",
       "commands": [
         "下载 miao-vision-plugin.zip，并通过 Codex Plugin 面板安装"
       ],
-      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.7.2/miao-vision-plugin.zip",
+      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.9.0/miao-vision-plugin.zip",
       "verifyCommand": "miao-viz --version",
       "requiresAgent": true,
       "requiresApproval": true
@@ -21,11 +22,12 @@
       "host": "claude-code",
       "recommended": true,
       "title": "Claude Code Plugin",
+      "description": "推荐给 Claude Code 用户。核心 Report 保持本地；可选本地 Review Viewer 用于查看进度和 artifact 预览，媒体能力需单独配置并逐次确认费用。",
       "commands": [
         "claude plugin marketplace add miaoshou-dev/miao-vision",
         "claude plugin install miao-vision@miao-vision"
       ],
-      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.7.2/miao-vision-plugin.zip",
+      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.9.0/miao-vision-plugin.zip",
       "verifyCommand": "miao-viz --version",
       "requiresAgent": true,
       "requiresApproval": true
@@ -38,7 +40,7 @@
         "下载并安装 miao-vision-skill.zip",
         "miao-viz --version"
       ],
-      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.7.2/miao-vision-skill.zip",
+      "downloadUrl": "https://github.com/miaoshou-dev/miao-vision/releases/download/skill-v0.9.0/miao-vision-skill.zip",
       "verifyCommand": "miao-viz --version",
       "requiresAgent": true,
       "requiresApproval": true

@@ -1,4 +1,6 @@
 import { join } from 'node:path'
+import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { agentError, isAgentError } from './errors'
 import { profileDataset } from './data-profiler'
 import { validateReportSpec } from './spec-validator'
@@ -14,22 +16,29 @@ import { resolveDirectives } from './directive-resolver'
 import { mapInsightText } from './insight-utils'
 import { validateProvenance } from './provenance-validator'
 import type { CliArgs } from './cli-utils'
-import type { AgentReportSpec } from './types'
+import type { AgentReportSpec, DataProfile } from './types'
 import { exportHtmlToPdf } from './pdf-export'
 import { exportHtmlToPng } from './png-export'
 import { renderReportHtmlWithTrust } from './trusted-html-render'
 import { deliverReportArtifact } from './report-delivery'
+import { publishStageOnce, reviewPublisherFromArgs, stage, type ReviewPublisher } from './review/review-publisher'
+import { summarizeDataQuality } from './review/review-data-quality'
+import { summarizeDelivery } from './review/review-delivery'
+import type { DeliveryManifest } from './artifact-delivery'
+import { fingerprintArtifactData } from './artifact-data-fingerprint'
+import { fingerprintArtifactSpec } from './artifact-spec-fingerprint'
+import { hashValue } from './report-project-storage'
 
 export async function runRenderGroup(args: CliArgs): Promise<void> {
   switch (args.subcommand) {
     case 'report':
-      printJson(await runRender(args))
+      printJson(await runWithReview(args, 'report', publisher => runRender(args, publisher)))
       return
     case 'deck':
-      printJson(await runDeckRender(args))
+      printJson(await runWithReview(args, 'deck', () => runDeckRender(args)))
       return
     case 'article':
-      printJson(await runArticle(args))
+      printJson(await runWithReview(args, 'article', () => runArticle(args)))
       return
     default:
       printJson(fail(agentError('UNKNOWN_SUBCOMMAND',
@@ -37,6 +46,66 @@ export async function runRenderGroup(args: CliArgs): Promise<void> {
         { subcommand: args.subcommand, available: ['report', 'deck', 'article'] }
       )))
   }
+}
+
+async function runWithReview(args: CliArgs, kind: 'report' | 'deck' | 'article', execute: (publisher?: ReviewPublisher) => Promise<unknown>): Promise<unknown> {
+  const publisher = reviewPublisherFromArgs(args, kind, `${kind} artifact`)
+  if (!publisher) return execute()
+  await publishStageOnce(publisher, stage('input_resolved', 'completed', 'Input and render options resolved.'))
+  const result = await execute(publisher)
+  if (isAgentError(result)) {
+    await publisher.publish({ type: 'run.issue', severity: 'error', code: result.code, message: result.message })
+    await publisher.publish({ type: 'run.completed', status: 'failed', message: result.message })
+    return result
+  }
+  const success = Boolean(result && typeof result === 'object' && (result as { ok?: unknown }).ok === true)
+  if (!success) {
+    await publisher.publish({ type: 'run.issue', severity: 'error', code: 'RENDER_FAILED', message: 'Render did not return a successful result.' })
+    await publisher.publish({ type: 'run.completed', status: 'failed' })
+    return result
+  }
+  if (kind !== 'report') await publishStageOnce(publisher, stage('rendered', 'completed', 'Artifact rendered.'))
+  const value = (result as { value?: Record<string, unknown> }).value ?? {}
+  const delivery = value.delivery as (DeliveryManifest & { status?: string }) | undefined
+  const coverage = value.coverage as { objectCoverage?: number; claimCheckCoverage?: number; eligibleObjects?: number; coveredObjects?: number; requiredClaimChecks?: number; passedClaimChecks?: number; invalidReferences?: number; failedClaimChecks?: number; empty?: boolean } | undefined
+  const fingerprints = value.fingerprints as { specHash: string; dataFingerprint: string } | undefined ?? fallbackFingerprints(args, kind)
+  const composition = value.composition as Extract<import('./review/review-events').ReviewEvent, { type: 'artifact.updated' }>['composition'] ?? {
+    ...(stringFlag(args, 'theme') ? { theme: stringFlag(args, 'theme') } : {}), charts: [], insights: [], evidence: []
+  }
+  const evidenceItems = value.evidenceItems as Extract<import('./review/review-events').ReviewEvent, { type: 'artifact.updated' }>['evidenceItems']
+  if (delivery?.artifacts?.primary?.path) {
+    const completeCoverage = coverage && Object.values(coverage).every(value => value !== undefined)
+      ? coverage as { objectCoverage: number; claimCheckCoverage: number; eligibleObjects: number; coveredObjects: number; requiredClaimChecks: number; passedClaimChecks: number; invalidReferences: number; failedClaimChecks: number; empty: boolean }
+      : undefined
+    const dataQuality = summarizeDataQuality(value.profile as DataProfile | undefined)
+    await publisher.publish({ type: 'artifact.updated', kind, primaryPath: delivery.artifacts.primary.path, ...(delivery.artifacts.preview?.path ? { previewPath: delivery.artifacts.preview.path } : {}), verified: delivery.verification?.verified === true, deliveryStatus: (delivery.status as 'ready' | 'needs_review' | 'restricted' | 'failed' | 'missing') ?? 'needs_review', ...(completeCoverage ? { coverage: completeCoverage } : {}), evidence: { metricCount: delivery.summary?.metrics?.length ?? 0, highlightCount: delivery.summary?.highlights?.length ?? 0, missingCount: completeCoverage ? completeCoverage.invalidReferences + completeCoverage.failedClaimChecks : 0 }, ...(dataQuality ? { dataQuality } : {}), delivery: summarizeDelivery(delivery), ...(fingerprints ? { fingerprints } : {}), ...(composition ? { composition } : {}), ...(evidenceItems ? { evidenceItems } : {}) })
+  }
+  await publishStageOnce(publisher, stage('delivery_verified', 'completed', 'Delivery manifest available.'))
+  const warning = Array.isArray((result as { warnings?: unknown }).warnings) && ((result as { warnings: unknown[] }).warnings.length > 0)
+  await publisher.publish({ type: 'run.completed', status: warning ? 'warning' : 'ready' })
+  return result
+}
+
+function fallbackFingerprints(args: CliArgs, kind: 'report' | 'deck' | 'article'): { specHash: string; dataFingerprint: string } | undefined {
+  const specPath = kind === 'article'
+    ? stringFlag(args, 'spec-input') ?? stringFlag(args, 'bundle-input') ?? args.positional[0]
+    : stringFlag(args, 'spec')
+  const dataPath = kind === 'article' ? args.positional[0] ?? specPath : stringFlag(args, 'input') ?? firstInput(args)
+  if (!specPath || !dataPath) return undefined
+  try {
+    return { specHash: fileHash(specPath), dataFingerprint: fileHash(dataPath) }
+  } catch {
+    return undefined
+  }
+}
+
+function fileHash(path: string): string {
+  return createHash('sha256').update(readFileSync(path)).digest('hex')
+}
+
+function provenanceEvidenceIds(provenance: AgentReportSpec['charts'][number]['provenance']): string[] {
+  if (typeof provenance === 'string') return [provenance]
+  return provenance?.evidence ?? []
 }
 
 export function getReportPngExportOptions(spec: AgentReportSpec, args: CliArgs): {
@@ -53,7 +122,7 @@ export function getReportPngExportOptions(spec: AgentReportSpec, args: CliArgs):
   }
 }
 
-async function runRender(args: CliArgs): Promise<unknown> {
+async function runRender(args: CliArgs, publisher?: ReviewPublisher): Promise<unknown> {
   const input = stringFlag(args, 'input') ?? firstInput(args) ?? agentError('MISSING_FLAG', 'Missing --input <file> or --inputs <a,b,...>.')
   const specPath = requiredFlag(args, 'spec')
   if (isAgentError(input)) return fail(input)
@@ -70,6 +139,7 @@ async function runRender(args: CliArgs): Promise<unknown> {
   if (isAgentError(dataset)) return fail(dataset)
 
   const profile = profileDataset(dataset.value)
+  await publishStageOnce(publisher, stage('profiled', 'completed', 'Input data profiled.'))
   const spec = readSpec(specPath)
   const normalized = normalizeSpec(spec)
   if (isAgentError(normalized)) return fail(normalized)
@@ -81,11 +151,16 @@ async function runRender(args: CliArgs): Promise<unknown> {
     const unwrapped = (raw as { ok?: unknown; value?: unknown }).ok === true ? (raw as { value: unknown }).value : raw
     renderContext = parseAnalyzeContext(unwrapped)
     if (!renderContext) return fail(agentError('INVALID_CONTEXT', 'context.json format is invalid.', { contextPath }))
+    await publishStageOnce(publisher, stage('analyzed', 'completed', 'Analyze context loaded.'))
+  } else {
+    await publishStageOnce(publisher, stage('analyzed', 'skipped', 'No analyze context supplied.'))
   }
+  await publishStageOnce(publisher, stage('spec_instantiated', 'completed', 'Report spec resolved.'))
 
   const resolvedSpec = renderContext ? resolveChartEvidence(normalized, renderContext) : normalized
   const validation = validateReportSpec(resolvedSpec, profile, formats, renderContext ?? undefined)
   if (isAgentError(validation)) return fail(validation)
+  await publishStageOnce(publisher, stage('validated', 'completed', 'Report spec validated.'))
 
   if (renderContext && validation.value.insights && validation.value.insights.length > 0) {
     validation.value.insights = validation.value.insights.map(insight =>
@@ -107,6 +182,7 @@ async function runRender(args: CliArgs): Promise<unknown> {
     coverage: renderProvenance?.coverage,
     theme: themeFlag
   })
+  await publishStageOnce(publisher, stage('rendered', 'completed', 'Artifact rendered.'))
   const html = rendered.html
   const finalTrust = rendered.trust
   const hardBudgetIssue = finalTrust.shareSafety.checks.find(check => check.id === 'artifact_budget')?.issues.find(issue => issue.severity === 'error')
@@ -186,7 +262,21 @@ async function runRender(args: CliArgs): Promise<unknown> {
       shareSafe: interactive ? finalTrust.shareSafe : undefined,
       shareSafety: interactive ? finalTrust.shareSafety : undefined,
       exposureManifest: interactive ? finalTrust.manifest : undefined,
-      delivery: delivered.delivery
+      delivery: delivered.delivery,
+      fingerprints: {
+        specHash: fingerprintArtifactSpec('report', validation.value),
+        dataFingerprint: fingerprintArtifactData(dataset.value)
+      },
+      composition: {
+        ...(validation.value.theme ? { theme: validation.value.theme } : {}),
+        charts: validation.value.charts.map((chart, index) => ({ id: chart.id ?? `chart-${index + 1}`, type: chart.type, hash: hashValue(chart), path: `charts[${index}]`, ...(chart.title ? { title: chart.title } : {}), evidenceIds: provenanceEvidenceIds(chart.provenance) })),
+        insights: (validation.value.insights ?? []).map((insight, index) => ({ id: `insight-${index + 1}`, hash: hashValue(insight), path: `insights[${index}]`, title: typeof insight === 'string' ? insight : insight.text, evidenceIds: typeof insight === 'string' ? [] : insight.evidence ?? provenanceEvidenceIds(insight.provenance) })),
+        evidence: (renderContext?.evidence ?? []).map((item, index) => ({ id: item.id, hash: hashValue(item), path: `context.evidence[${index}]` }))
+      },
+      evidenceItems: (renderContext?.evidence ?? []).map(item => ({
+        id: item.id, query: item.query,
+        ...(renderContext?.metricCandidates?.find(candidate => candidate.id === item.id)?.caveat ? { caveat: renderContext.metricCandidates.find(candidate => candidate.id === item.id)!.caveat } : {})
+      }))
     },
     ...(warnings.length ? { warnings } : {})
   }

@@ -28,6 +28,9 @@ import { packageTrustedArtifact } from './trusted-artifact'
 import { runRenderGroup } from './cli-render'
 import { runArtifactCommand } from './cli-artifact'
 import { diagnoseEnvironment } from './diagnostic'
+import { runReviewCommand } from './cli-review'
+import { publishStageOnce, reviewPublisherFromArgs, stage } from './review/review-publisher'
+import type { ReviewStage } from './review/review-events'
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2))
   if (args.command === '--version' || args.command === '-v' || args.command === 'version') {
@@ -63,12 +66,14 @@ async function main(): Promise<void> {
       case 'artifact':
         printJson(runArtifactCommand(args))
         return
+      case 'review':
+        return runReviewCommand(args)
       case 'diagnose':
         printJson(diagnoseEnvironment({ input: stringFlag(args, 'input'), output: stringFlag(args, 'output'), host: stringFlag(args, 'host'), requirePdf: args.flags['pdf'] === true }))
         return
     }
     printJson(agentError('UNKNOWN_COMMAND', `Unknown command: ${args.command ?? '(none)'}`, {
-      commands: ['data', 'spec', 'deck', 'report', 'render', 'artifact']
+      commands: ['data', 'spec', 'deck', 'report', 'render', 'artifact', 'review']
     }))
     process.exitCode = 1
   } catch (error) {
@@ -76,11 +81,14 @@ async function main(): Promise<void> {
     process.exitCode = 1
   }
 }
-function runData(args: CliArgs): void | Promise<void> {
+async function runData(args: CliArgs): Promise<void> {
   switch (args.subcommand) {
-    case 'profile':
-      printJson(runProfile(args))
+    case 'profile': {
+      const result = runProfile(args)
+      await publishStandaloneResult(args, 'profiled', result, 'Input data profiled.')
+      printJson(result)
       return
+    }
     case 'query':
       printJson(runQuery(args))
       return
@@ -93,23 +101,35 @@ function runData(args: CliArgs): void | Promise<void> {
       )))
   }
 }
-function runSpec(args: CliArgs): void {
+async function runSpec(args: CliArgs): Promise<void> {
   switch (args.subcommand) {
-    case 'validate':
-      printJson(runValidate(args))
+    case 'validate': {
+      const result = runValidate(args)
+      await publishStandaloneResult(args, 'validated', result, 'Report spec validated.')
+      printJson(result)
       return
+    }
     case 'catalog':
       printJson(runCatalog(args))
       return
-    case 'block':
-      printJson(runBlock(args))
+    case 'block': {
+      const result = runBlock(args)
+      if (args.positional[0] === 'instantiate') await publishStandaloneResult(args, 'spec_instantiated', result, 'Report block instantiated.')
+      printJson(result)
       return
-    case 'template':
-      printJson(runTemplate(args))
+    }
+    case 'template': {
+      const result = runTemplate(args)
+      if (args.positional[0] === 'instantiate') await publishStandaloneResult(args, 'spec_instantiated', result, 'Report template instantiated.')
+      printJson(result)
       return
-    case 'scene':
-      printJson(runScene(args))
+    }
+    case 'scene': {
+      const result = runScene(args)
+      if (args.positional[0] === 'instantiate') await publishStandaloneResult(args, 'spec_instantiated', result, 'Report scene instantiated.')
+      printJson(result)
       return
+    }
     case 'summary':
       printJson(runSummary(args))
       return
@@ -279,12 +299,19 @@ function runQuery(args: CliArgs): unknown {
 async function runAnalyze(args: CliArgs): Promise<void> {
   const file = args.positional[0] ?? firstInput(args)
   if (!file) {
-    printJson(fail(agentError('MISSING_INPUT', 'Usage: miao-viz data analyze <file> [--intent "..."] [--output context.json] [--extra-query "..."] [--correct-assumption "primary_measure=col"] [--sheet <name>] [--limit <n>]')))
+    const result = fail(agentError('MISSING_INPUT', 'Usage: miao-viz data analyze <file> [--intent "..."] [--output context.json] [--extra-query "..."] [--correct-assumption "primary_measure=col"] [--sheet <name>] [--limit <n>]'))
+    await publishStandaloneResult(args, 'analyzed', result, 'Analyze context created.')
+    printJson(result)
     return
   }
 
   const dataset = loadCliDataset(args, file)
-  if (isAgentError(dataset)) { printJson(fail(dataset)); return }
+  if (isAgentError(dataset)) {
+    const result = fail(dataset)
+    await publishStandaloneResult(args, 'analyzed', result, 'Analyze context created.')
+    printJson(result)
+    return
+  }
 
   const context = analyzeDataset(dataset.value, {
     intent: stringFlag(args, 'intent'),
@@ -294,6 +321,7 @@ async function runAnalyze(args: CliArgs): Promise<void> {
 
   const value = args.flags['compact'] === true ? toCompactAnalyzeContext(context) : context
   const result = { ok: true, value }
+  await publishStandaloneResult(args, 'analyzed', result, 'Analyze context created.')
   const outputPath = stringFlag(args, 'output')
   if (outputPath) {
     writeOutput(outputPath, `${JSON.stringify(result, null, 2)}\n`)
@@ -301,6 +329,21 @@ async function runAnalyze(args: CliArgs): Promise<void> {
   } else {
     printJson(result)
   }
+}
+
+async function publishStandaloneResult(args: CliArgs, reviewStage: ReviewStage, result: unknown, successMessage: string): Promise<void> {
+  const publisher = reviewPublisherFromArgs(args, 'report', 'report workflow')
+  if (!publisher) return
+  await publishStageOnce(publisher, stage('input_resolved', 'completed', 'Input and review options resolved.'))
+  const record = result && typeof result === 'object' ? result as { ok?: unknown; code?: unknown; message?: unknown } : undefined
+  if (record?.ok === true) {
+    await publishStageOnce(publisher, stage(reviewStage, 'completed', successMessage))
+    return
+  }
+  const code = typeof record?.code === 'string' ? record.code : 'COMMAND_FAILED'
+  const message = typeof record?.message === 'string' ? record.message : `${reviewStage} command failed.`
+  await publisher.publish(stage(reviewStage, 'failed', message, code))
+  await publisher.publish({ type: 'run.issue', severity: 'error', code, message })
 }
 
 main()
