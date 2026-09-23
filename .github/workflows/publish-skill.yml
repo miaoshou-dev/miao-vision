@@ -44,7 +44,7 @@ jobs:
 
       - name: Verify release versions
         run: |
-          test "$(node -p "require('./packages/miao-viz-cli/package.json').version")" = "${{ steps.version.outputs.version }}"
+          test "$(node -p "require('./packages/miao-viz-cli/package.json').version")" = "$(node -p "require('./skills/miao-vision/cli-compatibility.json').recommendedCliVersion")"
           test "$(node -p "require('./skills/miao-vision/cli-compatibility.json').pluginVersion")" = "${{ steps.version.outputs.version }}"
           test "$(node -p "require('./skills/miao-vision/cli-compatibility.json').releaseTag")" = "${GITHUB_REF_NAME}"
 

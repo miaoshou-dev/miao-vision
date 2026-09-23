@@ -66,7 +66,7 @@ Supported formats: **CSV, TSV, XLSX, JSON**: all read locally. Reports cite pre-
 
 Download [`miao-vision-plugin.zip`](https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-plugin.zip) from the
 [latest GitHub Release](https://github.com/miaoshou-dev/miao-vision/releases/latest). The current release is
-[`v0.9.0`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.9.0). It is
+[`v0.9.1`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.9.1). It is
 one bundle with one Skill and one CLI compatibility contract:
 
 | Host | Installation |

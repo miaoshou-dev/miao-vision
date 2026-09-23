@@ -11,7 +11,7 @@
       "name": "miao-vision",
       "source": "./",
       "description": "Miao Vision — evidence-backed local visualization with an optional local Review Viewer and data-story media.",
-      "version": "0.9.0",
+      "version": "0.9.1",
       "homepage": "https://github.com/miaoshou-dev/miao-vision",
       "license": "MIT"
     }

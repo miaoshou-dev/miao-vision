@@ -50,7 +50,7 @@ export async function runReviewMcp(): Promise<void> {
 
 async function handleRequest(request: JsonRpcRequest, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>): Promise<unknown> {
   if (request.method === 'initialize') {
-    return { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'miao-viz', version: '0.8.0' } }
+    return { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'miao-viz', version: '0.8.1' } }
   }
   if (request.method === 'ping') return {}
   if (request.method === 'tools/list') {
