@@ -10,6 +10,7 @@ BIN_DIR="$MIAO_HOME/bin"
 DESTINATION="$BIN_DIR/miao-viz"
 
 RELEASE_TAG=$(node -e 'const c=require(process.argv[1]); process.stdout.write(c.releaseTag)' "$COMPATIBILITY")
+RECOMMENDED_VERSION=$(node -e 'const c=require(process.argv[1]); process.stdout.write(c.recommendedCliVersion)' "$COMPATIBILITY")
 
 case "$(uname -s)" in
   Darwin) OS=darwin ;;
@@ -31,9 +32,8 @@ if [ "${1:-}" = "--print-url" ]; then
   exit 0
 fi
 
-if EXISTING=$(node "$SCRIPT_DIR/check-miao-viz.mjs" --print-path 2>/dev/null); then
-  printf 'Using compatible miao-viz at %s\n' "$EXISTING"
-  "$EXISTING" --version
+if [ -x "$DESTINATION" ] && node "$SCRIPT_DIR/check-miao-viz.mjs" --candidate "$DESTINATION" --require-recommended --print-path >/dev/null 2>&1; then
+  printf 'Using recommended miao-viz %s at %s\n' "$RECOMMENDED_VERSION" "$DESTINATION"
   exit 0
 fi
 
@@ -69,6 +69,10 @@ chmod +x "$TMP_DIR/$ASSET"
 STAGED=$(mktemp "$BIN_DIR/.miao-viz.XXXXXX")
 cp "$TMP_DIR/$ASSET" "$STAGED"
 chmod +x "$STAGED"
+if ! node "$SCRIPT_DIR/check-miao-viz.mjs" --candidate "$STAGED" --require-recommended --print-path >/dev/null; then
+  echo "Downloaded CLI failed version or capability verification; existing CLI was preserved." >&2
+  exit 1
+fi
 mv -f "$STAGED" "$DESTINATION"
 STAGED=
 printf 'Installed miao-viz at %s\n' "$DESTINATION"

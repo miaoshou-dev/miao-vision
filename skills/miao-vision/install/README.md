@@ -1,6 +1,6 @@
 # Miao Vision Plugin Installation
 
-Current compatible plugin release: `v0.9.3` (`skill-v0.9.3`), with
+Current compatible plugin release: `v0.9.4` (`skill-v0.9.4`), with
 `@miao-vision/cli@0.8.2`. Download the cross-host bundle from:
 
 ```text
@@ -17,10 +17,15 @@ same source skill for Codex, Claude Code, and OpenClaw:
 The standalone Skill ZIP remains a lightweight compatibility channel for one
 release cycle.
 
-On first use, the plugin resolves the CLI from `MIAO_VISION_HOME` when set,
-then `~/.miao-vision/bin/miao-viz`, then `PATH`. Only when no compatible CLI
-exists does it ask permission to download the versioned, checksum-verified
-binary. Plugin upgrades and uninstalls do not remove this shared CLI.
+On first use, the plugin checks for its pinned recommended CLI version. When
+only an older compatible CLI exists, it asks permission before downloading the
+versioned, checksum-verified binary. The installer checks the shared CLI path,
+verifies the downloaded version and capabilities, then replaces that path. A
+failed download or verification leaves the old CLI in place. Plugin upgrades
+and uninstalls do not remove the shared CLI. A plain
+`miao-viz --version` may still report a different global copy on `PATH`; use
+`node scripts/check-miao-viz.mjs --print-path` to see the CLI selected by the
+skill.
 
 All ordinary source-data workflows stay local. Optional data-story image/video
 generation requires Node.js 22+, `ai-cli`, `AI_GATEWAY_API_KEY`, remote upload

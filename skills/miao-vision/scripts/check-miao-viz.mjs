@@ -4,7 +4,9 @@ import { spawnSync } from 'node:child_process'
 import {
   existingCandidates,
   isCompatibleVersion,
+  isRecommendedVersion,
   readCompatibility,
+  selectPreferredCandidate,
   skillRoot
 } from './cli-runtime.mjs'
 
@@ -24,24 +26,34 @@ function supportsRequiredCapabilities(candidate) {
   })
 }
 
-const candidates = existingCandidates()
+const candidateIndex = process.argv.indexOf('--candidate')
+if (candidateIndex !== -1 && !process.argv[candidateIndex + 1]) {
+  console.error('--candidate requires an executable path.')
+  process.exit(2)
+}
+const candidates = candidateIndex === -1 ? existingCandidates() : [process.argv[candidateIndex + 1]]
 const inspected = candidates.map(readVersion).filter(Boolean)
-const selected = inspected.find((candidate) =>
+const compatible = inspected.filter((candidate) =>
   candidate.version &&
   isCompatibleVersion(candidate.version, compatibility) &&
   supportsRequiredCapabilities(candidate)
 )
+const selected = selectPreferredCandidate(compatible, compatibility)
+const requireRecommended = process.argv.includes('--require-recommended')
 
-if (!selected) {
+if (!selected || (requireRecommended && !isRecommendedVersion(selected.version, compatibility))) {
   const found = inspected.map(({ executable, version }) => `${executable} (${version || 'unknown version'})`).join(', ')
-  console.error('The installed miao-viz CLI does not provide the capabilities required by this Miao Vision skill.')
+  console.error(requireRecommended && selected
+    ? 'The recommended miao-viz CLI is not installed.'
+    : 'The installed miao-viz CLI does not provide the capabilities required by this Miao Vision skill.')
   console.error(found ? `Found: ${found}.` : 'No miao-viz CLI was found.')
   console.error(`Required CLI range: >=${compatibility.minimumCliVersion} <${compatibility.maximumCliVersionExclusive}.`)
+  console.error(`Recommended CLI version: ${compatibility.recommendedCliVersion}.`)
   console.error('Run scripts/install-miao-viz.sh (macOS/Linux) or scripts/install-miao-viz.ps1 (Windows).')
   process.exit(1)
 }
 
-if (selected.executable === candidates.at(-1)) {
+if (candidateIndex === -1 && selected.executable === candidates.at(-1)) {
   console.error(`Using legacy skill-local CLI at ${selected.executable}. Reinstall to migrate it to the shared Miao Vision home.`)
 }
 

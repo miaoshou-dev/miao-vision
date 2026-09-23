@@ -58,6 +58,14 @@ export function isCompatibleVersion(version, compatibility) {
   return minimum !== null && maximum !== null && minimum >= 0 && maximum < 0
 }
 
+export function isRecommendedVersion(version, compatibility) {
+  return compareVersions(version, compatibility.recommendedCliVersion) === 0
+}
+
+export function selectPreferredCandidate(candidates, compatibility) {
+  return candidates.find((candidate) => isRecommendedVersion(candidate.version, compatibility)) ?? candidates[0]
+}
+
 export function existingCandidates(options) {
   return cliCandidates(options).filter((candidate) => candidate === executableName(options?.platform) || existsSync(candidate))
 }

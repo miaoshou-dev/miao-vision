@@ -79,14 +79,23 @@ Never invoke `ai text`, audio generation, or multi-model comparison.
 
 ## CLI and Files
 
-After choosing the workflow, run `scripts/check-miao-viz.mjs --print-path` to
-resolve the CLI. It prefers `$MIAO_VISION_HOME/bin/miao-viz`, then
-`~/.miao-vision/bin/miao-viz`, then a compatible `miao-viz` on `PATH`. Keep that
-executable for the task. In references, `miao-viz` means this resolved path.
-Request approval before installation; verify the installed executable with
-`--version` and `spec catalog`. If installation or the first report workflow
-fails, run `miao-viz diagnose --host codex --input <input> --output <output>`
-before guessing at fixes. Add `--pdf` for a PDF-specific check.
+After choosing the workflow, run
+`scripts/check-miao-viz.mjs --require-recommended --print-path`. The required
+version is pinned by `cli-compatibility.json` for this plugin release; never
+download an unpinned `latest` CLI. If the check passes, keep its executable path
+for the task. If it fails, run `scripts/check-miao-viz.mjs --print-path` to see
+whether an older compatible CLI exists. Tell the user which version is installed
+and which version this plugin recommends, then request approval to run the
+platform `scripts/install-miao-viz.sh` or `scripts/install-miao-viz.ps1`.
+Installation downloads only the CLI binary and checksum file from this plugin's
+pinned release and replaces only the shared Miao Vision CLI. It does not update
+a global npm installation. If the user declines, use a compatible CLI when one
+exists and mention the version difference; if none exists, stop the CLI workflow.
+After installation, rerun the recommended-version check and verify `spec catalog`.
+In references, `miao-viz` means the resolved executable path. If installation or
+the first report workflow fails, run
+`miao-viz diagnose --host codex --input <input> --output <output>` before guessing
+at fixes. Add `--pdf` for a PDF-specific check.
 
 Use a task-specific `miao-vision` directory in the system's native temporary
 directory for Context, Profile, drafts, and other intermediate files. Resolve

@@ -13,10 +13,14 @@ npx skills add miaoshou-dev/miao-vision --global --agent codex --yes
 
 ## 2. Shared CLI
 
-On first use, Miao Vision checks `MIAO_VISION_HOME`, then
-`~/.miao-vision/bin/miao-viz`, then `PATH`. If none is compatible, approve the
-request to download the matching release binary into the shared user directory.
-Uninstalling or upgrading the plugin does not remove the CLI.
+On first use, Miao Vision checks for the CLI version recommended by this plugin.
+If it is absent, approve the request to download the matching release binary
+into the shared user directory. An older compatible CLI can still be used if
+you decline the update. The installer verifies the checksum, version, and
+capabilities before replacing the shared copy. Check the version at the path
+printed by `node scripts/check-miao-viz.mjs --print-path`; a plain
+`miao-viz` command can resolve to a separate global installation.
+Uninstalling or upgrading the plugin does not remove the shared CLI.
 
 ## 3. Restart Codex
 

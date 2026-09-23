@@ -17,10 +17,11 @@ npx skills add miaoshou-dev/miao-vision --global --agent claude-code --yes
 
 ## 2. Shared CLI
 
-On first use, Miao Vision checks `MIAO_VISION_HOME`, then
-`~/.miao-vision/bin/miao-viz`, then `PATH`. If none is compatible, approve the
-request to download the matching release binary into the shared user directory.
-Plugin cache replacement and uninstall do not remove this CLI.
+On first use, Miao Vision checks for the CLI version pinned to this plugin
+release. If it is absent, approve the request to download and verify the
+matching release binary in the shared user directory. An older compatible CLI
+can still be used if you decline the update. Plugin cache replacement and
+uninstall do not remove this CLI.
 
 ## 3. Claude App / Web ZIP Install
 

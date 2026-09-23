@@ -15,10 +15,13 @@ $TempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("miao-viz-install-" + [g
 $Staged = $null
 
 try {
-  $Existing = & node (Join-Path $PSScriptRoot "check-miao-viz.mjs") --print-path 2>$null
+  $BinDir = Join-Path $MiaoHome "bin"
+  $Destination = Join-Path $BinDir "miao-viz.exe"
+  if (Test-Path $Destination) {
+    $Existing = & node (Join-Path $PSScriptRoot "check-miao-viz.mjs") --candidate $Destination --require-recommended --print-path 2>$null
+  }
   if ($LASTEXITCODE -eq 0 -and $Existing) {
-    Write-Output "Using compatible miao-viz at $Existing"
-    & $Existing --version
+    Write-Output "Using recommended miao-viz $($Compatibility.recommendedCliVersion) at $Destination"
     exit 0
   }
 
@@ -34,11 +37,11 @@ try {
   $Actual = (Get-FileHash -Algorithm SHA256 $Download).Hash.ToLowerInvariant()
   if ($Expected -ne $Actual) { throw "Checksum verification failed for $Asset" }
 
-  $BinDir = Join-Path $MiaoHome "bin"
   New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
-  $Destination = Join-Path $BinDir "miao-viz.exe"
   $Staged = Join-Path $BinDir (".miao-viz-" + [guid]::NewGuid() + ".exe")
   Copy-Item $Download $Staged
+  & node (Join-Path $PSScriptRoot "check-miao-viz.mjs") --candidate $Staged --require-recommended --print-path | Out-Null
+  if ($LASTEXITCODE -ne 0) { throw "Downloaded CLI failed version or capability verification; existing CLI was preserved." }
   Move-Item -Force $Staged $Destination
   $Staged = $null
   Write-Output "Installed miao-viz at $Destination"
