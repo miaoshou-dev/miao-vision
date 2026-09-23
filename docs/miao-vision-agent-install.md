@@ -5,7 +5,7 @@ Miao Vision ships as a cross-host plugin backed by one local CLI:
 - `miao-viz` CLI: local data profiling, spec validation, and HTML rendering.
 - `miao-vision` plugin: shared Skill and metadata for Codex, Claude Code, and OpenClaw.
 
-Current plugin release: [`v0.9.1`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.9.1).
+Current plugin release: [`v0.9.2`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.9.2).
 The release contains the plugin ZIP, compatibility Skill ZIP, checksums, and
 native CLI binaries. The recommended npm CLI is `@miao-vision/cli@0.8.1`.
 
