@@ -78,6 +78,6 @@ export class ReviewStore {
   }
 }
 
-export function stageEvent(runId: string, sequence: number, stage: ReviewEvent['stage'], status: Extract<ReviewEvent, { type: 'run.stage' }>['status'], message?: string, code?: string): ReviewEvent {
+export function stageEvent(runId: string, sequence: number, stage: Extract<ReviewEvent, { type: 'run.stage' }>['stage'], status: Extract<ReviewEvent, { type: 'run.stage' }>['status'], message?: string, code?: string): ReviewEvent {
   return { type: 'run.stage', runId, sequence, timestamp: now(), stage, status, ...(message ? { message } : {}), ...(code ? { code } : {}) }
 }

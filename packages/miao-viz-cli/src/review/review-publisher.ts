@@ -1,10 +1,10 @@
 import type { CliArgs } from '../cli-utils'
-import type { ReviewEvent, ReviewStage } from './review-events'
+import type { ReviewEvent, ReviewEventInput, ReviewStage } from './review-events'
 
 export interface ReviewPublisher {
   readonly runId: string
   hasStage(stage: ReviewStage): Promise<boolean>
-  publish(event: Omit<ReviewEvent, 'runId' | 'sequence' | 'timestamp'>): Promise<void>
+  publish(event: ReviewEventInput): Promise<void>
 }
 
 export function reviewPublisherFromArgs(args: CliArgs, kind: 'report' | 'deck' | 'article', title: string): ReviewPublisher | undefined {
@@ -52,7 +52,7 @@ class HttpReviewPublisher implements ReviewPublisher {
     await this.post('/api/runs', { runId: this.runId, kind, title, ...(parentRunId ? { parentRunId } : {}) })
   }
 
-  async publish(event: Omit<ReviewEvent, 'runId' | 'sequence' | 'timestamp'>): Promise<void> {
+  async publish(event: ReviewEventInput): Promise<void> {
     await this.ready
     await this.post(`/api/runs/${encodeURIComponent(this.runId)}/events`, {
       ...event, runId: this.runId, sequence: this.sequence++, timestamp: new Date().toISOString()
@@ -74,6 +74,6 @@ export async function publishStageOnce(publisher: ReviewPublisher | undefined, e
   await publisher.publish(event)
 }
 
-export function stage(stage: ReviewStage, status: 'pending' | 'running' | 'completed' | 'warning' | 'failed' | 'skipped', message?: string, code?: string): Omit<ReviewEvent, 'runId' | 'sequence' | 'timestamp'> {
+export function stage(stage: ReviewStage, status: 'pending' | 'running' | 'completed' | 'warning' | 'failed' | 'skipped', message?: string, code?: string): Extract<ReviewEventInput, { type: 'run.stage' }> {
   return { type: 'run.stage', stage, status, ...(message ? { message } : {}), ...(code ? { code } : {}) }
 }

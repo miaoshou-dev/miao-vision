@@ -92,6 +92,9 @@ export const reviewEventSchema = z.discriminatedUnion('type', [
 export type ReviewStage = z.infer<typeof reviewStageSchema>
 export type ReviewRunStatus = z.infer<typeof reviewRunStatusSchema>
 export type ReviewEvent = z.infer<typeof reviewEventSchema>
+export type ReviewEventInput = ReviewEvent extends infer Event
+  ? Event extends ReviewEvent ? Omit<Event, 'runId' | 'sequence' | 'timestamp'> : never
+  : never
 
 export interface ReviewRunSnapshot {
   runId: string

@@ -6,7 +6,7 @@ import { POSTER_TEMPLATE_REGISTRY, resolvePosterTemplateById } from './poster-te
 
 function context(rows: Record<string, unknown>[]): BlockMatchContext {
   const dataset: LoadedDataset = { file: 'poster-template.csv', columns: Object.keys(rows[0] ?? {}), rows }
-  const analyzed = analyzeDataset(dataset, 'compare category performance')
+  const analyzed = analyzeDataset(dataset, { intent: 'compare category performance' })
   return {
     fields: analyzed.fields,
     evidence: analyzed.evidence,
