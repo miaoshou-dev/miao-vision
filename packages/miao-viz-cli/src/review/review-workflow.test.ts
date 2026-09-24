@@ -1,5 +1,5 @@
 import { execFileSync, spawn } from 'node:child_process'
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -81,5 +81,27 @@ describe('review workflow smoke', () => {
       specHash: run?.artifact?.fingerprints?.specHash,
       dataFingerprint: run?.artifact?.fingerprints?.dataFingerprint
     })
+  }, 30_000)
+
+  it('publishes deck slide modules and compares a child revision', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'miao-review-deck-'))
+    const parentSpec = 'packages/miao-viz-cli/examples/sales-deck.yaml'
+    const childSpec = join(dir, 'deck-child.yaml')
+    writeFileSync(childSpec, readFileSync(parentSpec, 'utf8').replace('Quarter at a Glance', 'Quarterly Sales Snapshot'))
+    const render = (runId: string, spec: string, parentRunId?: string) => runCliAsync([
+      'render', 'deck', '--input', 'packages/miao-viz-cli/examples/sales.csv', '--spec', spec,
+      '--output', join(dir, `${runId}.html`), '--review-url', server.url, '--review-run-id', runId,
+      ...(parentRunId ? ['--review-parent-run-id', parentRunId] : [])
+    ])
+    await expect(render('deck-parent', parentSpec)).resolves.toMatchObject({ ok: true })
+    await expect(render('deck-child', childSpec, 'deck-parent')).resolves.toMatchObject({ ok: true })
+    const mapped = await (await fetch(`${server.url}api/runs/deck-child/spec-map`)).json()
+    expect(mapped).toMatchObject({ value: { items: expect.arrayContaining([
+      expect.objectContaining({ kind: 'slide', path: 'slides[1]' }),
+      expect.objectContaining({ kind: 'slideTitle', path: 'slides[1].title', title: 'Quarterly Sales Snapshot' }),
+      expect.objectContaining({ kind: 'chart', path: 'slides[1].charts[0]' })
+    ]) } })
+    const compared = await (await fetch(`${server.url}api/compare?before=deck-parent&after=deck-child`)).json()
+    expect(compared).toMatchObject({ value: { changes: { slides: { modified: ['slide-2'] }, dataChanged: false } } })
   }, 30_000)
 })

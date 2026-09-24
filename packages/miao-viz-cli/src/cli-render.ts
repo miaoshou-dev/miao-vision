@@ -72,6 +72,32 @@ async function runWithReview(args: CliArgs, kind: 'report' | 'deck' | 'article',
   const composition = value.composition as Extract<import('./review/review-events').ReviewEvent, { type: 'artifact.updated' }>['composition'] ?? {
     ...(stringFlag(args, 'theme') ? { theme: stringFlag(args, 'theme') } : {}), charts: [], insights: [], evidence: []
   }
+  const sourceSpecPath = stringFlag(args, 'spec')
+  if (composition && sourceSpecPath) composition.sourceSpecPath = sourceSpecPath
+  if (kind === 'deck' && composition && !composition.title) {
+    const specPath = stringFlag(args, 'spec')
+    if (specPath) {
+      try {
+        const title = readSpec(specPath)?.title
+        if (typeof title === 'string' && title.trim()) composition.title = { id: 'title', path: 'title', title: title.slice(0, 500) }
+      } catch { /* A missing spec must not interrupt review publishing. */ }
+    }
+  }
+  if (kind === 'deck' && composition && sourceSpecPath) {
+    try {
+      const deckSpec = readSpec(sourceSpecPath) as { slides?: Array<{ title?: string; claim?: string; charts?: Array<{ id?: string; type: string; title?: string; [key: string]: unknown }>; [key: string]: unknown }> }
+      if (Array.isArray(deckSpec.slides)) composition.slides = deckSpec.slides.map((slide, slideIndex) => ({
+        id: `slide-${slideIndex + 1}`, hash: hashValue(slide), path: `slides[${slideIndex}]`, slideIndex,
+        ...(typeof slide.title === 'string' ? { title: slide.title.slice(0, 500) } : {}),
+        ...(typeof slide.claim === 'string' ? { claim: slide.claim.slice(0, 1000) } : {}),
+        charts: (slide.charts ?? []).map((chart, chartIndex) => ({
+          id: chart.id ?? `slide-${slideIndex}-chart`, type: chart.type, hash: hashValue(chart),
+          path: `slides[${slideIndex}].charts[${chartIndex}]`, chartIndex,
+          ...(typeof chart.title === 'string' ? { title: chart.title.slice(0, 500) } : {})
+        }))
+      }))
+    } catch { /* The rendered artifact remains reviewable without slide metadata. */ }
+  }
   const evidenceItems = value.evidenceItems as Extract<import('./review/review-events').ReviewEvent, { type: 'artifact.updated' }>['evidenceItems']
   if (delivery?.artifacts?.primary?.path) {
     const completeCoverage = coverage && Object.values(coverage).every(value => value !== undefined)
@@ -269,6 +295,7 @@ async function runRender(args: CliArgs, publisher?: ReviewPublisher): Promise<un
       },
       composition: {
         ...(validation.value.theme ? { theme: validation.value.theme } : {}),
+        title: { id: 'title' as const, path: 'title' as const, title: (validation.value.title || 'Miao Vision Report').slice(0, 500) },
         charts: validation.value.charts.map((chart, index) => ({ id: chart.id ?? `chart-${index + 1}`, type: chart.type, hash: hashValue(chart), path: `charts[${index}]`, ...(chart.title ? { title: chart.title } : {}), evidenceIds: provenanceEvidenceIds(chart.provenance) })),
         insights: (validation.value.insights ?? []).map((insight, index) => ({ id: `insight-${index + 1}`, hash: hashValue(insight), path: `insights[${index}]`, title: typeof insight === 'string' ? insight : insight.text, evidenceIds: typeof insight === 'string' ? [] : insight.evidence ?? provenanceEvidenceIds(insight.provenance) })),
         evidence: (renderContext?.evidence ?? []).map((item, index) => ({ id: item.id, hash: hashValue(item), path: `context.evidence[${index}]` }))

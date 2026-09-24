@@ -7,7 +7,9 @@ export interface ReviewChangeSummary {
   theme?: { before?: string; after?: string; changed: boolean }
   dataChanged?: boolean
   specChanged?: boolean
+  title?: { before?: string; after?: string; changed: boolean }
   charts: { added: string[]; removed: string[]; modified: string[] }
+  slides: { added: string[]; removed: string[]; modified: string[] }
   insights: { added: string[]; removed: string[]; modified: string[] }
   evidence: { added: string[]; removed: string[]; modified: string[] }
 }
@@ -28,10 +30,16 @@ export function summarizeReviewChanges(run: ReviewRunSnapshot, parent?: ReviewRu
       },
       dataChanged: previous?.fingerprints?.dataFingerprint !== current?.fingerprints?.dataFingerprint,
       specChanged: previous?.fingerprints?.specHash !== current?.fingerprints?.specHash,
+      title: {
+        ...(previous?.composition?.title ? { before: previous.composition.title.title } : {}),
+        ...(current?.composition?.title ? { after: current.composition.title.title } : {}),
+        changed: previous?.composition?.title?.title !== current?.composition?.title?.title
+      },
       charts: diffEntries(previous?.composition?.charts ?? [], current?.composition?.charts ?? []),
+      slides: diffEntries(previous?.composition?.slides ?? [], current?.composition?.slides ?? []),
       insights: diffEntries(previous?.composition?.insights ?? [], current?.composition?.insights ?? []),
       evidence: diffEntries(previous?.composition?.evidence ?? [], current?.composition?.evidence ?? [])
-    } : { charts: emptyDiff(), insights: emptyDiff(), evidence: emptyDiff() })
+    } : { charts: emptyDiff(), slides: emptyDiff(), insights: emptyDiff(), evidence: emptyDiff() })
   }
 }
 

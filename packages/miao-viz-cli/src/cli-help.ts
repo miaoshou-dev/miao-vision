@@ -234,12 +234,12 @@ Start the local Review Viewer server. The server binds to 127.0.0.1 and stays
 alive until SIGINT or SIGTERM.
 
 Options:
-  --port <n>              Port to bind (default: an available local port)
+  --port <n>              Port to bind (default: 43179; use 0 for an available port)
   --artifact-root <dir>  Root directory allowed for artifact access (default: cwd)
 `,
   'review.mcp': `Usage: miao-viz review mcp
 
-Start the stdio MCP server and the local Review Viewer. The MCP server exposes
+Start the stdio MCP server and the local Review Viewer on port 43179. The MCP server exposes
 open_miao_vision_viewer and run_miao_viz.
 `,
   'data.query': `Usage: miao-viz data query <file> [options]

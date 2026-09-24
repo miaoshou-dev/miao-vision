@@ -58,7 +58,10 @@ export const reviewArtifactEventSchema = reviewEventBaseSchema.extend({
   }).optional(),
   composition: z.object({
     theme: z.string().min(1).max(120).optional(),
+    sourceSpecPath: z.string().min(1).max(4096).optional(),
+    title: z.object({ id: z.literal('title'), path: z.literal('title'), title: z.string().min(1).max(500) }).optional(),
     charts: z.array(z.object({ id: z.string().min(1).max(300), type: z.string().min(1).max(120), hash: z.string().regex(/^[a-f0-9]{64}$/), path: z.string().max(300).optional(), title: z.string().max(500).optional(), evidenceIds: z.array(z.string().max(300)).max(30).optional() })).max(100),
+    slides: z.array(z.object({ id: z.string().min(1).max(300), hash: z.string().regex(/^[a-f0-9]{64}$/), path: z.string().max(300), title: z.string().max(500).optional(), claim: z.string().max(1000).optional(), slideIndex: z.number().int().nonnegative(), charts: z.array(z.object({ id: z.string().min(1).max(300), type: z.string().min(1).max(120), hash: z.string().regex(/^[a-f0-9]{64}$/), path: z.string().max(300), title: z.string().max(500).optional(), chartIndex: z.number().int().nonnegative() })).max(30).optional() })).max(200).optional(),
     insights: z.array(z.object({ id: z.string().min(1).max(300), hash: z.string().regex(/^[a-f0-9]{64}$/), path: z.string().max(300).optional(), title: z.string().max(500).optional(), evidenceIds: z.array(z.string().max(300)).max(30).optional() })).max(100),
     evidence: z.array(z.object({ id: z.string().min(1).max(300), hash: z.string().regex(/^[a-f0-9]{64}$/), path: z.string().max(300).optional() })).max(200)
   }).optional(),

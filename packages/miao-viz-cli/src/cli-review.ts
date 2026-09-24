@@ -1,7 +1,7 @@
 import { agentError } from './errors'
 import { fail, numberFlag, printJson, stringFlag } from './cli-utils'
 import type { CliArgs } from './cli-utils'
-import { startReviewServer } from './review/review-server'
+import { DEFAULT_REVIEW_PORT, startReviewServer } from './review/review-server'
 import { runReviewMcp } from './review/review-mcp'
 
 export async function runReviewCommand(args: CliArgs): Promise<void> {
@@ -16,7 +16,7 @@ export async function runReviewCommand(args: CliArgs): Promise<void> {
     return
   }
   const server = await startReviewServer({
-    port: numberFlag(args, 'port'),
+    port: numberFlag(args, 'port') ?? DEFAULT_REVIEW_PORT,
     artifactRoot: stringFlag(args, 'artifact-root')
   })
   printJson({ ok: true, value: { url: server.url, port: server.port, artifactRoot: stringFlag(args, 'artifact-root') ?? process.cwd() } })

@@ -1,4 +1,6 @@
 import { EventEmitter } from 'node:events'
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { reviewEventSchema, type ReviewEvent, type ReviewRunSnapshot, type ReviewRunStatus, now, createRunSnapshot } from './review-events'
 import { summarizeRunHistory, type ReviewHistoryItem } from './review-history'
 
@@ -6,16 +8,20 @@ export class ReviewStore {
   private readonly runs = new Map<string, ReviewRunSnapshot>()
   private readonly emitter = new EventEmitter()
   private readonly maxRuns: number
+  private readonly persistencePath?: string
 
-  constructor(maxRuns = 20) {
+  constructor(maxRuns = 20, persistencePath?: string) {
     this.maxRuns = maxRuns
+    this.persistencePath = persistencePath
     this.emitter.setMaxListeners(100)
+    this.restore()
   }
 
   create(input: Pick<ReviewRunSnapshot, 'runId' | 'kind' | 'title' | 'parentRunId'>): ReviewRunSnapshot {
     const run = createRunSnapshot(input)
     this.runs.set(run.runId, run)
     this.trim()
+    this.persist()
     return this.snapshot(run.runId)!
   }
 
@@ -52,6 +58,7 @@ export class ReviewStore {
       run.finishedAt = parsed.timestamp
     }
     this.emitter.emit(parsed.runId, parsed)
+    this.persist()
   }
 
   on(runId: string, listener: (event: ReviewEvent) => void): () => void {
@@ -63,6 +70,7 @@ export class ReviewStore {
     const run = this.runs.get(runId)
     if (!run) throw new Error(`Unknown review run: ${runId}`)
     run.status = status
+    this.persist()
   }
 
   private snapshot(runId: string): ReviewRunSnapshot | undefined {
@@ -75,6 +83,29 @@ export class ReviewStore {
       const first = this.runs.keys().next().value
       if (first) this.runs.delete(first)
     }
+  }
+
+  private restore(): void {
+    if (!this.persistencePath || !existsSync(this.persistencePath)) return
+    try {
+      const stored = JSON.parse(readFileSync(this.persistencePath, 'utf8')) as ReviewRunSnapshot[]
+      if (!Array.isArray(stored)) return
+      for (const run of stored.slice(-this.maxRuns)) {
+        if (!run || typeof run.runId !== 'string' || !['report', 'deck', 'article'].includes(run.kind) || !Array.isArray(run.events)) continue
+        if (run.events.some(event => !reviewEventSchema.safeParse(event).success)) continue
+        this.runs.set(run.runId, run)
+      }
+    } catch { /* A corrupt review cache must not prevent rendering. */ }
+  }
+
+  private persist(): void {
+    if (!this.persistencePath) return
+    try {
+      mkdirSync(dirname(this.persistencePath), { recursive: true })
+      const temporary = `${this.persistencePath}.tmp`
+      writeFileSync(temporary, JSON.stringify([...this.runs.values()]), 'utf8')
+      renameSync(temporary, this.persistencePath)
+    } catch { /* Review history is optional and must not fail the CLI workflow. */ }
   }
 }
 

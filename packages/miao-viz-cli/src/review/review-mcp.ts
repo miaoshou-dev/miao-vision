@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
-import { startReviewServer, type ReviewServer } from './review-server'
+import { DEFAULT_REVIEW_PORT, startReviewServer, type ReviewServer } from './review-server'
 
 interface JsonRpcRequest {
   jsonrpc?: string
@@ -13,6 +13,7 @@ export async function runReviewMcp(): Promise<void> {
   const workflowArgs = new Map<string, Record<string, unknown>>()
   let server: ReviewServer
   server = await startReviewServer({
+    port: DEFAULT_REVIEW_PORT,
     retryRun: async runId => {
       const previous = workflowArgs.get(runId)
       if (!previous) throw new Error('Retry metadata is unavailable for this run.')

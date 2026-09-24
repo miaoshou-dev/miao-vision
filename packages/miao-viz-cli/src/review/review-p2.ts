@@ -5,7 +5,15 @@ export function artifactSpecMap(run: ReviewRunSnapshot): unknown {
   const composition = run.artifact?.composition
   return {
     runId: run.runId,
+    sourceSpecPath: composition?.sourceSpecPath,
     items: [
+      ...(composition?.title ? [{ kind: 'title', ...composition.title }] : []),
+      ...(composition?.slides ?? []).flatMap(item => [
+        { kind: 'slide', ...item },
+        ...(item.title ? [{ kind: 'slideTitle', id: `${item.id}-title`, path: `${item.path}.title`, title: item.title, slideIndex: item.slideIndex }] : []),
+        ...(item.claim ? [{ kind: 'slideClaim', id: `${item.id}-claim`, path: `${item.path}.claim`, title: item.claim, slideIndex: item.slideIndex }] : []),
+        ...(item.charts ?? []).map(chart => ({ kind: 'chart', ...chart, slideIndex: item.slideIndex }))
+      ]),
       ...(composition?.charts ?? []).map(item => ({ kind: 'chart', ...item })),
       ...(composition?.insights ?? []).map(item => ({ kind: 'insight', ...item })),
       ...(composition?.evidence ?? []).map(item => ({ kind: 'evidence', ...item }))

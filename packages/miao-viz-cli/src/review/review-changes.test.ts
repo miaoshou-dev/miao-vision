@@ -12,6 +12,7 @@ function run(runId: string, parentRunId?: string): ReviewRunSnapshot {
     fingerprints: { specHash: hash(runId === 'old' ? 'a' : 'b'), dataFingerprint: hash('d') },
     composition: {
       theme: runId === 'old' ? 'minimal' : 'magazine',
+      title: { id: 'title', path: 'title', title: runId === 'old' ? 'Old title' : 'New title' },
       charts: runId === 'old' ? [{ id: 'sales', type: 'bar', hash: hash('a') }] : [{ id: 'sales', type: 'bar', hash: hash('b') }, { id: 'trend', type: 'line', hash: hash('c') }],
       insights: [], evidence: []
     }
@@ -24,7 +25,16 @@ describe('review change summary', () => {
     expect(summarizeReviewChanges(run('new', 'old'), run('old'))).toMatchObject({
       comparable: true, specChanged: true, dataChanged: false,
       theme: { before: 'minimal', after: 'magazine', changed: true },
+      title: { before: 'Old title', after: 'New title', changed: true },
       charts: { added: ['trend'], removed: [], modified: ['sales'] }
     })
+  })
+
+  it('identifies changed deck slides', () => {
+    const before = run('old')
+    const after = run('new', 'old')
+    before.artifact!.composition!.slides = [{ id: 'slide-1', path: 'slides[0]', slideIndex: 0, hash: hash('a'), title: 'Before' }]
+    after.artifact!.composition!.slides = [{ id: 'slide-1', path: 'slides[0]', slideIndex: 0, hash: hash('b'), title: 'After' }]
+    expect(summarizeReviewChanges(after, before).slides).toEqual({ added: [], removed: [], modified: ['slide-1'] })
   })
 })
