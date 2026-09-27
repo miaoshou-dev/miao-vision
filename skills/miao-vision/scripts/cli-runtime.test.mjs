@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -64,11 +64,12 @@ test('prefers the recommended CLI over an earlier candidate', () => {
 
 test('checks a specified executable independently of PATH', { skip: process.platform === 'win32' }, () => {
   const directory = mkdtempSync(join(tmpdir(), 'miao-viz-check-'))
+  const { recommendedCliVersion } = JSON.parse(readFileSync(new URL('../cli-compatibility.json', import.meta.url), 'utf8'))
   try {
     const executable = join(directory, 'miao-viz')
     writeFileSync(executable, `#!/bin/sh
 case "$1" in
-  --version) printf '0.8.2\\n' ;;
+  --version) printf '${recommendedCliVersion}\\n' ;;
   *) printf '%s\\n' "$*" ;;
 esac
 `)
