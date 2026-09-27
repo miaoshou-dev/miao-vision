@@ -6,8 +6,8 @@ description: >
   or local Markdown/text and optional CSV, TSV, XLSX, or JSON data for an
   HTML/PDF report, single-page data poster, browser deck, or an optional
   data-story image/video that explains a verified conclusion. It can also use
-  the optional local Review Viewer to monitor a generation run and inspect its
-  evidence and artifact preview.
+  the optional local Review Viewer to monitor a generation run, inspect its
+  evidence and artifact preview, compare versions, or export a selected version.
   Also validate a user-supplied Miao Vision report or deck spec. Do not trigger from
   isolated keywords such as chart, report, dashboard, slides, infographic, or PDF.
 ---
@@ -56,9 +56,10 @@ Read only the reference needed for the selected workflow:
 | Materially ambiguous tabular deliverable or explicit plan-first request | [outcome-brief.md](references/outcome-brief.md), then the selected workflow |
 | Explicit explanatory image based on a verified conclusion | [media-image.md](references/media-image.md) |
 | Explicit data-story video | [media-video.md](references/media-video.md) |
+| Monitor a run, compare versions, request a scoped revision, or export a selected Viewer version | [review-viewer.md](references/review-viewer.md) |
 
 For media, read [media-setup.md](references/media-setup.md) only if setup fails.
-Do not use this skill for text-only work, general raster generation, native `.pptx`,
+Do not use this skill for text-only work, general raster generation, editable native `.pptx`,
 live dashboards, remote databases, or remote datasets. Article URL retrieval and
 normalization belong to the agent; the CLI consumes local text.
 Never invoke `ai text`, audio generation, or multi-model comparison.
@@ -120,11 +121,18 @@ A failed preview does not
 invalidate a successfully generated primary artifact. For media, retain the
 verified report as the evidence source. When the Review Viewer is active,
 include its local URL alongside the primary artifact.
+After a report is delivered, add one short optional Review Viewer action below
+the artifact link: invite the user to compare versions, request a targeted edit,
+or export PDF/PNG. Link the action to the local Viewer only if that report was
+tracked by a running Viewer. Otherwise offer to start a Viewer-backed revision;
+starting the Viewer after an ordinary render does not import that earlier run.
+Keep this action inside the 300-token delivery budget.
 
 ## Review Viewer
 
 Ordinary generation does not start the Viewer. Use it when the user asks to
-monitor or inspect a generation run and the local Viewer can be started.
+monitor a run, compare versions, request a scoped revision, or export a selected
+version and the local Viewer can be started.
 The current plugin does not register the Viewer MCP server or open its URL in
 Codex automatically. Read [review-viewer.md](references/review-viewer.md) for
 the available local commands and connection steps. Viewer failure must not
