@@ -78,7 +78,8 @@ async function runWithReview(args: CliArgs, kind: 'report' | 'deck' | 'article',
     const specPath = stringFlag(args, 'spec')
     if (specPath) {
       try {
-        const title = readSpec(specPath)?.title
+        const spec = readSpec(specPath)
+        const title = spec && typeof spec === 'object' && 'title' in spec ? spec.title : undefined
         if (typeof title === 'string' && title.trim()) composition.title = { id: 'title', path: 'title', title: title.slice(0, 500) }
       } catch { /* A missing spec must not interrupt review publishing. */ }
     }

@@ -113,7 +113,8 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
         'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff'
       })
-      return response.end(readFileSync(output.path))
+      response.end(readFileSync(output.path))
+      return
     } catch (error) {
       return respondJson(response, 500, { ok: false, code: 'EXPORT_FAILED', message: error instanceof Error ? error.message : 'Export failed.' })
     }
