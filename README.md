@@ -1,73 +1,42 @@
 # Miao Vision
 
-> From data file to shareable visual report: one command, or one sentence to your AI agent.
+> Turn local data or documents into evidence-backed reports, posters, decks, and article infographics.
 
 [![npm](https://img.shields.io/npm/v/@miao-vision/cli)](https://www.npmjs.com/package/@miao-vision/cli)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)](https://www.typescriptlang.org/)
 
 <table>
 <tr>
-<td><img src="docs/assets/demo-report.png" alt="Data report: KPI cards, charts, and AI-written insights" width="480"/></td>
-<td><img src="docs/assets/demo-deck.png" alt="Presentation deck: editorial slides with keyboard navigation" width="480"/></td>
+<td><img src="docs/assets/demo-report.png" alt="Data report with KPI cards, charts, and grounded insights" width="480"/></td>
+<td><img src="docs/assets/demo-deck.png" alt="Browser presentation deck with editorial slides" width="480"/></td>
 </tr>
 <tr>
-<td align="center"><em>Data report: KPI cards, charts, written insights</em></td>
-<td align="center"><em>Presentation deck: keyboard navigation, print-to-PDF</em></td>
+<td align="center"><em>Data report: KPIs, charts, evidence, and insights</em></td>
+<td align="center"><em>Presentation deck: narrative slides, keyboard navigation, PDF export</em></td>
 </tr>
 </table>
 
-Give Miao Vision a CSV, spreadsheet, or article. It inspects the schema, runs aggregation queries, and renders a self-contained HTML or PDF artifact: KPI cards, charts, tables, insights: ready to open, share, print, or email. No server. No login. No expiry.
+Miao Vision is an AI-first, local-first visualization system. Its primary engine is the `miao-viz` CLI: it profiles local files, computes reusable evidence, validates compact specs, and produces self-contained artifacts that are easy to review and share.
 
-Built for **analysts and developers** who want a polished output in minutes, not a dashboard to maintain forever.
+Source data stays on your machine during the standard report, poster, deck, article, and validation workflows. There is no required backend, account, or API key.
 
----
+## What it creates
 
-## What you get
+| Artifact | Best for | Output |
+|---|---|---|
+| **Data report** | KPI summaries, trends, comparisons, detail tables, and evidence-backed findings | HTML, SVG, PNG, PDF |
+| **Data poster** | One-page rankings, comparisons, composition, flows, timelines, and geographic summaries | HTML, PNG, single-page PDF |
+| **Recurring report** | Replaying verified metrics, evidence recipes, layout, and theme on a new period | Versioned HTML/PDF runs with review state |
+| **Presentation deck** | Executive reviews, proposals, explainers, project updates, and hybrid data narratives | Browser deck or 16:9 PDF |
+| **Article infographic** | Visual summaries of normalized local Markdown or text | HTML, PNG, PDF, JSON, Markdown |
 
-**Data report**: KPI cards, bar charts, line trends, tables, and written insights in self-contained HTML or printable PDF.
-
-**Recurring report**: save a verified report project once, then replay the same metrics, evidence recipes, layout, and theme on each new period’s data.
-
-**Presentation deck**: browser slides with keyboard navigation and fullscreen, plus direct 16:9 PDF export. No PowerPoint required.
-
-**Article infographic**: paste in an article URL or Markdown file; get back a static visual summary you can drop into any document.
-
-HTML remains the default. Reports and decks can also be exported directly to PDF for printing and archival.
-
----
-
-## Inspect and query your data
-
-Before rendering, you can understand your data locally: no upload, no backend. Three commands read files in-process:
-
-```bash
-miao-viz data profile ./sales.csv      # fields, types, distributions, correlations, quality
-miao-viz data query ./sales.csv \       # SQL-style aggregation with filter / groupBy / orderby
-  --groupby region \
-  --measure "sum(sales) as total, count(*) as cnt" \
-  --filter "year>=2023" \
-  --orderby "total desc"
-miao-viz data analyze ./sales.csv \     # evidence pack + chart catalog for grounded reports
-  --intent "monthly trend and top regions" \
-  --output /tmp/context.json
-```
-
-- **`profile`**: reveals column types, roles, statistics (min/max/mean/median/stddev/skewness), outliers, correlations, data-quality issues, and auto-suggested chart shapes. `--summary` for a lightweight schema peek.
-- **`query`**: runs real aggregations (`sum`/`count`/`avg`/`min`/`max`) with filter, groupBy, orderby, and limit. Returns computed values **plus a generated SQL string** for traceability.
-- **`analyze`**: pre-computes a structured `context.json`: citable evidence IDs, derived metric candidates, a deterministic chart allowlist (with *blocked* charts and reasons), sample-size warnings, and prompt rules.
-
-Supported formats: **CSV, TSV, XLSX, JSON**: all read locally. Reports cite pre-computed evidence via `$evidence:` directives, so insights are grounded in real numbers, not invented ones.
-
----
+Generated HTML is self-contained. Interactive reports can include safe local filters and detail views; trusted delivery validates an explicit data-exposure policy before writing the artifact.
 
 ## Get started
 
-### Option A: Install the cross-host plugin (recommended)
+### Install the cross-host plugin
 
-Download [`miao-vision-plugin.zip`](https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-plugin.zip) from the
-[latest GitHub Release](https://github.com/miaoshou-dev/miao-vision/releases/latest). The current release is
-[`v0.10.1`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.10.1). It is
-one bundle with one Skill and one CLI compatibility contract:
+Download [`miao-vision-plugin.zip`](https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-plugin.zip) from the [latest GitHub Release](https://github.com/miaoshou-dev/miao-vision/releases/latest).
 
 | Host | Installation |
 |---|---|
@@ -75,226 +44,202 @@ one bundle with one Skill and one CLI compatibility contract:
 | Claude Code | Add `miaoshou-dev/miao-vision` as a marketplace, then install `miao-vision@miao-vision` |
 | OpenClaw | Run `openclaw plugins install ./miao-vision-plugin.zip`, then enable `miao-vision` |
 
-OpenClaw reads the bundle through its Codex-compatible layout. It does not
-require a separate native OpenClaw plugin.
+The plugin looks for a compatible CLI in this order:
 
-On first use, Miao Vision checks these locations in order:
-
-1. `$MIAO_VISION_HOME/bin/miao-viz`, when `MIAO_VISION_HOME` is set
+1. `$MIAO_VISION_HOME/bin/miao-viz`
 2. `~/.miao-vision/bin/miao-viz`
-3. A compatible `miao-viz` already on `PATH`
+3. `miao-viz` on `PATH`
 
-If none is compatible, the plugin asks permission to download the matching,
-checksum-verified CLI release. Data stays local. Plugin upgrades and uninstalls
-do not remove the shared CLI or generated artifacts. Delete
-`~/.miao-vision` separately only when you want to remove the shared CLI.
-Browser dependencies for PDF export remain optional and are not bundled with
-the plugin.
+If none is compatible, the plugin asks before downloading the matching checksum-verified CLI release. Browser dependencies for PNG/PDF export are optional and are not bundled with the plugin.
 
-Optional data-story images and single-shot videos require Node.js 22+, `ai-cli`,
-one `AI_GATEWAY_API_KEY`, and separately billed Vercel AI Gateway usage. The
-agent always shows the fixed model tier, catalog price summary, and upload scope
-before asking for confirmation. Without this optional setup, every original
-report, poster, deck, article, and validation workflow remains available on
-Node.js 20 and keeps source data local.
+Once installed, describe the outcome you want:
 
-Once installed, just describe what you want:
-
-| What you say | What you get |
-|---|---|
-| "analyze sales.csv and make a report" | Self-contained HTML data report |
-| "export this report as a printable A4 PDF" | Direct PDF report |
-| "update last week's report with this week's file" | A new run using the saved metrics and layout |
-| "turn this into a deck for Monday's meeting" | Browser slide deck |
-| "make an infographic from this article" | Static infographic HTML |
-
-**Lightweight compatibility install:** install only the Skill:
-
-```bash
-# Global install: choose the agent explicitly
-npx skills add miaoshou-dev/miao-vision -g -a codex -y
-# or: npx skills add miaoshou-dev/miao-vision -g -a claude-code -y
-
-# Or use the compatibility ZIP from GitHub Releases
-# Download miao-vision-skill.zip from https://github.com/miaoshou-dev/miao-vision/releases
-mkdir -p ~/.claude/skills
-unzip miao-vision-skill.zip -d ~/.claude/skills/
+```text
+Analyze sales.xlsx and make an executive report with a printable PDF.
+Turn this campaign export into a one-page comparison poster.
+Use this Markdown brief and the attached CSV to make a presentation deck.
+Update last week's verified report with this week's file.
 ```
 
-The standalone Skill ZIP remains available for one compatibility cycle. It
-uses the same shared CLI directory and does not install a private executable
-inside the Skill.
+For a Skill-only compatibility install:
 
----
+```bash
+npx skills add miaoshou-dev/miao-vision -g -a codex -y
+# or
+npx skills add miaoshou-dev/miao-vision -g -a claude-code -y
+```
 
-### Option B: Install only the CLI
-
-**Step 1: Install the CLI**
+### Install only the CLI
 
 ```bash
 npm install -g @miao-vision/cli
+miao-viz data profile ./sales.csv --summary
 ```
 
-**Step 2: Run on your data**
+Node.js 20 or newer is required.
+
+## Core workflows
+
+### Direct, evidence-grounded generation
+
+Use this path when the desired artifact is already clear:
+
+```text
+analyze → instantiate or author spec → validate → render → deliver
+```
 
 ```bash
-miao-viz data profile ./sales.csv
-miao-viz render report --input ./sales.csv --spec ./report.yaml --format html,pdf --output-dir ./output
-open ./output/report.html
-```
-
----
-
-## Built for AI agents
-
-Most tools treat AI as an afterthought. Miao Vision is designed from the ground up as a visualization backend that AI agents can drive reliably. Every command returns structured, machine-readable output. The spec format is compact by design: agents write a few dozen lines of YAML, not hundreds of lines of chart code.
-
-### The problem with naive AI visualization
-
-When you ask an AI agent to "make a chart from this CSV", it typically:
-
-- Generates hundreds of lines of HTML + CSS + JavaScript from scratch
-- Hallucinates field names it never confirmed exist
-- Invents statistics instead of computing them from actual data
-- Produces output that looks plausible but is factually wrong
-
-The result wastes tokens, requires manual review, and still fails on complex data.
-
-### How Miao Vision solves this
-
-A four-step pipeline that constrains the agent to what it's good at: reasoning: and delegates everything else to the CLI:
-
-```
-1. Analyze    miao-viz data analyze   → CLI inspects data, pre-computes summaries and evidence
-2. Draft      agent writes spec       → compact YAML citing pre-computed values, not invented ones
-3. Validate   miao-viz spec validate  → CLI checks the spec, returns machine-readable patch hints
-4. Render     miao-viz render report  → CLI produces self-contained HTML/PDF artifacts
-```
-
-The agent never generates chart code. It writes a spec. The CLI renders it.
-
-### Three design guarantees
-
-#### 1. Fewer tokens
-
-The `analyze` command pre-computes everything the agent needs: field roles, grouped aggregates, time periods, ranked results: as a structured JSON briefing. The agent reads the briefing and writes the spec. It doesn't spend tokens exploring the data:
-
-```bash
+# 1. Compute fields, metric candidates, evidence, warnings, and allowed charts.
 miao-viz data analyze ./sales.csv \
   --intent "monthly trend and top regions" \
-  --output /tmp/context.json
+  --output /tmp/miao-vision/context.json
+
+# 2. Start from deterministic CLI knowledge when possible.
+miao-viz spec scene list
+miao-viz spec scene instantiate <scene-id> \
+  --context /tmp/miao-vision/context.json \
+  --output /tmp/miao-vision/report.yaml
+
+# 3. Validate schema, evidence paths, claim checks, and catalog rules.
+miao-viz data profile ./sales.csv > /tmp/miao-vision/profile.json
+miao-viz spec validate \
+  --spec /tmp/miao-vision/report.yaml \
+  --profile /tmp/miao-vision/profile.json \
+  --context /tmp/miao-vision/context.json \
+  --verify --strict --patch-hints
+
+# 4. Render shareable formats together.
+miao-viz render report \
+  --input ./sales.csv \
+  --spec /tmp/miao-vision/report.yaml \
+  --context /tmp/miao-vision/context.json \
+  --format html,pdf \
+  --output-dir ./output
 ```
 
-Output includes `fields[]`, `evidence[]`, `catalog`, and `promptRules[]`: a complete decision package, not raw rows to reason over.
+Reports bind displayed values and claims to computed evidence through `$evidence:` directives. Validation returns structured errors and JSON Patch hints, rather than requiring an agent to interpret prose-only failures.
 
-#### 2. More accurate output
+### Plan-first generation
 
-Agents bind KPIs, charts, and insights to pre-computed evidence. They don't
-invent numbers or infer where a displayed result came from.
+Use the Artifact Plan workflow when the audience, delivery format, scope, or desired outcome is materially ambiguous:
 
-Each analytical object declares provenance. A single value can use the compact
-form; a claim that needs verification uses the full form:
-
-```yaml
-charts:
-  - id: total-sales
-    type: bigvalue
-    encoding:
-      value: { field: total_sales, type: quantitative }
-    provenance:
-      evidence: [total]
-      derivedFrom: [$evidence:total.values.total_sales]
-      check: value_match
-      claimArgs:
-        value: $evidence:total.values.total_sales
-        expected: $evidence:total.values.total_sales
-insights:
-  - text: "East contributed the largest share of sales."
-    type: share
-    provenance:
-      evidence: [by_dimension, total]
-      derivedFrom:
-        - $evidence:by_dimension.rows[0].total_sales
-        - $evidence:total.values.total_sales
-      check: share_formula
-      claimArgs:
-        numerator: $evidence:by_dimension.rows[0].total_sales
-        denominator: $evidence:total.values.total_sales
-        expected: 0.42
+```text
+outcome brief → artifact plan → confirm if needed → instantiate → validate → render
 ```
 
-`spec validate --context context.json --verify --strict` resolves every path,
-checks chart and recipe compatibility, runs required claim checks, and reports
-object coverage plus claim-check coverage. Publishing requires both to be
-100%. Invalid bindings return structured `PROVENANCE_*` errors before output is
-published.
+```bash
+miao-viz artifact plan \
+  --brief ./outcome-brief.json \
+  --context /tmp/miao-vision/context.json \
+  --output /tmp/miao-vision/plan.json
 
-Rendered reports expose a plain-language “View evidence” panel. Calculation,
-scope, filters, sample size, and verification status appear first; evidence IDs
-and technical paths stay in a collapsed details section.
+miao-viz artifact instantiate \
+  --plan /tmp/miao-vision/plan.json \
+  --context /tmp/miao-vision/context.json \
+  --output /tmp/miao-vision/report.yaml
 
-#### 3. Machine-readable fixes
-
-When `validate` finds problems, it returns structured `patches[]` the agent can apply directly: no free-form error messages to interpret:
-
-```json
-{
-  "ok": false,
-  "patches": [
-    { "op": "replace", "path": "/charts/0/encoding/x/type", "value": "temporal" }
-  ]
-}
+miao-viz artifact validate \
+  --plan /tmp/miao-vision/plan.json \
+  --context /tmp/miao-vision/context.json \
+  --input ./sales.csv \
+  --spec /tmp/miao-vision/report.yaml \
+  --output /tmp/miao-vision/verification.json
 ```
 
-The agent applies the patch, re-validates, and renders. No human intervention required.
+Outcome Memory is explicit and project-local. The CLI never searches for it implicitly; use `miao-viz artifact memory` to inspect, update, or forget confirmed preferences.
 
----
+## Inspect and query local data
 
-## Why Miao Vision
+Supported tabular formats are CSV, TSV, XLSX, and JSON.
 
-| | |
-|---|---|
-| **AI-native pipeline** | Every CLI command returns structured JSON. Agents read briefings, not raw data. Specs are compact YAML: never raw chart code. |
-| **Evidence-grounded output** | KPIs, charts, and insights declare provenance. Strict publishing requires 100% object and claim-check coverage, and reports explain the calculation in plain language. |
-| **Machine-readable fixes** | `spec validate --patch-hints` returns `patches[]` the agent applies directly. No retry loops, no free-form error parsing. |
-| **Your data stays local** | Nothing leaves your machine. No upload, no API call with your data. |
-| **Files made to share** | HTML opens anywhere; direct PDF output is ready to print, email, or archive. No hosted viewer needed. |
-| **Not a dashboard** | No database to connect, no tiles to arrange, no filter panel to maintain. You get an artifact, not a workspace. |
-| **Looks good by default** | The magazine theme is designed to be clear and credible out of the box. |
-
----
-
-## UseCase
-
-### 1. Data report
-
-You have a CSV, TSV, XLSX, or JSON file. You want a chart report to share with your team.
-
-Ask your AI agent:
-```
-Use miao-vision to analyze ~/data/sales.csv and generate an HTML report.
-```
-
-Or run the CLI yourself:
 ```bash
 miao-viz data profile ./sales.csv
-miao-viz render report --input ./sales.csv --spec ./sales-dashboard.yaml --output ./report.html
+miao-viz data query ./sales.csv \
+  --groupby region \
+  --measure "sum(sales) as total, count(*) as count" \
+  --filter "year>=2025" \
+  --orderby "total desc"
+miao-viz data analyze ./sales.csv \
+  --intent "monthly trend and top regions" \
+  --compact
 ```
 
-You get: KPI cards, bar charts, trend lines, and data tables: styled and ready to share.
+- `profile` returns field types, roles, statistics, distributions, correlations, and quality warnings.
+- `query` performs deterministic aggregations with filters, grouping, sorting, and limits.
+- `analyze` produces the evidence pack, metric candidates, chart catalog, blocked-chart reasons, assumptions, and prompt rules used by downstream workflows.
 
----
+## Reports, posters, and interaction
 
-### 2. Recurring report
+Use `spec scene`, `spec template`, or `spec block` before hand-authoring a report. They compile deterministic CLI knowledge into ordinary specs that remain inspectable and editable.
 
-You have a weekly or monthly export and want the same trusted metrics, evidence, and layout every period.
-
-Ask your AI agent:
+```bash
+miao-viz spec scene list
+miao-viz spec template list
+miao-viz spec block instantiate <block-id> --context ./context.json
 ```
-Use this week's new data to update last week's report with the same metrics and layout.
+
+Poster templates are exposed through the report template catalog. A poster is a validated report spec with `layout.preset: poster`, rendered through the same report command:
+
+```bash
+miao-viz spec template instantiate data-poster-ranking \
+  --context ./context.json \
+  --output ./poster.yaml
+miao-viz render report \
+  --input ./sales.csv --spec ./poster.yaml --context ./context.json \
+  --format html,png,pdf --output-dir ./poster-output
 ```
 
-After the first report is verified, the CLI can save and replay the project:
+For shareable interactive HTML, instantiate only a recommended interaction preset from the analyze context:
+
+```bash
+miao-viz spec interaction instantiate filter-and-detail \
+  --context ./context.json \
+  --output ./interactions.yaml
+```
+
+Use `--trusted` with strict verification when third-party delivery must fail closed unless the artifact is share-safe.
+
+## Presentation decks
+
+Decks can be data-driven, document-driven, or hybrid. Markdown/text is analyzed into a `DeckContext`; `--data` adds structured evidence for hybrid decks.
+
+```bash
+miao-viz deck analyze ./brief.md \
+  --data ./sales.csv \
+  --intent "executive business review" \
+  --output ./deck-context.json
+
+miao-viz deck instantiate business-review \
+  --context ./deck-context.json \
+  --output ./deck.yaml
+
+miao-viz deck validate \
+  --spec ./deck.yaml --context ./deck-context.json --verify --strict
+
+miao-viz render deck \
+  --input ./sales.csv --spec ./deck.yaml --context ./deck-context.json \
+  --output ./deck.html
+```
+
+Available deterministic intents include `executive-brief`, `business-review`, `topic-explainer`, `project-update`, and `proposal`. Narrative decks without structured data do not require `--input`.
+
+## Article infographics
+
+The CLI accepts local Markdown or text. When the source is a URL, an agent should fetch and normalize it first; the article command intentionally does not fetch remote pages.
+
+```bash
+miao-viz render article analyze ./article.md --output ./article-context.json
+miao-viz render article catalog --for-llm
+miao-viz render article ./article.md \
+  --style editorial --format html --output ./infographic.html
+```
+
+For controlled compositions, render a complete `InfographicSpec` with `--spec-input`, or an atomic multi-chart bundle with `--bundle-input`.
+
+## Recurring reports
+
+Once a report and its evidence are verified, save the contract and replay it against a new period without redesigning the artifact:
+
 ```bash
 miao-viz report init ./sales-weekly \
   --input ./week-28.xlsx \
@@ -309,260 +254,80 @@ miao-viz report update ./sales-weekly \
   --format html,pdf
 ```
 
-You get: immutable run history, stable Evidence IDs and Spec hashes, data-contract checks, and fresh HTML/PDF artifacts without redesigning the report.
+Projects retain immutable run history, stable evidence IDs and spec hashes, data-contract checks, period outcome briefs, review state, previews, and delivery manifests. Use `report info` and `report history` to inspect them. `report clean` previews removals and requires explicit confirmation.
 
----
+## Review Viewer and delivery
 
-### 3. Presentation deck
+Render commands return a structured delivery manifest containing status, primary artifact, optional PNG preview, verification coverage, metrics, highlights, warnings, and suggested actions. Agents can deliver from this manifest without scraping the generated HTML.
 
-You have data and you need slides for a meeting: not a chart dump, but an actual narrative deck.
+The optional local Review Viewer shows workflow stages, previews, evidence, data quality, version changes, and exports:
 
-Ask your AI agent:
-```
-Use miao-vision to turn ~/data/sales.csv into a presentation deck for an executive review.
-```
-
-Or use the CLI:
 ```bash
-miao-viz render deck --input ./sales.csv --spec ./sales-deck.yaml --output ./deck.html
-miao-viz render deck --input ./sales.csv --spec ./sales-deck.yaml --format pdf --output ./deck.pdf
+miao-viz review serve --artifact-root ./output
+
+miao-viz render report \
+  --input ./sales.csv --spec ./report.yaml --context ./context.json \
+  --output ./output/report.html \
+  --review-url http://127.0.0.1:43179 \
+  --review-run-id sales-review
 ```
 
-You get: a browser-based slide deck with cover, metrics, charts, and an ending slide, or a 16:9 PDF with exactly one slide per page.
-
----
-
-### 4. Article infographic
-
-You have an article URL or a Markdown file and you want a visual summary: not just a wall of text.
-
-Ask your AI agent:
-```
-Use miao-vision to turn this article Markdown file into an infographic.
-```
-
-Or use the CLI:
-```bash
-miao-viz render article ./my-article.md --style editorial --output ./infographic.html
-```
-
-You get: a static, shareable infographic you can embed or send directly.
-
----
-
-## VizSpec example
-
-If you prefer writing specs yourself, here's what a simple one looks like:
-
-```yaml
-title: Sales Dashboard
-theme: magazine
-charts:
-  - type: bigvalue
-    title: Total Sales
-    data:
-      transform:
-        - type: aggregate
-          measures:
-            - field: sales
-              op: sum
-              as: total_sales
-    encoding:
-      value:
-        field: total_sales
-
-  - type: bar
-    title: Sales by Region
-    data:
-      transform:
-        - type: aggregate
-          groupBy: [region]
-          measures:
-            - field: sales
-              op: sum
-              as: total_sales
-        - type: sort
-          field: total_sales
-          order: desc
-    encoding:
-      x:
-        field: region
-      y:
-        field: total_sales
-```
-
-Run `miao-viz spec catalog` for the full catalog with encoding rules, anti-patterns, and usage guidance.
-
----
-
-## Supported chart types
-
-Miao Vision supports 27 chart types across three categories:
-
-### Standard
-
-| Chart | Description |
-|-------|-------------|
-| `bar` | Vertical bars for ranking and comparison across categories |
-| `line` | Connected series for trends and time series |
-| `area` | Filled line chart for cumulative trends and stacked mass |
-| `pie` | Proportional slices for part-to-whole composition (2-7 categories) |
-| `scatter` | Points on two axes for correlation and relationship analysis |
-| `histogram` | Binned distribution of a single numeric field |
-| `heatmap` | Colored grid for matrix density and cross-tab patterns |
-| `table` | Sortable HTML table for detail view |
-| `bigvalue` | Large single-number KPI for top-level metrics |
-
-### Extended
-
-| Chart | Description |
-|-------|-------------|
-| `progress` | Horizontal progress bar for goal attainment |
-| `sparkline` | Tiny inline line chart for embedding in tables |
-| `delta` | KPI value with up/down arrow and percentage change |
-| `funnel` | Narrowing trapezoids for conversion stage dropoff |
-| `gauge` | Semi-circular gauge with needle for threshold monitoring |
-| `bubble` | Circle points on two axes with radius encoding a third measure |
-| `boxplot` | Box-and-whisker for distribution comparison across groups |
-| `waterfall` | Floating bar cascade for financial bridges and cumulative breakdown |
-| `radar` | Spider-web polygon for multi-faceted performance profiling |
-| `calendar` | Day-of-week grid for daily activity density |
-| `treemap` | Nested rectangles for part-to-whole with many categories |
-| `pivot` | HTML cross-tabulation with row/column dimensions |
-| `sankey` | Curved flows between source and target nodes |
-
-### Infographic
-
-| Chart | Description |
-|-------|-------------|
-| `infographic-kpi` | Stylized KPI card with gradient background |
-| `infographic-list` | Ranked item list with numbered badges |
-| `infographic-flow` | Sequential step flow with arrow connectors |
-| `infographic-hierarchy` | Tree structure with center divider line |
-| `infographic-comparison` | Side-by-side comparison cards |
-
----
-
-## DeckSpec example
-
-```yaml
-title: Sales Review
-theme: magazine
-slides:
-  - layout: cover
-    eyebrow: Q4 Review
-    title: Sales Momentum Is Concentrated In Key Regions
-    claim: Revenue is growing, but performance is not evenly distributed.
-
-  - layout: metrics-chart
-    eyebrow: Executive Snapshot
-    title: Quarter At A Glance
-    metrics:
-      - label: Total Revenue
-        format: "$,.0f"
-        data:
-          transform:
-            - type: aggregate
-              measures:
-                - field: sales
-                  op: sum
-                  as: total_sales
-    charts:
-      - type: line
-        title: Monthly Sales Trend
-        data:
-          transform:
-            - type: derive-month
-              field: order_date
-              as: month
-            - type: aggregate
-              groupBy: [month]
-              measures:
-                - field: sales
-                  op: sum
-                  as: total_sales
-            - type: sort
-              field: month
-              order: asc
-        encoding:
-          x:
-            field: month
-          y:
-            field: total_sales
-```
-
-Supported layouts: `cover`, `title-only`, `text-points`, `text-chart`, `metrics-chart`, `chart-full`, `table-full`, `ending`.
-
----
+`miao-viz review mcp` starts the Viewer together with its local stdio MCP integration.
 
 ## CLI reference
 
-Commands are organized into four groups:
+| Group | Commands | Purpose |
+|---|---|---|
+| `artifact` | `plan`, `instantiate`, `validate`, `memory` | Plan and verify the intended visual outcome |
+| `data` | `profile`, `query`, `analyze` | Inspect files and compute evidence |
+| `spec` | `validate`, `catalog`, `block`, `template`, `scene`, `summary`, `diff`, `inspect`, `interaction` | Author, validate, and debug report specs |
+| `deck` | `analyze`, `instantiate`, `validate` | Build and verify narrative, data, or hybrid decks |
+| `report` | `init`, `update`, `info`, `history`, `clean` | Manage recurring report projects |
+| `render` | `report`, `deck`, `article` | Generate HTML, SVG, PNG, or PDF artifacts |
+| `review` | `serve`, `mcp` | Run the local review and export surface |
 
-### data: Inspect and query data files
+Run `miao-viz --help`, `miao-viz <group> --help`, or `miao-viz <group> <command> --help` for the current contract.
 
-| Command | What it does |
-|---|---|
-| `miao-viz data profile <file>` | Inspect fields, types, and distributions |
-| `miao-viz data query <file>` | Run ad-hoc aggregation queries |
-| `miao-viz data analyze <file>` | Pre-compute evidence pack and catalog for agent consumption |
+The chart catalog is code-owned and evolves independently of this README. Use the following command for the authoritative chart types, variants, encoding requirements, templates, and anti-patterns:
 
-### spec: Author, validate, and debug specs
+```bash
+miao-viz spec catalog --for-llm
+```
 
-| Command | What it does |
-|---|---|
-| `miao-viz spec validate` | Check your VizSpec or DeckSpec; return machine-readable patch hints |
-| `miao-viz spec catalog` | List chart types and infographic templates |
-| `miao-viz spec block` | Instantiate report blocks from analyze context |
-| `miao-viz spec template` | List, inspect, or instantiate report templates |
-| `miao-viz spec inspect` | Debug chart transform pipelines and evidence usage |
+## Design guarantees
 
-### report: Reuse verified reports
+- **Evidence-grounded:** displayed claims and metrics can be traced to deterministic local computations.
+- **Machine-readable:** commands return structured `ok/value` results or structured errors and repair hints.
+- **Local-first:** standard workflows do not upload source data or require a backend.
+- **Shareable:** artifacts are self-contained, printable, and accompanied by an explicit delivery state.
+- **Agent-efficient:** catalog, scene, template, validation, and rendering knowledge lives in the CLI rather than being regenerated as chart code.
 
-| Command | What it does |
-|---|---|
-| `miao-viz report init` | Create a recurring report project; use `--dry-run` to preview |
-| `miao-viz report update` | Replay saved Evidence recipes and Spec with new-period data |
-| `miao-viz report info` | Inspect project health, contract, hashes, and latest run |
-| `miao-viz report history` | List prior runs |
-| `miao-viz report clean` | Preview or remove old runs while protecting the latest run |
-
-### render: Generate artifacts
-
-| Command | What it does |
-|---|---|
-| `miao-viz render report` | Render a VizSpec to HTML, SVG, or PDF; supports `html,pdf` |
-| `miao-viz render deck` | Render a DeckSpec to HTML slides or a 16:9 PDF |
-| `miao-viz render article` | Convert local Markdown/text into HTML, PNG, PDF, JSON, or Markdown |
-
-Commands are grouped: `data` (profile, query, analyze), `spec` (validate, catalog, block, template, inspect), `report` (init, update, info, history, clean), and `render` (report, deck, article).
-
----
+Optional AI-generated story images and single-shot videos use a separately configured media workflow, Node.js 22+, `ai-cli`, an AI Gateway key, and separately billed models. The agent must show the model tier, price summary, and upload scope before asking for confirmation. These services are not required for the core visualization workflows.
 
 ## Documentation
 
+- [Getting Started](./docs/getting-started/GETTING_STARTED.md)
 - [Product Overview](./docs/PRODUCT_OVERVIEW.md)
+- [Architecture Overview](./docs/architecture/ARCHITECTURE_OVERVIEW.md)
 - [Agent Install Guide](./docs/miao-vision-agent-install.md)
-- [Recurring Reports and PDF Export PRD](./docs/recurring-report-and-pdf-export-prd.md)
+- [Outcome Memory](./docs/outcome-memory.md)
+- [Review Viewer](./docs/miao-viz-review-viewer-prd.md)
+- [Trusted Interactive Reports](./docs/trusted-interactive-report-prd.md)
 - [Feature Roadmap](./docs/roadmap/FEATURE_ROADMAP.md)
-- [All docs](./docs/README.md)
-
----
+- [All documentation](./docs/README.md)
 
 ## Development
 
 ```bash
-npm run dev          # Start the Svelte preview app (http://localhost:5173)
-npm run build:cli    # Build the miao-viz CLI package
-npm run check        # TypeScript and Svelte diagnostics
-npm run test         # Run unit tests
+npm run dev          # Start the lightweight web preview/distribution app
+npm run build:cli    # Bundle packages/miao-viz-cli
+npm run test:run     # Run Vitest once
+npm run check        # Run Svelte and TypeScript diagnostics
+npm run check:size   # Enforce source file size limits
+npm run test:e2e     # Run browser/deck end-to-end tests
 ```
 
-The web app is a preview and distribution surface. The main product path is the
-cross-host plugin backed by the deterministic `miao-viz` CLI. The standalone
-CLI remains available for scripts, CI, and direct use.
-
----
+The primary implementation lives in `packages/miao-viz-cli`. The Svelte app is a lightweight landing, preview, packaging, and distribution surface; it does not own report, deck, poster, or article generation logic.
 
 ## License
 

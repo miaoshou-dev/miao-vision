@@ -330,6 +330,7 @@ Commands:
   summary   Derive an evidence-preserving executive summary
   diff      Inspect the impact of a minimal spec edit
   inspect   Inspect chart transforms and evidence usage
+  interaction Instantiate a safe interactive-report fragment
 `,
   report: `
 Usage: miao-viz report <command> [options]
@@ -356,12 +357,21 @@ Commands:
   render: `
 Usage: miao-viz render <command> [options]
 
-Generate HTML output artifacts.
+Generate report, deck, and infographic artifacts.
 
 Commands:
-  report    Render a vizspec to HTML or SVG
-  deck      Render a deck spec to HTML slides
+  report    Render a vizspec to HTML, SVG, PNG, or PDF
+  deck      Render a deck spec to HTML slides or PDF
   article   Convert a local article to an infographic artifact
+`,
+  review: `
+Usage: miao-viz review <command> [options]
+
+Run the local Review Viewer and its agent integration.
+
+Commands:
+  serve     Start the local Review Viewer server
+  mcp       Start the Viewer with its stdio MCP server
 `,
 }
 
@@ -388,10 +398,12 @@ Usage:
 
 Groups:
   artifact Plan tabular visual outcomes in optional Shadow Mode
-  data    Inspect and query data files
-  spec    Author, validate, and debug visualization specs
-  deck    Plan and validate browser deck specs
-  render  Generate HTML output (reports, decks, infographics)
+  data     Inspect and query data files
+  spec     Author, validate, and debug visualization specs
+  deck     Plan and validate browser deck specs
+  report   Create and replay recurring report projects
+  render   Generate reports, decks, and infographics
+  review   Review, compare, and export local artifact versions
 
 Run "miao-viz <group> --help" for group-specific commands.
 Run "miao-viz <group> <command> --help" for command-specific options.
