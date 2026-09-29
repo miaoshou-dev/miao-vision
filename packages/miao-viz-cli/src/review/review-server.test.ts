@@ -69,6 +69,9 @@ describe('review server', () => {
 
       expect(await (await fetch(`${server.url}api/runs/run-1/export`)).json()).toMatchObject({ value: { kind: 'report', formats: ['pdf', 'png'] } })
       expect(await (await fetch(`${server.url}api/runs/run-1/export/pptx`)).json()).toMatchObject({ code: 'EXPORT_UNAVAILABLE' })
+      expect(await (await fetch(`${server.url}api/runs/run-1/themes`)).json()).toMatchObject({
+        value: { targetPath: 'theme', themes: expect.arrayContaining([expect.objectContaining({ id: 'magazine' }), expect.objectContaining({ id: 'tableau' })]) }
+      })
 
       const evidence = await fetch(`${server.url}api/runs/run-1/evidence`)
       expect(evidence.status).toBe(200)
@@ -123,5 +126,19 @@ describe('review server', () => {
       expect(result.status).toBe(200)
       expect(await result.json()).toMatchObject({ value: { beforeRunId: 'persist-parent', afterRunId: 'persist-child' } })
     } finally { await restarted.close() }
+  })
+
+  it('returns poster themes from the registered poster theme catalog', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'miao-review-poster-theme-'))
+    const artifact = join(root, 'poster.html')
+    writeFileSync(artifact, '<main class="mv-poster">Poster</main>')
+    const server = await startReviewServer({ artifactRoot: root })
+    try {
+      server.store.create({ runId: 'poster-1', kind: 'report', title: 'Poster' })
+      server.store.publish({ type: 'artifact.updated', runId: 'poster-1', sequence: 0, timestamp: new Date().toISOString(), kind: 'report', primaryPath: artifact, verified: true, deliveryStatus: 'ready' })
+      expect(await (await fetch(`${server.url}api/runs/poster-1/themes`)).json()).toMatchObject({
+        value: { targetPath: 'poster.theme', themes: expect.arrayContaining([expect.objectContaining({ id: 'editorial-light' }), expect.objectContaining({ id: 'newsroom-bold' })]) }
+      })
+    } finally { await server.close() }
   })
 })

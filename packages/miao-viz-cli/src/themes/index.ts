@@ -28,4 +28,8 @@ export function getTheme(name: string | undefined): ReportTheme {
   return THEMES[resolved as ThemeName]
 }
 
+export function listThemes(): Array<Pick<ReportTheme, 'name' | 'layout' | 'svg'>> {
+  return Object.values(THEMES).map(theme => ({ name: theme.name, layout: theme.layout, svg: theme.svg }))
+}
+
 export type { ThemeName, LayoutName, ReportTheme, SvgTheme } from './types'

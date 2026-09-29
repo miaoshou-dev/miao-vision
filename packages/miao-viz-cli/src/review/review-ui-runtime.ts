@@ -1,6 +1,6 @@
 export const reviewUiRuntime = String.raw`
 const $ = id => document.getElementById(id);
-const ui = { runs: [], currentId: '', baseId: '', targetId: '', moduleId: '', intent: 'conclusion', signature: null, language: localStorage.getItem('miao-review-language') === 'en' ? 'en' : 'zh' };
+const ui = { runs: [], currentId: '', baseId: '', targetId: '', moduleId: '', intent: 'conclusion', themeId: '', themeRunId: '', themeTargetPath: '', themeOptionsRun: '', themeOptions: null, signature: null, language: localStorage.getItem('miao-review-language') === 'en' ? 'en' : 'zh' };
 const messages = {
   zh: { chooseArtifact:'选择交付物', exportCurrent:'导出当前版本 ▾', exportPreparing:'正在生成导出文件…', exportFailed:'导出失败', exportEmpty:'当前版本暂无可导出的格式', exportPptx:'PPTX · 图片式', slide:'幻灯片', slideTitle:'页标题', slideClaim:'核心主张', deckHint:'选择右侧幻灯片、页标题、核心主张或图表，预览会切换到对应页。', deckGuideEdit:'打开“局部修改”，选幻灯片、页标题、核心主张或图表。预览会跳到对应页，编辑请求后复制给 Agent。', guideExportTitle:'导出当前版本', guideExportBody:'选中左侧版本后，使用右上角导出菜单下载该版本支持的格式。', guideOpen:'使用指南', guideClose:'关闭指南', guideEyebrow:'快速上手', guideTitle:'从查看版本到发起修改', guideCompareTitle:'比较版本', guideCompareBody:'左侧选版本，再用 A / B 选择要比较的两版。查看产物预览和下方的变化详情。', guideEditTitle:'修改一个模块', guideEditBody:'打开“局部修改”，选标题、图表或洞察。预览会定位并高亮，选好意图后编辑请求并复制给 Agent。', guideNote:'复制请求不会直接改文件。Agent 修改 Spec、验证并渲染后，新产物会显示为子版本。', mainFeatures:'主要功能', editableRequest:'可编辑修改请求', project:'当前产物', history:'版本记录', localReview:'● 本地审稿', localNote:'版本、Spec 与成品保存在本机。快速修改会生成给 Agent 的请求，Viewer 不直接改动文件。', intro:'查看每次修订的变化，或选中一个模块提出下一次修改。', openCurrent:'预览当前版本 ↗', compareTab:'版本比较', editTab:'局部修改', changeDetails:'变化详情', previewNote:'预览显示已渲染的真实 HTML 产物。', currentModules:'当前版本 · 可选中的模块', selectHint:'点击报告标题或右侧模块列表，生成限定范围的修改请求。', highlightHint:'高亮只用于选中目标，实际修改仍需经过 Spec 验证。', editThis:'修改这一块', scopeHint:'只携带目标模块、原值和必要证据，减少 Agent 读取范围。', targetModule:'目标模块', editIntent:'修改意图', agentRequest:'发送给 Agent 的请求，可编辑', scopedRevision:'限定模块 · 验证后生成子版本', copyRequest:'复制修改请求', baseline:'基准 A', comparison:'对比 B', swapVersions:'交换比较版本', conclusion:'突出结论', shorter:'更简洁', custom:'自定义要求', initial:'初版', revision:'修订', verified:'已验证', localFile:'本地文件', verifiedEvidence:'✓ 证据已验证', pendingEvidence:'○ 证据待验证', noPreview:'此版本还没有可预览的产物。', none:'无', unchanged:'未变化', modified:'已修改', uncertain:'待确认', title:'主标题', theme:'主题', chart:'图表', insight:'洞察', evidence:'证据', data:'数据', specChanged:'内容已变，当前模块摘要没有更细的定位', fingerprintSame:'数据指纹一致', fingerprintChanged:'数据指纹发生变化', fingerprintMissing:'缺少数据指纹', changesFound:n=>'发现 '+n+' 处模块变化', changesCount:n=>n+' 处变化', changesUnknown:'Spec 已变，模块变化待定位', noChanges:'两个版本没有检测到模块变化', bothVerified:'两个版本的证据检查均已通过。下方显示模块变化和真实产物。', needsReview:'至少一个版本未通过完整证据检查。', dataSame:'数据未变', dataChanged:'数据已变', dataUnknown:'数据未知', evidenceVerified:'证据已验证', evidencePending:'证据待复核', compareUnavailable:'比较暂不可用', compareFailed:'无法比较这两个版本', awaitingArtifact:'等待产物渲染完成', noModules:'这个版本暂无可定位的模块。', reportTitle:'主标题', sourceSpec:'源 Spec', artifactPath:'产物路径', locateSpec:'请先定位源 Spec。', targetPath:'目标路径', currentContent:'当前内容', evidenceIds:'相关证据 ID', promptConclusion:'突出已经验证的主要结论，不引入新数字。', promptShorter:'缩短文字并保留原意。', promptCustom:'请在这里写下具体修改要求。', promptEnd:'只修改这个模块，保留数据与其他已验证内容。验证后渲染为该版本的子版本。', readFailed:'无法读取版本记录', firstArtifact:'等待第一个产物', noHistory:'还没有版本记录', startWorkflow:'运行 Miao Vision 工作流后，版本和产物会出现在这里。', disconnected:'Viewer 连接中断', noArtifact:'产物还未生成', chooseModule:'请先选择可修改的模块', copied:'修改请求已复制', copyManually:'请手动复制选中的文字', versionCount:n=>n+' 个版本' },
   en: { chooseArtifact:'Choose artifact', exportCurrent:'Export version ▾', exportPreparing:'Preparing export…', exportFailed:'Export failed', exportEmpty:'No export format for this version', exportPptx:'PPTX · image slides', slide:'Slide', slideTitle:'Slide title', slideClaim:'Key claim', deckHint:'Select a slide, slide title, key claim, or chart on the right to jump to that page.', deckGuideEdit:'Open Edit a module and select a slide, slide title, key claim, or chart. The preview jumps to that page. Edit the request and copy it for your agent.', guideExportTitle:'Export a version', guideExportBody:'Select a version on the left, then use the export menu to download its available formats.', guideOpen:'How to use', guideClose:'Close guide', guideEyebrow:'QUICK START', guideTitle:'From review to revision', guideCompareTitle:'Compare versions', guideCompareBody:'Choose a version on the left, then select A and B. Review both artifacts and the changes below.', guideEditTitle:'Edit one module', guideEditBody:'Open Edit a module and select a title, chart, or insight. The preview locates it. Choose an intent, edit the request, and copy it for your agent.', guideNote:'Copying a request does not change files. After your agent edits the Spec, validates, and renders it, the result appears as a child version.', mainFeatures:'Main features', editableRequest:'Editable change request', project:'Current artifact', history:'Version history', localReview:'● Local review', localNote:'Versions, Specs, and artifacts stay on this computer. Quick edits create a request for your agent; the Viewer does not edit files.', intro:'Compare revisions or select a module for the next change.', openCurrent:'Open current version ↗', compareTab:'Compare versions', editTab:'Edit a module', changeDetails:'Change details', previewNote:'Previews show the rendered HTML artifacts.', currentModules:'Current version · Select a module', selectHint:'Select a report title or a module on the right to create a scoped request.', highlightHint:'Highlighting only selects a target. Changes still require Spec validation.', editThis:'Edit this module', scopeHint:'Include only the target, current value, and necessary evidence to reduce agent context.', targetModule:'Target module', editIntent:'Edit intent', agentRequest:'Request for your agent, editable', scopedRevision:'Scoped edit · Validate and create a child version', copyRequest:'Copy request', baseline:'Baseline A', comparison:'Compare B', swapVersions:'Swap versions', conclusion:'Highlight conclusion', shorter:'Make concise', custom:'Custom request', initial:'Initial', revision:'Revision', verified:'Verified', localFile:'Local file', verifiedEvidence:'✓ Evidence verified', pendingEvidence:'○ Evidence pending', noPreview:'No artifact is available for this version yet.', none:'None', unchanged:'Unchanged', modified:'Modified', uncertain:'Uncertain', title:'Main title', theme:'Theme', chart:'Chart', insight:'Insight', evidence:'Evidence', data:'Data', specChanged:'Spec changed, but the module summary cannot pinpoint it', fingerprintSame:'Data fingerprints match', fingerprintChanged:'Data fingerprint changed', fingerprintMissing:'Data fingerprint unavailable', changesFound:n=>n+' module change'+(n===1?'':'s')+' found', changesCount:n=>n+' change'+(n===1?'':'s'), changesUnknown:'Spec changed; module changes need inspection', noChanges:'No module changes detected between these versions', bothVerified:'Evidence checks passed for both versions. Module changes and artifacts appear below.', needsReview:'At least one version has not passed all evidence checks.', dataSame:'Data unchanged', dataChanged:'Data changed', dataUnknown:'Data unknown', evidenceVerified:'Evidence verified', evidencePending:'Evidence needs review', compareUnavailable:'Comparison unavailable', compareFailed:'Could not compare these versions', awaitingArtifact:'Waiting for the artifact to render', noModules:'No addressable modules are available for this version.', reportTitle:'Main title', sourceSpec:'Source Spec', artifactPath:'Artifact path', locateSpec:'Locate its source Spec first.', targetPath:'Target path', currentContent:'Current content', evidenceIds:'Related evidence IDs', promptConclusion:'Emphasize the main verified conclusion without adding new figures.', promptShorter:'Make the text shorter while preserving its meaning.', promptCustom:'Describe the exact change here.', promptEnd:'Change only this module. Preserve the data and other verified content. Validate, then render a child version of this run.', readFailed:'Could not load version history', firstArtifact:'Waiting for the first artifact', noHistory:'No versions yet', startWorkflow:'Run a Miao Vision workflow to see versions and artifacts here.', disconnected:'Viewer connection lost', noArtifact:'The artifact has not been generated yet', chooseModule:'Select a module first', copied:'Request copied', copyManually:'Select the text and copy it manually', versionCount:n=>n+' version'+(n===1?'':'s') }
@@ -8,7 +8,7 @@ const messages = {
 const t = key => messages[ui.language][key];
 function applyLanguage() {
   document.documentElement.lang = ui.language === 'en' ? 'en' : 'zh-CN';
-  document.querySelectorAll('[data-i18n]').forEach(node => { node.textContent = t(node.dataset.i18n); });
+  document.querySelectorAll('[data-i18n]').forEach(node => { const value = t(node.dataset.i18n); if (value !== undefined) node.textContent = value; });
   document.querySelectorAll('[data-i18n-aria]').forEach(node => node.setAttribute('aria-label', t(node.dataset.i18nAria)));
   document.querySelectorAll('[data-i18n-title]').forEach(node => node.title = t(node.dataset.i18nTitle));
   document.querySelectorAll('#intents .chip').forEach(node => { node.textContent = t(node.dataset.intent); node.classList.toggle('active', node.dataset.intent === ui.intent); });
@@ -141,11 +141,53 @@ async function renderComparison() {
 }
 const intents = { conclusion:'promptConclusion', shorter:'promptShorter', custom:'promptCustom' };
 function promptFor(run, item) {
-  const kind = item.kind === 'title' ? t('reportTitle') : t(item.kind);
   const source = run.artifact?.composition?.sourceSpecPath ? t('sourceSpec') + ': ' + JSON.stringify(run.artifact.composition.sourceSpecPath) + '. ' : t('artifactPath') + ': ' + JSON.stringify(run.artifact?.primaryPath) + '. ' + t('locateSpec') + ' ';
+  const hasTheme = ui.themeRunId === run.runId && ui.themeId && ui.themeTargetPath;
+  if (!item && !hasTheme) return '';
+  const theme = hasTheme ? (ui.language === 'en'
+    ? ' Set ' + ui.themeTargetPath + ' to ' + JSON.stringify(ui.themeId) + '.'
+    : ' 将 ' + ui.themeTargetPath + ' 更换为 ' + JSON.stringify(ui.themeId) + '。') : '';
+  if (!item) return ui.language === 'en'
+    ? 'Revise Miao Vision ' + run.kind + ' run ' + run.runId + '. ' + source + theme.trim() + ' Preserve data and verified content. Validate, then render a child version of this run.'
+    : '修改 Miao Vision ' + run.kind + ' 版本 ' + run.runId + '。' + source + theme.trim() + '保留数据和已验证内容。验证后渲染为该版本的子版本。';
+  const kind = item.kind === 'title' ? t('reportTitle') : t(item.kind);
   const evidence = item.evidenceIds?.length ? t('evidenceIds') + ': ' + item.evidenceIds.join(', ') + '. ' : '';
-  if (ui.language === 'en') return 'Revise the ' + kind + ' in Miao Vision ' + run.kind + ' run ' + run.runId + '. ' + source + t('targetPath') + ': ' + item.path + '. ' + t('currentContent') + ': ' + JSON.stringify(item.title || item.id) + '. ' + t(intents[ui.intent]) + ' ' + evidence + t('promptEnd');
-  return '修改 Miao Vision ' + run.kind + ' 版本 ' + run.runId + ' 的' + kind + '。' + source + t('targetPath') + ': ' + item.path + '。' + t('currentContent') + ': ' + JSON.stringify(item.title || item.id) + '。' + t(intents[ui.intent]) + evidence + t('promptEnd');
+  const end = hasTheme
+    ? (ui.language === 'en' ? ' Change only this module and the selected theme. Preserve data and other verified content. Validate, then render a child version of this run.' : '只修改这个模块和选定主题，保留数据与其他已验证内容。验证后渲染为该版本的子版本。')
+    : t('promptEnd');
+  if (ui.language === 'en') return 'Revise the ' + kind + ' in Miao Vision ' + run.kind + ' run ' + run.runId + '. ' + source + t('targetPath') + ': ' + item.path + '. ' + t('currentContent') + ': ' + JSON.stringify(item.title || item.id) + '. ' + t(intents[ui.intent]) + ' ' + evidence + theme + end;
+  return '修改 Miao Vision ' + run.kind + ' 版本 ' + run.runId + ' 的' + kind + '。' + source + t('targetPath') + ': ' + item.path + '。' + t('currentContent') + ': ' + JSON.stringify(item.title || item.id) + '。' + t(intents[ui.intent]) + evidence + theme + end;
+}
+function renderThemeOptions(run, model) {
+  const heading = document.querySelector('[data-i18n="themeChange"]'), hint = $('themeHint'), host = $('themeOptions');
+  heading.textContent = ui.language === 'en' ? 'Change theme' : '更换主题'; host.replaceChildren();
+  if (!run?.artifact) { hint.textContent = ui.language === 'en' ? 'A rendered artifact is required before choosing a theme.' : '产物渲染完成后可选择主题。'; return; }
+  const themes = model?.themes || [];
+  if (!themes.length) { hint.textContent = ui.language === 'en' ? 'No themes are available for this artifact.' : '当前产物没有可用主题。'; return; }
+  const currentTheme = model.currentTheme ? (ui.language === 'en' ? 'Current: ' : '当前：') + model.currentTheme + ' · ' : '';
+  hint.textContent = currentTheme + (ui.language === 'en' ? 'Choose a registered theme. It is added to the same revision request.' : '选择已注册主题，会合并到同一条修订请求。');
+  for (const theme of themes) {
+    const button = document.createElement('button'); button.type = 'button'; button.className = 'theme-choice' + (ui.themeRunId === run.runId && ui.themeId === theme.id ? ' active' : '');
+    button.setAttribute('aria-pressed', String(ui.themeRunId === run.runId && ui.themeId === theme.id));
+    button.title = theme.id;
+    const swatch = document.createElement('span'); swatch.className = 'theme-swatch'; swatch.style.setProperty('--theme-background', theme.background); swatch.style.setProperty('--theme-accent', theme.accent);
+    const name = document.createElement('span'); name.textContent = theme.label;
+    button.append(swatch, name);
+    button.onclick = () => { ui.themeRunId = run.runId; ui.themeId = theme.id; ui.themeTargetPath = model.targetPath; renderThemeOptions(run, model); renderEdit(); };
+    host.appendChild(button);
+  }
+}
+async function renderThemes(run) {
+  const group = $('themeOptions').closest('.theme-group'), panel = document.querySelector('.edit-panel');
+  if (group && panel) panel.insertBefore(group, panel.querySelector('.group'));
+  if (ui.themeOptionsRun === run?.runId && ui.themeOptions) return renderThemeOptions(run, ui.themeOptions);
+  ui.themeOptionsRun = run?.runId || ''; ui.themeOptions = null; renderThemeOptions(run, null);
+  if (!run?.artifact) return;
+  try {
+    const response = await fetch('/api/runs/' + encodeURIComponent(run.runId) + '/themes');
+    const body = await response.json(); if (!response.ok || ui.currentId !== run.runId) return;
+    ui.themeOptionsRun = run.runId; ui.themeOptions = body.value; renderThemeOptions(run, body.value);
+  } catch { if (ui.currentId === run?.runId) renderThemeOptions(run, null); }
 }
 function reportTarget(doc, item, run) {
   if (run.kind === 'deck') {
@@ -183,13 +225,14 @@ function focusReportTarget(frame, item, scroll, run) {
 }
 async function renderEdit(scrollToTarget = false) {
   const run = current(), targets = $('targets'); targets.replaceChildren();
+  renderThemes(run);
   if (!run?.artifact) { $('editReport').textContent = t('awaitingArtifact'); $('prompt').value = ''; return; }
   preview('editReport', run);
   $('selectHint').textContent = run.kind === 'deck' ? t('deckHint') : t('selectHint');
   let items = [];
   try { const response = await fetch('/api/runs/' + encodeURIComponent(run.runId) + '/spec-map'); const body = await response.json(); items = (body.value?.items || []).filter(item => (run.kind === 'deck' ? ['slide','slideTitle','slideClaim','chart'].includes(item.kind) : ['title','chart','insight'].includes(item.kind)) && item.path); } catch { /* Preview remains usable. */ }
   if (ui.currentId !== run.runId) return;
-  if (!items.length) { targets.textContent = t('noModules'); $('prompt').value = ''; return; }
+  if (!items.length) { targets.textContent = t('noModules'); $('prompt').value = promptFor(run, null); return; }
   if (!items.some(item => item.kind + ':' + item.id === ui.moduleId)) ui.moduleId = items[0].kind + ':' + items[0].id;
   items.forEach(item => {
     const key = item.kind + ':' + item.id, button = document.createElement('button'); button.className = 'target' + (key === ui.moduleId ? ' active' : '');

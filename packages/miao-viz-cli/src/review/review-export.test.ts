@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { createReviewExport, reviewExportSource } from './review-export'
+import { createReviewExport, reviewDeliveryHtml, reviewExportSource } from './review-export'
 import { ReviewStore } from './review-store'
 
 function runFor(kind: 'report' | 'deck', html: string) {
@@ -15,6 +15,16 @@ function runFor(kind: 'report' | 'deck', html: string) {
 }
 
 describe('review exports', () => {
+  it('removes review-only evidence controls from delivery HTML', () => {
+    const reviewHtml = `<main><button class="evidence-trigger" data-evidence-key="chart-1">View evidence</button><p class="evidence-status">Verification pending</p><section class="evidence-appendix"><h2>Evidence Appendix</h2><p>E1 · sales_total</p></section></main><aside class="evidence-drawer">Evidence ID: sales_total</aside><script>document.querySelector('[data-evidence-key]'); document.querySelector('#miao-evidence-drawer')</script>`
+    const deliveryHtml = reviewDeliveryHtml(reviewHtml)
+    expect(deliveryHtml).not.toContain('View evidence')
+    expect(deliveryHtml).not.toContain('Verification pending')
+    expect(deliveryHtml).not.toContain('Evidence Appendix')
+    expect(deliveryHtml).not.toContain('sales_total')
+    expect(deliveryHtml).not.toContain('miao-evidence-drawer')
+  })
+
   it('offers only artifact-specific formats', () => {
     expect(reviewExportSource(runFor('report', '<main>Report</main>'))?.formats).toEqual(['pdf', 'png'])
     expect(reviewExportSource(runFor('report', '<main class="mv-poster">Poster</main>'))?.formats).toEqual(['png'])

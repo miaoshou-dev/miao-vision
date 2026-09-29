@@ -9,6 +9,8 @@ import { artifactSpecMap, batchSummary, revisionActions, visualDiff } from './re
 import { summarizeReviewChanges } from './review-changes'
 import { reviewViewerHtml } from './review-ui'
 import { createReviewExport, reviewExportSource, type ReviewExportFormat } from './review-export'
+import { listThemes } from '../themes'
+import { POSTER_THEME_REGISTRY } from '../poster/poster-theme'
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8',
@@ -132,6 +134,22 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
     } })
   }
   if (url.pathname === '/api/batch') return respondJson(response, 200, { ok: true, value: batchSummary(store.list()) })
+  const themesMatch = /^\/api\/runs\/([^/]+)\/themes$/.exec(url.pathname)
+  if (themesMatch) {
+    const run = store.get(decodeURIComponent(themesMatch[1]))
+    if (!run) return respondJson(response, 404, { ok: false, code: 'RUN_NOT_FOUND', message: 'Review run not found.' })
+    const source = reviewExportSource(run)
+    const isPoster = source?.kind === 'poster'
+    if (run.kind === 'article') return respondJson(response, 200, { ok: true, value: { targetPath: null, currentTheme: null, themes: [] } })
+    const themes = isPoster
+      ? POSTER_THEME_REGISTRY.map(theme => ({ id: theme.id, label: theme.label, background: theme.tokens.background, accent: theme.tokens.accent }))
+      : listThemes().map(theme => ({ id: theme.name, label: theme.name, background: theme.svg.background, accent: theme.svg.palette[0] ?? theme.svg.labelColor }))
+    return respondJson(response, 200, { ok: true, value: {
+      targetPath: isPoster ? 'poster.theme' : 'theme',
+      currentTheme: run.artifact?.composition?.theme ?? null,
+      themes
+    } })
+  }
   const changesMatch = /^\/api\/runs\/([^/]+)\/changes$/.exec(url.pathname)
   if (changesMatch) {
     const run = store.get(decodeURIComponent(changesMatch[1]))
