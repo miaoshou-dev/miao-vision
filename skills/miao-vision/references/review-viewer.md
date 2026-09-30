@@ -32,12 +32,20 @@ could not be published.
 
 The version view compares any two runs in the same revision family. Review
 history survives a Viewer process restart in a local cache. For reports, the
-edit view maps titles, charts, and insights to Spec paths. For decks, it maps
-each slide, title, claim, and chart to `slides[n]` paths. Selecting a deck target
-jumps to that slide in the preview; selecting a changed slide in the comparison
-jumps both previews to that page. The Viewer copies a scoped prompt for the
-agent. Copying a prompt does not change the Spec. Validate and render the
-revision with `--review-parent-run-id` to link it to the selected version.
+edit view maps titles, charts, and insights to Spec paths. Decks map each slide,
+title, claim, and chart to `slides[n]` paths. Posters map semantic title,
+subtitle, chart, and footer areas to their ReportSpec paths. Reviewers can select
+multiple targets and one registered theme, enter one request, then inspect a
+RevisionPlan listing the proposed changes, preserved content, validations, and
+risks. Confirmation alone never changes a file.
+
+After confirmation, an Agent reads the revision with
+`get_miao_vision_revision` and submits an allowlisted `PatchSet` through
+`apply_miao_vision_revision`. The local service rejects unknown paths, arbitrary
+files, unregistered themes, and protected data, evidence, provenance, and
+encoding paths. A successful application writes a versioned child Spec and
+artifact linked to its parent run. The Viewer is not a PPT, canvas, drag-drop,
+or direct Spec editor.
 
 Choose an artifact in the sidebar, select a version, and use **Export version**
 to download its rendered artifact:

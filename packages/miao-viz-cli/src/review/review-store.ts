@@ -3,9 +3,13 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from '
 import { dirname } from 'node:path'
 import { reviewEventSchema, type ReviewEvent, type ReviewRunSnapshot, type ReviewRunStatus, now, createRunSnapshot } from './review-events'
 import { summarizeRunHistory, type ReviewHistoryItem } from './review-history'
+import type { RevisionPlan, RevisionRequest } from './review-revision'
+
+export interface StoredRevision { request: RevisionRequest, plan: RevisionPlan }
 
 export class ReviewStore {
   private readonly runs = new Map<string, ReviewRunSnapshot>()
+  private readonly revisions = new Map<string, StoredRevision>()
   private readonly emitter = new EventEmitter()
   private readonly maxRuns: number
   private readonly persistencePath?: string
@@ -35,6 +39,26 @@ export class ReviewStore {
 
   history(): ReviewHistoryItem[] {
     return this.list().map(summarizeRunHistory)
+  }
+
+  saveRevision(request: RevisionRequest, plan: RevisionPlan): StoredRevision {
+    const revision = { request: structuredClone(request), plan: structuredClone(plan) }
+    this.revisions.set(request.revisionId, revision)
+    this.persist()
+    return structuredClone(revision)
+  }
+
+  revision(revisionId: string): StoredRevision | undefined {
+    const revision = this.revisions.get(revisionId)
+    return revision ? structuredClone(revision) : undefined
+  }
+
+  updateRevision(revisionId: string, plan: RevisionPlan): StoredRevision | undefined {
+    const revision = this.revisions.get(revisionId)
+    if (!revision) return undefined
+    revision.plan = structuredClone(plan)
+    this.persist()
+    return structuredClone(revision)
   }
 
   publish(event: ReviewEvent): void {
@@ -88,12 +112,15 @@ export class ReviewStore {
   private restore(): void {
     if (!this.persistencePath || !existsSync(this.persistencePath)) return
     try {
-      const stored = JSON.parse(readFileSync(this.persistencePath, 'utf8')) as ReviewRunSnapshot[]
-      if (!Array.isArray(stored)) return
+      const raw = JSON.parse(readFileSync(this.persistencePath, 'utf8')) as ReviewRunSnapshot[] | { runs?: ReviewRunSnapshot[], revisions?: StoredRevision[] }
+      const stored = Array.isArray(raw) ? raw : raw.runs ?? []
       for (const run of stored.slice(-this.maxRuns)) {
         if (!run || typeof run.runId !== 'string' || !['report', 'deck', 'article'].includes(run.kind) || !Array.isArray(run.events)) continue
         if (run.events.some(event => !reviewEventSchema.safeParse(event).success)) continue
         this.runs.set(run.runId, run)
+      }
+      if (!Array.isArray(raw)) for (const revision of raw.revisions ?? []) {
+        if (revision?.request?.revisionId && revision?.plan?.revisionId === revision.request.revisionId) this.revisions.set(revision.request.revisionId, revision)
       }
     } catch { /* A corrupt review cache must not prevent rendering. */ }
   }
@@ -103,7 +130,7 @@ export class ReviewStore {
     try {
       mkdirSync(dirname(this.persistencePath), { recursive: true })
       const temporary = `${this.persistencePath}.tmp`
-      writeFileSync(temporary, JSON.stringify([...this.runs.values()]), 'utf8')
+      writeFileSync(temporary, JSON.stringify({ runs: [...this.runs.values()], revisions: [...this.revisions.values()] }), 'utf8')
       renameSync(temporary, this.persistencePath)
     } catch { /* Review history is optional and must not fail the CLI workflow. */ }
   }

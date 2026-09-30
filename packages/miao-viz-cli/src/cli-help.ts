@@ -240,7 +240,9 @@ Options:
   'review.mcp': `Usage: miao-viz review mcp
 
 Start the stdio MCP server and the local Review Viewer on port 43179. The MCP server exposes
-open_miao_vision_viewer and run_miao_viz.
+open_miao_vision_viewer, run_miao_viz, get_miao_vision_revision, and
+apply_miao_vision_revision. A Viewer revision must be confirmed before the Agent can
+apply its restricted PatchSet and render a child version.
 `,
   'data.query': `Usage: miao-viz data query <file> [options]
 

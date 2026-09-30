@@ -1,6 +1,8 @@
 import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import { DEFAULT_REVIEW_PORT, startReviewServer, type ReviewServer } from './review-server'
+import { revisionOutputPath, writeRevisionSpec } from './review-revision-apply'
+import type { StoredRevision } from './review-store'
 
 interface JsonRpcRequest {
   jsonrpc?: string
@@ -18,7 +20,8 @@ export async function runReviewMcp(): Promise<void> {
       const previous = workflowArgs.get(runId)
       if (!previous) throw new Error('Retry metadata is unavailable for this run.')
       return runWorkflow({ ...previous, parentRunId: runId }, server, workflowArgs)
-    }
+    },
+    applyRevision: async revision => applyRevision(revision, server, workflowArgs)
   })
   const input = createInterface({ input: process.stdin, crlfDelay: Infinity })
   const output = (value: unknown) => process.stdout.write(`${JSON.stringify(value)}\n`)
@@ -61,7 +64,9 @@ async function handleRequest(request: JsonRpcRequest, server: ReviewServer, work
         type: 'object', required: ['kind', 'output'], properties: {
           kind: { type: 'string', enum: ['report', 'deck', 'article'] }, input: { type: 'string' }, spec: { type: 'string' }, context: { type: 'string' }, output: { type: 'string' }, theme: { type: 'string' }, parentRunId: { type: 'string', description: 'Optional earlier Viewer run to associate as the source of this revision.' }
         }
-      } }
+      } },
+      { name: 'get_miao_vision_revision', description: 'Reads a Viewer revision request and its human-readable plan. The plan must be confirmed in Viewer before applying.', inputSchema: { type: 'object', required: ['revisionId'], properties: { revisionId: { type: 'string' } } } },
+      { name: 'apply_miao_vision_revision', description: 'Applies a confirmed Viewer revision using a restricted PatchSet, validates and renders it as a child run. It cannot alter data, evidence, provenance, or arbitrary files.', inputSchema: { type: 'object', required: ['revisionId', 'patchSet'], properties: { revisionId: { type: 'string' }, patchSet: { type: 'object', properties: { operations: { type: 'array' } } } } } }
     ] }
   }
   if (request.method !== 'tools/call') throw new Error(`Unsupported MCP method: ${request.method ?? '(missing)'}`)
@@ -72,7 +77,38 @@ async function handleRequest(request: JsonRpcRequest, server: ReviewServer, work
     return { content: [{ type: 'text', text: `Miao Vision Review Viewer is available at ${server.url}. Open this URL in the embedded browser.` }] }
   }
   if (name === 'run_miao_viz') return { content: [{ type: 'text', text: JSON.stringify(await runWorkflow(args, server, workflowArgs)) }] }
+  if (name === 'get_miao_vision_revision') return { content: [{ type: 'text', text: JSON.stringify(await revisionRequest(server, stringArg(args, 'revisionId'))) }] }
+  if (name === 'apply_miao_vision_revision') return { content: [{ type: 'text', text: JSON.stringify(await applyRevisionRequest(server, stringArg(args, 'revisionId'), args.patchSet)) }] }
   throw new Error(`Unknown MCP tool: ${name}`)
+}
+
+async function revisionRequest(server: ReviewServer, revisionId?: string): Promise<unknown> {
+  if (!revisionId) throw new Error('revisionId is required')
+  const response = await fetch(new URL(`/api/revisions/${encodeURIComponent(revisionId)}`, server.url))
+  const body = await response.json()
+  if (!response.ok) throw new Error(body.message ?? 'Revision request was not found.')
+  return body.value
+}
+
+async function applyRevisionRequest(server: ReviewServer, revisionId: string | undefined, patchSet: unknown): Promise<unknown> {
+  if (!revisionId || !patchSet || typeof patchSet !== 'object') throw new Error('revisionId and patchSet are required')
+  const response = await fetch(new URL(`/api/revisions/${encodeURIComponent(revisionId)}/apply`, server.url), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patchSet) })
+  const body = await response.json()
+  if (!response.ok) throw new Error(body.message ?? 'Revision could not be applied.')
+  return body.value
+}
+
+async function applyRevision(revision: StoredRevision, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>): Promise<{ childRunId: string }> {
+  const previous = workflowArgs.get(revision.request.parentRunId)
+  if (!previous) throw new Error('The parent run was not started by this MCP session, so it cannot be applied automatically.')
+  if (!revision.plan.patchSet) throw new Error('A PatchSet is required to apply a revision.')
+  const spec = writeRevisionSpec(revision.request, revision.plan.patchSet)
+  const output = typeof previous.output === 'string' ? revisionOutputPath(revision.request, previous.output) : undefined
+  if (!output) throw new Error('The parent workflow has no output path.')
+  const result = await runWorkflow({ ...previous, spec, output, parentRunId: revision.request.parentRunId }, server, workflowArgs)
+  const childRunId = result && typeof result === 'object' && typeof (result as { runId?: unknown }).runId === 'string' ? (result as { runId: string }).runId : undefined
+  if (!childRunId) throw new Error('The revision workflow did not create a child run.')
+  return { childRunId }
 }
 
 async function runWorkflow(args: Record<string, unknown>, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>): Promise<unknown> {

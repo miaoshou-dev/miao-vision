@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { extname, resolve, relative, isAbsolute, join } from 'node:path'
-import { ReviewStore } from './review-store'
+import { ReviewStore, type StoredRevision } from './review-store'
 import type { ReviewEvent } from './review-events'
 import { artifactSpecMap, batchSummary, revisionActions, visualDiff } from './review-p2'
 import { summarizeReviewChanges } from './review-changes'
@@ -11,6 +11,7 @@ import { reviewViewerHtml } from './review-ui'
 import { createReviewExport, reviewExportSource, type ReviewExportFormat } from './review-export'
 import { listThemes } from '../themes'
 import { POSTER_THEME_REGISTRY } from '../poster/poster-theme'
+import { createRevisionRequest, patchSetSchema, planRevision, revisionPlanSchema, validatePatchSet } from './review-revision'
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html; charset=utf-8', '.htm': 'text/html; charset=utf-8',
@@ -32,6 +33,7 @@ export interface StartReviewServerOptions {
   port?: number
   artifactRoot?: string
   retryRun?: (runId: string) => Promise<unknown>
+  applyRevision?: (revision: StoredRevision) => Promise<{ childRunId: string }>
 }
 
 export async function startReviewServer(options: StartReviewServerOptions = {}): Promise<ReviewServer> {
@@ -39,7 +41,7 @@ export async function startReviewServer(options: StartReviewServerOptions = {}):
   const cacheKey = createHash('sha256').update(artifactRoot).digest('hex').slice(0, 16)
   const store = new ReviewStore(20, join(tmpdir(), 'miao-vision-review', cacheKey, 'runs.json'))
   const clients = new Map<string, Set<ServerResponse>>()
-  const server = createServer((request, response) => { void handleRequest(request, response, store, artifactRoot, clients, options.retryRun) })
+  const server = createServer((request, response) => { void handleRequest(request, response, store, artifactRoot, clients, options.retryRun, options.applyRevision) })
   try {
     await listen(server, options.port ?? 0)
   } catch (error) {
@@ -61,7 +63,7 @@ export async function startReviewServer(options: StartReviewServerOptions = {}):
   }
 }
 
-async function handleRequest(request: IncomingMessage, response: ServerResponse, store: ReviewStore, artifactRoot: string, clients: Map<string, Set<ServerResponse>>, retryRun?: (runId: string) => Promise<unknown>): Promise<void> {
+async function handleRequest(request: IncomingMessage, response: ServerResponse, store: ReviewStore, artifactRoot: string, clients: Map<string, Set<ServerResponse>>, retryRun?: (runId: string) => Promise<unknown>, applyRevision?: (revision: StoredRevision) => Promise<{ childRunId: string }>): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://127.0.0.1')
   if (request.method === 'POST' && url.pathname === '/api/runs') {
     const body = await readJsonBody(request)
@@ -92,6 +94,51 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
       return respondJson(response, 202, { ok: true, value: await retryRun(runId) })
     } catch (error) {
       return respondJson(response, 409, { ok: false, code: 'RETRY_FAILED', message: error instanceof Error ? error.message : 'Unable to retry this run.' })
+    }
+  }
+  const createRevisionMatch = /^\/api\/runs\/([^/]+)\/revisions$/.exec(url.pathname)
+  if (request.method === 'POST' && createRevisionMatch) {
+    const run = store.get(decodeURIComponent(createRevisionMatch[1]))
+    const body = await readJsonBody(request)
+    if (!run || !body) return respondJson(response, 404, { ok: false, code: 'RUN_NOT_FOUND', message: 'Review run not found.' })
+    try {
+      const requestModel = createRevisionRequest(run, {
+        instruction: String(body.instruction ?? ''),
+        targets: Array.isArray(body.targets) ? body.targets : [],
+        ...(body.theme && typeof body.theme === 'object' ? { theme: body.theme as { id: string, path: 'theme' | 'poster.theme' } } : {})
+      })
+      const plan = planRevision(requestModel)
+      return respondJson(response, 201, { ok: true, value: store.saveRevision(requestModel, plan) })
+    } catch (error) {
+      return respondJson(response, 400, { ok: false, code: 'INVALID_REVISION_REQUEST', message: error instanceof Error ? error.message : 'Invalid revision request.' })
+    }
+  }
+  const revisionMatch = /^\/api\/revisions\/([^/]+)(?:\/(confirm|apply))?$/.exec(url.pathname)
+  if (revisionMatch) {
+    const revision = store.revision(decodeURIComponent(revisionMatch[1]))
+    if (!revision) return respondJson(response, 404, { ok: false, code: 'REVISION_NOT_FOUND', message: 'Revision request not found.' })
+    if (request.method === 'GET' && !revisionMatch[2]) return respondJson(response, 200, { ok: true, value: revision })
+    if (request.method !== 'POST' || !revisionMatch[2]) return respondJson(response, 405, { ok: false, code: 'METHOD_NOT_ALLOWED', message: 'Revision endpoint only supports reading, confirmation, and application.' })
+    if (revisionMatch[2] === 'confirm') {
+      if (revision.plan.status !== 'draft') return respondJson(response, 409, { ok: false, code: 'REVISION_NOT_DRAFT', message: 'Only a draft revision can be confirmed.' })
+      const plan = revisionPlanSchema.parse({ ...revision.plan, status: 'confirmed' })
+      return respondJson(response, 200, { ok: true, value: store.updateRevision(revision.request.revisionId, plan) })
+    }
+    if (revision.plan.status !== 'confirmed') return respondJson(response, 409, { ok: false, code: 'REVISION_NOT_CONFIRMED', message: 'Confirm the revision plan before applying it.' })
+    const body = await readJsonBody(request)
+    try {
+      const source = reviewExportSource(store.get(revision.request.parentRunId)!)
+      const themeIds = source?.kind === 'poster' ? POSTER_THEME_REGISTRY.map(theme => theme.id) : listThemes().map(theme => theme.name)
+      const patchSet = validatePatchSet(revision.request, patchSetSchema.parse(body), themeIds)
+      if (!applyRevision) return respondJson(response, 409, { ok: false, code: 'REVISION_EXECUTOR_UNAVAILABLE', message: 'Use the connected Agent MCP tool to apply this confirmed revision.' })
+      const updated = store.updateRevision(revision.request.revisionId, revisionPlanSchema.parse({ ...revision.plan, patchSet }))!
+      const result = await applyRevision(updated)
+      const applied = revisionPlanSchema.parse({ ...updated.plan, status: 'applied', childRunId: result.childRunId })
+      return respondJson(response, 202, { ok: true, value: store.updateRevision(revision.request.revisionId, applied) })
+    } catch (error) {
+      const failed = revisionPlanSchema.parse({ ...revision.plan, status: 'failed', risks: [...revision.plan.risks, error instanceof Error ? error.message : 'Revision application failed.'] })
+      store.updateRevision(revision.request.revisionId, failed)
+      return respondJson(response, 400, { ok: false, code: 'INVALID_PATCH_SET', message: error instanceof Error ? error.message : 'Invalid PatchSet.' })
     }
   }
   if (request.method !== 'GET') return respondJson(response, 405, { ok: false, code: 'METHOD_NOT_ALLOWED', message: 'Review server only accepts run/event writes and read requests.' })

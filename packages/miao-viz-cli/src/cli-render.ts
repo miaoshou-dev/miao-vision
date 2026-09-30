@@ -299,6 +299,7 @@ async function runRender(args: CliArgs, publisher?: ReviewPublisher): Promise<un
         title: { id: 'title' as const, path: 'title' as const, title: (validation.value.title || 'Miao Vision Report').slice(0, 500) },
         charts: validation.value.charts.map((chart, index) => ({ id: chart.id ?? `chart-${index + 1}`, type: chart.type, hash: hashValue(chart), path: `charts[${index}]`, ...(chart.title ? { title: chart.title } : {}), evidenceIds: provenanceEvidenceIds(chart.provenance) })),
         insights: (validation.value.insights ?? []).map((insight, index) => ({ id: `insight-${index + 1}`, hash: hashValue(insight), path: `insights[${index}]`, title: typeof insight === 'string' ? insight : insight.text, evidenceIds: typeof insight === 'string' ? [] : insight.evidence ?? provenanceEvidenceIds(insight.provenance) })),
+        ...(validation.value.layout?.preset === 'poster' && validation.value.poster ? { poster: posterReviewModules(validation.value) } : {}),
         evidence: (renderContext?.evidence ?? []).map((item, index) => ({ id: item.id, hash: hashValue(item), path: `context.evidence[${index}]` }))
       },
       evidenceItems: (renderContext?.evidence ?? []).map(item => ({
@@ -308,4 +309,15 @@ async function runRender(args: CliArgs, publisher?: ReviewPublisher): Promise<un
     },
     ...(warnings.length ? { warnings } : {})
   }
+}
+
+function posterReviewModules(spec: AgentReportSpec): Array<{ id: string, kind: 'posterTitle' | 'posterSubtitle' | 'posterMetric' | 'posterChart' | 'posterCopy' | 'posterFooter', path: string, title?: string }> {
+  const poster = spec.poster
+  if (!poster) return []
+  const modules: Array<{ id: string, kind: 'posterTitle' | 'posterSubtitle' | 'posterMetric' | 'posterChart' | 'posterCopy' | 'posterFooter', path: string, title?: string }> = []
+  if (poster.hero?.title) modules.push({ id: 'poster-hero-title', kind: 'posterTitle', path: 'poster.hero.title', title: poster.hero.title })
+  if (poster.hero?.subtitle) modules.push({ id: 'poster-hero-subtitle', kind: 'posterSubtitle', path: 'poster.hero.subtitle', title: poster.hero.subtitle })
+  if (poster.chartId) modules.push({ id: 'poster-chart', kind: 'posterChart', path: `charts[${Math.max(0, spec.charts.findIndex(chart => chart.id === poster.chartId))}]`, title: poster.chartId })
+  if (poster.footer?.source) modules.push({ id: 'poster-footer', kind: 'posterFooter', path: 'poster.footer.source', title: poster.footer.source })
+  return modules
 }

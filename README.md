@@ -260,7 +260,7 @@ Projects retain immutable run history, stable evidence IDs and spec hashes, data
 
 Render commands return a structured delivery manifest containing status, primary artifact, optional PNG preview, verification coverage, metrics, highlights, warnings, and suggested actions. Agents can deliver from this manifest without scraping the generated HTML.
 
-The optional local Review Viewer shows workflow stages, previews, evidence, data quality, version changes, and exports:
+The optional local Review Viewer shows workflow stages, previews, evidence, data quality, version changes, and exports. Its controlled revision flow lets reviewers select multiple semantic modules, enter one request, inspect and confirm a revision plan, then have an Agent apply an allowlisted PatchSet into a versioned child artifact. It is not a PPT or freeform canvas editor: data, evidence, provenance, and arbitrary Spec paths remain protected.
 
 ```bash
 miao-viz review serve --artifact-root ./output

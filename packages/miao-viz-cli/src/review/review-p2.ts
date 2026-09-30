@@ -14,8 +14,9 @@ export function artifactSpecMap(run: ReviewRunSnapshot): unknown {
         ...(item.claim ? [{ kind: 'slideClaim', id: `${item.id}-claim`, path: `${item.path}.claim`, title: item.claim, slideIndex: item.slideIndex }] : []),
         ...(item.charts ?? []).map(chart => ({ kind: 'chart', ...chart, slideIndex: item.slideIndex }))
       ]),
-      ...(composition?.charts ?? []).map(item => ({ kind: 'chart', ...item })),
+      ...(composition?.charts ?? []).map(item => ({ kind: item.type === 'bigvalue' ? 'kpi' : item.type === 'table' ? 'table' : 'chart', ...item })),
       ...(composition?.insights ?? []).map(item => ({ kind: 'insight', ...item })),
+      ...(composition?.poster ?? []),
       ...(composition?.evidence ?? []).map(item => ({ kind: 'evidence', ...item }))
     ]
   }

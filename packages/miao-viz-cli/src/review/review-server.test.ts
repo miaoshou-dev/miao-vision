@@ -73,6 +73,17 @@ describe('review server', () => {
         value: { targetPath: 'theme', themes: expect.arrayContaining([expect.objectContaining({ id: 'magazine' }), expect.objectContaining({ id: 'tableau' })]) }
       })
 
+      server.store.publish({ type: 'artifact.updated', runId: 'run-1', sequence: 2, timestamp: new Date().toISOString(), kind: 'report', primaryPath: artifact, verified: true, deliveryStatus: 'ready', evidenceItems: [{ id: 'sales_total', query: 'Sum sales by period', caveat: 'Partial period' }], composition: { sourceSpecPath: join(root, 'report.yaml'), title: { id: 'title', path: 'title', title: 'Sales' }, charts: [{ id: 'sales', type: 'bar', hash: 'a'.repeat(64), path: 'charts[0]', evidenceIds: ['sales_total'] }], insights: [], evidence: [] } })
+      const revision = await fetch(`${server.url}api/runs/run-1/revisions`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ instruction: 'Use magazine and improve the chart', targets: [{ id: 'sales', kind: 'chart', path: 'charts[0]' }], theme: { id: 'magazine', path: 'theme' } }) })
+      expect(revision.status).toBe(201)
+      const revisionBody = await revision.json() as { value: { request: { revisionId: string, evidenceIds: string[] }, plan: { status: string, changes: string[] } } }
+      expect(revisionBody.value).toMatchObject({ request: { evidenceIds: ['sales_total'] }, plan: { status: 'draft', changes: expect.any(Array) } })
+      const revisionId = revisionBody.value.request.revisionId
+      expect(await (await fetch(`${server.url}api/revisions/${revisionId}/apply`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ operations: [{ op: 'replace', path: 'theme', value: 'magazine' }] }) })).json()).toMatchObject({ code: 'REVISION_NOT_CONFIRMED' })
+      const confirmed = await fetch(`${server.url}api/revisions/${revisionId}/confirm`, { method: 'POST' })
+      expect(await confirmed.json()).toMatchObject({ value: { plan: { status: 'confirmed' } } })
+      expect(await (await fetch(`${server.url}api/revisions/${revisionId}/apply`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ operations: [{ op: 'replace', path: 'evidence', value: 'bad' }] }) })).json()).toMatchObject({ code: 'INVALID_PATCH_SET' })
+
       const evidence = await fetch(`${server.url}api/runs/run-1/evidence`)
       expect(evidence.status).toBe(200)
       expect(await evidence.json()).toMatchObject({ value: { runId: 'run-1', verified: true, issues: [], items: [{ id: 'sales_total' }] } })
@@ -81,7 +92,7 @@ describe('review server', () => {
       expect(changes.status).toBe(200)
       expect(await changes.json()).toMatchObject({ value: { runId: 'run-1', comparable: false } })
 
-      expect(await (await fetch(`${server.url}api/runs/run-1/spec-map`)).json()).toMatchObject({ value: { runId: 'run-1', items: [] } })
+      expect(await (await fetch(`${server.url}api/runs/run-1/spec-map`)).json()).toMatchObject({ value: { runId: 'run-1', items: expect.arrayContaining([expect.objectContaining({ kind: 'title' }), expect.objectContaining({ kind: 'chart', id: 'sales' })]) } })
       expect(await (await fetch(`${server.url}api/runs/run-1/revision-actions`)).json()).toMatchObject({ value: { actions: expect.any(Array) } })
       expect(await (await fetch(`${server.url}api/runs/run-1/visual-diff`)).json()).toMatchObject({ value: { comparable: false } })
       expect(await (await fetch(`${server.url}api/compare?before=run-1&after=run-1`)).json()).toMatchObject({ value: { beforeRunId: 'run-1', afterRunId: 'run-1' } })

@@ -9,7 +9,7 @@
 
 借鉴 Maestro Viewer 的产品模式，Miao Vision 应增加一个轻量的本地 **Review Viewer**：Agent 继续通过 `miao-viz-cli` 完成数据分析、Spec 生成、验证和渲染；Viewer 只负责在 Codex 内展示执行过程、当前 artifact、证据状态和交付结果。
 
-它不是新的 BI 工作台，也不是报告编辑器，而是连接 **Agent 工作流** 和 **最终视觉产物** 的审稿界面。
+它不是新的 BI 工作台，也不是报告编辑器，而是连接 **Agent 工作流** 和 **最终视觉产物** 的审稿界面。局部修订采用多目标、单 Prompt、Agent 受控 PatchSet 的模式，不提供 PPT/Canvas 式拖拽、自由排版或任意 Spec 编辑。
 
 ## 2. 背景与问题
 
@@ -62,7 +62,7 @@ Maestro 的可复用经验不是“做一个设备控制台”，而是：**MCP 
 
 - 不恢复 SQL Workspace、任意 SQL 编辑器或多数据源连接器。
 - 不做拖拽布局编辑器、图表属性面板或可视化搭建器。
-- 不在 Viewer 中让用户直接修改数据、Spec 或 JavaScript。
+- 不在 Viewer 中让用户直接修改数据、Spec 或 JavaScript；确认的修订只能由 Agent 对已声明模块提交受限 PatchSet。
 - 不引入后端、云端会话、登录、权限和协作状态。
 - 不把 Viewer 变成必须依赖的交付物；最终 HTML/PDF/SVG 必须仍可独立打开。
 - 不复制 Maestro 的设备画面流、输入代理和长驻设备控制能力。
