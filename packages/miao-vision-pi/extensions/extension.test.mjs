@@ -29,7 +29,7 @@ function managed(id = 1) {
       return { content: [{ type: 'text', text: `${name}:${id}` }] }
     }
   }
-  return { client, calls, url: `http://127.0.0.1:${5000 + id}/`, cliVersion: '0.9.2' }
+  return { client, calls, url: `http://127.0.0.1:${5000 + id}/`, cliVersion: '0.9.3' }
 }
 
 test('lazily starts once and reuses one MCP for concurrent tool calls', async () => {
@@ -72,7 +72,7 @@ test('session shutdown closes the managed MCP and is idempotent', async () => {
 })
 
 test('startup errors remain actionable and do not disable registered tools', async () => {
-  const app = harness(async () => { throw new Error('Recommended CLI 0.9.2 is required.') })
+  const app = harness(async () => { throw new Error('Recommended CLI 0.9.3 is required.') })
   await assert.rejects(app.command.handler('', app.ctx), /Recommended CLI 0\.9\.1/)
   assert.equal(app.tools.size, 4)
   assert.equal(app.notices.length, 0)
