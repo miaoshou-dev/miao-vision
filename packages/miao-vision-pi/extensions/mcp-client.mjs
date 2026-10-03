@@ -39,7 +39,7 @@ export class McpProcessClient {
   }
 
   async initialize() {
-    return this.request('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: '@miao-vision/pi', version: '0.10.1' } })
+    return this.request('initialize', { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: '@miao-vision/pi', version: '0.10.2' } })
   }
 
   callTool(name, args = {}) {
