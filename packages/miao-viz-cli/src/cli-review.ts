@@ -6,7 +6,10 @@ import { runReviewMcp } from './review/review-mcp'
 
 export async function runReviewCommand(args: CliArgs): Promise<void> {
   if (args.subcommand === 'mcp') {
-    await runReviewMcp()
+    await runReviewMcp({
+      port: numberFlag(args, 'port') ?? DEFAULT_REVIEW_PORT,
+      artifactRoot: stringFlag(args, 'artifact-root')
+    })
     return
   }
   if (args.subcommand !== 'serve') {

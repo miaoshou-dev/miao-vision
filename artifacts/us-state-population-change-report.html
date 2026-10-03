@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>U.S. State Population Change, 2010–2019</title>
+<style>
+  :root { color-scheme: light; --bg:#f4f1eb; --panel:#fff; --text:#18212f; --muted:#64748b; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:linear-gradient(180deg,#f7f5f0,#efeae2); color:var(--text); font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+  main { width:min(1260px,calc(100% - 32px)); margin:0 auto; padding:56px 0 72px; }
+  header { max-width:960px; margin:0 auto 28px; text-align:center; }
+  .eyebrow { color:#497929; font-size:13px; font-weight:750; letter-spacing:.14em; text-transform:uppercase; }
+  h1 { margin:12px 0 10px; font-size:clamp(34px,5vw,62px); line-height:1.02; letter-spacing:-.045em; }
+  .deck { margin:0 auto; max-width:780px; color:#526071; font-size:17px; line-height:1.55; }
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:30px 0 16px; }
+  .kpi { background:#fff; border:1px solid #ddd8cf; border-radius:16px; padding:17px 18px; }
+  .kpi b { display:block; font-size:23px; letter-spacing:-.025em; }
+  .kpi span { color:var(--muted); font-size:12px; }
+  .chart-card { overflow:auto; background:#fff; border:1px solid #ddd8cf; border-radius:20px; box-shadow:0 24px 70px rgba(71,60,43,.12); padding:16px; }
+  svg { display:block; width:100%; height:auto; }
+  .legend { display:flex; align-items:center; justify-content:center; gap:22px; color:#526071; font-size:13px; margin:3px 0 10px; }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:7px; }
+  .notes { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:18px; }
+  .note { background:#fff; border-left:3px solid #9bd568; border-radius:8px; padding:16px 18px; color:#526071; line-height:1.55; }
+  footer { margin-top:20px; color:#64748b; font-size:12px; text-align:center; }
+  @media (max-width:800px) { .kpis,.notes { grid-template-columns:1fr 1fr; } main { width:min(100% - 20px,1260px); padding-top:34px; } }
+  @media (max-width:520px) { .kpis,.notes { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">Population • 2010 to 2019</div>
+    <h1>Where America grew—and shrank</h1>
+    <p class="deck">Each bar shows the percentage change in population between 2010 and 2019. States and territories are sorted from decrease to increase on one shared scale around zero.</p>
+  </header>
+  <section class="kpis" aria-label="Summary">
+    <div class="kpi"><b>+19,022,344</b><span>Net population change</span></div>
+    <div class="kpi"><b>47</b><span>States / territories with gains</span></div>
+    <div class="kpi"><b>5</b><span>States / territories with declines</span></div>
+    <div class="kpi"><b>52</b><span>Rows compared</span></div>
+  </section>
+  <section class="chart-card">
+    <div class="legend"><span><i style="background:#9bd568"></i>Population increase</span><span><i style="background:#dfa0c5"></i>Population decrease</span></div>
+    <svg viewBox="0 0 1180 1604" role="img" aria-labelledby="chart-title chart-desc">
+      <title id="chart-title">Diverging bar chart of U.S. state population change from 2010 to 2019</title>
+      <desc id="chart-desc">States and territories sorted from largest gain to largest decline. The centered state axis marks zero.</desc>
+      <text x="590" y="28" text-anchor="middle" fill="#18212f" font-size="20" font-weight="750">← decrease · Change in population, 2010–2019 (%) · increase →</text>
+      <text x="590" y="49" text-anchor="middle" fill="#64748b" font-size="12">Sorted by percentage change • labels switch sides at zero</text>
+      <g>
+    <line x1="110" y1="70" x2="110" y2="1538" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="110" y="58" text-anchor="middle" fill="#334155" font-size="12">-20%</text>
+  </g><g>
+    <line x1="230" y1="70" x2="230" y2="1538" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="230" y="58" text-anchor="middle" fill="#334155" font-size="12">-15%</text>
+  </g><g>
+    <line x1="350" y1="70" x2="350" y2="1538" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="350" y="58" text-anchor="middle" fill="#334155" font-size="12">-10%</text>
+  </g><g>
+    <line x1="470" y1="70" x2="470" y2="1538" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="470" y="58" text-anchor="middle" fill="#334155" font-size="12">-5%</text>
+  </g><g>
+    <line x1="590" y1="70" x2="590" y2="1538" stroke="#1f2937" stroke-width="2"/>
+    <text x="590" y="58" text-anchor="middle" fill="#334155" font-size="12">0%</text>
+  </g><g>
+    <line x1="710" y1="70" x2="710" y2="1538" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="710" y="58" text-anchor="middle" fill="#334155" font-size="12">+5%</text>
+  </g><g>
+    <line x1="830" y1="70" x2="830" y2="1538" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="830" y="58" text-anchor="middle" fill="#334155" font-size="12">+10%</text>
+  </g><g>
+    <line x1="950" y1="70" x2="950" y2="1538" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="950" y="58" text-anchor="middle" fill="#334155" font-size="12">+15%</text>
+  </g><g>
+    <line x1="1070" y1="70" x2="1070" y2="1538" stroke="#e5e7eb" stroke-width="1"/>
+    <text x="1070" y="58" text-anchor="middle" fill="#334155" font-size="12">+20%</text>
+  </g>
+      <g class="state-row">
+    <title>Puerto Rico: −14.3% (-532,095 people)</title>
+    <rect x="247.24629065145666" y="86" width="342.75370934854334" height="20" fill="#dfa0c5"/>
+    <text x="602" y="100" text-anchor="start" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Puerto Rico</text>
+    <text x="239.24629065145666" y="100" text-anchor="end" fill="#1f2937" font-size="11.5" class="value-label">−14.3%</text>
+  </g><g class="state-row">
+    <title>West Virginia: −3.3% (-60,929 people)</title>
+    <rect x="511.08468780794755" y="114" width="78.91531219205245" height="20" fill="#dfa0c5"/>
+    <text x="602" y="128" text-anchor="start" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">West Virginia</text>
+    <text x="503.08468780794755" y="128" text-anchor="end" fill="#1f2937" font-size="11.5" class="value-label">−3.3%</text>
+  </g><g class="state-row">
+    <title>Illinois: −1.2% (-158,811 people)</title>
+    <rect x="560.2940276051874" y="142" width="29.705972394812648" height="20" fill="#dfa0c5"/>
+    <text x="602" y="156" text-anchor="start" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Illinois</text>
+    <text x="552.2940276051874" y="156" text-anchor="end" fill="#1f2937" font-size="11.5" class="value-label">−1.2%</text>
+  </g><g class="state-row">
+    <title>Vermont: −0.3% (-1,752 people)</title>
+    <rect x="583.280286891861" y="170" width="6.71971310813899" height="20" fill="#dfa0c5"/>
+    <text x="602" y="184" text-anchor="start" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Vermont</text>
+    <text x="575.280286891861" y="184" text-anchor="end" fill="#1f2937" font-size="11.5" class="value-label">−0.3%</text>
+  </g><g class="state-row">
+    <title>Connecticut: −0.2% (-8,810 people)</title>
+    <rect x="584.0841001237516" y="198" width="5.915899876248432" height="20" fill="#dfa0c5"/>
+    <text x="602" y="212" text-anchor="start" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Connecticut</text>
+    <text x="576.0841001237516" y="212" text-anchor="end" fill="#1f2937" font-size="11.5" class="value-label">−0.2%</text>
+  </g><g class="state-row">
+    <title>Mississippi: +0.3% (+8,852 people)</title>
+    <rect x="590" y="226" width="7.159647315384973" height="20" fill="#9bd568"/>
+    <text x="578" y="240" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Mississippi</text>
+    <text x="605.159647315385" y="240" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+0.3%</text>
+  </g><g class="state-row">
+    <title>New York: +0.4% (+75,459 people)</title>
+    <rect x="590" y="254" width="9.3456830808301" height="20" fill="#9bd568"/>
+    <text x="578" y="268" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">New York</text>
+    <text x="607.3456830808301" y="268" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+0.4%</text>
+  </g><g class="state-row">
+    <title>Rhode Island: +0.6% (+6,794 people)</title>
+    <rect x="590" y="282" width="15.491270389438341" height="20" fill="#9bd568"/>
+    <text x="578" y="296" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Rhode Island</text>
+    <text x="613.4912703894383" y="296" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+0.6%</text>
+  </g><g class="state-row">
+    <title>Pennsylvania: +0.8% (+99,610 people)</title>
+    <rect x="590" y="310" width="18.820411515039837" height="20" fill="#9bd568"/>
+    <text x="578" y="324" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Pennsylvania</text>
+    <text x="616.8204115150398" y="324" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+0.8%</text>
+  </g><g class="state-row">
+    <title>New Jersey: +1.0% (+90,296 people)</title>
+    <rect x="590" y="338" width="24.64888680414026" height="20" fill="#9bd568"/>
+    <text x="578" y="352" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">New Jersey</text>
+    <text x="622.6488868041403" y="352" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+1.0%</text>
+  </g><g class="state-row">
+    <title>Michigan: +1.0% (+103,217 people)</title>
+    <rect x="590" y="366" width="25.063721462942794" height="20" fill="#9bd568"/>
+    <text x="578" y="380" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Michigan</text>
+    <text x="623.0637214629428" y="380" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+1.0%</text>
+  </g><g class="state-row">
+    <title>Maine: +1.2% (+15,851 people)</title>
+    <rect x="590" y="394" width="28.638600500918074" height="20" fill="#9bd568"/>
+    <text x="578" y="408" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Maine</text>
+    <text x="626.6386005009181" y="408" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+1.2%</text>
+  </g><g class="state-row">
+    <title>Ohio: +1.3% (+152,596 people)</title>
+    <rect x="590" y="422" width="31.745353705073967" height="20" fill="#9bd568"/>
+    <text x="578" y="436" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Ohio</text>
+    <text x="629.745353705074" y="436" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+1.3%</text>
+  </g><g class="state-row">
+    <title>New Mexico: +1.8% (+37,650 people)</title>
+    <rect x="590" y="450" width="43.881566391265665" height="20" fill="#9bd568"/>
+    <text x="578" y="464" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">New Mexico</text>
+    <text x="641.8815663912657" y="464" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+1.8%</text>
+  </g><g class="state-row">
+    <title>Kansas: +2.1% (+60,196 people)</title>
+    <rect x="590" y="478" width="50.635970892195814" height="20" fill="#9bd568"/>
+    <text x="578" y="492" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Kansas</text>
+    <text x="648.6359708921958" y="492" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+2.1%</text>
+  </g><g class="state-row">
+    <title>Wisconsin: +2.4% (+135,448 people)</title>
+    <rect x="590" y="506" width="57.16124498987688" height="20" fill="#9bd568"/>
+    <text x="578" y="520" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Wisconsin</text>
+    <text x="655.1612449898769" y="520" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+2.4%</text>
+  </g><g class="state-row">
+    <title>Missouri: +2.5% (+148,501 people)</title>
+    <rect x="590" y="534" width="59.51022612230872" height="20" fill="#9bd568"/>
+    <text x="578" y="548" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Missouri</text>
+    <text x="657.5102261223087" y="548" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+2.5%</text>
+  </g><g class="state-row">
+    <title>Louisiana: +2.5% (+115,422 people)</title>
+    <rect x="590" y="562" width="61.10524351409947" height="20" fill="#9bd568"/>
+    <text x="578" y="576" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Louisiana</text>
+    <text x="659.1052435140995" y="576" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+2.5%</text>
+  </g><g class="state-row">
+    <title>Alabama: +2.6% (+123,449 people)</title>
+    <rect x="590" y="590" width="61.986185011055" height="20" fill="#9bd568"/>
+    <text x="578" y="604" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Alabama</text>
+    <text x="659.986185011055" y="604" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+2.6%</text>
+  </g><g class="state-row">
+    <title>Wyoming: +2.7% (+15,133 people)</title>
+    <rect x="590" y="618" width="64.43847515905941" height="20" fill="#9bd568"/>
+    <text x="578" y="632" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Wyoming</text>
+    <text x="662.4384751590594" y="632" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+2.7%</text>
+  </g><g class="state-row">
+    <title>Kentucky: +3.0% (+128,306 people)</title>
+    <rect x="590" y="646" width="70.96297685814545" height="20" fill="#9bd568"/>
+    <text x="578" y="660" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Kentucky</text>
+    <text x="668.9629768581455" y="660" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+3.0%</text>
+  </g><g class="state-row">
+    <title>Alaska: +3.0% (+21,314 people)</title>
+    <rect x="590" y="674" width="72.023890818621" height="20" fill="#9bd568"/>
+    <text x="578" y="688" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Alaska</text>
+    <text x="670.023890818621" y="688" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+3.0%</text>
+  </g><g class="state-row">
+    <title>New Hampshire: +3.3% (+43,241 people)</title>
+    <rect x="590" y="702" width="78.83081270366961" height="20" fill="#9bd568"/>
+    <text x="578" y="716" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">New Hampshire</text>
+    <text x="676.8308127036696" y="716" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+3.3%</text>
+  </g><g class="state-row">
+    <title>Arkansas: +3.5% (+101,907 people)</title>
+    <rect x="590" y="730" width="83.8764327391923" height="20" fill="#9bd568"/>
+    <text x="578" y="744" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Arkansas</text>
+    <text x="681.8764327391923" y="744" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+3.5%</text>
+  </g><g class="state-row">
+    <title>Iowa: +3.6% (+108,715 people)</title>
+    <rect x="590" y="758" width="85.64858658954722" height="20" fill="#9bd568"/>
+    <text x="578" y="772" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Iowa</text>
+    <text x="683.6485865895472" y="772" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+3.6%</text>
+  </g><g class="state-row">
+    <title>Indiana: +3.8% (+248,417 people)</title>
+    <rect x="590" y="786" width="91.95234524434886" height="20" fill="#9bd568"/>
+    <text x="578" y="800" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Indiana</text>
+    <text x="689.9523452443489" y="800" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+3.8%</text>
+  </g><g class="state-row">
+    <title>Hawaii: +4.1% (+55,571 people)</title>
+    <rect x="590" y="814" width="98.04477097348308" height="20" fill="#9bd568"/>
+    <text x="578" y="828" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Hawaii</text>
+    <text x="696.0447709734831" y="828" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+4.1%</text>
+  </g><g class="state-row">
+    <title>Maryland: +4.7% (+272,128 people)</title>
+    <rect x="590" y="842" width="113.12051922282853" height="20" fill="#9bd568"/>
+    <text x="578" y="856" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Maryland</text>
+    <text x="711.1205192228285" y="856" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+4.7%</text>
+  </g><g class="state-row">
+    <title>Oklahoma: +5.5% (+205,620 people)</title>
+    <rect x="590" y="870" width="131.54940713358997" height="20" fill="#9bd568"/>
+    <text x="578" y="884" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Oklahoma</text>
+    <text x="729.54940713359" y="884" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+5.5%</text>
+  </g><g class="state-row">
+    <title>Nebraska: +5.9% (+108,067 people)</title>
+    <rect x="590" y="898" width="142.0111578286859" height="20" fill="#9bd568"/>
+    <text x="578" y="912" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Nebraska</text>
+    <text x="740.0111578286859" y="912" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+5.9%</text>
+  </g><g class="state-row">
+    <title>California: +6.1% (+2,257,700 people)</title>
+    <rect x="590" y="926" width="145.44489000704698" height="20" fill="#9bd568"/>
+    <text x="578" y="940" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">California</text>
+    <text x="743.444890007047" y="940" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+6.1%</text>
+  </g><g class="state-row">
+    <title>Massachusetts: +6.1% (+401,874 people)</title>
+    <rect x="590" y="954" width="147.3048640966066" height="20" fill="#9bd568"/>
+    <text x="578" y="968" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Massachusetts</text>
+    <text x="745.3048640966066" y="968" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+6.1%</text>
+  </g><g class="state-row">
+    <title>Minnesota: +6.3% (+335,707 people)</title>
+    <rect x="590" y="982" width="151.90576789830175" height="20" fill="#9bd568"/>
+    <text x="578" y="996" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Minnesota</text>
+    <text x="749.9057678983017" y="996" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+6.3%</text>
+  </g><g class="state-row">
+    <title>Virginia: +6.7% (+534,495 people)</title>
+    <rect x="590" y="1010" width="160.3279780188136" height="20" fill="#9bd568"/>
+    <text x="578" y="1024" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Virginia</text>
+    <text x="758.3279780188136" y="1024" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+6.7%</text>
+  </g><g class="state-row">
+    <title>Tennessee: +7.7% (+487,069 people)</title>
+    <rect x="590" y="1038" width="184.20205779765706" height="20" fill="#9bd568"/>
+    <text x="578" y="1052" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Tennessee</text>
+    <text x="782.2020577976571" y="1052" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+7.7%</text>
+  </g><g class="state-row">
+    <title>Montana: +8.0% (+79,363 people)</title>
+    <rect x="590" y="1066" width="192.50890677824782" height="20" fill="#9bd568"/>
+    <text x="578" y="1080" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Montana</text>
+    <text x="790.5089067782478" y="1080" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+8.0%</text>
+  </g><g class="state-row">
+    <title>Delaware: +8.4% (+75,830 people)</title>
+    <rect x="590" y="1094" width="202.67859330418491" height="20" fill="#9bd568"/>
+    <text x="578" y="1108" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Delaware</text>
+    <text x="800.6785933041849" y="1108" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+8.4%</text>
+  </g><g class="state-row">
+    <title>South Dakota: +8.7% (+70,479 people)</title>
+    <rect x="590" y="1122" width="207.75455059077854" height="20" fill="#9bd568"/>
+    <text x="578" y="1136" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">South Dakota</text>
+    <text x="805.7545505907785" y="1136" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+8.7%</text>
+  </g><g class="state-row">
+    <title>Georgia: +9.6% (+929,770 people)</title>
+    <rect x="590" y="1150" width="230.33938147867184" height="20" fill="#9bd568"/>
+    <text x="578" y="1164" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Georgia</text>
+    <text x="828.3393814786718" y="1164" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+9.6%</text>
+  </g><g class="state-row">
+    <title>North Carolina: +10.0% (+952,601 people)</title>
+    <rect x="590" y="1178" width="239.7615726439867" height="20" fill="#9bd568"/>
+    <text x="578" y="1192" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">North Carolina</text>
+    <text x="837.7615726439867" y="1192" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+10.0%</text>
+  </g><g class="state-row">
+    <title>Oregon: +10.1% (+386,663 people)</title>
+    <rect x="590" y="1206" width="242.2274276090725" height="20" fill="#9bd568"/>
+    <text x="578" y="1220" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Oregon</text>
+    <text x="840.2274276090725" y="1220" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+10.1%</text>
+  </g><g class="state-row">
+    <title>South Carolina: +11.3% (+523,350 people)</title>
+    <rect x="590" y="1234" width="271.5548441160522" height="20" fill="#9bd568"/>
+    <text x="578" y="1248" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">South Carolina</text>
+    <text x="869.5548441160522" y="1248" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+11.3%</text>
+  </g><g class="state-row">
+    <title>Washington: +13.2% (+890,353 people)</title>
+    <rect x="590" y="1262" width="317.768531379098" height="20" fill="#9bd568"/>
+    <text x="578" y="1276" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Washington</text>
+    <text x="915.768531379098" y="1276" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+13.2%</text>
+  </g><g class="state-row">
+    <title>North Dakota: +13.3% (+89,471 people)</title>
+    <rect x="590" y="1290" width="319.2585092574834" height="20" fill="#9bd568"/>
+    <text x="578" y="1304" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">North Dakota</text>
+    <text x="917.2585092574834" y="1304" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+13.3%</text>
+  </g><g class="state-row">
+    <title>Arizona: +13.9% (+886,700 people)</title>
+    <rect x="590" y="1318" width="332.92777537982147" height="20" fill="#9bd568"/>
+    <text x="578" y="1332" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Arizona</text>
+    <text x="930.9277753798215" y="1332" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+13.9%</text>
+  </g><g class="state-row">
+    <title>Idaho: +14.0% (+219,565 people)</title>
+    <rect x="590" y="1346" width="336.1584912304428" height="20" fill="#9bd568"/>
+    <text x="578" y="1360" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Idaho</text>
+    <text x="934.1584912304428" y="1360" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+14.0%</text>
+  </g><g class="state-row">
+    <title>Nevada: +14.1% (+379,605 people)</title>
+    <rect x="590" y="1374" width="337.35782068177946" height="20" fill="#9bd568"/>
+    <text x="578" y="1388" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Nevada</text>
+    <text x="935.3578206817795" y="1388" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+14.1%</text>
+  </g><g class="state-row">
+    <title>Florida: +14.2% (+2,676,427 people)</title>
+    <rect x="590" y="1402" width="341.6477256106091" height="20" fill="#9bd568"/>
+    <text x="578" y="1416" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Florida</text>
+    <text x="939.6477256106091" y="1416" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+14.2%</text>
+  </g><g class="state-row">
+    <title>Colorado: +14.5% (+729,540 people)</title>
+    <rect x="590" y="1430" width="348.14630410109294" height="20" fill="#9bd568"/>
+    <text x="578" y="1444" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Colorado</text>
+    <text x="946.1463041010929" y="1444" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+14.5%</text>
+  </g><g class="state-row">
+    <title>Texas: +15.3% (+3,850,320 people)</title>
+    <rect x="590" y="1458" width="367.49102555317813" height="20" fill="#9bd568"/>
+    <text x="578" y="1472" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Texas</text>
+    <text x="965.4910255531781" y="1472" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+15.3%</text>
+  </g><g class="state-row">
+    <title>Utah: +16.0% (+442,073 people)</title>
+    <rect x="590" y="1486" width="383.87096424055267" height="20" fill="#9bd568"/>
+    <text x="578" y="1500" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">Utah</text>
+    <text x="981.8709642405527" y="1500" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+16.0%</text>
+  </g><g class="state-row">
+    <title>District of Columbia: +17.3% (+104,026 people)</title>
+    <rect x="590" y="1514" width="414.9125095766657" height="20" fill="#9bd568"/>
+    <text x="578" y="1528" text-anchor="end" fill="#1f2937" font-size="11.5" font-weight="560" class="state-label">District of Columbia</text>
+    <text x="1012.9125095766657" y="1528" text-anchor="start" fill="#1f2937" font-size="11.5" class="value-label">+17.3%</text>
+  </g>
+      <text x="110" y="1600" fill="#64748b" font-size="12">Population decrease</text>
+      <text x="1070" y="1600" text-anchor="end" fill="#64748b" font-size="12">Population increase</text>
+    </svg>
+  </section>
+  <section class="notes">
+    <div class="note"><strong>Texas</strong> recorded the largest increase: <strong>+3,850,320</strong> people.</div>
+    <div class="note" style="border-left-color:#dfa0c5"><strong>Puerto Rico</strong> recorded the largest decrease: <strong>−532,095</strong> people.</div>
+  </section>
+  <footer>Source: us-state-population-2010-2019.csv • Change = 2019 population − 2010 population • Includes the District of Columbia and Puerto Rico.</footer>
+</main>
+</body>
+</html>

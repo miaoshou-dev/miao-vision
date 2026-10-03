@@ -21,4 +21,10 @@ describe('environment diagnostics', () => {
     const result = diagnoseEnvironment({ input: join(root, 'missing.csv'), output: join(root, 'out'), host: 'cli' })
     expect(result).toMatchObject({ ok: false, code: 'FILE_NOT_FOUND', nextActions: [{ safeToRetry: true }] })
   })
+
+  it('recognizes Pi as a plugin host', () => {
+    const root = mkdtempSync(join(tmpdir(), 'miao-viz-diagnose-'))
+    const result = diagnoseEnvironment({ output: root, host: 'pi' })
+    expect(result).toMatchObject({ ok: true, value: { host: 'pi' } })
+  })
 })

@@ -9,6 +9,7 @@ const codex = readJson('.codex-plugin/plugin.json')
 const claude = readJson('.claude-plugin/plugin.json')
 const marketplace = readJson('.claude-plugin/marketplace.json')
 const cli = readJson('packages/miao-viz-cli/package.json')
+const pi = readJson('packages/miao-vision-pi/package.json')
 const compatibility = readJson('skills/miao-vision/cli-compatibility.json')
 const mediaCompatibility = readJson('skills/miao-vision/media-compatibility.json')
 const errors = []
@@ -17,7 +18,8 @@ const expectedPluginVersion = codex.version
 for (const [label, version] of [
   ['Claude plugin', claude.version],
   ['CLI compatibility pluginVersion', compatibility.pluginVersion],
-  ['Claude marketplace plugin', marketplace.plugins[0]?.version]
+  ['Claude marketplace plugin', marketplace.plugins[0]?.version],
+  ['Pi package', pi.version]
 ]) {
   if (version !== expectedPluginVersion) errors.push(`${label} version ${version ?? '(missing)'} must equal ${expectedPluginVersion}.`)
 }
@@ -56,7 +58,7 @@ if (!mediaCompatibility.image?.model || !mediaCompatibility.video?.models?.stand
   errors.push('Media compatibility must define the fixed image and video models.')
 }
 
-const metadata = JSON.stringify({ codex, claude, marketplace })
+const metadata = JSON.stringify({ codex, claude, marketplace, pi })
 if (metadata.includes('maishou-dev')) errors.push('Plugin metadata contains the misspelled repository owner maishou-dev.')
 
 if (errors.length > 0) {

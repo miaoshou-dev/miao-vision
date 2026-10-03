@@ -46,6 +46,18 @@
       "requiresApproval": true
     },
     {
+      "host": "pi",
+      "recommended": true,
+      "title": "Pi Package",
+      "description": "为 Pi 安装 Skill、原生工具和本地 Review Viewer 生命周期适配。",
+      "commands": [
+        "pi install npm:@miao-vision/pi"
+      ],
+      "verifyCommand": "miao-viz diagnose --host pi",
+      "requiresAgent": true,
+      "requiresApproval": true
+    },
+    {
       "host": "cli",
       "recommended": true,
       "title": "npx Skill",

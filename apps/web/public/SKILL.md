@@ -95,8 +95,10 @@ exists and mention the version difference; if none exists, stop the CLI workflow
 After installation, rerun the recommended-version check and verify `spec catalog`.
 In references, `miao-viz` means the resolved executable path. If installation or
 the first report workflow fails, run
-`miao-viz diagnose --host codex --input <input> --output <output>` before guessing
-at fixes. Add `--pdf` for a PDF-specific check.
+`miao-viz diagnose --host <host> --input <input> --output <output>` before guessing,
+where `<host>` is `pi`, `codex`, `claude-code`, or `openclaw` only when the
+current runtime identifies that host; otherwise use `cli`. Add `--pdf` for a
+PDF-specific check.
 
 Use a task-specific `miao-vision` directory in the system's native temporary
 directory for Context, Profile, drafts, and other intermediate files. Resolve

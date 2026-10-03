@@ -17,4 +17,9 @@ describe('anonymous funnel events', () => {
       errorCode: 'FIELD_NOT_FOUNDcatsecret', cliVersion: '0.6.0'
     })
   })
+
+  it('accepts Pi as an agent host', () => {
+    const path = join(mkdtempSync(join(tmpdir(), 'miao-funnel-')), 'events.jsonl')
+    expect(recordFunnelEvent(path, { name: 'install_verify', source: 'npm', host: 'pi', installMethod: 'plugin' }).host).toBe('pi')
+  })
 })

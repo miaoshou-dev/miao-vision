@@ -1,11 +1,11 @@
-title: Sales Dashboard
+title: Sales Dashboard2
 charts:
   - type: bar
     title: Sales by Region
     data:
       transform:
         - type: aggregate
-          groupBy: [region]
+          groupBy: [ region ]
           measures:
             - field: sales
               op: sum
@@ -23,7 +23,7 @@ charts:
           field: order_date
           as: order_month
         - type: aggregate
-          groupBy: [order_month]
+          groupBy: [ order_month ]
           measures:
             - field: sales
               op: sum

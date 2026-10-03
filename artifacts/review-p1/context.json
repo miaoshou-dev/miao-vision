@@ -1,0 +1,1954 @@
+{
+  "ok": true,
+  "value": {
+    "intent": {
+      "raw": "sales performance",
+      "coverage": "full",
+      "assumptions": [
+        {
+          "key": "primary_measure",
+          "value": "sales",
+          "confidence": 0.62,
+          "alternatives": [
+            "orders"
+          ],
+          "reason": "multiple measure candidates detected"
+        },
+        {
+          "key": "primary_dimension",
+          "value": "region",
+          "confidence": 0.72,
+          "alternatives": [
+            "product",
+            "sku"
+          ],
+          "reason": "multiple dimension candidates detected"
+        },
+        {
+          "key": "time_field",
+          "value": "order_date",
+          "confidence": 0.9,
+          "alternatives": [],
+          "reason": "single clear time field"
+        }
+      ],
+      "visualTasks": [
+        {
+          "family": "comparison",
+          "confidence": 0.65,
+          "rationale": [
+            "default inferred from available field roles"
+          ]
+        }
+      ]
+    },
+    "fields": [
+      {
+        "name": "order_date",
+        "role": "time",
+        "type": "date",
+        "semanticTags": [],
+        "confidence": 0.95,
+        "rationale": [
+          "unique rate is very high",
+          "column type is date"
+        ],
+        "qualityFlags": [
+          "high_unique_rate"
+        ],
+        "chartUsage": {
+          "asMeasure": "forbidden",
+          "asDimension": "allowed",
+          "asDetailKey": "allowed"
+        },
+        "distinctCount": 45,
+        "comparison": {
+          "unit": "count",
+          "timeGrain": "day",
+          "aggregationPolicy": "none",
+          "comparableGroup": "count:none"
+        },
+        "timePeriods": 45,
+        "span": "2026-01-01 ~ 2026-05-05"
+      },
+      {
+        "name": "region",
+        "role": "dimension",
+        "type": "string",
+        "semanticTags": [],
+        "confidence": 0.82,
+        "rationale": [
+          "string column suitable for grouping"
+        ],
+        "qualityFlags": [],
+        "chartUsage": {
+          "asMeasure": "forbidden",
+          "asDimension": "recommended",
+          "asDetailKey": "allowed"
+        },
+        "distinctCount": 5,
+        "comparison": {
+          "aggregationPolicy": "none",
+          "comparableGroup": "string:none"
+        }
+      },
+      {
+        "name": "product",
+        "role": "dimension",
+        "type": "string",
+        "semanticTags": [],
+        "confidence": 0.82,
+        "rationale": [
+          "string column suitable for grouping"
+        ],
+        "qualityFlags": [],
+        "chartUsage": {
+          "asMeasure": "forbidden",
+          "asDimension": "recommended",
+          "asDetailKey": "allowed"
+        },
+        "distinctCount": 15,
+        "comparison": {
+          "aggregationPolicy": "none",
+          "comparableGroup": "string:none"
+        }
+      },
+      {
+        "name": "sku",
+        "role": "dimension",
+        "type": "string",
+        "semanticTags": [],
+        "confidence": 0.68,
+        "rationale": [
+          "unique rate is very high",
+          "string column suitable for grouping"
+        ],
+        "qualityFlags": [
+          "high_unique_rate"
+        ],
+        "chartUsage": {
+          "asMeasure": "forbidden",
+          "asDimension": "recommended",
+          "asDetailKey": "allowed"
+        },
+        "distinctCount": 45,
+        "comparison": {
+          "aggregationPolicy": "none",
+          "comparableGroup": "string:none"
+        }
+      },
+      {
+        "name": "sales",
+        "role": "measure",
+        "type": "number",
+        "semanticTags": [
+          "currency"
+        ],
+        "confidence": 0.9,
+        "rationale": [
+          "numeric non-identifier column"
+        ],
+        "qualityFlags": [],
+        "chartUsage": {
+          "asMeasure": "recommended",
+          "asDimension": "discouraged",
+          "asDetailKey": "allowed"
+        },
+        "distinctCount": 44,
+        "comparison": {
+          "unit": "currency",
+          "aggregationPolicy": "sum",
+          "comparableGroup": "currency:sum"
+        },
+        "min": 118,
+        "max": 286
+      },
+      {
+        "name": "orders",
+        "role": "measure",
+        "type": "number",
+        "semanticTags": [],
+        "confidence": 0.78,
+        "rationale": [
+          "numeric non-identifier column"
+        ],
+        "qualityFlags": [],
+        "chartUsage": {
+          "asMeasure": "recommended",
+          "asDimension": "discouraged",
+          "asDetailKey": "allowed"
+        },
+        "distinctCount": 12,
+        "comparison": {
+          "unit": "count",
+          "aggregationPolicy": "sum",
+          "comparableGroup": "count:sum"
+        },
+        "min": 2,
+        "max": 13
+      }
+    ],
+    "evidence": [
+      {
+        "id": "total",
+        "query": "Total aggregates: sum(sales) as total_sales, sum(orders) as total_orders, count(*) as row_count",
+        "recipe": {
+          "schemaVersion": 1,
+          "measures": [
+            {
+              "operation": "sum",
+              "field": "sales",
+              "alias": "total_sales"
+            },
+            {
+              "operation": "sum",
+              "field": "orders",
+              "alias": "total_orders"
+            },
+            {
+              "operation": "count",
+              "field": "*",
+              "alias": "row_count"
+            }
+          ]
+        },
+        "values": {
+          "total_sales": 9085,
+          "total_orders": 331,
+          "row_count": 45
+        }
+      },
+      {
+        "id": "by_dimension",
+        "query": "sales by region, with share",
+        "recipe": {
+          "schemaVersion": 1,
+          "groupBy": [
+            "region"
+          ],
+          "measures": [
+            {
+              "operation": "sum",
+              "field": "sales",
+              "alias": "total_sales"
+            },
+            {
+              "operation": "count",
+              "field": "*",
+              "alias": "row_count"
+            }
+          ],
+          "orderBy": [
+            {
+              "field": "total_sales",
+              "direction": "desc"
+            }
+          ],
+          "share": {
+            "field": "total_sales",
+            "alias": "share"
+          }
+        },
+        "rows": [
+          {
+            "region": "East",
+            "total_sales": 2002,
+            "row_count": 9,
+            "share": 0.2204
+          },
+          {
+            "region": "Central",
+            "total_sales": 1884,
+            "row_count": 9,
+            "share": 0.2074
+          },
+          {
+            "region": "North",
+            "total_sales": 1860,
+            "row_count": 9,
+            "share": 0.2047
+          },
+          {
+            "region": "South",
+            "total_sales": 1682,
+            "row_count": 9,
+            "share": 0.1851
+          },
+          {
+            "region": "West",
+            "total_sales": 1657,
+            "row_count": 9,
+            "share": 0.1824
+          }
+        ]
+      },
+      {
+        "id": "by_time",
+        "query": "sales by order_date (ascending)",
+        "recipe": {
+          "schemaVersion": 1,
+          "groupBy": [
+            "order_date"
+          ],
+          "measures": [
+            {
+              "operation": "sum",
+              "field": "sales",
+              "alias": "total_sales"
+            }
+          ],
+          "orderBy": [
+            {
+              "field": "order_date",
+              "direction": "asc"
+            }
+          ]
+        },
+        "rows": [
+          {
+            "order_date": "2026-01-01",
+            "total_sales": 120
+          },
+          {
+            "order_date": "2026-01-02",
+            "total_sales": 135
+          },
+          {
+            "order_date": "2026-01-03",
+            "total_sales": 142
+          },
+          {
+            "order_date": "2026-01-04",
+            "total_sales": 128
+          },
+          {
+            "order_date": "2026-01-05",
+            "total_sales": 156
+          },
+          {
+            "order_date": "2026-01-06",
+            "total_sales": 162
+          },
+          {
+            "order_date": "2026-01-07",
+            "total_sales": 118
+          },
+          {
+            "order_date": "2026-01-08",
+            "total_sales": 175
+          },
+          {
+            "order_date": "2026-01-09",
+            "total_sales": 149
+          },
+          {
+            "order_date": "2026-01-10",
+            "total_sales": 166
+          },
+          {
+            "order_date": "2026-02-01",
+            "total_sales": 180
+          },
+          {
+            "order_date": "2026-02-02",
+            "total_sales": 171
+          },
+          {
+            "order_date": "2026-02-03",
+            "total_sales": 198
+          },
+          {
+            "order_date": "2026-02-04",
+            "total_sales": 154
+          },
+          {
+            "order_date": "2026-02-05",
+            "total_sales": 187
+          },
+          {
+            "order_date": "2026-02-06",
+            "total_sales": 191
+          },
+          {
+            "order_date": "2026-02-07",
+            "total_sales": 160
+          },
+          {
+            "order_date": "2026-02-08",
+            "total_sales": 205
+          },
+          {
+            "order_date": "2026-02-09",
+            "total_sales": 176
+          },
+          {
+            "order_date": "2026-02-10",
+            "total_sales": 189
+          },
+          {
+            "order_date": "2026-03-01",
+            "total_sales": 210
+          },
+          {
+            "order_date": "2026-03-02",
+            "total_sales": 198
+          },
+          {
+            "order_date": "2026-03-03",
+            "total_sales": 224
+          },
+          {
+            "order_date": "2026-03-04",
+            "total_sales": 183
+          },
+          {
+            "order_date": "2026-03-05",
+            "total_sales": 215
+          },
+          {
+            "order_date": "2026-03-06",
+            "total_sales": 232
+          },
+          {
+            "order_date": "2026-03-07",
+            "total_sales": 207
+          },
+          {
+            "order_date": "2026-03-08",
+            "total_sales": 240
+          },
+          {
+            "order_date": "2026-03-09",
+            "total_sales": 199
+          },
+          {
+            "order_date": "2026-03-10",
+            "total_sales": 228
+          },
+          {
+            "order_date": "2026-04-01",
+            "total_sales": 245
+          },
+          {
+            "order_date": "2026-04-02",
+            "total_sales": 221
+          },
+          {
+            "order_date": "2026-04-03",
+            "total_sales": 260
+          },
+          {
+            "order_date": "2026-04-04",
+            "total_sales": 214
+          },
+          {
+            "order_date": "2026-04-05",
+            "total_sales": 236
+          },
+          {
+            "order_date": "2026-04-06",
+            "total_sales": 252
+          },
+          {
+            "order_date": "2026-04-07",
+            "total_sales": 230
+          },
+          {
+            "order_date": "2026-04-08",
+            "total_sales": 272
+          },
+          {
+            "order_date": "2026-04-09",
+            "total_sales": 219
+          },
+          {
+            "order_date": "2026-04-10",
+            "total_sales": 248
+          },
+          {
+            "order_date": "2026-05-01",
+            "total_sales": 268
+          },
+          {
+            "order_date": "2026-05-02",
+            "total_sales": 242
+          },
+          {
+            "order_date": "2026-05-03",
+            "total_sales": 286
+          },
+          {
+            "order_date": "2026-05-04",
+            "total_sales": 235
+          },
+          {
+            "order_date": "2026-05-05",
+            "total_sales": 259
+          }
+        ]
+      }
+    ],
+    "catalog": {
+      "charts": [
+        "bigvalue",
+        "table",
+        "bar",
+        "line",
+        "area",
+        "pie",
+        "histogram",
+        "scatter",
+        "dot"
+      ],
+      "blockedCharts": [],
+      "recommendedPlan": [
+        {
+          "type": "bigvalue",
+          "note": "show sales, orders as KPI"
+        },
+        {
+          "type": "bar",
+          "note": "sales by region, top N"
+        },
+        {
+          "type": "line",
+          "note": "sales over order_date"
+        }
+      ],
+      "blocks": [
+        {
+          "id": "trend-ranking",
+          "score": 0.9999999999999999,
+          "description": "KPI + line trend + ranking bar. Executive summary combining time and category views.",
+          "bestFor": [
+            "executive summary",
+            "monthly review with category breakdown",
+            "combined trend + ranking"
+          ],
+          "density": "full",
+          "examplePrompt": "Show me sales trend and which regions are performing best",
+          "charts": [
+            "bigvalue",
+            "line",
+            "bar"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Main metric",
+              "default": "sales"
+            },
+            "primaryDimension": {
+              "type": "field",
+              "role": "dimension",
+              "description": "Ranking dimension",
+              "default": "region"
+            },
+            "timeField": {
+              "type": "field",
+              "role": "time",
+              "description": "Time dimension",
+              "default": "order_date"
+            },
+            "topN": {
+              "type": "number",
+              "description": "Top N bars in ranking",
+              "default": 5,
+              "min": 3,
+              "max": 10
+            }
+          },
+          "qualityChecks": [
+            "line chart sort asc on time field — already included",
+            "bar chart sort desc + limit — already included",
+            "Add caveat if sampleWarnings present"
+          ],
+          "requiredEvidence": [
+            "total",
+            "by_time",
+            "by_dimension"
+          ],
+          "validInsightTypes": [
+            "total",
+            "trend",
+            "delta",
+            "rank"
+          ],
+          "dataQualityConstraints": [
+            "requires at least 3 time periods and readable dimension cardinality"
+          ],
+          "provenanceRecipes": [
+            {
+              "objectKind": "kpi",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "chart",
+              "evidenceId": "by_time",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "time",
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "by_time",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "time",
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "chart",
+              "evidenceId": "by_dimension",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "dimension",
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "by_dimension",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "dimension",
+                "measure_alias"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "full-detail-report",
+          "score": 0.9999999999999999,
+          "description": "Complete report: KPI + trend line + ranking bar + detail table.",
+          "bestFor": [
+            "comprehensive analysis",
+            "full business review",
+            "all-in-one report"
+          ],
+          "density": "full",
+          "examplePrompt": "Give me a complete analysis of our sales performance",
+          "charts": [
+            "bigvalue",
+            "line",
+            "bar",
+            "table"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Main metric",
+              "default": "sales"
+            },
+            "primaryDimension": {
+              "type": "field",
+              "role": "dimension",
+              "description": "Grouping dimension",
+              "default": "region"
+            },
+            "timeField": {
+              "type": "field",
+              "role": "time",
+              "description": "Time dimension",
+              "default": "order_date"
+            },
+            "topN": {
+              "type": "number",
+              "description": "Top N in ranking bar",
+              "default": 5,
+              "min": 3,
+              "max": 10
+            }
+          },
+          "qualityChecks": [
+            "total chart count is 4 — within V01 limit of 6",
+            "line chart sort asc on time field — already included",
+            "bar chart sort desc + limit — already included",
+            "Add caveat if sampleWarnings present",
+            "Table shows aggregated rows, not raw rows"
+          ],
+          "requiredEvidence": [
+            "total",
+            "by_time",
+            "by_dimension"
+          ],
+          "validInsightTypes": [
+            "total",
+            "trend",
+            "delta",
+            "rank",
+            "data_quality"
+          ],
+          "dataQualityConstraints": [
+            "requires at least 3 time periods and a dimension for detail review"
+          ],
+          "provenanceRecipes": [
+            {
+              "objectKind": "kpi",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "chart",
+              "evidenceId": "by_time",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "time",
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "by_time",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "time",
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "chart",
+              "evidenceId": "by_dimension",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "dimension",
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "by_dimension",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "dimension",
+                "measure_alias"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "snapshot-ranking",
+          "score": 0.8999999999999999,
+          "description": "KPI card + ranked bar chart. Best for static snapshots without a time dimension.",
+          "bestFor": [
+            "regional ranking",
+            "category comparison",
+            "top-N with no time axis"
+          ],
+          "density": "compact",
+          "examplePrompt": "Show me sales by region, top 10",
+          "charts": [
+            "bigvalue",
+            "bar"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Metric to rank by",
+              "default": "sales"
+            },
+            "primaryDimension": {
+              "type": "field",
+              "role": "dimension",
+              "description": "Dimension to group by",
+              "default": "region"
+            },
+            "topN": {
+              "type": "number",
+              "description": "Number of top rows to show",
+              "default": 10,
+              "min": 3,
+              "max": 50
+            }
+          },
+          "qualityChecks": [
+            "bar chart has sort (desc) + limit — verify transform order",
+            "Do not exceed 4 bigvalue cards",
+            "Add caveat if context.json contains sampleWarnings"
+          ],
+          "requiredEvidence": [
+            "total",
+            "by_dimension"
+          ],
+          "validInsightTypes": [
+            "total",
+            "rank",
+            "share"
+          ],
+          "dataQualityConstraints": [
+            "dimension should stay within top-N readability limits"
+          ],
+          "provenanceRecipes": [
+            {
+              "objectKind": "kpi",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "chart",
+              "evidenceId": "by_dimension",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "dimension",
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "by_dimension",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "dimension",
+                "measure_alias"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "trend-overview",
+          "score": 0.8999999999999999,
+          "description": "KPI card + line chart. For datasets with a time dimension and ≥3 periods.",
+          "bestFor": [
+            "time series trend",
+            "monthly/quarterly overview",
+            "single measure over time"
+          ],
+          "density": "compact",
+          "examplePrompt": "Show me sales trend over time",
+          "charts": [
+            "bigvalue",
+            "line"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Metric to trend",
+              "default": "sales"
+            },
+            "timeField": {
+              "type": "field",
+              "role": "time",
+              "description": "Time dimension field",
+              "default": "order_date"
+            }
+          },
+          "qualityChecks": [
+            "line chart has sort asc on time field — already included",
+            "Add caveat if timePeriods is limited (< 6)"
+          ],
+          "requiredEvidence": [
+            "total",
+            "by_time"
+          ],
+          "validInsightTypes": [
+            "total",
+            "trend",
+            "delta"
+          ],
+          "dataQualityConstraints": [
+            "requires at least 3 time periods"
+          ],
+          "provenanceRecipes": [
+            {
+              "objectKind": "kpi",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "chart",
+              "evidenceId": "by_time",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "time",
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "by_time",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "time",
+                "measure_alias"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "comparison-breakdown",
+          "score": 0.8999999999999999,
+          "description": "Bar chart + pie chart for dual-angle breakdown of a measure by one dimension.",
+          "bestFor": [
+            "category share",
+            "part-to-whole analysis",
+            "bar + pie dual view"
+          ],
+          "density": "medium",
+          "examplePrompt": "Break down revenue by product category, show both ranking and share",
+          "charts": [
+            "bar",
+            "pie"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Metric to break down",
+              "default": "sales"
+            },
+            "primaryDimension": {
+              "type": "field",
+              "role": "dimension",
+              "description": "Grouping dimension",
+              "default": "region"
+            },
+            "topN": {
+              "type": "number",
+              "description": "Top N bars to show",
+              "default": 10,
+              "min": 3,
+              "max": 20
+            }
+          },
+          "qualityChecks": [
+            "pie chart limited to ≤7 slices — already enforced",
+            "bar top-N for long-tail dimensions"
+          ],
+          "requiredEvidence": [
+            "total",
+            "by_dimension"
+          ],
+          "validInsightTypes": [
+            "total",
+            "rank",
+            "share"
+          ],
+          "dataQualityConstraints": [
+            "pie requires a small part-to-whole dimension"
+          ],
+          "provenanceRecipes": [
+            {
+              "objectKind": "kpi",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "chart",
+              "evidenceId": "by_dimension",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "dimension",
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "by_dimension",
+              "resultPath": "rows",
+              "path": "rows",
+              "fields": [
+                "dimension",
+                "measure_alias"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "kpi-summary",
+          "score": 0.7999999999999999,
+          "description": "One or more KPI cards showing total metrics at a glance.",
+          "bestFor": [
+            "executive summary",
+            "single-metric overview",
+            "no dimension breakdown needed"
+          ],
+          "density": "compact",
+          "examplePrompt": "Show me the total sales and order count",
+          "charts": [
+            "bigvalue"
+          ],
+          "variables": {
+            "primaryMeasure": {
+              "type": "field",
+              "role": "measure",
+              "description": "Main metric to display as KPI",
+              "default": "sales"
+            }
+          },
+          "qualityChecks": [
+            "Do not exceed 4 bigvalue cards per report"
+          ],
+          "requiredEvidence": [
+            "total"
+          ],
+          "validInsightTypes": [
+            "total",
+            "delta"
+          ],
+          "dataQualityConstraints": [
+            "measure field must not be an identifier"
+          ],
+          "provenanceRecipes": [
+            {
+              "objectKind": "kpi",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            },
+            {
+              "objectKind": "insight",
+              "evidenceId": "total",
+              "resultPath": "values",
+              "path": "values.<measure_alias>",
+              "fields": [
+                "measure_alias"
+              ]
+            }
+          ]
+        }
+      ],
+      "blockedBlocks": [],
+      "templates": [
+        {
+          "id": "trend-ranking-overview",
+          "score": 1,
+          "bestFor": [
+            "executive trend with category ranking",
+            "monthly review"
+          ],
+          "requires": [
+            "measure",
+            "dimension",
+            "time"
+          ],
+          "blocks": [
+            "trend-ranking"
+          ],
+          "density": "full",
+          "requiredEvidence": [
+            "total",
+            "by_time",
+            "by_dimension"
+          ],
+          "qualityConstraints": [
+            "requires at least 3 time periods"
+          ]
+        },
+        {
+          "id": "full-detail-report",
+          "score": 1,
+          "bestFor": [
+            "comprehensive business review",
+            "trend plus ranking plus table"
+          ],
+          "requires": [
+            "measure",
+            "dimension",
+            "time"
+          ],
+          "blocks": [
+            "full-detail-report"
+          ],
+          "density": "full",
+          "requiredEvidence": [
+            "total",
+            "by_time",
+            "by_dimension"
+          ],
+          "qualityConstraints": [
+            "requires at least 3 time periods and a readable dimension"
+          ]
+        },
+        {
+          "id": "cohort-comparison",
+          "score": 1,
+          "bestFor": [
+            "comparison",
+            "trend"
+          ],
+          "requires": [
+            "measure",
+            "dimension",
+            "time"
+          ],
+          "blocks": [
+            "cohort-comparison"
+          ],
+          "density": "full",
+          "requiredEvidence": [
+            "total"
+          ],
+          "qualityConstraints": [
+            "All metrics must remain evidence-grounded."
+          ],
+          "intents": [
+            "comparison",
+            "trend"
+          ],
+          "layoutPreset": "mosaic"
+        },
+        {
+          "id": "data-poster-share",
+          "score": 0.94,
+          "bestFor": [
+            "part-to-whole composition",
+            "100% stacked category comparison"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "hero",
+            "callout",
+            "chart",
+            "decorative",
+            "footer"
+          ],
+          "density": "compact",
+          "requiredEvidence": [
+            "by_dimension"
+          ],
+          "qualityConstraints": [
+            "Poster values must remain finite, rankable, and evidence-grounded."
+          ],
+          "intents": [
+            "composition"
+          ],
+          "layoutPreset": "poster"
+        },
+        {
+          "id": "data-poster-trend",
+          "score": 0.9299999999999999,
+          "bestFor": [
+            "time series poster",
+            "change over time"
+          ],
+          "requires": [
+            "measure"
+          ],
+          "blocks": [
+            "hero",
+            "callout",
+            "chart",
+            "decorative",
+            "footer"
+          ],
+          "density": "compact",
+          "requiredEvidence": [
+            "by_dimension"
+          ],
+          "qualityConstraints": [
+            "Poster values must remain finite, rankable, and evidence-grounded."
+          ],
+          "intents": [
+            "trend",
+            "change"
+          ],
+          "layoutPreset": "poster"
+        },
+        {
+          "id": "data-poster-ranking",
+          "score": 0.9099999999999999,
+          "bestFor": [
+            "single-page ranking poster",
+            "shareable category comparison",
+            "static data story"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "hero",
+            "callout",
+            "chart",
+            "decorative",
+            "footer"
+          ],
+          "density": "compact",
+          "requiredEvidence": [
+            "by_dimension"
+          ],
+          "qualityConstraints": [
+            "Poster values must remain finite, rankable, and evidence-grounded."
+          ],
+          "intents": [
+            "ranking",
+            "comparison"
+          ],
+          "layoutPreset": "poster"
+        },
+        {
+          "id": "data-poster-comparison",
+          "score": 0.9099999999999999,
+          "bestFor": [
+            "two-measure category comparison",
+            "side-by-side ranking poster"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "hero",
+            "callout",
+            "chart",
+            "decorative",
+            "footer"
+          ],
+          "density": "compact",
+          "requiredEvidence": [
+            "by_dimension"
+          ],
+          "qualityConstraints": [
+            "Poster values must remain finite, rankable, and evidence-grounded."
+          ],
+          "intents": [
+            "comparison"
+          ],
+          "layoutPreset": "poster"
+        },
+        {
+          "id": "snapshot-overview",
+          "score": 0.9000000000000001,
+          "bestFor": [
+            "static comparison",
+            "category ranking",
+            "no time axis"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "kpi-summary",
+            "snapshot-ranking"
+          ],
+          "density": "compact",
+          "requiredEvidence": [
+            "total",
+            "by_dimension"
+          ],
+          "qualityConstraints": [
+            "requires one measure and one readable dimension"
+          ]
+        },
+        {
+          "id": "composition-review",
+          "score": 0.9000000000000001,
+          "bestFor": [
+            "share analysis",
+            "part-to-whole breakdown",
+            "composition report"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "kpi-summary",
+            "comparison-breakdown"
+          ],
+          "density": "medium",
+          "requiredEvidence": [
+            "total",
+            "by_dimension"
+          ],
+          "qualityConstraints": [
+            "requires small category count for part-to-whole view"
+          ]
+        },
+        {
+          "id": "executive-scorecard",
+          "score": 0.9000000000000001,
+          "bestFor": [
+            "summary",
+            "target-attainment"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "kpi-summary",
+            "snapshot-ranking"
+          ],
+          "density": "full",
+          "requiredEvidence": [
+            "total"
+          ],
+          "qualityConstraints": [
+            "All metrics must remain evidence-grounded."
+          ],
+          "intents": [
+            "summary",
+            "target-attainment"
+          ],
+          "layoutPreset": "executive"
+        },
+        {
+          "id": "distribution-diagnostics",
+          "score": 0.9000000000000001,
+          "bestFor": [
+            "distribution"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "distribution-diagnostics"
+          ],
+          "density": "full",
+          "requiredEvidence": [
+            "total"
+          ],
+          "qualityConstraints": [
+            "All metrics must remain evidence-grounded."
+          ],
+          "intents": [
+            "distribution"
+          ],
+          "layoutPreset": "analytical"
+        },
+        {
+          "id": "conversion-journey",
+          "score": 0.9000000000000001,
+          "bestFor": [
+            "flow"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "conversion-journey"
+          ],
+          "density": "full",
+          "requiredEvidence": [
+            "total"
+          ],
+          "qualityConstraints": [
+            "All metrics must remain evidence-grounded."
+          ],
+          "intents": [
+            "flow"
+          ],
+          "layoutPreset": "narrative"
+        },
+        {
+          "id": "variance-bridge",
+          "score": 0.9000000000000001,
+          "bestFor": [
+            "change"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "variance-bridge"
+          ],
+          "density": "full",
+          "requiredEvidence": [
+            "total"
+          ],
+          "qualityConstraints": [
+            "All metrics must remain evidence-grounded."
+          ],
+          "intents": [
+            "change"
+          ],
+          "layoutPreset": "analytical"
+        },
+        {
+          "id": "relationship-analysis",
+          "score": 0.9000000000000001,
+          "bestFor": [
+            "relationship"
+          ],
+          "requires": [
+            "measure",
+            "dimension"
+          ],
+          "blocks": [
+            "relationship-analysis"
+          ],
+          "density": "full",
+          "requiredEvidence": [
+            "total"
+          ],
+          "qualityConstraints": [
+            "All metrics must remain evidence-grounded."
+          ],
+          "intents": [
+            "relationship"
+          ],
+          "layoutPreset": "analytical"
+        }
+      ],
+      "blockedTemplates": [
+        {
+          "id": "content-poster-timeline",
+          "reason": "timeline requires ordered field and title/description text fields"
+        },
+        {
+          "id": "data-poster-flow",
+          "reason": "missing required flow intent"
+        },
+        {
+          "id": "data-poster-geo",
+          "reason": "missing required geo dimension"
+        }
+      ],
+      "recommendations": [
+        {
+          "intent": "comparison",
+          "chartType": "dot",
+          "variant": "standard",
+          "score": 0.86,
+          "reasons": [
+            "dimension and quantitative measure detected"
+          ],
+          "alternatives": [
+            {
+              "chartType": "bar",
+              "variant": "horizontal",
+              "score": 0.82
+            }
+          ]
+        },
+        {
+          "intent": "comparison",
+          "chartType": "bar",
+          "variant": "horizontal",
+          "score": 0.82,
+          "reasons": [
+            "category comparison is available"
+          ],
+          "alternatives": [
+            {
+              "chartType": "dot",
+              "variant": "standard",
+              "score": 0.86
+            }
+          ]
+        }
+      ],
+      "scenes": [
+        {
+          "id": "sales-analysis",
+          "name": "Sales Analysis",
+          "description": "Sales KPI, category ranking, and time trend.",
+          "score": 0.9000000000000001,
+          "keywords": [
+            "sales",
+            "revenue",
+            "orders",
+            "销售",
+            "营收",
+            "订单"
+          ],
+          "requiredRoles": [
+            "measure",
+            "dimension"
+          ],
+          "metricSemantics": [
+            "sales",
+            "revenue",
+            "amount",
+            "订单",
+            "销售额",
+            "营收"
+          ],
+          "templates": [
+            "trend-ranking-overview",
+            "snapshot-overview"
+          ],
+          "blocks": [
+            "trend-ranking",
+            "snapshot-ranking"
+          ]
+        },
+        {
+          "id": "business-overview",
+          "name": "Business Overview",
+          "description": "Executive KPI, trend, and ranking overview.",
+          "score": 0.8400000000000001,
+          "keywords": [
+            "business overview",
+            "operating review",
+            "经营",
+            "经营概览"
+          ],
+          "requiredRoles": [
+            "measure",
+            "dimension"
+          ],
+          "metricSemantics": [],
+          "templates": [
+            "trend-ranking-overview",
+            "snapshot-overview"
+          ],
+          "blocks": [
+            "trend-ranking",
+            "snapshot-ranking"
+          ]
+        },
+        {
+          "id": "data-quality-audit",
+          "name": "Data Quality Audit",
+          "description": "Field completeness, duplicates, type consistency, and outlier diagnostics.",
+          "score": 0.8400000000000001,
+          "keywords": [
+            "data quality",
+            "missing",
+            "duplicate",
+            "数据质量",
+            "缺失",
+            "重复"
+          ],
+          "requiredRoles": [],
+          "metricSemantics": [],
+          "templates": [
+            "snapshot-overview",
+            "distribution-diagnostics"
+          ],
+          "blocks": [
+            "snapshot-ranking",
+            "distribution-diagnostics"
+          ]
+        }
+      ],
+      "blockedScenes": [
+        {
+          "id": "marketing-performance",
+          "reason": "missing metric:click|impression|ctr|conversion|转化|点击|曝光, metric:campaign|channel|spend|cost|渠道|投放|费用",
+          "missing": [
+            "metric:click|impression|ctr|conversion|转化|点击|曝光",
+            "metric:campaign|channel|spend|cost|渠道|投放|费用"
+          ],
+          "clarificationQuestions": [
+            "Which source field represents click|impression|ctr|conversion|转化|点击|曝光?",
+            "Which source field represents campaign|channel|spend|cost|渠道|投放|费用?"
+          ]
+        },
+        {
+          "id": "financial-summary",
+          "reason": "missing metric:revenue|income|收入|营收, metric:cost|expense|profit|margin|成本|费用|利润|毛利",
+          "missing": [
+            "metric:revenue|income|收入|营收",
+            "metric:cost|expense|profit|margin|成本|费用|利润|毛利"
+          ],
+          "clarificationQuestions": [
+            "Which source field represents revenue|income|收入|营收?",
+            "Which source field represents cost|expense|profit|margin|成本|费用|利润|毛利?"
+          ]
+        },
+        {
+          "id": "survey-analysis",
+          "reason": "missing metric:score|rating|response|评分|答案",
+          "missing": [
+            "metric:score|rating|response|评分|答案"
+          ],
+          "clarificationQuestions": [
+            "Which source field represents score|rating|response|评分|答案?"
+          ]
+        },
+        {
+          "id": "ab-test",
+          "reason": "missing metric:variant|group|treatment|实验组|对照组, metric:conversion|outcome|result|转化|结果",
+          "missing": [
+            "metric:variant|group|treatment|实验组|对照组",
+            "metric:conversion|outcome|result|转化|结果"
+          ],
+          "clarificationQuestions": [
+            "Which source field represents variant|group|treatment|实验组|对照组?",
+            "Which source field represents conversion|outcome|result|转化|结果?"
+          ]
+        }
+      ],
+      "deckPatterns": [
+        {
+          "id": "executive-brief",
+          "score": 0.9,
+          "density": "compact",
+          "blocks": [
+            "cover-claim",
+            "kpi-snapshot",
+            "trend-overview-slide",
+            "ranking-slide"
+          ]
+        },
+        {
+          "id": "business-review",
+          "score": 0.9,
+          "density": "medium",
+          "blocks": [
+            "cover-claim",
+            "kpi-snapshot",
+            "trend-overview-slide",
+            "ranking-slide"
+          ]
+        }
+      ],
+      "slideBlocks": [
+        {
+          "id": "cover-claim",
+          "score": 1,
+          "requiredRoles": [],
+          "requiredEvidence": []
+        },
+        {
+          "id": "kpi-snapshot",
+          "score": 0.9,
+          "requiredRoles": [
+            "measure"
+          ],
+          "requiredEvidence": [
+            "total"
+          ]
+        },
+        {
+          "id": "trend-overview-slide",
+          "score": 0.9,
+          "requiredRoles": [
+            "time",
+            "measure"
+          ],
+          "requiredEvidence": [
+            "by_time"
+          ]
+        },
+        {
+          "id": "ranking-slide",
+          "score": 0.9,
+          "requiredRoles": [
+            "dimension",
+            "measure"
+          ],
+          "requiredEvidence": [
+            "by_dimension"
+          ]
+        }
+      ],
+      "blockedSlideBlocks": [
+        {
+          "id": "data-quality-slide",
+          "reasonCode": "NO_SAMPLE_WARNINGS",
+          "reason": "No analyze warnings require a data-quality slide."
+        }
+      ],
+      "interactions": [
+        {
+          "preset": "filter",
+          "score": 0.88,
+          "filters": [
+            {
+              "field": "order_date",
+              "type": "range",
+              "reason": "Valid time field"
+            },
+            {
+              "field": "product",
+              "type": "select",
+              "reason": "Low-cardinality dimension field"
+            }
+          ],
+          "detailFields": null,
+          "dataPolicy": "minimal",
+          "risks": []
+        }
+      ]
+    },
+    "sampleWarnings": [],
+    "promptRules": [
+      "Use only chart types listed in catalog.charts: bigvalue, table, bar, line, area, pie, histogram, scatter, dot.",
+      "Every insight must cite at least one evidence id from the evidence array.",
+      "Do not compute new percentages or aggregates. Use values from evidence rows directly."
+    ],
+    "metricCandidates": [
+      {
+        "id": "unit_avg_sales_per_orders",
+        "type": "unit_average",
+        "label": "sales per orders",
+        "formula": "sum(sales) / sum(orders)",
+        "value": 27.45,
+        "confidence": "high"
+      },
+      {
+        "id": "share_top_region",
+        "type": "share",
+        "label": "Top region share of sales",
+        "formula": "sum(sales where region='East') / sum(sales)",
+        "value": 0.2204,
+        "confidence": "high"
+      },
+      {
+        "id": "period_change_sales",
+        "type": "period_change",
+        "label": "sales period-over-period change",
+        "formula": "(latest sales - previous sales) / previous sales",
+        "value": 0.1021,
+        "confidence": "high"
+      }
+    ],
+    "clarificationQuestions": [
+      {
+        "id": "primary_measure",
+        "question": "This dataset has multiple measures. Analyze sales, orders?",
+        "options": [
+          "sales",
+          "orders"
+        ],
+        "blocking": false,
+        "appliesTo": "measure"
+      },
+      {
+        "id": "primary_dimension",
+        "question": "Which dimension should drive the main comparison: region, product, sku?",
+        "options": [
+          "region",
+          "product",
+          "sku"
+        ],
+        "blocking": false,
+        "appliesTo": "dimension"
+      }
+    ],
+    "poster": {
+      "intent": "comparison",
+      "rationale": [
+        "comparison visual intent detected"
+      ],
+      "confidence": 0.82,
+      "roleBindings": {
+        "measure": [
+          "sales",
+          "orders"
+        ],
+        "dimension": [
+          "region",
+          "product",
+          "sku"
+        ],
+        "stage": [
+          "region",
+          "product",
+          "sku"
+        ]
+      },
+      "templates": [
+        {
+          "id": "data-poster-comparison",
+          "score": 0.96,
+          "status": "available",
+          "matchedIntent": "comparison",
+          "matchedRoles": [
+            "measure",
+            "dimension"
+          ],
+          "missingRoles": [],
+          "rationale": [
+            "comparison requirements matched"
+          ],
+          "recommendedTheme": "editorial-light",
+          "fallbackTemplateId": "data-poster-ranking"
+        },
+        {
+          "id": "data-poster-share",
+          "score": 0.94,
+          "status": "available",
+          "matchedIntent": "share",
+          "matchedRoles": [
+            "measure",
+            "dimension"
+          ],
+          "missingRoles": [],
+          "rationale": [
+            "share requirements matched"
+          ],
+          "recommendedTheme": "editorial-light",
+          "fallbackTemplateId": "data-poster-ranking"
+        },
+        {
+          "id": "data-poster-trend",
+          "score": 0.9299999999999999,
+          "status": "available",
+          "matchedIntent": "trend",
+          "matchedRoles": [
+            "measure"
+          ],
+          "missingRoles": [],
+          "rationale": [
+            "trend requirements matched"
+          ],
+          "recommendedTheme": "editorial-light",
+          "fallbackTemplateId": "data-poster-ranking"
+        },
+        {
+          "id": "data-poster-ranking",
+          "score": 0.9099999999999999,
+          "status": "available",
+          "matchedIntent": "ranking",
+          "matchedRoles": [
+            "measure",
+            "dimension"
+          ],
+          "missingRoles": [],
+          "rationale": [
+            "ranking requirements matched"
+          ],
+          "recommendedTheme": "editorial-light"
+        },
+        {
+          "id": "content-poster-timeline",
+          "score": 0,
+          "status": "blocked",
+          "matchedIntent": "timeline",
+          "matchedRoles": [],
+          "missingRoles": [],
+          "rationale": [
+            "timeline requires ordered field and title/description text fields"
+          ],
+          "reasonCode": "POSTER_TEMPLATE_NOT_APPLICABLE",
+          "recommendedTheme": "editorial-light"
+        },
+        {
+          "id": "data-poster-flow",
+          "score": 0,
+          "status": "blocked",
+          "matchedIntent": "flow",
+          "matchedRoles": [
+            "measure",
+            "stage"
+          ],
+          "missingRoles": [],
+          "rationale": [
+            "missing required flow intent"
+          ],
+          "reasonCode": "POSTER_FLOW_INTENT_MISSING",
+          "recommendedTheme": "editorial-light",
+          "fallbackTemplateId": "data-poster-ranking"
+        },
+        {
+          "id": "data-poster-geo",
+          "score": 0,
+          "status": "blocked",
+          "matchedIntent": "geo",
+          "matchedRoles": [
+            "measure"
+          ],
+          "missingRoles": [
+            "geo"
+          ],
+          "rationale": [
+            "missing required geo dimension"
+          ],
+          "reasonCode": "POSTER_GEO_FIELD_MISSING",
+          "recommendedTheme": "editorial-light"
+        }
+      ],
+      "style": {
+        "compositionId": "comparison-story",
+        "themeId": "editorial-light",
+        "rationale": [
+          "selected comparison-story from user intent and data shape",
+          "used editorial-light because no explicit visual mood was found"
+        ],
+        "confidence": 0.86,
+        "overrideable": true
+      }
+    }
+  }
+}

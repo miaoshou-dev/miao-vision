@@ -11,7 +11,7 @@ export type FunnelEventName = typeof funnelEventNames[number]
 export const funnelEventSchema = z.object({
   name: z.enum(funnelEventNames), eventId: z.string().uuid(), occurredAt: z.string().datetime(),
   source: z.enum(['web', 'github', 'npm', 'community', 'unknown']),
-  host: z.enum(['codex', 'claude-code', 'openclaw', 'cli', 'unknown']),
+  host: z.enum(['codex', 'claude-code', 'openclaw', 'pi', 'cli', 'unknown']),
   installMethod: z.enum(['plugin', 'npm', 'skill', 'unknown']),
   cliVersion: z.string().optional(), errorCode: z.string().optional(), durationMs: z.number().int().nonnegative().optional(),
   schemaVersion: z.literal(1)

@@ -1,0 +1,1526 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Business Overview</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --mv-paper: #f8fafc;
+      --mv-surface: #ffffff;
+      --mv-border: #e2e8f0;
+      --mv-ink: #0f172a;
+      --mv-muted: #64748b;
+      --mv-soft: #475569;
+      --mv-brand: #2563eb;
+      --mv-serif: Georgia, "Times New Roman", serif;
+      --mv-mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
+    }
+    body { margin: 0; background: #f8fafc; color: #0f172a; }
+    .miao-viz-report { max-width: 1120px; margin: 0 auto; padding: 40px 24px 56px; }
+    header { margin-bottom: 28px; }
+    h1 { margin: 0; font-size: 32px; font-weight: 760; letter-spacing: 0; }
+    h2 { margin: 0 0 18px; font-size: 20px; font-weight: 700; letter-spacing: 0; }
+    .eyebrow { margin: 0 0 8px; color: #2563eb; font-size: 13px; font-weight: 700; text-transform: uppercase; }
+    .description { max-width: 760px; color: #475569; line-height: 1.6; }
+    .meta { color: #64748b; font-size: 13px; }
+    .chart-block { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 22px; margin: 18px 0; box-shadow: 0 1px 2px rgba(15,23,42,0.04); }
+    .miao-chart-svg { display: block; max-width: 100%; overflow: visible; }
+    svg text { font-size: 12px; fill: #475569; }
+    .miao-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .miao-table caption { text-align: left; font-weight: 700; margin-bottom: 12px; }
+    .miao-table th, .miao-table td { border-bottom: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; }
+    .miao-bigvalue { border: 1px solid #dbeafe; background: #eff6ff; border-radius: 8px; padding: 24px; }
+    .miao-bigvalue-label { color: #1d4ed8; font-weight: 700; }
+    .miao-bigvalue-number { margin-top: 8px; font-size: 42px; font-weight: 780; }
+    .miao-unsupported { padding: 18px; border-radius: 8px; background: #fff7ed; color: #9a3412; }
+    @media (max-width: 720px) { .miao-viz-report { padding: 24px 14px 36px; } h1 { font-size: 26px; } .chart-block { padding: 16px; } }
+  
+  .report-insights { margin: 0 0 32px; padding: 16px 20px 14px; border-radius: 4px; border: 1px solid rgba(128,128,128,0.18); background: rgba(128,128,128,0.04); }
+  .insights-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.45; margin: 0 0 8px; }
+  .insights-list { margin: 0; padding: 0 0 0 18px; }
+  .insights-list li { margin: 5px 0; font-size: 13px; line-height: 1.55; opacity: 0.75; }
+  .insight-warning { color: #8a4b00; }
+  .insight-caveat { display: block; margin-top: 2px; font-size: 11px; opacity: 0.58; }
+  .miao-render-slot > svg { max-width: 100%; height: auto; }
+  @media print {
+    @page { margin: 12mm; }
+    .chart-block, .chart-card, .miao-facet-svg, h1, h2 { break-inside: avoid; page-break-inside: avoid; }
+    .miao-render-slot { overflow: visible; }
+    .miao-viz-report button, .miao-view-state, [role="tooltip"], .evidence-drawer { display: none !important; }
+    table thead { display: table-header-group; }
+    a[href]::after { content: none !important; }
+    * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+  .report-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; align-items: start; }
+  .report-grid > .chart-block { margin: 0; grid-column: span var(--mv-span, 12); }
+  .report-grid > .emphasis-primary { border-top: 3px solid var(--mv-brand, #2563eb); }
+  .data-quality-badge { display: inline-block; margin: 0 0 8px; padding: 3px 8px; border: 1px solid #c2410c; border-radius: 999px; color: #9a3412; background: #fff7ed; font-size: 10px; font-weight: 700; }
+  .evidence-trigger { margin: 6px 0 0; border: 0; background: transparent; color: var(--mv-brand, #2563eb); font: inherit; font-size: 11px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .evidence-status { margin: 0 0 18px; padding: 9px 12px; border-left: 3px solid #b45309; background: #fffbeb; font-size: 12px; }
+  .evidence-drawer[hidden] { display: none; }
+  .evidence-drawer { position: fixed; inset: 0; z-index: 999; display: flex; justify-content: flex-end; background: rgba(15,23,42,.38); }
+  .evidence-panel { width: min(520px, 100%); height: 100%; overflow: auto; padding: 24px; background: var(--mv-surface, #fff); color: inherit; box-shadow: -12px 0 32px rgba(15,23,42,.18); }
+  .evidence-panel-header { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+  .evidence-close { border: 1px solid rgba(128,128,128,.3); border-radius: 4px; padding: 6px 10px; background: transparent; color: inherit; cursor: pointer; }
+  .evidence-meta { display: grid; grid-template-columns: 110px 1fr; gap: 8px 12px; margin-top: 18px; font-size: 13px; }
+  .evidence-meta dt { opacity: .55; }
+  .evidence-meta dd { margin: 0; overflow-wrap: anywhere; }
+  .evidence-summary { margin: 18px 0; padding: 14px 16px; border-left: 3px solid var(--mv-brand, #2563eb); background: rgba(37,99,235,.06); }
+  .evidence-summary p { margin: 5px 0; line-height: 1.45; }
+  .evidence-verified { font-weight: 650; color: #166534; }
+  .evidence-technical { margin-top: 18px; font-size: 12px; }
+  .evidence-technical summary { cursor: pointer; opacity: .72; }
+  .evidence-current { margin-top: 18px; padding: 10px 12px; background: rgba(128,128,128,.08); font-size: 12px; }
+  .evidence-appendix { margin-top: 32px; padding-top: 18px; border-top: 1px solid rgba(128,128,128,.25); }
+  .evidence-appendix li { margin: 8px 0; font-size: 11px; }
+  .layout-narrative { display: block; }
+  @media (max-width: 720px) { .report-grid { display: block; } .report-grid > .chart-block { margin-bottom: 18px; } .evidence-drawer { align-items: flex-end; } .evidence-panel { width: 100%; height: min(82vh, 760px); } }
+</style>
+</head>
+<body>
+  <main class="miao-viz-report">
+    
+    <header>
+    <p class="eyebrow">Miao Vision</p>
+    <h1>Business Overview</h1>
+    
+    <p class="meta">/Users/guming/dev/gitcode/miao-vision/test_data/scene_business_overview.csv · 3 rows · generated 2026-07-30T05:30:52.108Z</p>
+  </header>
+    
+    <section class="chart-block" data-miao-chart="kpi_total_kpi_value">
+    <h2>Total kpi_value</h2>
+    <button type="button" class="evidence-trigger" data-evidence-key="evidence-object-1" aria-haspopup="dialog">View evidence</button><div class="miao-render-slot"><div class="miao-bigvalue"><div class="miao-bigvalue-label">Total kpi_value</div><div class="miao-bigvalue-number">393</div></div></div>
+  </section>
+<section class="chart-block" data-miao-chart="trend_by_month">
+    <h2>kpi_value over month</h2>
+    <button type="button" class="evidence-trigger" data-evidence-key="evidence-object-2" aria-haspopup="dialog">View evidence</button><div class="miao-render-slot"><svg class="miao-chart-svg" viewBox="0 0 720 420" width="100%" height="420" role="img" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="420" fill="#ffffff" />
+    
+      
+    <line x1="72" y1="273.0" x2="696" y2="273.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="190.0" x2="696" y2="190.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="107.0" x2="696" y2="107.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="24.0" x2="696" y2="24.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" />
+    <line x1="72" y1="356" x2="696" y2="356" stroke="#94a3b8" />
+    <line x1="72" y1="24" x2="72" y2="356" stroke="#94a3b8" />
+    <text x="66" y="360.0" text-anchor="end" fill="#475569" font-size="11">0</text><text x="66" y="277.0" text-anchor="end" fill="#475569" font-size="11">35.3</text><text x="66" y="194.0" text-anchor="end" fill="#475569" font-size="11">70.5</text><text x="66" y="111.0" text-anchor="end" fill="#475569" font-size="11">105.8</text><text x="66" y="28.0" text-anchor="end" fill="#475569" font-size="11">141</text>
+    <text x="384.0" y="410" text-anchor="middle" fill="#475569" font-size="12">month</text>
+    <text x="14" y="190.0" text-anchor="middle" transform="rotate(-90 14 190.0)" fill="#475569" font-size="12">total_kpi_value</text>
+  
+      
+      <path d="M 72.0 73.4 L 384.0 45.2 L 696.0 24.0" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+      <circle data-miao-mark="true" data-chart-id="trend_by_month" data-field="month" data-value="2026-01" data-row-key="0" data-tooltip="2026-01: 120" cx="72.0" cy="73.4" r="4" fill="#2563eb"><title>2026-01: 120</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_month" data-field="month" data-value="2026-02" data-row-key="0" data-tooltip="2026-02: 132" cx="384.0" cy="45.2" r="4" fill="#2563eb"><title>2026-02: 132</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_month" data-field="month" data-value="2026-03" data-row-key="0" data-tooltip="2026-03: 141" cx="696.0" cy="24.0" r="4" fill="#2563eb"><title>2026-03: 141</title></circle>
+      <text x="72.0" y="400" text-anchor="middle" fill="#475569">2026-01</text><text x="384.0" y="400" text-anchor="middle" fill="#475569">2026-02</text><text x="696.0" y="400" text-anchor="middle" fill="#475569">2026-03</text>
+    
+  </svg></div>
+  </section>
+<section class="chart-block" data-miao-chart="ranking_by_region">
+    <h2>kpi_value by region</h2>
+    <button type="button" class="evidence-trigger" data-evidence-key="evidence-object-3" aria-haspopup="dialog">View evidence</button><div class="miao-render-slot"><svg class="miao-chart-svg" viewBox="0 0 720 420" width="100%" height="420" role="img" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="420" fill="#ffffff" />
+    
+      
+    <line x1="72" y1="285.0" x2="696" y2="285.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="198.0" x2="696" y2="198.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="111.0" x2="696" y2="111.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="24.0" x2="696" y2="24.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" />
+    <line x1="72" y1="372" x2="696" y2="372" stroke="#94a3b8" />
+    <line x1="72" y1="24" x2="72" y2="372" stroke="#94a3b8" />
+    <text x="66" y="376.0" text-anchor="end" fill="#475569" font-size="11">0</text><text x="66" y="289.0" text-anchor="end" fill="#475569" font-size="11">63</text><text x="66" y="202.0" text-anchor="end" fill="#475569" font-size="11">126</text><text x="66" y="115.0" text-anchor="end" fill="#475569" font-size="11">189</text><text x="66" y="28.0" text-anchor="end" fill="#475569" font-size="11">252</text>
+    <text x="384.0" y="426" text-anchor="middle" fill="#475569" font-size="12">region</text>
+    <text x="14" y="198.0" text-anchor="middle" transform="rotate(-90 14 198.0)" fill="#475569" font-size="12">total_kpi_value</text>
+  
+      <g>
+        <rect data-miao-mark="true" data-chart-id="ranking_by_region" data-field="region" data-value="East" data-row-key="0" data-tooltip="East: 252" x="72.0" y="24.0" width="308.0" height="348.0" rx="3" fill="#2563eb" />
+        <text x="226.0" y="390.0" text-anchor="middle" fill="#475569" font-size="11">East</text>
+      </g><g>
+        <rect data-miao-mark="true" data-chart-id="ranking_by_region" data-field="region" data-value="West" data-row-key="1" data-tooltip="West: 141" x="388.0" y="177.3" width="308.0" height="194.7" rx="3" fill="#2563eb" />
+        <text x="542.0" y="390.0" text-anchor="middle" fill="#475569" font-size="11">West</text>
+      </g>
+    
+  </svg></div>
+  </section>
+    <section class="evidence-appendix"><h2>Evidence Appendix</h2><ol><li><b>E1 · total</b> — Total aggregates: sum(kpi_value) as total_kpi_value, count(*) as row_count · fields: kpi_value, * · sample: 3</li><li><b>E2 · by_time</b> — kpi_value by month (ascending) · fields: month, kpi_value · sample: 3</li><li><b>E3 · by_dimension</b> — kpi_value by region, with share · fields: region, kpi_value, * · sample: 2</li></ol></section>
+  </main>
+  <aside class="evidence-drawer" id="miao-evidence-drawer" role="dialog" aria-modal="true" aria-labelledby="miao-evidence-title" hidden>
+    <div class="evidence-panel">
+      <div class="evidence-panel-header">
+        <div><p class="insights-label">Why you can trust this</p><h2 id="miao-evidence-title">How this result was calculated</h2></div>
+        <button type="button" class="evidence-close" aria-label="Close evidence">Close</button>
+      </div>
+      <div id="miao-evidence-content"></div>
+    </div>
+  </aside>
+  <script type="application/json" id="miao-viz-spec">{
+  "title": "Business Overview",
+  "insights": [],
+  "charts": [
+    {
+      "id": "kpi_total_kpi_value",
+      "type": "bigvalue",
+      "title": "Total kpi_value",
+      "data": {
+        "transform": [
+          {
+            "type": "aggregate",
+            "measures": [
+              {
+                "field": "kpi_value",
+                "op": "sum",
+                "as": "total_kpi_value"
+              }
+            ]
+          }
+        ]
+      },
+      "encoding": {
+        "value": {
+          "field": "total_kpi_value",
+          "type": "quantitative"
+        }
+      },
+      "provenance": {
+        "evidence": [
+          "total"
+        ],
+        "derivedFrom": [
+          "\u0024evidence:total.values.total_kpi_value"
+        ],
+        "check": "value_match",
+        "claimArgs": {
+          "expected": "\u0024evidence:total.values.total_kpi_value",
+          "value": "\u0024evidence:total.values.total_kpi_value"
+        }
+      }
+    },
+    {
+      "id": "trend_by_month",
+      "type": "line",
+      "title": "kpi_value over month",
+      "data": {
+        "transform": [
+          {
+            "type": "aggregate",
+            "groupBy": [
+              "month"
+            ],
+            "measures": [
+              {
+                "field": "kpi_value",
+                "op": "sum",
+                "as": "total_kpi_value"
+              }
+            ]
+          },
+          {
+            "type": "sort",
+            "field": "month",
+            "order": "asc"
+          }
+        ]
+      },
+      "encoding": {
+        "x": {
+          "field": "month",
+          "type": "temporal"
+        },
+        "y": {
+          "field": "total_kpi_value",
+          "type": "quantitative"
+        }
+      },
+      "provenance": {
+        "evidence": [
+          "by_time"
+        ],
+        "derivedFrom": [
+          "\u0024evidence:by_time.rows"
+        ]
+      }
+    },
+    {
+      "id": "ranking_by_region",
+      "type": "bar",
+      "title": "kpi_value by region",
+      "data": {
+        "transform": [
+          {
+            "type": "aggregate",
+            "groupBy": [
+              "region"
+            ],
+            "measures": [
+              {
+                "field": "kpi_value",
+                "op": "sum",
+                "as": "total_kpi_value"
+              }
+            ]
+          },
+          {
+            "type": "sort",
+            "field": "total_kpi_value",
+            "order": "desc"
+          },
+          {
+            "type": "limit",
+            "value": 5
+          }
+        ]
+      },
+      "encoding": {
+        "x": {
+          "field": "region",
+          "type": "nominal"
+        },
+        "y": {
+          "field": "total_kpi_value",
+          "type": "quantitative"
+        }
+      },
+      "provenance": {
+        "evidence": [
+          "by_dimension"
+        ],
+        "derivedFrom": [
+          "\u0024evidence:by_dimension.rows"
+        ]
+      }
+    }
+  ]
+}</script>
+  <script type="application/json" id="miao-viz-profile">{
+  "file": "/Users/guming/dev/gitcode/miao-vision/test_data/scene_business_overview.csv",
+  "rows": 3,
+  "columns": [
+    {
+      "name": "month",
+      "type": "date",
+      "total": 3,
+      "nonNullCount": 3,
+      "nullCount": 0,
+      "nullRate": 0,
+      "fillRate": 1,
+      "uniqueRate": 1,
+      "samples": [
+        "2026-01",
+        "2026-02",
+        "2026-03"
+      ],
+      "distinctCount": 3,
+      "temporal": {
+        "span": "2026-01 ~ 2026-03",
+        "granularity": "month",
+        "isMonotonic": true,
+        "gapCount": 0
+      },
+      "role": "time",
+      "semanticTags": [],
+      "confidence": 0.95,
+      "rationale": [
+        "column type is date"
+      ],
+      "qualityFlags": [],
+      "chartUsage": {
+        "asMeasure": "forbidden",
+        "asDimension": "allowed",
+        "asDetailKey": "allowed"
+      }
+    },
+    {
+      "name": "region",
+      "type": "string",
+      "total": 3,
+      "nonNullCount": 3,
+      "nullCount": 0,
+      "nullRate": 0,
+      "fillRate": 1,
+      "uniqueRate": 0.6667,
+      "samples": [
+        "East",
+        "West"
+      ],
+      "distinctCount": 2,
+      "topValue": "East",
+      "topSharePct": 0.6667,
+      "distribution": [
+        {
+          "value": "East",
+          "count": 2,
+          "sharePct": 0.6667
+        },
+        {
+          "value": "West",
+          "count": 1,
+          "sharePct": 0.3333
+        }
+      ],
+      "role": "dimension",
+      "semanticTags": [],
+      "confidence": 0.82,
+      "rationale": [
+        "string column suitable for grouping"
+      ],
+      "qualityFlags": [],
+      "chartUsage": {
+        "asMeasure": "forbidden",
+        "asDimension": "recommended",
+        "asDetailKey": "allowed"
+      }
+    },
+    {
+      "name": "kpi_value",
+      "type": "number",
+      "total": 3,
+      "nonNullCount": 3,
+      "nullCount": 0,
+      "nullRate": 0,
+      "fillRate": 1,
+      "uniqueRate": 1,
+      "samples": [
+        120,
+        132,
+        141
+      ],
+      "distinctCount": 3,
+      "min": 120,
+      "max": 141,
+      "sum": 393,
+      "mean": 131,
+      "median": 132,
+      "p25": 126,
+      "p75": 136.5,
+      "stddev": 8.6023,
+      "coefficientOfVariation": 0.0657,
+      "skewness": -0.3487,
+      "skewnessReliable": false,
+      "outlierCount": 0,
+      "outlierReliable": false,
+      "histogram": [
+        {
+          "bucket": "120-127",
+          "count": 1
+        },
+        {
+          "bucket": "127-134",
+          "count": 1
+        },
+        {
+          "bucket": "134-141",
+          "count": 1
+        }
+      ],
+      "histogramReliable": false,
+      "role": "measure",
+      "semanticTags": [],
+      "confidence": 0.78,
+      "rationale": [
+        "numeric non-identifier column"
+      ],
+      "qualityFlags": [],
+      "chartUsage": {
+        "asMeasure": "recommended",
+        "asDimension": "discouraged",
+        "asDetailKey": "allowed"
+      }
+    }
+  ],
+  "quality": {
+    "completeness": 1,
+    "nullRate": 0,
+    "avgUniqueRate": 0.8889,
+    "highNullColumns": [],
+    "likelyIdColumns": [],
+    "duplicateProneDimensions": [
+      "region"
+    ]
+  },
+  "hints": [
+    {
+      "type": "kpi",
+      "field": "kpi_value",
+      "label": "kpi value"
+    },
+    {
+      "type": "time-series",
+      "xField": "month",
+      "yFields": [
+        "kpi_value"
+      ]
+    },
+    {
+      "type": "ranking",
+      "groupField": "region",
+      "measureField": "kpi_value"
+    },
+    {
+      "type": "share",
+      "labelField": "region",
+      "valueField": "kpi_value"
+    }
+  ]
+}</script>
+  
+  <script type="application/json" id="miao-viz-data">[{"month":"2026-01","region":"East","kpi_value":120},{"month":"2026-02","region":"East","kpi_value":132},{"month":"2026-03","region":"West","kpi_value":141}]</script>
+  <script type="application/json" id="miao-viz-runtime-theme">{"palette":["#2563eb","#16a34a","#f97316","#dc2626","#7c3aed","#0891b2"],"background":"#ffffff","axisColor":"#94a3b8","labelColor":"#475569"}</script>
+  <script>
+(function() {
+  var miaoData = {};
+  var categoryAxisDefaults = {"estimatedCharacterWidth":7,"minimumLabelGap":12,"horizontalBottomMargin":48,"rotatedBottomMargin":88,"horizontalMaxLength":18,"rotatedMaxLength":18,"rotationDegrees":-35};
+  var runtimeTheme = { palette:['#2563eb','#16a34a','#f97316','#dc2626','#7c3aed','#0891b2'], background:'#fff', axisColor:'#94a3b8', labelColor:'#475569' };
+  if (typeof document !== 'undefined') {
+    var runtimeThemeEl = document.getElementById('miao-viz-runtime-theme');
+    if (runtimeThemeEl) {
+      try { runtimeTheme = Object.assign(runtimeTheme, JSON.parse(runtimeThemeEl.textContent || '{}')); } catch (_) {}
+    }
+  }
+  var palette = runtimeTheme.palette;
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function(char) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/\\n/g, ' ');
+  }
+
+  function sum(a, b) { return a + b; }
+  function fixed(value) { return Number(value).toFixed(1); }
+
+  function toMonth(value) {
+    var date = new Date(String(value));
+    if (!Number.isFinite(date.getTime())) return String(value == null ? '' : value);
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+  }
+
+  function color(index) { return palette[index % palette.length]; }
+
+  function comparableValue(value) {
+    if (value == null || value === '') return null;
+    var num = Number(value);
+    if (Number.isFinite(num)) return num;
+    var date = new Date(String(value)).getTime();
+    return Number.isFinite(date) ? date : null;
+  }
+
+  function svgFrame(width, height, body) {
+    return '<svg class="miao-chart-svg" viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height +
+      '" role="img" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="' + width + '" height="' + height +
+      '" fill="' + escapeAttr(runtimeTheme.background) + '" />' + body + '</svg>';
+  }
+
+  function markAttrs(chartId, markField, value, rowKey, tooltipText) {
+    return 'data-miao-mark="true" data-chart-id="' + escapeAttr(chartId || '') + '" data-field="' + escapeAttr(markField || '') +
+      '" data-value="' + escapeAttr(value == null ? '' : String(value)) + '" data-row-key="' + escapeAttr(String(rowKey)) +
+      '" data-tooltip="' + escapeAttr(tooltipText || '') + '"';
+  }
+
+  function polarToCartesian(cx, cy, radius, angle) {
+    return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
+  }
+
+  function describeArc(cx, cy, radius, startAngle, endAngle) {
+    var start = polarToCartesian(cx, cy, radius, endAngle);
+    var end = polarToCartesian(cx, cy, radius, startAngle);
+    var largeArc = endAngle - startAngle <= Math.PI ? '0' : '1';
+    return 'M ' + fixed(cx) + ' ' + fixed(cy) + ' L ' + fixed(start.x) + ' ' + fixed(start.y) +
+      ' A ' + fixed(radius) + ' ' + fixed(radius) + ' 0 ' + largeArc + ' 0 ' + fixed(end.x) + ' ' + fixed(end.y) + ' Z';
+  }
+
+  miaoData.escapeHtml = escapeHtml;
+  miaoData.escapeAttr = escapeAttr;
+  miaoData.fixed = fixed;
+  miaoData.sum = sum;
+  miaoData.toMonth = toMonth;
+  miaoData.color = color;
+  miaoData.comparableValue = comparableValue;
+  miaoData.svgFrame = svgFrame;
+  miaoData.markAttrs = markAttrs;
+  miaoData.describeArc = describeArc;
+  miaoData.polarToCartesian = polarToCartesian;
+
+  miaoData.uniqueValues = function(rows, field, limit) {
+    var seen = new Set();
+    rows.forEach(function(row) {
+      if (row[field] != null) seen.add(String(row[field]));
+    });
+    return Array.from(seen).slice(0, limit || 200).sort();
+  };
+
+  miaoData.aggregateMeasure = function(sourceRows, measure) {
+    if (measure.op === 'count') return sourceRows.length;
+    var values = sourceRows.map(function(row) { return Number(row[measure.field]); }).filter(Number.isFinite);
+    if (!values.length) return 0;
+    if (measure.op === 'avg') return values.reduce(sum, 0) / values.length;
+    if (measure.op === 'min') return Math.min.apply(null, values);
+    if (measure.op === 'max') return Math.max.apply(null, values);
+    return values.reduce(sum, 0);
+  };
+
+  miaoData.aggregateRows = function(sourceRows, transform) {
+    var groupBy = transform.groupBy || [];
+    var measures = transform.measures || [];
+    var groups = new Map();
+    sourceRows.forEach(function(row) {
+      var key = JSON.stringify(groupBy.map(function(field) { return row[field]; }));
+      var existing = groups.get(key) || [];
+      existing.push(row);
+      groups.set(key, existing);
+    });
+    return Array.from(groups.values()).map(function(groupRows) {
+      var first = groupRows[0] || {};
+      var out = {};
+      groupBy.forEach(function(field) { out[field] = first[field]; });
+      measures.forEach(function(measure) { out[measure.as] = miaoData.aggregateMeasure(groupRows, measure); });
+      return out;
+    });
+  };
+
+  miaoData.prepareRows = function(sourceRows, chart) {
+    return ((chart.data && chart.data.transform) || []).reduce(function(current, transform) {
+      if (transform.type === 'derive-month' && transform.field && transform.as) {
+        return current.map(function(row) {
+          var copy = Object.assign({}, row);
+          copy[transform.as] = miaoData.toMonth(row[transform.field]);
+          return copy;
+        });
+      }
+      if (transform.type === 'aggregate') return miaoData.aggregateRows(current, transform);
+      if (transform.type === 'sort' && transform.field) {
+        var order = transform.order === 'asc' ? 1 : -1;
+        return current.slice().sort(function(a, b) {
+          var an = Number(a[transform.field]);
+          var bn = Number(b[transform.field]);
+          if (Number.isFinite(an) && Number.isFinite(bn)) return (an - bn) * order;
+          return String(a[transform.field] || '').localeCompare(String(b[transform.field] || '')) * order;
+        });
+      }
+      if (transform.type === 'limit' && typeof transform.value === 'number') return current.slice(0, transform.value);
+      if (transform.type === 'filter' && transform.field && transform.value != null) {
+        var rawStr = String(transform.value);
+        var ops = ['>=', '<=', '>', '<', '='];
+        var op = '=';
+        var compVal = rawStr;
+        for (var oi = 0; oi < ops.length; oi++) {
+          if (rawStr.indexOf(ops[oi]) === 0) { op = ops[oi]; compVal = rawStr.slice(ops[oi].length).trim(); break; }
+        }
+        return current.filter(function(row) {
+          var cell = String(row[transform.field] == null ? '' : row[transform.field]);
+          if (op === '=') return cell === compVal;
+          var numCell = Number(row[transform.field]);
+          var numComp = Number(compVal);
+          if (Number.isFinite(numCell) && Number.isFinite(numComp)) {
+            if (op === '>=') return numCell >= numComp;
+            if (op === '<=') return numCell <= numComp;
+            if (op === '>') return numCell > numComp;
+            if (op === '<') return numCell < numComp;
+          }
+          if (op === '>=') return cell >= compVal;
+          if (op === '<=') return cell <= compVal;
+          if (op === '>') return cell > compVal;
+          if (op === '<') return cell < compVal;
+          return false;
+        });
+      }
+      return current;
+    }, sourceRows.slice());
+  };
+
+  miaoData.applyFilters = function(source, filterDefs, state) {
+    return source.filter(function(row) {
+      return filterDefs.every(function(filter) {
+        var active = state[filter.field];
+        if (active == null || active === '' || (Array.isArray(active) && !active[0] && !active[1])) return true;
+        if (filter.type === 'select') {
+          if (Array.isArray(active)) {
+            if (active.length === 0) return true;
+            return active.indexOf(String(row[filter.field] == null ? '' : row[filter.field])) !== -1;
+          }
+          return String(row[filter.field] == null ? '' : row[filter.field]) === String(active);
+        }
+        var current = miaoData.comparableValue(row[filter.field]);
+        if (current == null) return false;
+        var min = miaoData.comparableValue(active[0]);
+        var max = miaoData.comparableValue(active[1]);
+        if (min != null && current < min) return false;
+        if (max != null && current > max) return false;
+        return true;
+      });
+    });
+  };
+
+  miaoData.guessFieldType = function(rows, field) {
+    var count = 0, dateCount = 0, numCount = 0;
+    for (var i = 0; i < rows.length && count < 10; i++) {
+      var v = rows[i][field];
+      if (v == null || v === '') continue;
+      count++;
+      if (Number.isFinite(Number(v))) numCount++;
+      if (!isNaN(Date.parse(String(v)))) dateCount++;
+    }
+    if (count === 0) return 'string';
+    if (dateCount >= count * 0.8) return 'date';
+    if (numCount >= count * 0.8) return 'number';
+    return 'string';
+  };
+
+  miaoData.renderLegend = function(svgWidth, marginTop, colorValues) {
+    var legendX = svgWidth - 200;
+    return colorValues.map(function(val, i) {
+      var y = marginTop + i * 20;
+      return '<g><rect x="' + legendX + '" y="' + (y - 8) + '" width="10" height="10" rx="2" fill="' + color(i) +
+        '" /><text x="' + (legendX + 16) + '" y="' + y + '" fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(val.substring(0, 16)) + '</text></g>';
+    }).join('');
+  };
+
+  miaoData.describeDonutArc = function(cx, cy, innerR, outerR, startAngle, endAngle) {
+    var outerS = miaoData.polarToCartesian(cx, cy, outerR, startAngle);
+    var outerE = miaoData.polarToCartesian(cx, cy, outerR, endAngle);
+    var innerS = miaoData.polarToCartesian(cx, cy, innerR, endAngle);
+    var innerE = miaoData.polarToCartesian(cx, cy, innerR, startAngle);
+    var largeArc = endAngle - startAngle <= Math.PI ? '0' : '1';
+    return 'M ' + fixed(outerS.x) + ' ' + fixed(outerS.y) +
+      ' A ' + fixed(outerR) + ' ' + fixed(outerR) + ' 0 ' + largeArc + ' 0 ' + fixed(outerE.x) + ' ' + fixed(outerE.y) +
+      ' L ' + fixed(innerS.x) + ' ' + fixed(innerS.y) +
+      ' A ' + fixed(innerR) + ' ' + fixed(innerR) + ' 0 ' + largeArc + ' 1 ' + fixed(innerE.x) + ' ' + fixed(innerE.y) + ' Z';
+  };
+
+
+  miaoData.renderDivergingBar = function(chart, chartRows, chartId) {
+    var categoryField = chart.encoding && chart.encoding.x && chart.encoding.x.field || '';
+    var measureField = chart.encoding && chart.encoding.y && chart.encoding.y.field || '';
+    var style = chart.style || {};
+    var data = chartRows.map(function(row, index) {
+      return { row:row, index:index, label:String(row[categoryField] == null ? '—' : row[categoryField]), value:Number(row[measureField]) };
+    }).filter(function(item) { return Number.isFinite(item.value); });
+    if (!categoryField || !measureField || !data.length) return miaoData.renderNoData();
+
+    var sort = style.divergingSort == null ? 'asc' : style.divergingSort;
+    if (sort === 'asc' || sort === 'desc') {
+      data.sort(function(a, b) { return sort === 'asc' ? a.value - b.value : b.value - a.value; });
+    }
+    var width = Number.isFinite(Number(style.width)) ? Number(style.width) : 720;
+    var rowHeight = Number.isFinite(Number(style.rowHeight)) ? Number(style.rowHeight) : 25;
+    var margin = { top:54, right:44, bottom:24, left:44 };
+    var height = Number.isFinite(Number(style.height)) ? Number(style.height) : Math.max(420, margin.top + margin.bottom + data.length * rowHeight);
+    var plotWidth = width - margin.left - margin.right;
+    var plotHeight = height - margin.top - margin.bottom;
+    var rawMin = Math.min.apply(null, [0].concat(data.map(function(item) { return item.value; })));
+    var rawMax = Math.max.apply(null, [0].concat(data.map(function(item) { return item.value; })));
+    var rough = Math.max(rawMax - rawMin, 1) / 6;
+    var power = Math.pow(10, Math.floor(Math.log10(Math.max(rough, Number.EPSILON))));
+    var normalized = rough / power;
+    var tickStep = (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * power;
+    var domainMin = Number.isFinite(Number(style.xDomainMin)) ? Number(style.xDomainMin) : Math.floor(rawMin / tickStep) * tickStep;
+    var domainMax = Number.isFinite(Number(style.xDomainMax)) ? Number(style.xDomainMax) : Math.ceil(rawMax / tickStep) * tickStep;
+    var domainSpan = Math.max(domainMax - domainMin, 1);
+    var scale = function(value) { return margin.left + (value - domainMin) / domainSpan * plotWidth; };
+    var zeroX = scale(0);
+    var step = plotHeight / data.length;
+    var positiveColor = String(style.positiveColor || '#9bd66d');
+    var negativeColor = String(style.negativeColor || '#e79ac8');
+    var decimals = Math.max(0, Math.min(6, Number(style.valueDecimals == null ? 1 : style.valueDecimals)));
+    var suffix = String(style.valueSuffix == null && chart.encoding && chart.encoding.y && chart.encoding.y.unit === 'percentage' ? '%' : (style.valueSuffix || ''));
+    var format = function(value) {
+      return (value > 0 ? '+' : value < 0 ? '−' : '') + Math.abs(value).toFixed(decimals) + suffix;
+    };
+    var ticks = [];
+    for (var tick = Math.ceil(domainMin / tickStep) * tickStep; tick <= domainMax + tickStep / 100; tick += tickStep) {
+      ticks.push(Number(tick.toFixed(10)));
+    }
+    var grid = style.showGrid === false ? '' : ticks.map(function(tick) {
+      var x = scale(tick);
+      return '<line x1="' + fixed(x) + '" y1="' + fixed(margin.top - 8) + '" x2="' + fixed(x) + '" y2="' +
+        fixed(margin.top + plotHeight) + '" stroke="#ffffff" stroke-width="1" />';
+    }).join('');
+    var axis = ticks.map(function(tick) {
+      var x = scale(tick);
+      return '<line x1="' + fixed(x) + '" y1="' + fixed(margin.top - 13) + '" x2="' + fixed(x) + '" y2="' +
+        fixed(margin.top - 5) + '" stroke="' + escapeAttr(runtimeTheme.axisColor) + '" />' +
+        '<text x="' + fixed(x) + '" y="' + fixed(margin.top - 20) + '" text-anchor="middle" fill="' +
+        escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(format(tick)) + '</text>';
+    }).join('');
+    var bars = data.map(function(item, index) {
+      var end = scale(item.value);
+      var x = Math.min(zeroX, end);
+      var y = margin.top + index * step + step * 0.12;
+      var barHeight = step * 0.76;
+      var negative = item.value < 0;
+      var stateX = zeroX + (negative ? 8 : -8);
+      var valueX = end + (negative ? -7 : 7);
+      var valueLabel = style.showValueLabels === false ? '' :
+        '<text x="' + fixed(valueX) + '" y="' + fixed(y + barHeight * 0.68) + '" text-anchor="' +
+        (negative ? 'end' : 'start') + '" fill="' + escapeAttr(runtimeTheme.labelColor) +
+        '" font-size="10">' + escapeHtml(format(item.value)) + '</text>';
+      return '<g ' + markAttrs(chartId, categoryField, item.row[categoryField], item.index, item.label + ': ' + format(item.value)) + '>' +
+        '<rect x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(Math.abs(end - zeroX)) +
+        '" height="' + fixed(barHeight) + '" fill="' + escapeAttr(negative ? negativeColor : positiveColor) + '" />' +
+        '<text x="' + fixed(stateX) + '" y="' + fixed(y + barHeight * 0.68) + '" text-anchor="' +
+        (negative ? 'start' : 'end') + '" fill="' + escapeAttr(runtimeTheme.labelColor) +
+        '" font-size="11">' + escapeHtml(item.label) + '</text>' + valueLabel + '</g>';
+    }).join('');
+    var title = String(style.axisTitle || chart.title || '← decrease · change · increase →');
+    return svgFrame(width, height, '<g class="miao-diverging-bar"><text x="' + fixed(zeroX) +
+      '" y="20" text-anchor="middle" fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="12">' +
+      escapeHtml(title) + '</text>' + grid + axis + '<line x1="' + fixed(zeroX) + '" y1="' +
+      fixed(margin.top - 8) + '" x2="' + fixed(zeroX) + '" y2="' + fixed(margin.top + plotHeight) +
+      '" stroke="' + escapeAttr(runtimeTheme.labelColor) + '" />' + bars + '</g>');
+  };
+
+
+  miaoData.renderBar = function(chart, chartRows, chartId) {
+    var xField = (chart.encoding && chart.encoding.x && chart.encoding.x.field) || '';
+    var yField = (chart.encoding && chart.encoding.y && chart.encoding.y.field) || '';
+    var colorField = (chart.encoding && chart.encoding.color && chart.encoding.color.field) || '';
+    var hasSeries = Boolean(colorField);
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : (hasSeries ? 900 : 720);
+    var rightMargin = hasSeries ? 140 : 24;
+    var axisLayout = miaoData.categoryAxisLayout(chartRows.map(function(row) { return String(row[xField] == null ? '' : row[xField]); }), width - 72 - rightMargin, hasSeries);
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : (axisLayout.rotate ? 460 : 420);
+    var margin = { top: 24, right: rightMargin, bottom: axisLayout.bottomMargin, left: 72 };
+    var chartWidth = width - margin.left - margin.right;
+    var chartHeight = height - margin.top - margin.bottom;
+    var values = chartRows.map(function(row) { return Number(row[yField]); }).filter(Number.isFinite);
+    var yMax = Math.max.apply(null, values.concat([1]));
+    var gap = 8;
+
+    if (!colorField) {
+      var barWidth = Math.max(8, (chartWidth - gap * Math.max(chartRows.length - 1, 0)) / Math.max(chartRows.length, 1));
+      var body = chartRows.map(function(row, index) {
+        var value = Number(row[yField]) || 0;
+        var barHeight = value / yMax * chartHeight;
+        var x = margin.left + index * (barWidth + gap);
+        var y = margin.top + chartHeight - barHeight;
+        var label = String(row[xField] == null ? '' : row[xField]);
+        return '<g><rect ' + markAttrs(chartId, xField, row[xField], index, label + ': ' + value) +
+          ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(barWidth) + '" height="' + fixed(barHeight) +
+          '" rx="3" fill="' + color(index) + '" />' +
+          miaoData.renderBarAxisLabel(label, x + barWidth / 2, margin.top + chartHeight + (axisLayout.rotate ? 34 : 18), axisLayout) + '</g>';
+      }).join('');
+      return svgFrame(width, height, body);
+    }
+
+    var colorValues = miaoData.uniqueValues(chartRows, colorField);
+    var xValues = miaoData.uniqueValues(chartRows, xField);
+    var rowMap = new Map();
+    chartRows.forEach(function(row) {
+      rowMap.set(String(row[xField]) + '|' + String(row[colorField]), Number(row[yField]) || 0);
+    });
+    var barMode = chart.style && chart.style.barMode;
+    var stackColors = colorValues.map(function(_, ci) { return color(ci); });
+
+    if (barMode === 'stacked') {
+      var xBarWidth = Math.max(8, (chartWidth - gap * Math.max(xValues.length - 1, 0)) / Math.max(xValues.length, 1));
+      var body = xValues.map(function(xVal, xi) {
+        var accumY = 0;
+        return colorValues.map(function(cVal, ci) {
+          var raw = rowMap.get(String(xVal) + '|' + String(cVal)) || 0;
+          var barHeight = raw / yMax * chartHeight;
+          var x = margin.left + xi * (xBarWidth + gap);
+          var y = margin.top + chartHeight - accumY - barHeight;
+          accumY += barHeight;
+          return '<rect ' + markAttrs(chartId, xField, xVal, xi * colorValues.length + ci, xVal + ', ' + cVal + ': ' + raw) +
+            ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(xBarWidth) + '" height="' + fixed(barHeight) +
+            '" rx="1" fill="' + stackColors[ci] + '" />';
+        }).join('');
+      }).join('');
+      var labels = xValues.map(function(value, index) { return miaoData.renderBarAxisLabel(value, margin.left + index * (xBarWidth + gap) + xBarWidth / 2, margin.top + chartHeight + 34, axisLayout); }).join('');
+      return svgFrame(width, height, body + labels + miaoData.renderLegend(width, margin.top, colorValues));
+    }
+
+    var groupWidth = (chartWidth - gap * Math.max(xValues.length - 1, 0)) / Math.max(xValues.length, 1);
+    var barWidth = Math.max(4, (groupWidth - gap * Math.max(colorValues.length - 1, 0)) / Math.max(colorValues.length, 1));
+    var groupStartX = (groupWidth - (barWidth * colorValues.length + gap * Math.max(colorValues.length - 1, 0))) / 2;
+    var xLabels = [];
+
+    var body = xValues.map(function(xVal, xi) {
+      var baseX = margin.left + xi * (groupWidth + gap) + groupStartX;
+      xLabels.push(miaoData.renderBarAxisLabel(xVal, baseX + groupWidth / 2 - gap / 2, margin.top + chartHeight + 34, axisLayout));
+      return colorValues.map(function(cVal, ci) {
+        var raw = rowMap.get(String(xVal) + '|' + String(cVal)) || 0;
+        var barHeight = raw / yMax * chartHeight;
+        var x = baseX + ci * (barWidth + gap);
+        var y = margin.top + chartHeight - barHeight;
+        return '<rect ' + markAttrs(chartId, xField, xVal, xi * colorValues.length + ci, xVal + ', ' + cVal + ': ' + raw) +
+          ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(barWidth) + '" height="' + fixed(barHeight) +
+          '" rx="2" fill="' + stackColors[ci] + '" />';
+      }).join('');
+    }).join('');
+
+    return svgFrame(width, height, body + xLabels.join('') + miaoData.renderLegend(width, margin.top, colorValues));
+  };
+
+  miaoData.categoryAxisLayout = function(labels, plotWidth, forceRotate) {
+    var slotWidth = plotWidth / Math.max(labels.length, 1);
+    var longest = labels.reduce(function(max, label) { return Math.max(max, label.length); }, 0);
+    var rotate = Boolean(forceRotate) || longest * categoryAxisDefaults.estimatedCharacterWidth + categoryAxisDefaults.minimumLabelGap > slotWidth;
+    var horizontalFit = Math.max(4, Math.floor((slotWidth - categoryAxisDefaults.minimumLabelGap) / categoryAxisDefaults.estimatedCharacterWidth));
+    return { rotate:rotate, bottomMargin:rotate ? categoryAxisDefaults.rotatedBottomMargin : categoryAxisDefaults.horizontalBottomMargin, maxLabelLength:rotate ? categoryAxisDefaults.rotatedMaxLength : Math.min(categoryAxisDefaults.horizontalMaxLength,horizontalFit), rotationDegrees:categoryAxisDefaults.rotationDegrees };
+  };
+
+  miaoData.renderBarAxisLabel = function(value, x, y, layout) {
+    var raw = String(value == null ? '' : value);
+    var label = raw.length > layout.maxLabelLength ? raw.slice(0, layout.maxLabelLength - 3) + '...' : raw;
+    var transform = layout.rotate ? ' transform="rotate(' + layout.rotationDegrees + ' ' + fixed(x) + ' ' + fixed(y) + ')"' : '';
+    return '<text x="' + fixed(x) + '" y="' + fixed(y) + '" text-anchor="' + (layout.rotate ? 'end' : 'middle') + '"' + transform + ' fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(label) + '</text>';
+  };
+
+  miaoData.renderXY = function(chart, chartRows, chartId) {
+    var xField = (chart.encoding && chart.encoding.x && chart.encoding.x.field) || '';
+    var yField = (chart.encoding && chart.encoding.y && chart.encoding.y.field) || '';
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : 720;
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : 420;
+    var margin = { top: 24, right: 24, bottom: 48, left: 64 };
+    var w = width - margin.left - margin.right, h = height - margin.top - margin.bottom;
+    var values = chartRows.map(function(row) { return Number(row[yField]); }).filter(Number.isFinite);
+    if (!values.length) return miaoData.renderNoData();
+    var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+    if (min === max) { min = Math.min(0, min); max = max || 1; }
+    var points = chartRows.map(function(row, index) {
+      var x = margin.left + (chartRows.length <= 1 ? w / 2 : index / (chartRows.length - 1) * w);
+      var value = Number(row[yField]);
+      var y = margin.top + h - ((value - min) / (max - min || 1) * h);
+      return { x:x, y:y, row:row, index:index, value:value };
+    }).filter(function(point) { return Number.isFinite(point.value); });
+    var line = points.map(function(point, index) { return (index ? 'L ' : 'M ') + fixed(point.x) + ' ' + fixed(point.y); }).join(' ');
+    var body = '';
+    if (chart.type === 'area' && points.length) body += '<path d="' + line + ' L ' + fixed(points[points.length-1].x) + ' ' + fixed(margin.top+h) + ' L ' + fixed(points[0].x) + ' ' + fixed(margin.top+h) + ' Z" fill="' + color(0) + '" opacity=".18" />';
+    if (chart.type !== 'scatter') body += '<path d="' + line + '" fill="none" stroke="' + color(0) + '" stroke-width="3" />';
+    body += points.map(function(point) { var label=String(point.row[xField] == null ? '' : point.row[xField]); return '<circle ' + markAttrs(chartId,xField,point.row[xField],point.index,label+': '+point.value) + ' cx="'+fixed(point.x)+'" cy="'+fixed(point.y)+'" r="5" fill="'+color(0)+'" />'; }).join('');
+    return svgFrame(width,height,body);
+  };
+
+  miaoData.renderBigValue = function(chart, chartRows) {
+    var field = (chart.encoding && chart.encoding.value && chart.encoding.value.field) || '';
+    var value = chartRows[0] && chartRows[0][field];
+    return '<div class="miao-bigvalue"><div style="font-size:42px;font-weight:700">' + escapeHtml(value == null ? '—' : String(value)) + '</div><div class="miao-view-derived">Current filter</div></div>';
+  };
+
+  miaoData.renderNoData = function() { return '<div class="miao-no-data">No data for the current view</div>'; };
+
+  miaoData.renderPie = function(chart, chartRows, chartId) {
+    var labelField = (chart.encoding && chart.encoding.label && chart.encoding.label.field) || '';
+    var valueField = (chart.encoding && chart.encoding.value && chart.encoding.value.field) || '';
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : 720;
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : 420;
+    var cx = width / 2 - 80;
+    var cy = height / 2;
+    var outerR = Math.min(width, height) * 0.34;
+    var innerR = (chart.style && typeof chart.style.innerRadius === 'number' ? chart.style.innerRadius : 0) * outerR;
+    var values = chartRows.map(function(row) { return Math.max(0, Number(row[valueField]) || 0); });
+    var total = values.reduce(sum, 0) || 1;
+    var angle = -Math.PI / 2;
+    var slices = chartRows.map(function(row, index) {
+      var value = values[index];
+      var nextAngle = angle + value / total * Math.PI * 2;
+      var path = innerR > 0
+        ? miaoData.describeDonutArc(cx, cy, innerR, outerR, angle, nextAngle)
+        : describeArc(cx, cy, outerR, angle, nextAngle);
+      var label = String(row[labelField] == null ? '' : row[labelField]);
+      angle = nextAngle;
+      return '<path ' + markAttrs(chartId, labelField, row[labelField], index, label + ': ' + value) +
+        ' d="' + path + '" fill="' + color(index) + '" stroke="' + escapeAttr(runtimeTheme.background) + '" stroke-width="2" />';
+    }).join('');
+    return svgFrame(width, height, slices);
+  };
+
+  miaoData.renderTable = function(chart, chartRows, chartId, sortState) {
+    var sortable = chart.sortable === true;
+
+    if (sortState && sortState.field && sortState.order) {
+      var order = sortState.order === 'asc' ? 1 : -1;
+      chartRows = chartRows.slice().sort(function(a, b) {
+        var an = Number(a[sortState.field]);
+        var bn = Number(b[sortState.field]);
+        if (Number.isFinite(an) && Number.isFinite(bn)) return (an - bn) * order;
+        return String(a[sortState.field] || '').localeCompare(String(b[sortState.field] || '')) * order;
+      });
+    }
+
+    var columns = Object.keys(chartRows[0] || {}).slice(0, 8);
+    var markField = (chart.encoding && chart.encoding.label && chart.encoding.label.field) ||
+      (chart.encoding && chart.encoding.x && chart.encoding.x.field) || columns[0] || '';
+    var thead = '<thead><tr>' +
+      columns.map(function(col) {
+        var attrs = '';
+        var indicator = '';
+        if (sortable) {
+          var active = sortState && sortState.field === col;
+          var order = active ? sortState.order : '';
+          attrs = ' data-sortable="true" data-sort-field="' + escapeAttr(col) + '" data-sort-order="' + order + '"';
+          indicator = active ? (order === 'asc' ? ' ▲' : ' ▼') : '';
+        }
+        return '<th' + attrs + '>' + escapeHtml(col) + indicator + '</th>';
+      }).join('') +
+      '</tr></thead>';
+    var tbody = '<tbody>' + chartRows.slice(0, 20).map(function(row, index) {
+      return '<tr ' + markAttrs(chartId, markField, row[markField], index, String(row[markField] || 'Row')) + '>' +
+        columns.map(function(col) { return '<td>' + escapeHtml(row[col] == null ? '' : String(row[col])) + '</td>'; }).join('') +
+        '</tr>';
+    }).join('') + '</tbody>';
+    return '<div class="miao-table-wrap"><table class="miao-table">' + thead + tbody + '</table></div>';
+  };
+
+  miaoData.renderDetailTable = function(selectedRows, chartId, allRows) {
+    var visible = selectedRows.slice(0, 100);
+    var columns = Object.keys(visible[0] || allRows[0] || {}).slice(0, 8);
+    if (!columns.length) return '<div class="miao-detail-title">No rows</div>';
+    return '<div class="miao-detail-title">' + escapeHtml(chartId || 'Detail') + ': ' + selectedRows.length + ' rows</div>' +
+      '<table><thead><tr>' + columns.map(function(col) { return '<th>' + escapeHtml(col) + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + visible.map(function(row) {
+        return '<tr>' + columns.map(function(col) { return '<td>' + escapeHtml(row[col] == null ? '' : String(row[col])) + '</td>'; }).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
+  };
+
+  window.miaoData = miaoData;
+})();
+</script>
+  <style>
+.miao-chart-svg [data-miao-mark] { cursor: pointer; transition: opacity 0.15s ease, stroke-width 0.15s ease; }
+.miao-chart-svg [data-miao-mark]:hover { opacity: 0.78; }
+.miao-chart-svg [data-miao-selected="true"] { stroke: currentColor; stroke-width: 2; }
+.miao-mark-hidden { opacity: 0.18; }
+.miao-table th[data-sortable] { cursor: pointer; user-select: none; }
+.miao-table th[data-sortable]:hover { opacity: 0.72; }
+.miao-filter-checks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.miao-filter-checks-scroll { max-height: 200px; overflow-y: auto; }
+.miao-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; font-size: 12px; cursor: pointer; }
+.miao-chip:hover { background: rgba(128,128,128,0.06); }
+.miao-chip input[type="checkbox"] { margin: 0; }
+.miao-filter-search { min-width: 180px; border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; padding: 6px 8px; background: transparent; color: inherit; font: inherit; }
+.miao-drilldown-bar { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; padding: 8px 12px; border-radius: 4px; background: rgba(128,128,128,0.06); border: 1px solid rgba(128,128,128,0.18); font-size: 12px; }
+.miao-drilldown-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; }
+.miao-drilldown-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; background: rgba(37,99,235,0.1); color: #2563eb; font-weight: 600; }
+.miao-drilldown-clear { background: none; border: none; cursor: pointer; font-size: 14px; color: inherit; padding: 0 2px; line-height: 1; }
+.miao-drilldown-clear:hover { opacity: 0.7; }
+.miao-detail { margin-top: 12px; overflow: auto; max-height: 320px; border: 1px solid rgba(128,128,128,0.18); border-radius: 4px; }
+.miao-detail-title { padding: 9px 10px; font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(128,128,128,0.18); }
+.miao-detail table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.miao-detail th, .miao-detail td { padding: 7px 9px; border-bottom: 1px solid rgba(128,128,128,0.12); text-align: left; white-space: nowrap; }
+.miao-detail th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.64; }
+.miao-tooltip { position: fixed; z-index: 9999; pointer-events: none; padding: 6px 8px; border-radius: 4px; background: rgba(20,20,19,0.92); color: #fff; font: 12px/1.35 system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,0.18); transform: translate(10px, 10px); }
+.miao-view-state { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 16px; padding:8px 12px; border:1px solid rgba(128,128,128,.18); border-radius:4px; font-size:11px; }
+.miao-view-state button { border:0; background:transparent; color:inherit; cursor:pointer; text-decoration:underline; }
+.miao-no-data { display:grid; place-items:center; min-height:180px; color:#64748b; font:13px system-ui,sans-serif; border:1px dashed rgba(128,128,128,.25); border-radius:4px; }
+.miao-view-derived { font-size:10px; text-transform:uppercase; letter-spacing:.06em; opacity:.55; }
+[data-view-scope="base-evidence"]::after { content:'Based on full dataset'; display:block; margin-top:6px; font-size:10px; text-transform:uppercase; letter-spacing:.06em; opacity:.5; }
+@media print { .miao-interactive-controls,.deck-filter-btn,.deck-filter-panel,.deck-overlay,.miao-view-state,.miao-drilldown-bar { display:none !important; } }
+
+.miao-interactive-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 0 0 24px; padding: 12px 0; border-top: 1px solid rgba(128,128,128,0.18); border-bottom: 1px solid rgba(128,128,128,0.18); }
+.miao-filter { display: grid; gap: 5px; font-size: 12px; }
+.miao-filter label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.56; }
+.miao-filter select, .miao-filter input { min-width: 140px; border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; padding: 6px 8px; background: transparent; color: inherit; font: inherit; }
+.miao-filter-range { display: flex; gap: 6px; }
+.miao-reset { border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; padding: 7px 10px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.miao-reset:hover { background: rgba(128,128,128,0.08); }
+</style>
+  <script>
+(function() {
+  var md = window.miaoData;
+  if (!md) return;
+  var specEl = document.getElementById('miao-viz-spec');
+  var dataEl = document.getElementById('miao-viz-data');
+  if (!specEl || !dataEl) return;
+
+  var spec = JSON.parse(specEl.textContent || '{}');
+  var rows = JSON.parse(dataEl.textContent || '[]');
+  var filters = (spec.interactions && spec.interactions.globalFilters) || [];
+  var charts = spec.charts || [];
+  var state = { filters: {}, selection: null, sort: {}, drilldown: null };
+
+  function createTooltip() {
+    var el = document.createElement('div');
+    el.className = 'miao-tooltip';
+    el.hidden = true;
+    document.body.appendChild(el);
+    return el;
+  }
+
+  var tooltip = createTooltip();
+
+  function uniqueValues(field) {
+    return md.uniqueValues(rows, field, 200);
+  }
+
+  function renderControls() {
+    if (!filters.length) return;
+    var main = document.querySelector('.miao-viz-report');
+    if (!main) return;
+    var controls = document.createElement('section');
+    controls.className = 'miao-interactive-controls';
+    controls.setAttribute('aria-label', 'Interactive filters');
+    filters.forEach(function(filter) {
+      controls.appendChild(filter.type === 'range' ? renderRangeFilter(filter) : renderSelectFilter(filter));
+    });
+    var reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'miao-reset';
+    reset.textContent = 'Reset';
+    reset.addEventListener('click', function() {
+      state.filters = {};
+      state.selection = null;
+      state.drilldown = null;
+      controls.querySelectorAll('select,input').forEach(function(input) { input.value = ''; input.checked = false; });
+      update();
+    });
+    controls.appendChild(reset);
+    var header = main.querySelector('header');
+    main.insertBefore(controls, header ? header.nextSibling : main.firstChild);
+  }
+
+  function renderSelectFilter(filter) {
+    var wrap = document.createElement('div');
+    wrap.className = 'miao-filter';
+    var label = document.createElement('label');
+    label.textContent = filter.field;
+    wrap.appendChild(label);
+    if (filter.multiSelect) {
+      renderMultiSelect(wrap, filter);
+    } else {
+      renderSingleSelect(wrap, filter);
+    }
+    return wrap;
+  }
+
+  function renderSingleSelect(wrap, filter) {
+    var values = uniqueValues(filter.field);
+    if (values.length >= 20) {
+      var input = document.createElement('input');
+      input.className = 'miao-filter-search';
+      input.placeholder = 'Search ' + filter.field + '...';
+      input.setAttribute('list', 'miao-sg-' + md.escapeAttr(filter.field));
+      var datalist = document.createElement('datalist');
+      datalist.id = 'miao-sg-' + md.escapeAttr(filter.field);
+      values.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        datalist.appendChild(opt);
+      });
+      input.addEventListener('change', function() {
+        state.filters[filter.field] = input.value;
+        update();
+      });
+      wrap.appendChild(input);
+      wrap.appendChild(datalist);
+    } else {
+      var select = document.createElement('select');
+      select.innerHTML = '<option value="">All</option>' + values.map(function(value) {
+        return '<option value="' + md.escapeAttr(value) + '">' + md.escapeHtml(value) + '</option>';
+      }).join('');
+      select.addEventListener('change', function() {
+        state.filters[filter.field] = select.value;
+        update();
+      });
+      wrap.appendChild(select);
+    }
+  }
+
+  function renderMultiSelect(wrap, filter) {
+    var values = uniqueValues(filter.field);
+    state.filters[filter.field] = state.filters[filter.field] || [];
+    if (values.length >= 20) {
+      renderSearchableMulti(wrap, filter, values);
+    } else {
+      renderCheckboxes(wrap, filter, values);
+    }
+  }
+
+  function renderCheckboxes(wrap, filter, values) {
+    var container = document.createElement('div');
+    container.className = 'miao-filter-checks';
+    values.forEach(function(v) {
+      var labelEl = document.createElement('label');
+      labelEl.className = 'miao-chip';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = v;
+      cb.addEventListener('change', function() {
+        var arr = state.filters[filter.field] || [];
+        if (cb.checked) {
+          if (arr.indexOf(v) === -1) arr.push(v);
+        } else {
+          var idx = arr.indexOf(v);
+          if (idx !== -1) arr.splice(idx, 1);
+        }
+        update();
+      });
+      labelEl.appendChild(cb);
+      labelEl.appendChild(document.createTextNode(' ' + v));
+      container.appendChild(labelEl);
+    });
+    wrap.appendChild(container);
+  }
+
+  function renderSearchableMulti(wrap, filter, values) {
+    var searchInput = document.createElement('input');
+    searchInput.className = 'miao-filter-search';
+    searchInput.placeholder = 'Filter ' + filter.field + '...';
+    var container = document.createElement('div');
+    container.className = 'miao-filter-checks miao-filter-checks-scroll';
+    function renderFiltered(term) {
+      container.innerHTML = '';
+      var filtered = term ? values.filter(function(v) { return v.toLowerCase().indexOf(term.toLowerCase()) !== -1; }) : values.slice(0, 100);
+      filtered.forEach(function(v) {
+        var labelEl = document.createElement('label');
+        labelEl.className = 'miao-chip';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = v;
+        var arr = state.filters[filter.field] || [];
+        cb.checked = arr.indexOf(v) !== -1;
+        cb.addEventListener('change', function() {
+          if (cb.checked) {
+            if (arr.indexOf(v) === -1) arr.push(v);
+          } else {
+            var idx = arr.indexOf(v);
+            if (idx !== -1) arr.splice(idx, 1);
+          }
+          update();
+        });
+        labelEl.appendChild(cb);
+        labelEl.appendChild(document.createTextNode(' ' + v));
+        container.appendChild(labelEl);
+      });
+    }
+    searchInput.addEventListener('input', function() { renderFiltered(searchInput.value); });
+    renderFiltered('');
+    wrap.appendChild(searchInput);
+    wrap.appendChild(container);
+  }
+
+  function renderRangeFilter(filter) {
+    var wrap = document.createElement('div');
+    wrap.className = 'miao-filter';
+    var label = document.createElement('label');
+    label.textContent = filter.field;
+    var pair = document.createElement('div');
+    pair.className = 'miao-filter-range';
+    var useDate = md.guessFieldType(rows, filter.field) === 'date';
+    var min = document.createElement('input');
+    var max = document.createElement('input');
+    if (useDate) {
+      min.type = 'date';
+      max.type = 'date';
+    } else {
+      min.placeholder = 'Min';
+      max.placeholder = 'Max';
+    }
+    [min, max].forEach(function(input) {
+      input.addEventListener('input', function() {
+        state.filters[filter.field] = [min.value, max.value];
+        update();
+      });
+    });
+    pair.appendChild(min);
+    pair.appendChild(max);
+    wrap.appendChild(label);
+    wrap.appendChild(pair);
+    return wrap;
+  }
+
+  function chartSpec(chartId) {
+    return charts.find(function(chart, index) { return (chart.id || ('chart-' + (index + 1))) === chartId; }) || null;
+  }
+
+  function canSelect(chart) {
+    return Boolean(chart && ((chart.interaction && chart.interaction.select) || chart.drilldownPreset));
+  }
+
+  function renderChart(container, chart, sourceRows) {
+    if (!chart) return;
+    var slot = container.querySelector('.miao-render-slot');
+    if (!slot) return;
+    var chartId = container.getAttribute('data-miao-chart');
+    var data = sourceRows;
+    if (state.drilldown && state.drilldown.targetId === chartId) {
+      data = sourceRows.filter(function(row) {
+        return String(row[state.drilldown.field] == null ? '' : row[state.drilldown.field]) === String(state.drilldown.value);
+      });
+    }
+    var chartRows = md.prepareRows(data, chart);
+    if (!chartRows.length) slot.innerHTML = md.renderNoData();
+    else if (chart.type === 'bar' && chart.variant === 'diverging') slot.innerHTML = md.renderDivergingBar(chart, chartRows, chartId);
+    else if (chart.type === 'bar') slot.innerHTML = md.renderBar(chart, chartRows, chartId);
+    else if (['line','area','scatter'].indexOf(chart.type) !== -1) slot.innerHTML = md.renderXY(chart, chartRows, chartId);
+    else if (chart.type === 'pie') slot.innerHTML = md.renderPie(chart, chartRows, chartId);
+    else if (chart.type === 'bigvalue') slot.innerHTML = md.renderBigValue(chart, chartRows);
+    else if (chart.type === 'table') {
+      var sortState = state.sort[chartId] || null;
+      slot.innerHTML = md.renderTable(chart, chartRows, chartId, sortState);
+      if (chart.sortable) bindSortHeaders(container, chartId);
+    }
+  }
+
+  function bindSortHeaders(container, chartId) {
+    var handler = function(e) {
+      var th = e.target.closest('th[data-sortable]');
+      if (!th) return;
+      var field = th.getAttribute('data-sort-field');
+      if (!field) return;
+      var current = state.sort[chartId];
+      var newOrder;
+      if (!current || current.field !== field) newOrder = 'asc';
+      else if (current.order === 'asc') newOrder = 'desc';
+      else newOrder = null;
+      state.sort[chartId] = newOrder ? { field: field, order: newOrder } : null;
+      update();
+    };
+    container.onclick = handler;
+  }
+
+  function bindMarks() {
+    document.querySelectorAll('[data-miao-mark]').forEach(function(mark) {
+      if (mark.getAttribute('data-miao-bound') === 'true') return;
+      mark.setAttribute('data-miao-bound', 'true');
+      var chart = chartSpec(mark.getAttribute('data-chart-id'));
+      mark.addEventListener('mouseenter', function(event) {
+        var text = mark.getAttribute('data-tooltip');
+        if (!text) return;
+        tooltip.textContent = text;
+        tooltip.hidden = false;
+        moveTooltip(event);
+      });
+      mark.addEventListener('mousemove', moveTooltip);
+      mark.addEventListener('mouseleave', function() { tooltip.hidden = true; });
+      mark.addEventListener('click', function() {
+        var field = mark.getAttribute('data-field');
+        var value = mark.getAttribute('data-value');
+        if (!field) return;
+        var chartId = mark.getAttribute('data-chart-id');
+        if (chart && chart.drilldownChart) {
+          var same = state.drilldown && String(state.drilldown.value) === String(value) && state.drilldown.field === field;
+          state.drilldown = same ? null : { field: field, value: value, targetId: chart.drilldownChart, sourceId: chartId };
+          if (state.drilldown) {
+            var target = document.querySelector('[data-miao-chart="' + md.escapeAttr(chart.drilldownChart) + '"]');
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          update();
+          return;
+        }
+        if (!canSelect(chart)) return;
+        state.selection = state.selection && state.selection.field === field && String(state.selection.value) === String(value)
+          ? null
+          : { field: field, value: value };
+        update();
+      });
+    });
+  }
+
+  function renderDrilldownBreadcrumb() {
+    var main = document.querySelector('.miao-viz-report');
+    if (!main) return;
+    var existing = document.getElementById('miao-drilldown-bar');
+    if (!state.drilldown) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) existing.remove();
+    var bar = document.createElement('div');
+    bar.id = 'miao-drilldown-bar';
+    bar.className = 'miao-drilldown-bar';
+    bar.innerHTML = '<span class="miao-drilldown-label">Drilldown: </span>' +
+      '<span class="miao-drilldown-chip">' + md.escapeHtml(state.drilldown.field) + ': ' + md.escapeHtml(String(state.drilldown.value)) +
+      ' <button class="miao-drilldown-clear">&times;</button></span>';
+    bar.querySelector('.miao-drilldown-clear').addEventListener('click', function() {
+      state.drilldown = null;
+      update();
+    });
+    var controls = main.querySelector('.miao-interactive-controls');
+    var header = main.querySelector('header');
+    main.insertBefore(bar, controls || (header ? header.nextSibling : main.firstChild));
+  }
+
+  function update() {
+    var filtered = md.applyFilters(rows, filters, state.filters);
+    document.querySelectorAll('[data-miao-chart]').forEach(function(container) {
+      var chart = chartSpec(container.getAttribute('data-miao-chart'));
+      renderChart(container, chart, filtered);
+    });
+    bindMarks();
+    document.querySelectorAll('[data-miao-mark]').forEach(function(mark) {
+      var field = mark.getAttribute('data-field');
+      var value = mark.getAttribute('data-value');
+      var selected = state.selection && state.selection.field === field && String(state.selection.value) === String(value);
+      mark.setAttribute('data-miao-selected', selected ? 'true' : 'false');
+      mark.classList.toggle('miao-mark-hidden', Boolean((state.selection && !selected) || !markMatchesFilters(field, value)));
+    });
+    document.querySelectorAll('[data-miao-chart]').forEach(function(container) {
+      renderDetail(container, filtered);
+    });
+    renderDrilldownBreadcrumb();
+    renderViewState(filtered);
+  }
+
+  function renderViewState(filtered) {
+    var main = document.querySelector('.miao-viz-report');
+    if (!main) return;
+    var el = document.getElementById('miao-view-state');
+    if (!el) { el=document.createElement('div'); el.id='miao-view-state'; el.className='miao-view-state'; var controls=main.querySelector('.miao-interactive-controls'); main.insertBefore(el, controls ? controls.nextSibling : main.firstChild); }
+    var active=Object.keys(state.filters).filter(function(key){ var value=state.filters[key]; return value !== '' && value != null && (!Array.isArray(value) || value.some(Boolean)); });
+    el.innerHTML='<span>View: '+filtered.length+' / '+rows.length+' rows</span>'+active.map(function(key){return '<span class="miao-chip">'+md.escapeHtml(key)+': '+md.escapeHtml(Array.isArray(state.filters[key])?state.filters[key].join(' – '):String(state.filters[key]))+'</span>';}).join('')+(active.length?'<button id="miao-view-copy">Copy view link</button><button id="miao-view-reset">Reset all</button>':'<span>Base evidence view</span>');
+    var reset=document.getElementById('miao-view-reset'); if(reset) reset.onclick=function(){state.filters={};state.selection=null;state.drilldown=null;document.querySelectorAll('.miao-interactive-controls select,.miao-interactive-controls input').forEach(function(input){input.value='';input.checked=false;});update();};
+    var copy=document.getElementById('miao-view-copy'); if(copy) copy.onclick=function(){if(navigator.clipboard)navigator.clipboard.writeText(location.href);};
+    document.querySelectorAll('.report-insights').forEach(function(insights){insights.setAttribute('data-view-scope',active.length?'base-evidence':'current');insights.title=active.length?'Claims are based on the complete dataset.':'';});
+    try { location.hash = active.length ? 'miao=' + encodeURIComponent(JSON.stringify({filters:state.filters})) : ''; } catch (_) {}
+  }
+
+  function renderDetail(container, filtered) {
+    var chartId = container.getAttribute('data-miao-chart');
+    var detail = container.querySelector('.miao-detail');
+    if (!detail) {
+      detail = document.createElement('div');
+      detail.className = 'miao-detail';
+      container.appendChild(detail);
+    }
+    if (!state.selection) {
+      detail.innerHTML = '';
+      detail.hidden = true;
+      return;
+    }
+    var selectedRows = filtered.filter(function(row) {
+      return String(row[state.selection.field] == null ? '' : row[state.selection.field]) === String(state.selection.value);
+    });
+    detail.hidden = false;
+    detail.innerHTML = md.renderDetailTable(selectedRows, chartId, filtered);
+  }
+
+  function moveTooltip(event) {
+    tooltip.style.left = event.clientX + 'px';
+    tooltip.style.top = event.clientY + 'px';
+  }
+
+  function markMatchesFilters(field, value) {
+    var activeFilters = filters.filter(function(filter) { return filter.field === field; });
+    if (!activeFilters.length) return true;
+    return activeFilters.every(function(filter) {
+      var active = state.filters[filter.field];
+      if (active == null || active === '' || (Array.isArray(active) && !active[0] && !active[1])) return true;
+      if (filter.type === 'select') {
+        if (Array.isArray(active)) {
+          if (active.length === 0) return true;
+          return active.indexOf(String(value == null ? '' : value)) !== -1;
+        }
+        return String(value == null ? '' : value) === String(active);
+      }
+      var current = md.comparableValue(value);
+      if (current == null) return false;
+      var min = md.comparableValue(active[0]);
+      var max = md.comparableValue(active[1]);
+      if (min != null && current < min) return false;
+      if (max != null && current > max) return false;
+      return true;
+    });
+  }
+
+  try { if(location.hash.indexOf('#miao=')===0) { var saved=JSON.parse(decodeURIComponent(location.hash.slice(6))); state.filters=saved.filters||{}; } } catch (_) {}
+  var printState=null;
+  window.addEventListener('beforeprint',function(){printState=JSON.parse(JSON.stringify(state.filters));state.filters={};update();});
+  window.addEventListener('afterprint',function(){state.filters=printState||{};printState=null;update();});
+  renderControls();
+  update();
+})();
+</script>
+  <script>(function(){
+    var items={
+  "evidence-object-1": {
+    "key": "evidence-object-1",
+    "objectPath": "charts[0]",
+    "label": "Total kpi_value",
+    "kind": "kpi",
+    "evidenceIds": [
+      "total"
+    ],
+    "derivedFrom": [
+      "\u0024evidence:total.values.total_kpi_value"
+    ],
+    "check": "value_match",
+    "query": [
+      "Total aggregates: sum(kpi_value) as total_kpi_value, count(*) as row_count"
+    ],
+    "fields": [
+      "kpi_value",
+      "*"
+    ],
+    "filters": [],
+    "sampleSize": 3,
+    "verified": true,
+    "explanation": "Calculated as the sum of kpi_value.",
+    "scope": "3 source results, with no additional evidence filters.",
+    "verification": "Verified: the displayed value matches the source calculation."
+  },
+  "evidence-object-2": {
+    "key": "evidence-object-2",
+    "objectPath": "charts[1]",
+    "label": "kpi_value over month",
+    "kind": "chart",
+    "evidenceIds": [
+      "by_time"
+    ],
+    "derivedFrom": [
+      "\u0024evidence:by_time.rows"
+    ],
+    "query": [
+      "kpi_value by month (ascending)"
+    ],
+    "fields": [
+      "month",
+      "kpi_value"
+    ],
+    "filters": [],
+    "sampleSize": 3,
+    "verified": true,
+    "explanation": "Shows the sum of kpi_value, grouped by month.",
+    "scope": "3 source results, with no additional evidence filters.",
+    "verification": "Verified: the visualization uses the declared source data and calculation."
+  },
+  "evidence-object-3": {
+    "key": "evidence-object-3",
+    "objectPath": "charts[2]",
+    "label": "kpi_value by region",
+    "kind": "chart",
+    "evidenceIds": [
+      "by_dimension"
+    ],
+    "derivedFrom": [
+      "\u0024evidence:by_dimension.rows"
+    ],
+    "query": [
+      "kpi_value by region, with share"
+    ],
+    "fields": [
+      "region",
+      "kpi_value",
+      "*"
+    ],
+    "filters": [],
+    "sampleSize": 2,
+    "verified": true,
+    "explanation": "Shows the sum of kpi_value, grouped by region.",
+    "scope": "2 source results, with no additional evidence filters.",
+    "verification": "Verified: the visualization uses the declared source data and calculation."
+  }
+};
+    var drawer=document.getElementById('miao-evidence-drawer');
+    var content=document.getElementById('miao-evidence-content');
+    var previous=null;
+    function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+    function row(label,value){if(!value||Array.isArray(value)&&!value.length)return '';return '<dt>'+esc(label)+'</dt><dd>'+esc(Array.isArray(value)?value.join(', '):value)+'</dd>';}
+    function openEvidence(key,trigger){
+      var item=items[key]; if(!item)return; previous=trigger;
+      var view=document.getElementById('miao-view-state');
+      var container=trigger.closest('[data-miao-chart]');
+      var currentValue=container&&container.querySelector('.miao-bigvalue-number');
+      var viewText=view?Array.from(view.children).map(function(node){return node.textContent.trim();}).filter(Boolean).join(' · '):'';
+      var current=(currentValue?'Displayed value: '+currentValue.textContent+'. ':'')+
+        (view ? viewText+(container?'':' — filter not applied to this published claim.') : 'Published evidence; no active runtime filters.');
+      content.innerHTML='<h3>'+esc(item.label)+'</h3><div class="evidence-summary"><p>'+esc(item.explanation)+'</p><p>'+esc(item.scope)+'</p><p class="evidence-verified">'+esc(item.verification)+'</p></div><div class="evidence-current"><b>Current view</b><br>'+esc(current)+'</div><details class="evidence-technical"><summary>Technical details</summary><dl class="evidence-meta">'+row('Evidence ID',item.evidenceIds)+row('Original query',item.query)+row('Source fields',item.fields)+row('Applied filters',item.filters)+row('Result count',item.sampleSize)+row('Validation rule',item.check)+row('Data path',item.derivedFrom)+'</dl></details>';
+      drawer.hidden=false; drawer.querySelector('.evidence-close').focus();
+    }
+    document.addEventListener('click',function(event){var trigger=event.target.closest('[data-evidence-key]');if(trigger)openEvidence(trigger.dataset.evidenceKey,trigger);});
+    function close(){drawer.hidden=true;if(previous)previous.focus();}
+    drawer.querySelector('.evidence-close').onclick=close;
+    drawer.addEventListener('click',function(event){if(event.target===drawer)close();});
+    document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!drawer.hidden)close();});
+  }());</script>
+  <script>Promise.resolve(document.fonts && document.fonts.ready).then(function(){document.documentElement.dataset.miaoRenderReady='true';});</script>
+</body>
+</html>

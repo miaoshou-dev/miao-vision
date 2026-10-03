@@ -10,7 +10,7 @@ export const diagnosticCodes = [
   'OUTPUT_NOT_WRITABLE', 'PDF_DEPENDENCY_MISSING'
 ] as const
 export type DiagnosticCode = typeof diagnosticCodes[number]
-export type DiagnosticHost = 'codex' | 'claude-code' | 'openclaw' | 'cli' | 'unknown'
+export type DiagnosticHost = 'codex' | 'claude-code' | 'openclaw' | 'pi' | 'cli' | 'unknown'
 
 export interface DiagnosticResult {
   ok: boolean
@@ -89,7 +89,7 @@ function readCliVersion(): string {
   return match?.[0] ?? ''
 }
 function normalizeHost(value?: string): DiagnosticHost {
-  return value === 'codex' || value === 'claude-code' || value === 'openclaw' || value === 'cli' ? value : 'unknown'
+  return value === 'codex' || value === 'claude-code' || value === 'openclaw' || value === 'pi' || value === 'cli' ? value : 'unknown'
 }
 function compareVersions(a: string, b: string): number {
   const left = a.split('.').map(Number), right = b.split('.').map(Number)

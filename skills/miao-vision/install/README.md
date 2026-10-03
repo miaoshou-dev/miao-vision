@@ -13,6 +13,7 @@ same source skill for Codex, Claude Code, and OpenClaw:
 - Codex: see `codex.md`
 - Claude Code: see `claude.md`
 - OpenClaw: see `openclaw.md`
+- Pi: see `pi.md`
 
 The standalone Skill ZIP remains a lightweight compatibility channel for one
 release cycle.

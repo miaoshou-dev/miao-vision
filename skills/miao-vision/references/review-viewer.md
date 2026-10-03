@@ -11,6 +11,12 @@ Viewer MCP server or open the Viewer automatically. Start the connection
 explicitly when the host supports it, then open the returned local URL in the
 host's embedded browser. Do not describe the Viewer as active until it starts.
 
+The Pi package includes an Extension that manages this MCP connection. In Pi,
+use `/miao-viewer` to start or reconnect to the Viewer, `/miao-viewer status`
+to inspect it, and `/miao-viewer stop` to stop it. Pi users do not configure the
+Viewer MCP server separately. The command returns a loopback URL and does not
+open an external browser automatically.
+
 - `miao-viz review serve` starts only the local Viewer at
   `http://127.0.0.1:43179/` and returns its URL. Use `--port <n>` to override
   the fixed default, or `--port 0` to choose an available port.

@@ -1,3 +1,4 @@
+import { saveReviewTitle } from './review-title-edit'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, statSync } from 'node:fs'
@@ -74,6 +75,25 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
     if (existing) return respondJson(response, 200, { ok: true, value: existing })
     const run = store.create({ runId: body.runId, kind: body.kind as 'report' | 'deck' | 'article', title: body.title, ...(typeof body.parentRunId === 'string' ? { parentRunId: body.parentRunId } : {}) })
     return respondJson(response, 201, { ok: true, value: run })
+  }
+  const titleMatch = /^\/api\/runs\/([^/]+)\/title$/.exec(url.pathname)
+  if (request.method === 'GET' && titleMatch) {
+    const path = store.get(decodeURIComponent(titleMatch[1]))?.artifact?.composition?.sourceSpecPath
+    if (!path || !existsSync(path)) return respondJson(response, 404, { ok: false, code: 'SPEC_NOT_FOUND', message: 'Source Spec not found.' })
+    return respondJson(response, 200, { ok: true, value: { specHash: createHash('sha256').update(readFileSync(path)).digest('hex') } })
+  }
+  if (request.method === 'POST' && titleMatch) {
+    if (request.headers.origin && request.headers.origin !== `http://${request.headers.host}`) return respondJson(response, 403, { ok: false, code: 'ORIGIN_FORBIDDEN', message: 'Title edits must originate from this Viewer.' })
+    const run = store.get(decodeURIComponent(titleMatch[1]))
+    if (!run) return respondJson(response, 404, { ok: false, code: 'RUN_NOT_FOUND', message: 'Review run not found.' })
+    const body = await readJsonBody(request)
+    try {
+      saveReviewTitle(run, body?.title, body?.expectedTitle, body?.expectedSpecHash)
+      store.publish({ ...run.artifact!, sequence: (run.events.at(-1)?.sequence ?? -1) + 1, timestamp: new Date().toISOString() })
+      return respondJson(response, 200, { ok: true, value: store.get(run.runId) })
+    } catch (error) {
+      return respondJson(response, 409, { ok: false, code: 'TITLE_EDIT_FAILED', message: error instanceof Error ? error.message : 'Title save failed.' })
+    }
   }
   const eventMatch = /^\/api\/runs\/([^/]+)\/events$/.exec(url.pathname)
   if (request.method === 'POST' && eventMatch) {

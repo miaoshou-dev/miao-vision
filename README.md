@@ -43,6 +43,7 @@ Download [`miao-vision-plugin.zip`](https://github.com/miaoshou-dev/miao-vision/
 | Codex | Install `miao-vision-plugin.zip` through the Codex plugin surface |
 | Claude Code | Add `miaoshou-dev/miao-vision` as a marketplace, then install `miao-vision@miao-vision` |
 | OpenClaw | Run `openclaw plugins install ./miao-vision-plugin.zip`, then enable `miao-vision` |
+| Pi | Run `pi install npm:@miao-vision/pi` |
 
 The plugin looks for a compatible CLI in this order:
 

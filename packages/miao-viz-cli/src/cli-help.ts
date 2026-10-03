@@ -237,12 +237,17 @@ Options:
   --port <n>              Port to bind (default: 43179; use 0 for an available port)
   --artifact-root <dir>  Root directory allowed for artifact access (default: cwd)
 `,
-  'review.mcp': `Usage: miao-viz review mcp
+  'review.mcp': `Usage: miao-viz review mcp [options]
 
-Start the stdio MCP server and the local Review Viewer on port 43179. The MCP server exposes
+Start the stdio MCP server and the local Review Viewer. JSON-RPC is written to stdout and
+diagnostics are written to stderr. The MCP server exposes
 open_miao_vision_viewer, run_miao_viz, get_miao_vision_revision, and
 apply_miao_vision_revision. A Viewer revision must be confirmed before the Agent can
 apply its restricted PatchSet and render a child version.
+
+Options:
+  --port <n>              Port to bind (default: 43179; use 0 for an available port)
+  --artifact-root <dir>  Root directory allowed for artifact access (default: cwd)
 `,
   'data.query': `Usage: miao-viz data query <file> [options]
 
@@ -292,7 +297,7 @@ Check the local CLI, Node.js, host plugin, input file, output directory, and opt
 The result is JSON-safe and never includes file contents, secrets, or environment values.
 
 Options:
-  --host <id>          codex, claude-code, openclaw, or cli
+  --host <id>          codex, claude-code, openclaw, pi, or cli
   --input <file>       Input file readability check
   --output <directory> Output directory writeability check
   --pdf                Check the PDF export dependency
@@ -396,7 +401,7 @@ export function printHelp(groupOrCommand?: string): void {
 Usage:
   miao-viz <group> <command> [options]
   miao-viz --version
-  miao-viz diagnose [--input <file>] [--output <directory>] [--host codex|claude-code|openclaw|cli]
+  miao-viz diagnose [--input <file>] [--output <directory>] [--host codex|claude-code|openclaw|pi|cli]
 
 Groups:
   artifact Plan tabular visual outcomes in optional Shadow Mode

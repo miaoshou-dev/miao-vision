@@ -1,0 +1,518 @@
+{
+  "ok": true,
+  "value": {
+    "file": "/Users/guming/dev/gitcode/miao-vision/test_data/report_workflow_sales.csv",
+    "rows": 45,
+    "columns": [
+      {
+        "name": "order_date",
+        "type": "date",
+        "total": 45,
+        "nonNullCount": 45,
+        "nullCount": 0,
+        "nullRate": 0,
+        "fillRate": 1,
+        "uniqueRate": 1,
+        "samples": [
+          "2026-01-01",
+          "2026-01-02",
+          "2026-01-03",
+          "2026-01-04",
+          "2026-01-05"
+        ],
+        "distinctCount": 45,
+        "temporal": {
+          "span": "2026-01-01 ~ 2026-05-05",
+          "granularity": "day",
+          "isMonotonic": true,
+          "gapCount": 80
+        },
+        "role": "time",
+        "semanticTags": [],
+        "confidence": 0.95,
+        "rationale": [
+          "unique rate is very high",
+          "column type is date"
+        ],
+        "qualityFlags": [
+          "high_unique_rate"
+        ],
+        "chartUsage": {
+          "asMeasure": "forbidden",
+          "asDimension": "allowed",
+          "asDetailKey": "allowed"
+        }
+      },
+      {
+        "name": "region",
+        "type": "string",
+        "total": 45,
+        "nonNullCount": 45,
+        "nullCount": 0,
+        "nullRate": 0,
+        "fillRate": 1,
+        "uniqueRate": 0.1111,
+        "samples": [
+          "North",
+          "South",
+          "East",
+          "West",
+          "Central"
+        ],
+        "distinctCount": 5,
+        "topValue": "North",
+        "topSharePct": 0.2,
+        "distribution": [
+          {
+            "value": "North",
+            "count": 9,
+            "sharePct": 0.2
+          },
+          {
+            "value": "South",
+            "count": 9,
+            "sharePct": 0.2
+          },
+          {
+            "value": "East",
+            "count": 9,
+            "sharePct": 0.2
+          },
+          {
+            "value": "West",
+            "count": 9,
+            "sharePct": 0.2
+          },
+          {
+            "value": "Central",
+            "count": 9,
+            "sharePct": 0.2
+          }
+        ],
+        "role": "dimension",
+        "semanticTags": [],
+        "confidence": 0.82,
+        "rationale": [
+          "string column suitable for grouping"
+        ],
+        "qualityFlags": [],
+        "chartUsage": {
+          "asMeasure": "forbidden",
+          "asDimension": "recommended",
+          "asDetailKey": "allowed"
+        }
+      },
+      {
+        "name": "product",
+        "type": "string",
+        "total": 45,
+        "nonNullCount": 45,
+        "nullCount": 0,
+        "nullRate": 0,
+        "fillRate": 1,
+        "uniqueRate": 0.3333,
+        "samples": [
+          "Product 01",
+          "Product 02",
+          "Product 03",
+          "Product 04",
+          "Product 05"
+        ],
+        "distinctCount": 15,
+        "topValue": "Product 01",
+        "topSharePct": 0.0667,
+        "distribution": [
+          {
+            "value": "Product 01",
+            "count": 3,
+            "sharePct": 0.0667
+          },
+          {
+            "value": "Product 02",
+            "count": 3,
+            "sharePct": 0.0667
+          },
+          {
+            "value": "Product 03",
+            "count": 3,
+            "sharePct": 0.0667
+          },
+          {
+            "value": "Product 04",
+            "count": 3,
+            "sharePct": 0.0667
+          },
+          {
+            "value": "Product 05",
+            "count": 3,
+            "sharePct": 0.0667
+          },
+          {
+            "value": "Product 06",
+            "count": 3,
+            "sharePct": 0.0667
+          },
+          {
+            "value": "Product 07",
+            "count": 3,
+            "sharePct": 0.0667
+          },
+          {
+            "value": "Product 08",
+            "count": 3,
+            "sharePct": 0.0667
+          },
+          {
+            "value": "Product 09",
+            "count": 3,
+            "sharePct": 0.0667
+          },
+          {
+            "value": "Product 10",
+            "count": 3,
+            "sharePct": 0.0667
+          }
+        ],
+        "role": "dimension",
+        "semanticTags": [],
+        "confidence": 0.82,
+        "rationale": [
+          "string column suitable for grouping"
+        ],
+        "qualityFlags": [],
+        "chartUsage": {
+          "asMeasure": "forbidden",
+          "asDimension": "recommended",
+          "asDetailKey": "allowed"
+        }
+      },
+      {
+        "name": "sku",
+        "type": "string",
+        "total": 45,
+        "nonNullCount": 45,
+        "nullCount": 0,
+        "nullRate": 0,
+        "fillRate": 1,
+        "uniqueRate": 1,
+        "samples": [
+          "SKU001",
+          "SKU002",
+          "SKU003",
+          "SKU004",
+          "SKU005"
+        ],
+        "distinctCount": 45,
+        "topValue": "SKU001",
+        "topSharePct": 0.0222,
+        "distribution": [
+          {
+            "value": "SKU001",
+            "count": 1,
+            "sharePct": 0.0222
+          },
+          {
+            "value": "SKU002",
+            "count": 1,
+            "sharePct": 0.0222
+          },
+          {
+            "value": "SKU003",
+            "count": 1,
+            "sharePct": 0.0222
+          },
+          {
+            "value": "SKU004",
+            "count": 1,
+            "sharePct": 0.0222
+          },
+          {
+            "value": "SKU005",
+            "count": 1,
+            "sharePct": 0.0222
+          },
+          {
+            "value": "SKU006",
+            "count": 1,
+            "sharePct": 0.0222
+          },
+          {
+            "value": "SKU007",
+            "count": 1,
+            "sharePct": 0.0222
+          },
+          {
+            "value": "SKU008",
+            "count": 1,
+            "sharePct": 0.0222
+          },
+          {
+            "value": "SKU009",
+            "count": 1,
+            "sharePct": 0.0222
+          },
+          {
+            "value": "SKU010",
+            "count": 1,
+            "sharePct": 0.0222
+          }
+        ],
+        "role": "dimension",
+        "semanticTags": [],
+        "confidence": 0.68,
+        "rationale": [
+          "unique rate is very high",
+          "string column suitable for grouping"
+        ],
+        "qualityFlags": [
+          "high_unique_rate"
+        ],
+        "chartUsage": {
+          "asMeasure": "forbidden",
+          "asDimension": "recommended",
+          "asDetailKey": "allowed"
+        }
+      },
+      {
+        "name": "sales",
+        "type": "number",
+        "total": 45,
+        "nonNullCount": 45,
+        "nullCount": 0,
+        "nullRate": 0,
+        "fillRate": 1,
+        "uniqueRate": 0.9778,
+        "samples": [
+          120,
+          135,
+          142,
+          128,
+          156
+        ],
+        "distinctCount": 44,
+        "min": 118,
+        "max": 286,
+        "sum": 9085,
+        "mean": 201.8889,
+        "median": 205,
+        "p25": 171,
+        "p75": 235,
+        "stddev": 42.5792,
+        "coefficientOfVariation": 0.2109,
+        "skewness": -0.2192,
+        "skewnessReliable": true,
+        "outlierCount": 0,
+        "outlierReliable": true,
+        "histogram": [
+          {
+            "bucket": "118-139",
+            "count": 4
+          },
+          {
+            "bucket": "139-160",
+            "count": 4
+          },
+          {
+            "bucket": "160-181",
+            "count": 7
+          },
+          {
+            "bucket": "181-202",
+            "count": 7
+          },
+          {
+            "bucket": "202-223",
+            "count": 7
+          },
+          {
+            "bucket": "223-244",
+            "count": 8
+          },
+          {
+            "bucket": "244-265",
+            "count": 5
+          },
+          {
+            "bucket": "265-286",
+            "count": 3
+          }
+        ],
+        "histogramReliable": true,
+        "role": "measure",
+        "semanticTags": [
+          "currency"
+        ],
+        "confidence": 0.9,
+        "rationale": [
+          "numeric non-identifier column"
+        ],
+        "qualityFlags": [],
+        "chartUsage": {
+          "asMeasure": "recommended",
+          "asDimension": "discouraged",
+          "asDetailKey": "allowed"
+        }
+      },
+      {
+        "name": "orders",
+        "type": "number",
+        "total": 45,
+        "nonNullCount": 45,
+        "nullCount": 0,
+        "nullRate": 0,
+        "fillRate": 1,
+        "uniqueRate": 0.2667,
+        "samples": [
+          3,
+          4,
+          5,
+          6,
+          2
+        ],
+        "distinctCount": 12,
+        "min": 2,
+        "max": 13,
+        "sum": 331,
+        "mean": 7.3556,
+        "median": 8,
+        "p25": 5,
+        "p75": 9,
+        "stddev": 2.5136,
+        "coefficientOfVariation": 0.3417,
+        "skewness": -0.7692,
+        "skewnessReliable": true,
+        "outlierCount": 0,
+        "outlierReliable": true,
+        "histogram": [
+          {
+            "bucket": "2-3.375",
+            "count": 3
+          },
+          {
+            "bucket": "3.375-4.75",
+            "count": 3
+          },
+          {
+            "bucket": "4.75-6.125",
+            "count": 11
+          },
+          {
+            "bucket": "6.125-7.5",
+            "count": 5
+          },
+          {
+            "bucket": "7.5-8.875",
+            "count": 8
+          },
+          {
+            "bucket": "8.875-10.25",
+            "count": 10
+          },
+          {
+            "bucket": "10.25-11.625",
+            "count": 3
+          },
+          {
+            "bucket": "11.625-13",
+            "count": 2
+          }
+        ],
+        "histogramReliable": true,
+        "role": "measure",
+        "semanticTags": [],
+        "confidence": 0.78,
+        "rationale": [
+          "numeric non-identifier column"
+        ],
+        "qualityFlags": [],
+        "chartUsage": {
+          "asMeasure": "recommended",
+          "asDimension": "discouraged",
+          "asDetailKey": "allowed"
+        }
+      }
+    ],
+    "quality": {
+      "completeness": 1,
+      "nullRate": 0,
+      "avgUniqueRate": 0.6148,
+      "highNullColumns": [],
+      "likelyIdColumns": [],
+      "duplicateProneDimensions": [
+        "region",
+        "product"
+      ]
+    },
+    "correlations": [
+      {
+        "a": "sales",
+        "b": "orders",
+        "r": 0.9779,
+        "n": 45,
+        "reliable": true
+      }
+    ],
+    "hints": [
+      {
+        "type": "kpi",
+        "field": "sales",
+        "label": "sales"
+      },
+      {
+        "type": "kpi",
+        "field": "orders",
+        "label": "orders"
+      },
+      {
+        "type": "time-series",
+        "xField": "order_date",
+        "yFields": [
+          "sales",
+          "orders"
+        ]
+      },
+      {
+        "type": "ranking",
+        "groupField": "region",
+        "measureField": "sales"
+      },
+      {
+        "type": "ranking",
+        "groupField": "region",
+        "measureField": "orders"
+      },
+      {
+        "type": "ranking",
+        "groupField": "product",
+        "measureField": "sales"
+      },
+      {
+        "type": "ranking",
+        "groupField": "product",
+        "measureField": "orders"
+      },
+      {
+        "type": "share",
+        "labelField": "region",
+        "valueField": "sales"
+      },
+      {
+        "type": "correlation",
+        "a": "sales",
+        "b": "orders",
+        "r": 0.9779
+      }
+    ],
+    "insights": [
+      {
+        "type": "trend",
+        "title": "Strong relationship: sales and orders",
+        "description": "Pearson correlation is 0.9779; a scatter chart with an annotation can surface this relationship.",
+        "fields": [
+          "sales",
+          "orders"
+        ]
+      }
+    ]
+  }
+}

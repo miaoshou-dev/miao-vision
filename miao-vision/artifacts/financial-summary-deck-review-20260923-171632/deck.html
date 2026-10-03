@@ -1,0 +1,1420 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="基于3条月度记录的描述性财务简报。" />
+  <title>2026年1—3月财务摘要</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--mv-serif); -webkit-font-smoothing: antialiased; }
+
+  /* ── Present mode ── */
+  body.present-mode { background: #141413; overflow: hidden; }
+  .slide-viewport { width: 100vw; height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .slide-canvas { width: 1280px; height: 720px; transform-origin: center center; transform: scale(var(--slide-scale)); position: relative; }
+  .slide {
+    width: 1280px; height: 720px; background: var(--mv-paper);
+    position: absolute; top: 0; left: 0;
+    padding: 64px 80px 56px;
+    display: flex; flex-direction: column;
+    visibility: hidden; opacity: 0; transition: opacity 0.2s ease;
+  }
+  .slide.active { visibility: visible; opacity: 1; }
+
+  /* ── Nav bar ── */
+  .slide-nav {
+    position: fixed; bottom: 0; left: 0; right: 0; height: 48px;
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    background: rgba(20,20,19,0.72); backdrop-filter: blur(8px);
+    opacity: 0; transition: opacity 0.2s; z-index: 100;
+  }
+  .slide-nav:hover { opacity: 1; }
+  .slide-nav button {
+    background: none; border: none; cursor: pointer; color: rgba(255,255,255,0.65);
+    font-size: 13px; padding: 4px 10px; border-radius: 3px;
+    font-family: var(--mv-mono); transition: color 0.15s, background 0.15s;
+  }
+  .slide-nav button:hover { color: #fff; background: rgba(255,255,255,0.1); }
+  .slide-counter { color: rgba(255,255,255,0.4); font-family: var(--mv-mono); font-size: 12px; min-width: 56px; text-align: center; }
+
+  /* ── Shared slide elements ── */
+  .slide-eyebrow { font-family: var(--mv-mono); font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 3px; color: var(--mv-muted); margin-bottom: 14px; }
+  .slide-title { font-family: var(--mv-serif); font-size: 50px; font-weight: 500; line-height: 1.1; letter-spacing: -0.6px; color: var(--mv-ink); margin-bottom: 24px; max-width: 19ch; overflow-wrap: anywhere; }
+  .slide-claim { font-family: var(--mv-serif); font-size: 21px; line-height: 1.45; color: var(--mv-soft); margin-bottom: 18px; max-width: 52ch; overflow-wrap: anywhere; }
+  .slide-pts { list-style: none; counter-reset: pts; }
+  .slide-pts li { counter-increment: pts; font-size: 16px; line-height: 1.55; color: var(--mv-soft); padding-left: 22px; position: relative; margin-bottom: 10px; }
+  .slide-pts li::before { content: counter(pts) "."; position: absolute; left: 0; color: var(--mv-brand); font-weight: 500; font-family: var(--mv-mono); font-size: 13px; }
+  .slide-callout { border-left: 2px solid var(--mv-brand); padding: 8px 0 8px 16px; font-family: var(--mv-serif); font-size: 15px; line-height: 1.55; color: var(--mv-soft); margin-top: auto; }
+  .slide-recommendation { border-left: 2px solid var(--mv-brand); padding: 7px 0 7px 14px; font-family: var(--mv-serif); font-size: 14px; line-height: 1.45; color: var(--mv-soft); margin-top: 10px; }
+  .slide-caveat { position: absolute; left: 80px; right: 80px; bottom: 38px; font-family: var(--mv-mono); font-size: 9px; line-height: 1.35; color: var(--mv-muted); }
+  .slide-annotation { font-family: var(--mv-serif); font-size: 14px; color: var(--mv-muted); line-height: 1.55; margin-bottom: 14px; font-style: italic; }
+  .slide-quote-focus { justify-content: center; }
+  .slide-quote-focus blockquote { font-family: var(--mv-serif); font-size: 46px; line-height: 1.2; color: var(--mv-ink); max-width: 22ch; }
+  .quote-source { margin-top: 28px; font-family: var(--mv-mono); font-size: 12px; color: var(--mv-muted); }
+  .narrative-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 56px; flex: 1; }
+  .narrative-comparison > div { border-top: 2px solid var(--mv-brand); padding-top: 22px; }
+  .decision-request { font-family: var(--mv-serif); font-size: 34px; line-height: 1.25; color: var(--mv-ink); max-width: 28ch; margin-bottom: 28px; }
+  .decision-limit { margin-top: auto; font-family: var(--mv-mono); font-size: 11px; color: var(--mv-muted); }
+  .slide-body-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .slide-chart-full { display: flex; align-items: center; overflow: hidden; }
+  .slide-chart-full svg, .slide-chart-full .miao-table-wrap { width: 100%; }
+
+  /* ── Metrics ── */
+  .slide-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding-top: 14px; border-top: 0.5px dotted var(--mv-border); margin-bottom: 20px; }
+  .slide-metric { flex: 1; display: flex; flex-direction: column; gap: 5px; padding-right: 24px; }
+  .slide-metric .v { font-family: var(--mv-serif); font-size: 42px; font-weight: 500; color: var(--mv-brand); line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -0.5px; }
+  .slide-metric .l { font-family: var(--mv-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--mv-muted); }
+
+  /* ── Cover ── */
+  .slide-cover { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; height: 100%; }
+  .slide-cover-left { display: flex; flex-direction: column; }
+  .slide-cover h1 { font-family: var(--mv-serif); font-size: 56px; font-weight: 500; line-height: 1.05; letter-spacing: -1px; color: var(--mv-ink); margin-bottom: 14px; max-width: 12ch; overflow-wrap: anywhere; }
+  .slide-cover .sub { font-size: 18px; color: var(--mv-soft); line-height: 1.5; margin-bottom: 22px; max-width: 34ch; overflow-wrap: anywhere; }
+  .slide-cover .line { width: 48px; height: 2px; background: var(--mv-brand); margin-bottom: 14px; }
+  .slide-cover .meta { font-family: var(--mv-mono); font-size: 11px; color: var(--mv-muted); letter-spacing: 0.5px; }
+  .slide-cover-right { display: flex; align-items: center; justify-content: center; }
+  .slide-mark { font-family: var(--mv-mono); font-size: 10px; color: var(--mv-brand); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
+
+  /* ── Title-only ── */
+  .slide-title-only { justify-content: center; }
+
+  /* ── Ending ── */
+  .slide-ending { justify-content: center; align-items: center; text-align: center; }
+  .slide-ending h2 { font-family: var(--mv-serif); font-size: 52px; font-weight: 500; color: var(--mv-ink); letter-spacing: -0.8px; margin-bottom: 14px; }
+  .slide-ending .line { width: 48px; height: 1.5px; background: var(--mv-brand); margin: 0 auto 14px; }
+  .slide-ending .sub { font-size: 17px; color: var(--mv-soft); max-width: 44ch; line-height: 1.45; }
+
+  /* ── Footer ── */
+  .slide-page-num { position: absolute; bottom: 18px; right: 28px; font-family: var(--mv-mono); font-size: 10px; color: var(--mv-muted); font-variant-numeric: tabular-nums; }
+  .slide-footer-mark { position: absolute; bottom: 18px; left: 28px; font-family: var(--mv-mono); font-size: 10px; color: var(--mv-muted); letter-spacing: 1px; text-transform: uppercase; }
+
+  /* ── Table styles inside slide ── */
+  .miao-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .miao-table-wrap { max-height: 430px; overflow: hidden; }
+  .miao-table caption { caption-side: top; text-align: left; padding: 0 0 10px; color: var(--mv-muted); font-family: var(--mv-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .miao-table th { border-bottom: 1px solid var(--mv-border); padding: 7px 12px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--mv-muted); font-family: var(--mv-mono); }
+  .miao-table td { border-bottom: 1px solid var(--mv-border); padding: 8px 12px; color: var(--mv-soft); font-variant-numeric: tabular-nums; }
+  .miao-table tbody tr:last-child td { border-bottom: none; }
+
+  /* ── Print mode ── */
+  @media print {
+    body { background: var(--mv-paper); }
+    .slide-viewport { display: block; }
+    .slide-canvas { transform: none !important; width: auto; height: auto; }
+    .slide { width: 13.333in; height: 7.5in; position: relative; visibility: visible !important; opacity: 1 !important; break-after: page; page-break-after: always; animation: none !important; transition: none !important; }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    .slide-nav { display: none !important; }
+  }
+  @page { size: 13.333in 7.5in; margin: 0; background: var(--mv-paper, #f5f4ed); }
+</style>
+  <style id="miao-deck-theme">:root {
+      --mv-paper: #f5f4ed;
+      --mv-surface: #faf9f5;
+      --mv-border: #e5e3d8;
+      --mv-ink: #141413;
+      --mv-muted: #6b6a64;
+      --mv-soft-text: #504e49;
+      --mv-soft: #504e49;
+      --mv-brand: #1b365d;
+      --mv-mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
+      --mv-serif: Charter, Georgia, "Times New Roman", serif;
+      --mv-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+    }</style>
+</head>
+<body class="present-mode">
+  <div class="slide-viewport">
+    <div class="slide-canvas">
+      <div class="slide">
+  <div class="slide-cover">
+    <div class="slide-cover-left">
+      <div class="slide-mark">miao-vision</div>
+      <h1>2026年1—3月财务摘要</h1>
+      <div class="sub">3月收入较2月增长6.8%。</div>
+      <div class="line"></div>
+      <div class="meta">月度变化</div>
+    </div>
+    <div class="slide-cover-right"><svg viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg" style="width:260px;opacity:0.9">
+  <circle cx="160" cy="160" r="140" fill="none" stroke="var(--mv-border, #e5e3d8)" stroke-width="1"/>
+  <circle cx="160" cy="160" r="100" fill="none" stroke="var(--mv-border, #e5e3d8)" stroke-width="1"/>
+  <circle cx="160" cy="160" r="60" fill="var(--mv-surface, #eef2f7)" stroke="var(--mv-brand, #1b365d)" stroke-width="1.2"/>
+  <path d="M160 20 A140 140 0 0 1 300 160" fill="none" stroke="var(--mv-brand, #1b365d)" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M300 160 A140 140 0 0 1 160 300" fill="none" stroke="var(--mv-muted, #6b6a64)" stroke-width="1" stroke-linecap="round"/>
+  <path d="M160 300 A140 140 0 0 1 20 160" fill="none" stroke="var(--mv-muted, #6b6a64)" stroke-width="1" stroke-linecap="round"/>
+  <path d="M20 160 A140 140 0 0 1 160 20" fill="none" stroke="var(--mv-muted, #6b6a64)" stroke-width="1" stroke-linecap="round"/>
+</svg></div>
+  </div>
+  
+  
+  
+    <div class="slide-footer-mark">miao-vision</div>
+    <div class="slide-page-num">01</div>
+</div>
+<div class="slide">
+  <div class="slide-eyebrow">财务概览</div>
+  <div class="slide-title" style="margin-bottom:16px">收入、成本与利润</div>
+  <div class="slide-metrics">
+    <div class="slide-metric" data-miao-metric="true" data-slide-index="1" data-metric-index="0">
+      <div class="v">393,000</div>
+      <div class="l">总收入</div>
+    </div>
+    <div class="slide-metric" data-miao-metric="true" data-slide-index="1" data-metric-index="1">
+      <div class="v">264,000</div>
+      <div class="l">总成本</div>
+    </div>
+    <div class="slide-metric" data-miao-metric="true" data-slide-index="1" data-metric-index="2">
+      <div class="v">129,000</div>
+      <div class="l">总利润</div>
+    </div></div>
+  <div class="slide-chart-full" style="flex:1" data-miao-chart="ranking" data-slide-index="1" data-chart-index="0"><div class="miao-render-slot"><svg class="miao-chart-svg" viewBox="0 0 1100 310" width="100%" height="310" role="img" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="1100" height="310" fill="#faf9f5" />
+    
+      
+    <line x1="72" y1="202.5" x2="1076" y2="202.5" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="143.0" x2="1076" y2="143.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="83.5" x2="1076" y2="83.5" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="24.0" x2="1076" y2="24.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" />
+    <line x1="72" y1="262" x2="1076" y2="262" stroke="#c8c5b8" />
+    <line x1="72" y1="24" x2="72" y2="262" stroke="#c8c5b8" />
+    <text x="66" y="266.0" text-anchor="end" fill="#6b6a64" font-size="11">0</text><text x="66" y="206.5" text-anchor="end" fill="#6b6a64" font-size="11">63.0K</text><text x="66" y="147.0" text-anchor="end" fill="#6b6a64" font-size="11">126.0K</text><text x="66" y="87.5" text-anchor="end" fill="#6b6a64" font-size="11">189.0K</text><text x="66" y="28.0" text-anchor="end" fill="#6b6a64" font-size="11">252.0K</text>
+    <text x="574.0" y="316" text-anchor="middle" fill="#6b6a64" font-size="12">business_unit</text>
+    <text x="14" y="143.0" text-anchor="middle" transform="rotate(-90 14 143.0)" fill="#6b6a64" font-size="12">total_revenue</text>
+  
+      <g>
+        <rect data-miao-mark="true" data-chart-id="ranking" data-field="business_unit" data-value="Core" data-row-key="0" data-tooltip="Core: 252000" x="72.0" y="24.0" width="498.0" height="238.0" rx="3" fill="#1b365d" />
+        <text x="321.0" y="280.0" text-anchor="middle" fill="#6b6a64" font-size="11">Core</text>
+      </g><g>
+        <rect data-miao-mark="true" data-chart-id="ranking" data-field="business_unit" data-value="Growth" data-row-key="1" data-tooltip="Growth: 141000" x="578.0" y="128.8" width="498.0" height="133.2" rx="3" fill="#1b365d" />
+        <text x="827.0" y="280.0" text-anchor="middle" fill="#6b6a64" font-size="11">Growth</text>
+      </g>
+    
+  </svg></div></div>
+  
+  
+  
+    <div class="slide-footer-mark">miao-vision</div>
+    <div class="slide-page-num">02</div>
+</div>
+<div class="slide">
+  <div class="slide-eyebrow">月度表现</div>
+  <div class="slide-title" style="margin-bottom:16px">月度收入变化</div>
+  <div class="slide-chart-full" style="flex:1" data-miao-chart="trend" data-slide-index="2" data-chart-index="0"><div class="miao-render-slot"><svg class="miao-chart-svg" viewBox="0 0 1100 460" width="100%" height="460" role="img" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="1100" height="460" fill="#faf9f5" />
+    
+      
+    <line x1="72" y1="303.0" x2="1076" y2="303.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="210.0" x2="1076" y2="210.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="117.0" x2="1076" y2="117.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="24.0" x2="1076" y2="24.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" />
+    <line x1="72" y1="396" x2="1076" y2="396" stroke="#c8c5b8" />
+    <line x1="72" y1="24" x2="72" y2="396" stroke="#c8c5b8" />
+    <text x="66" y="400.0" text-anchor="end" fill="#6b6a64" font-size="11">0</text><text x="66" y="307.0" text-anchor="end" fill="#6b6a64" font-size="11">35.3K</text><text x="66" y="214.0" text-anchor="end" fill="#6b6a64" font-size="11">70.5K</text><text x="66" y="121.0" text-anchor="end" fill="#6b6a64" font-size="11">105.8K</text><text x="66" y="28.0" text-anchor="end" fill="#6b6a64" font-size="11">141.0K</text>
+    <text x="574.0" y="450" text-anchor="middle" fill="#6b6a64" font-size="12">month</text>
+    <text x="14" y="210.0" text-anchor="middle" transform="rotate(-90 14 210.0)" fill="#6b6a64" font-size="12">total_revenue</text>
+  
+      
+      <path d="M 72.0 79.4 L 574.0 47.7 L 1076.0 24.0" fill="none" stroke="#1b365d" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+      <circle data-miao-mark="true" data-chart-id="trend" data-field="month" data-value="2026-01" data-row-key="0" data-tooltip="2026-01: 120000" cx="72.0" cy="79.4" r="4" fill="#1b365d"><title>2026-01: 120000</title></circle><circle data-miao-mark="true" data-chart-id="trend" data-field="month" data-value="2026-02" data-row-key="0" data-tooltip="2026-02: 132000" cx="574.0" cy="47.7" r="4" fill="#1b365d"><title>2026-02: 132000</title></circle><circle data-miao-mark="true" data-chart-id="trend" data-field="month" data-value="2026-03" data-row-key="0" data-tooltip="2026-03: 141000" cx="1076.0" cy="24.0" r="4" fill="#1b365d"><title>2026-03: 141000</title></circle>
+      <text x="72.0" y="440" text-anchor="middle" fill="#6b6a64">2026-01</text><text x="574.0" y="440" text-anchor="middle" fill="#6b6a64">2026-02</text><text x="1076.0" y="440" text-anchor="middle" fill="#6b6a64">2026-03</text>
+    
+  </svg></div></div>
+  
+  
+  
+    <div class="slide-footer-mark">miao-vision</div>
+    <div class="slide-page-num">03</div>
+</div>
+<div class="slide">
+  <div class="slide-eyebrow">业务单元</div>
+  <div class="slide-title" style="margin-bottom:16px">业务单元收入对比</div>
+  <div class="slide-chart-full" style="flex:1" data-miao-chart="ranking" data-slide-index="3" data-chart-index="0"><div class="miao-render-slot"><svg class="miao-chart-svg" viewBox="0 0 1100 460" width="100%" height="460" role="img" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="1100" height="460" fill="#faf9f5" />
+    
+      
+    <line x1="72" y1="315.0" x2="1076" y2="315.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="218.0" x2="1076" y2="218.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="121.0" x2="1076" y2="121.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="24.0" x2="1076" y2="24.0" stroke="#c8c5b8" stroke-opacity="0.4" stroke-dasharray="4 3" />
+    <line x1="72" y1="412" x2="1076" y2="412" stroke="#c8c5b8" />
+    <line x1="72" y1="24" x2="72" y2="412" stroke="#c8c5b8" />
+    <text x="66" y="416.0" text-anchor="end" fill="#6b6a64" font-size="11">0</text><text x="66" y="319.0" text-anchor="end" fill="#6b6a64" font-size="11">63.0K</text><text x="66" y="222.0" text-anchor="end" fill="#6b6a64" font-size="11">126.0K</text><text x="66" y="125.0" text-anchor="end" fill="#6b6a64" font-size="11">189.0K</text><text x="66" y="28.0" text-anchor="end" fill="#6b6a64" font-size="11">252.0K</text>
+    <text x="574.0" y="466" text-anchor="middle" fill="#6b6a64" font-size="12">business_unit</text>
+    <text x="14" y="218.0" text-anchor="middle" transform="rotate(-90 14 218.0)" fill="#6b6a64" font-size="12">total_revenue</text>
+  
+      <g>
+        <rect data-miao-mark="true" data-chart-id="ranking" data-field="business_unit" data-value="Core" data-row-key="0" data-tooltip="Core: 252000" x="72.0" y="24.0" width="498.0" height="388.0" rx="3" fill="#1b365d" />
+        <text x="321.0" y="430.0" text-anchor="middle" fill="#6b6a64" font-size="11">Core</text>
+      </g><g>
+        <rect data-miao-mark="true" data-chart-id="ranking" data-field="business_unit" data-value="Growth" data-row-key="1" data-tooltip="Growth: 141000" x="578.0" y="194.9" width="498.0" height="217.1" rx="3" fill="#1b365d" />
+        <text x="827.0" y="430.0" text-anchor="middle" fill="#6b6a64" font-size="11">Growth</text>
+      </g>
+    
+  </svg></div></div>
+  
+  
+  
+    <div class="slide-footer-mark">miao-vision</div>
+    <div class="slide-page-num">04</div>
+</div>
+<div class="slide">
+  <div class="slide-eyebrow">数据范围</div>
+  <div class="slide-title">解读说明</div>
+  
+  <ul class="slide-pts"><li>仅有3条记录，覆盖2026年1月至3月。业务单元排名和月度对比只描述当前样本，不宜泛化。</li></ul>
+  
+  
+  <div class="slide-caveat">仅有3条记录；排名和对比只描述当前样本，不宜泛化。</div>
+  
+    <div class="slide-footer-mark">miao-vision</div>
+    <div class="slide-page-num">05</div>
+</div>
+    </div>
+  </div>
+  <nav class="slide-nav">
+    <button id="btn-prev">&#8592;</button>
+    <span id="slide-counter" class="slide-counter">1 / 5</span>
+    <button id="btn-next">&#8594;</button>
+    <button id="btn-fs" title="Fullscreen (F)">&#x26F6;</button>
+    <button id="btn-print" title="Export PDF">&#x2399;</button>
+    
+  </nav>
+  <script type="application/json" id="miao-viz-deck">{"title":"2026年1—3月财务摘要","description":"基于3条月度记录的描述性财务简报。","intent":"executive-brief","pattern":"executive-brief","caveats":[{"text":"仅有3条记录；排名和对比只描述当前样本，不宜泛化。","warningRefs":["extreme_small_sample"]}],"slides":[{"layout":"cover","slideRole":"cover-claim","eyebrow":"月度变化","title":"2026年1—3月财务摘要","claim":"3月收入较2月增长6.8%。","claimType":"delta","evidence":["by_time"],"derivedFrom":["$evidence:by_time.rows[1].total_revenue","$evidence:by_time.rows[last].total_revenue"],"check":"delta_formula","claimArgs":{"expected":0.06818181818181818,"from":"$evidence:by_time.rows[1].total_revenue","to":"$evidence:by_time.rows[last].total_revenue","mode":"percent"}},{"layout":"metrics-chart","slideRole":"kpi-snapshot","eyebrow":"财务概览","title":"收入、成本与利润","metrics":[{"label":"总收入","format":",.0f","data":{"transform":[{"type":"aggregate","measures":[{"field":"revenue","op":"sum","as":"total_revenue"}]}]},"provenance":{"evidence":["total"],"derivedFrom":["$evidence:total.values.total_revenue"],"check":"value_match","claimArgs":{"expected":"$evidence:total.values.total_revenue","value":"$evidence:total.values.total_revenue"}}},{"label":"总成本","format":",.0f","data":{"transform":[{"type":"aggregate","measures":[{"field":"cost","op":"sum","as":"total_cost"}]}]},"provenance":{"evidence":["total"],"derivedFrom":["$evidence:total.values.total_cost"],"check":"value_match","claimArgs":{"expected":"$evidence:total.values.total_cost","value":"$evidence:total.values.total_cost"}}},{"label":"总利润","format":",.0f","data":{"transform":[{"type":"aggregate","measures":[{"field":"profit","op":"sum","as":"total_profit"}]}]},"provenance":{"evidence":["total"],"derivedFrom":["$evidence:total.values.total_profit"],"check":"value_match","claimArgs":{"expected":"$evidence:total.values.total_profit","value":"$evidence:total.values.total_profit"}}}],"charts":[{"id":"ranking","type":"bar","title":"业务单元收入","interaction":{"tooltip":true},"data":{"transform":[{"type":"aggregate","groupBy":["business_unit"],"measures":[{"field":"revenue","op":"sum","as":"total_revenue"}]},{"type":"sort","field":"total_revenue","order":"desc"},{"type":"limit","value":10}]},"encoding":{"x":{"field":"business_unit"},"y":{"field":"total_revenue"}},"provenance":{"evidence":["by_dimension"],"derivedFrom":["$evidence:by_dimension.rows"]}}]},{"layout":"chart-full","slideRole":"trend-overview-slide","eyebrow":"月度表现","title":"月度收入变化","claim":"在这3条月度记录中，收入逐月上升。","claimType":"trend","evidence":["by_time"],"derivedFrom":["$evidence:by_time.rows[0].total_revenue","$evidence:by_time.rows[last].total_revenue"],"check":"trend_periods","claimArgs":{"series":"$evidence:by_time.rows","valueField":"total_revenue","minimumPeriods":3,"direction":"up"},"charts":[{"id":"trend","type":"line","title":"月度收入","interaction":{"tooltip":true},"data":{"transform":[{"type":"aggregate","groupBy":["month"],"measures":[{"field":"revenue","op":"sum","as":"total_revenue"}]},{"type":"sort","field":"month","order":"asc"}]},"encoding":{"x":{"field":"month"},"y":{"field":"total_revenue"}},"provenance":{"evidence":["by_time"],"derivedFrom":["$evidence:by_time.rows"]}}]},{"layout":"chart-full","slideRole":"ranking-slide","eyebrow":"业务单元","title":"业务单元收入对比","claim":"在当前样本中，Core 的收入排名第一。","claimType":"rank","evidence":["by_dimension"],"derivedFrom":["$evidence:by_dimension.rows[0].business_unit","$evidence:by_dimension.rows[0].total_revenue"],"check":"rank_position","claimArgs":{"rows":"$evidence:by_dimension.rows","subjectField":"business_unit","valueField":"total_revenue","subject":"Core","expectedRank":1,"order":"desc"},"charts":[{"id":"ranking","type":"bar","title":"业务单元收入","interaction":{"tooltip":true},"data":{"transform":[{"type":"aggregate","groupBy":["business_unit"],"measures":[{"field":"revenue","op":"sum","as":"total_revenue"}]},{"type":"sort","field":"total_revenue","order":"desc"},{"type":"limit","value":10}]},"encoding":{"x":{"field":"business_unit"},"y":{"field":"total_revenue"}},"provenance":{"evidence":["by_dimension"],"derivedFrom":["$evidence:by_dimension.rows"]}}]},{"layout":"text-points","slideRole":"data-quality-slide","eyebrow":"数据范围","title":"解读说明","warningRefs":["extreme_small_sample"],"bullets":["仅有3条记录，覆盖2026年1月至3月。业务单元排名和月度对比只描述当前样本，不宜泛化。"]}]}</script>
+  <script>
+(function() {
+  var slides = document.querySelectorAll('.slide');
+  var counter = document.getElementById('slide-counter');
+  var total = slides.length;
+  var current = 0;
+
+  function setScale() {
+    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    var canvas = document.querySelector('.slide-canvas');
+    if (canvas) { canvas.style.transform = 'scale(' + s + ')'; }
+  }
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, total - 1));
+    slides[current].classList.add('active');
+    if (counter) counter.textContent = (current + 1) + ' / ' + total;
+  }
+
+  document.addEventListener('keydown', function(e) {
+    var tag = (document.activeElement && document.activeElement.tagName) || '';
+    var inInput = tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA';
+    if (e.key === 'ArrowRight' || e.key === ' ') { if (!inInput) { e.preventDefault(); goTo(current + 1); } }
+    else if (e.key === 'ArrowLeft') { if (!inInput) { e.preventDefault(); goTo(current - 1); } }
+    else if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function() {});
+      else document.exitFullscreen().catch(function() {});
+    }
+  });
+
+  var btnPrev = document.getElementById('btn-prev');
+  var btnNext = document.getElementById('btn-next');
+  var btnFs   = document.getElementById('btn-fs');
+  var btnPrint = document.getElementById('btn-print');
+  if (btnPrev)  btnPrev.addEventListener('click', function() { goTo(current - 1); });
+  if (btnNext)  btnNext.addEventListener('click', function() { goTo(current + 1); });
+  if (btnFs)    btnFs.addEventListener('click', function() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(function() {});
+    else document.exitFullscreen().catch(function() {});
+  });
+  if (btnPrint) btnPrint.addEventListener('click', function() {
+    document.body.classList.remove('present-mode');
+    window.print();
+    document.body.classList.add('present-mode');
+  });
+
+  window.addEventListener('resize', setScale);
+  setScale();
+  goTo(0);
+  Promise.resolve(document.fonts && document.fonts.ready).then(function(){document.documentElement.dataset.miaoRenderReady='true';});
+})();
+</script>
+  
+  <script type="application/json" id="miao-viz-data">[{"month":"2026-01","business_unit":"Core","revenue":120000,"cost":80000,"profit":40000},{"month":"2026-02","business_unit":"Core","revenue":132000,"cost":85000,"profit":47000},{"month":"2026-03","business_unit":"Growth","revenue":141000,"cost":99000,"profit":42000}]</script>
+  <script type="application/json" id="miao-viz-runtime-theme">{"palette":["#1b365d","#8a5a44","#4f6f52","#a37f2c","#6b5b95","#2f6f73"],"background":"#faf9f5","axisColor":"#c8c5b8","labelColor":"#6b6a64"}</script>
+  <script>
+(function() {
+  var miaoData = {};
+  var categoryAxisDefaults = {"estimatedCharacterWidth":7,"minimumLabelGap":12,"horizontalBottomMargin":48,"rotatedBottomMargin":88,"horizontalMaxLength":18,"rotatedMaxLength":18,"rotationDegrees":-35};
+  var runtimeTheme = { palette:['#2563eb','#16a34a','#f97316','#dc2626','#7c3aed','#0891b2'], background:'#fff', axisColor:'#94a3b8', labelColor:'#475569' };
+  if (typeof document !== 'undefined') {
+    var runtimeThemeEl = document.getElementById('miao-viz-runtime-theme');
+    if (runtimeThemeEl) {
+      try { runtimeTheme = Object.assign(runtimeTheme, JSON.parse(runtimeThemeEl.textContent || '{}')); } catch (_) {}
+    }
+  }
+  var palette = runtimeTheme.palette;
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function(char) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/\\n/g, ' ');
+  }
+
+  function sum(a, b) { return a + b; }
+  function fixed(value) { return Number(value).toFixed(1); }
+
+  function toMonth(value) {
+    var date = new Date(String(value));
+    if (!Number.isFinite(date.getTime())) return String(value == null ? '' : value);
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+  }
+
+  function color(index) { return palette[index % palette.length]; }
+
+  function comparableValue(value) {
+    if (value == null || value === '') return null;
+    var num = Number(value);
+    if (Number.isFinite(num)) return num;
+    var date = new Date(String(value)).getTime();
+    return Number.isFinite(date) ? date : null;
+  }
+
+  function svgFrame(width, height, body) {
+    return '<svg class="miao-chart-svg" viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height +
+      '" role="img" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="' + width + '" height="' + height +
+      '" fill="' + escapeAttr(runtimeTheme.background) + '" />' + body + '</svg>';
+  }
+
+  function markAttrs(chartId, markField, value, rowKey, tooltipText) {
+    return 'data-miao-mark="true" data-chart-id="' + escapeAttr(chartId || '') + '" data-field="' + escapeAttr(markField || '') +
+      '" data-value="' + escapeAttr(value == null ? '' : String(value)) + '" data-row-key="' + escapeAttr(String(rowKey)) +
+      '" data-tooltip="' + escapeAttr(tooltipText || '') + '"';
+  }
+
+  function polarToCartesian(cx, cy, radius, angle) {
+    return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
+  }
+
+  function describeArc(cx, cy, radius, startAngle, endAngle) {
+    var start = polarToCartesian(cx, cy, radius, endAngle);
+    var end = polarToCartesian(cx, cy, radius, startAngle);
+    var largeArc = endAngle - startAngle <= Math.PI ? '0' : '1';
+    return 'M ' + fixed(cx) + ' ' + fixed(cy) + ' L ' + fixed(start.x) + ' ' + fixed(start.y) +
+      ' A ' + fixed(radius) + ' ' + fixed(radius) + ' 0 ' + largeArc + ' 0 ' + fixed(end.x) + ' ' + fixed(end.y) + ' Z';
+  }
+
+  miaoData.escapeHtml = escapeHtml;
+  miaoData.escapeAttr = escapeAttr;
+  miaoData.fixed = fixed;
+  miaoData.sum = sum;
+  miaoData.toMonth = toMonth;
+  miaoData.color = color;
+  miaoData.comparableValue = comparableValue;
+  miaoData.svgFrame = svgFrame;
+  miaoData.markAttrs = markAttrs;
+  miaoData.describeArc = describeArc;
+  miaoData.polarToCartesian = polarToCartesian;
+
+  miaoData.uniqueValues = function(rows, field, limit) {
+    var seen = new Set();
+    rows.forEach(function(row) {
+      if (row[field] != null) seen.add(String(row[field]));
+    });
+    return Array.from(seen).slice(0, limit || 200).sort();
+  };
+
+  miaoData.aggregateMeasure = function(sourceRows, measure) {
+    if (measure.op === 'count') return sourceRows.length;
+    var values = sourceRows.map(function(row) { return Number(row[measure.field]); }).filter(Number.isFinite);
+    if (!values.length) return 0;
+    if (measure.op === 'avg') return values.reduce(sum, 0) / values.length;
+    if (measure.op === 'min') return Math.min.apply(null, values);
+    if (measure.op === 'max') return Math.max.apply(null, values);
+    return values.reduce(sum, 0);
+  };
+
+  miaoData.aggregateRows = function(sourceRows, transform) {
+    var groupBy = transform.groupBy || [];
+    var measures = transform.measures || [];
+    var groups = new Map();
+    sourceRows.forEach(function(row) {
+      var key = JSON.stringify(groupBy.map(function(field) { return row[field]; }));
+      var existing = groups.get(key) || [];
+      existing.push(row);
+      groups.set(key, existing);
+    });
+    return Array.from(groups.values()).map(function(groupRows) {
+      var first = groupRows[0] || {};
+      var out = {};
+      groupBy.forEach(function(field) { out[field] = first[field]; });
+      measures.forEach(function(measure) { out[measure.as] = miaoData.aggregateMeasure(groupRows, measure); });
+      return out;
+    });
+  };
+
+  miaoData.prepareRows = function(sourceRows, chart) {
+    return ((chart.data && chart.data.transform) || []).reduce(function(current, transform) {
+      if (transform.type === 'derive-month' && transform.field && transform.as) {
+        return current.map(function(row) {
+          var copy = Object.assign({}, row);
+          copy[transform.as] = miaoData.toMonth(row[transform.field]);
+          return copy;
+        });
+      }
+      if (transform.type === 'aggregate') return miaoData.aggregateRows(current, transform);
+      if (transform.type === 'sort' && transform.field) {
+        var order = transform.order === 'asc' ? 1 : -1;
+        return current.slice().sort(function(a, b) {
+          var an = Number(a[transform.field]);
+          var bn = Number(b[transform.field]);
+          if (Number.isFinite(an) && Number.isFinite(bn)) return (an - bn) * order;
+          return String(a[transform.field] || '').localeCompare(String(b[transform.field] || '')) * order;
+        });
+      }
+      if (transform.type === 'limit' && typeof transform.value === 'number') return current.slice(0, transform.value);
+      if (transform.type === 'filter' && transform.field && transform.value != null) {
+        var rawStr = String(transform.value);
+        var ops = ['>=', '<=', '>', '<', '='];
+        var op = '=';
+        var compVal = rawStr;
+        for (var oi = 0; oi < ops.length; oi++) {
+          if (rawStr.indexOf(ops[oi]) === 0) { op = ops[oi]; compVal = rawStr.slice(ops[oi].length).trim(); break; }
+        }
+        return current.filter(function(row) {
+          var cell = String(row[transform.field] == null ? '' : row[transform.field]);
+          if (op === '=') return cell === compVal;
+          var numCell = Number(row[transform.field]);
+          var numComp = Number(compVal);
+          if (Number.isFinite(numCell) && Number.isFinite(numComp)) {
+            if (op === '>=') return numCell >= numComp;
+            if (op === '<=') return numCell <= numComp;
+            if (op === '>') return numCell > numComp;
+            if (op === '<') return numCell < numComp;
+          }
+          if (op === '>=') return cell >= compVal;
+          if (op === '<=') return cell <= compVal;
+          if (op === '>') return cell > compVal;
+          if (op === '<') return cell < compVal;
+          return false;
+        });
+      }
+      return current;
+    }, sourceRows.slice());
+  };
+
+  miaoData.applyFilters = function(source, filterDefs, state) {
+    return source.filter(function(row) {
+      return filterDefs.every(function(filter) {
+        var active = state[filter.field];
+        if (active == null || active === '' || (Array.isArray(active) && !active[0] && !active[1])) return true;
+        if (filter.type === 'select') {
+          if (Array.isArray(active)) {
+            if (active.length === 0) return true;
+            return active.indexOf(String(row[filter.field] == null ? '' : row[filter.field])) !== -1;
+          }
+          return String(row[filter.field] == null ? '' : row[filter.field]) === String(active);
+        }
+        var current = miaoData.comparableValue(row[filter.field]);
+        if (current == null) return false;
+        var min = miaoData.comparableValue(active[0]);
+        var max = miaoData.comparableValue(active[1]);
+        if (min != null && current < min) return false;
+        if (max != null && current > max) return false;
+        return true;
+      });
+    });
+  };
+
+  miaoData.guessFieldType = function(rows, field) {
+    var count = 0, dateCount = 0, numCount = 0;
+    for (var i = 0; i < rows.length && count < 10; i++) {
+      var v = rows[i][field];
+      if (v == null || v === '') continue;
+      count++;
+      if (Number.isFinite(Number(v))) numCount++;
+      if (!isNaN(Date.parse(String(v)))) dateCount++;
+    }
+    if (count === 0) return 'string';
+    if (dateCount >= count * 0.8) return 'date';
+    if (numCount >= count * 0.8) return 'number';
+    return 'string';
+  };
+
+  miaoData.renderLegend = function(svgWidth, marginTop, colorValues) {
+    var legendX = svgWidth - 200;
+    return colorValues.map(function(val, i) {
+      var y = marginTop + i * 20;
+      return '<g><rect x="' + legendX + '" y="' + (y - 8) + '" width="10" height="10" rx="2" fill="' + color(i) +
+        '" /><text x="' + (legendX + 16) + '" y="' + y + '" fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(val.substring(0, 16)) + '</text></g>';
+    }).join('');
+  };
+
+  miaoData.describeDonutArc = function(cx, cy, innerR, outerR, startAngle, endAngle) {
+    var outerS = miaoData.polarToCartesian(cx, cy, outerR, startAngle);
+    var outerE = miaoData.polarToCartesian(cx, cy, outerR, endAngle);
+    var innerS = miaoData.polarToCartesian(cx, cy, innerR, endAngle);
+    var innerE = miaoData.polarToCartesian(cx, cy, innerR, startAngle);
+    var largeArc = endAngle - startAngle <= Math.PI ? '0' : '1';
+    return 'M ' + fixed(outerS.x) + ' ' + fixed(outerS.y) +
+      ' A ' + fixed(outerR) + ' ' + fixed(outerR) + ' 0 ' + largeArc + ' 0 ' + fixed(outerE.x) + ' ' + fixed(outerE.y) +
+      ' L ' + fixed(innerS.x) + ' ' + fixed(innerS.y) +
+      ' A ' + fixed(innerR) + ' ' + fixed(innerR) + ' 0 ' + largeArc + ' 1 ' + fixed(innerE.x) + ' ' + fixed(innerE.y) + ' Z';
+  };
+
+
+  miaoData.renderDivergingBar = function(chart, chartRows, chartId) {
+    var categoryField = chart.encoding && chart.encoding.x && chart.encoding.x.field || '';
+    var measureField = chart.encoding && chart.encoding.y && chart.encoding.y.field || '';
+    var style = chart.style || {};
+    var data = chartRows.map(function(row, index) {
+      return { row:row, index:index, label:String(row[categoryField] == null ? '—' : row[categoryField]), value:Number(row[measureField]) };
+    }).filter(function(item) { return Number.isFinite(item.value); });
+    if (!categoryField || !measureField || !data.length) return miaoData.renderNoData();
+
+    var sort = style.divergingSort == null ? 'asc' : style.divergingSort;
+    if (sort === 'asc' || sort === 'desc') {
+      data.sort(function(a, b) { return sort === 'asc' ? a.value - b.value : b.value - a.value; });
+    }
+    var width = Number.isFinite(Number(style.width)) ? Number(style.width) : 720;
+    var rowHeight = Number.isFinite(Number(style.rowHeight)) ? Number(style.rowHeight) : 25;
+    var margin = { top:54, right:44, bottom:24, left:44 };
+    var height = Number.isFinite(Number(style.height)) ? Number(style.height) : Math.max(420, margin.top + margin.bottom + data.length * rowHeight);
+    var plotWidth = width - margin.left - margin.right;
+    var plotHeight = height - margin.top - margin.bottom;
+    var rawMin = Math.min.apply(null, [0].concat(data.map(function(item) { return item.value; })));
+    var rawMax = Math.max.apply(null, [0].concat(data.map(function(item) { return item.value; })));
+    var rough = Math.max(rawMax - rawMin, 1) / 6;
+    var power = Math.pow(10, Math.floor(Math.log10(Math.max(rough, Number.EPSILON))));
+    var normalized = rough / power;
+    var tickStep = (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * power;
+    var domainMin = Number.isFinite(Number(style.xDomainMin)) ? Number(style.xDomainMin) : Math.floor(rawMin / tickStep) * tickStep;
+    var domainMax = Number.isFinite(Number(style.xDomainMax)) ? Number(style.xDomainMax) : Math.ceil(rawMax / tickStep) * tickStep;
+    var domainSpan = Math.max(domainMax - domainMin, 1);
+    var scale = function(value) { return margin.left + (value - domainMin) / domainSpan * plotWidth; };
+    var zeroX = scale(0);
+    var step = plotHeight / data.length;
+    var positiveColor = String(style.positiveColor || '#9bd66d');
+    var negativeColor = String(style.negativeColor || '#e79ac8');
+    var decimals = Math.max(0, Math.min(6, Number(style.valueDecimals == null ? 1 : style.valueDecimals)));
+    var suffix = String(style.valueSuffix == null && chart.encoding && chart.encoding.y && chart.encoding.y.unit === 'percentage' ? '%' : (style.valueSuffix || ''));
+    var format = function(value) {
+      return (value > 0 ? '+' : value < 0 ? '−' : '') + Math.abs(value).toFixed(decimals) + suffix;
+    };
+    var ticks = [];
+    for (var tick = Math.ceil(domainMin / tickStep) * tickStep; tick <= domainMax + tickStep / 100; tick += tickStep) {
+      ticks.push(Number(tick.toFixed(10)));
+    }
+    var grid = style.showGrid === false ? '' : ticks.map(function(tick) {
+      var x = scale(tick);
+      return '<line x1="' + fixed(x) + '" y1="' + fixed(margin.top - 8) + '" x2="' + fixed(x) + '" y2="' +
+        fixed(margin.top + plotHeight) + '" stroke="#ffffff" stroke-width="1" />';
+    }).join('');
+    var axis = ticks.map(function(tick) {
+      var x = scale(tick);
+      return '<line x1="' + fixed(x) + '" y1="' + fixed(margin.top - 13) + '" x2="' + fixed(x) + '" y2="' +
+        fixed(margin.top - 5) + '" stroke="' + escapeAttr(runtimeTheme.axisColor) + '" />' +
+        '<text x="' + fixed(x) + '" y="' + fixed(margin.top - 20) + '" text-anchor="middle" fill="' +
+        escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(format(tick)) + '</text>';
+    }).join('');
+    var bars = data.map(function(item, index) {
+      var end = scale(item.value);
+      var x = Math.min(zeroX, end);
+      var y = margin.top + index * step + step * 0.12;
+      var barHeight = step * 0.76;
+      var negative = item.value < 0;
+      var stateX = zeroX + (negative ? 8 : -8);
+      var valueX = end + (negative ? -7 : 7);
+      var valueLabel = style.showValueLabels === false ? '' :
+        '<text x="' + fixed(valueX) + '" y="' + fixed(y + barHeight * 0.68) + '" text-anchor="' +
+        (negative ? 'end' : 'start') + '" fill="' + escapeAttr(runtimeTheme.labelColor) +
+        '" font-size="10">' + escapeHtml(format(item.value)) + '</text>';
+      return '<g ' + markAttrs(chartId, categoryField, item.row[categoryField], item.index, item.label + ': ' + format(item.value)) + '>' +
+        '<rect x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(Math.abs(end - zeroX)) +
+        '" height="' + fixed(barHeight) + '" fill="' + escapeAttr(negative ? negativeColor : positiveColor) + '" />' +
+        '<text x="' + fixed(stateX) + '" y="' + fixed(y + barHeight * 0.68) + '" text-anchor="' +
+        (negative ? 'start' : 'end') + '" fill="' + escapeAttr(runtimeTheme.labelColor) +
+        '" font-size="11">' + escapeHtml(item.label) + '</text>' + valueLabel + '</g>';
+    }).join('');
+    var title = String(style.axisTitle || chart.title || '← decrease · change · increase →');
+    return svgFrame(width, height, '<g class="miao-diverging-bar"><text x="' + fixed(zeroX) +
+      '" y="20" text-anchor="middle" fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="12">' +
+      escapeHtml(title) + '</text>' + grid + axis + '<line x1="' + fixed(zeroX) + '" y1="' +
+      fixed(margin.top - 8) + '" x2="' + fixed(zeroX) + '" y2="' + fixed(margin.top + plotHeight) +
+      '" stroke="' + escapeAttr(runtimeTheme.labelColor) + '" />' + bars + '</g>');
+  };
+
+
+  miaoData.renderBar = function(chart, chartRows, chartId) {
+    var xField = (chart.encoding && chart.encoding.x && chart.encoding.x.field) || '';
+    var yField = (chart.encoding && chart.encoding.y && chart.encoding.y.field) || '';
+    var colorField = (chart.encoding && chart.encoding.color && chart.encoding.color.field) || '';
+    var hasSeries = Boolean(colorField);
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : (hasSeries ? 900 : 720);
+    var rightMargin = hasSeries ? 140 : 24;
+    var axisLayout = miaoData.categoryAxisLayout(chartRows.map(function(row) { return String(row[xField] == null ? '' : row[xField]); }), width - 72 - rightMargin, hasSeries);
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : (axisLayout.rotate ? 460 : 420);
+    var margin = { top: 24, right: rightMargin, bottom: axisLayout.bottomMargin, left: 72 };
+    var chartWidth = width - margin.left - margin.right;
+    var chartHeight = height - margin.top - margin.bottom;
+    var values = chartRows.map(function(row) { return Number(row[yField]); }).filter(Number.isFinite);
+    var yMax = Math.max.apply(null, values.concat([1]));
+    var gap = 8;
+
+    if (!colorField) {
+      var barWidth = Math.max(8, (chartWidth - gap * Math.max(chartRows.length - 1, 0)) / Math.max(chartRows.length, 1));
+      var body = chartRows.map(function(row, index) {
+        var value = Number(row[yField]) || 0;
+        var barHeight = value / yMax * chartHeight;
+        var x = margin.left + index * (barWidth + gap);
+        var y = margin.top + chartHeight - barHeight;
+        var label = String(row[xField] == null ? '' : row[xField]);
+        return '<g><rect ' + markAttrs(chartId, xField, row[xField], index, label + ': ' + value) +
+          ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(barWidth) + '" height="' + fixed(barHeight) +
+          '" rx="3" fill="' + color(index) + '" />' +
+          miaoData.renderBarAxisLabel(label, x + barWidth / 2, margin.top + chartHeight + (axisLayout.rotate ? 34 : 18), axisLayout) + '</g>';
+      }).join('');
+      return svgFrame(width, height, body);
+    }
+
+    var colorValues = miaoData.uniqueValues(chartRows, colorField);
+    var xValues = miaoData.uniqueValues(chartRows, xField);
+    var rowMap = new Map();
+    chartRows.forEach(function(row) {
+      rowMap.set(String(row[xField]) + '|' + String(row[colorField]), Number(row[yField]) || 0);
+    });
+    var barMode = chart.style && chart.style.barMode;
+    var stackColors = colorValues.map(function(_, ci) { return color(ci); });
+
+    if (barMode === 'stacked') {
+      var xBarWidth = Math.max(8, (chartWidth - gap * Math.max(xValues.length - 1, 0)) / Math.max(xValues.length, 1));
+      var body = xValues.map(function(xVal, xi) {
+        var accumY = 0;
+        return colorValues.map(function(cVal, ci) {
+          var raw = rowMap.get(String(xVal) + '|' + String(cVal)) || 0;
+          var barHeight = raw / yMax * chartHeight;
+          var x = margin.left + xi * (xBarWidth + gap);
+          var y = margin.top + chartHeight - accumY - barHeight;
+          accumY += barHeight;
+          return '<rect ' + markAttrs(chartId, xField, xVal, xi * colorValues.length + ci, xVal + ', ' + cVal + ': ' + raw) +
+            ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(xBarWidth) + '" height="' + fixed(barHeight) +
+            '" rx="1" fill="' + stackColors[ci] + '" />';
+        }).join('');
+      }).join('');
+      var labels = xValues.map(function(value, index) { return miaoData.renderBarAxisLabel(value, margin.left + index * (xBarWidth + gap) + xBarWidth / 2, margin.top + chartHeight + 34, axisLayout); }).join('');
+      return svgFrame(width, height, body + labels + miaoData.renderLegend(width, margin.top, colorValues));
+    }
+
+    var groupWidth = (chartWidth - gap * Math.max(xValues.length - 1, 0)) / Math.max(xValues.length, 1);
+    var barWidth = Math.max(4, (groupWidth - gap * Math.max(colorValues.length - 1, 0)) / Math.max(colorValues.length, 1));
+    var groupStartX = (groupWidth - (barWidth * colorValues.length + gap * Math.max(colorValues.length - 1, 0))) / 2;
+    var xLabels = [];
+
+    var body = xValues.map(function(xVal, xi) {
+      var baseX = margin.left + xi * (groupWidth + gap) + groupStartX;
+      xLabels.push(miaoData.renderBarAxisLabel(xVal, baseX + groupWidth / 2 - gap / 2, margin.top + chartHeight + 34, axisLayout));
+      return colorValues.map(function(cVal, ci) {
+        var raw = rowMap.get(String(xVal) + '|' + String(cVal)) || 0;
+        var barHeight = raw / yMax * chartHeight;
+        var x = baseX + ci * (barWidth + gap);
+        var y = margin.top + chartHeight - barHeight;
+        return '<rect ' + markAttrs(chartId, xField, xVal, xi * colorValues.length + ci, xVal + ', ' + cVal + ': ' + raw) +
+          ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(barWidth) + '" height="' + fixed(barHeight) +
+          '" rx="2" fill="' + stackColors[ci] + '" />';
+      }).join('');
+    }).join('');
+
+    return svgFrame(width, height, body + xLabels.join('') + miaoData.renderLegend(width, margin.top, colorValues));
+  };
+
+  miaoData.categoryAxisLayout = function(labels, plotWidth, forceRotate) {
+    var slotWidth = plotWidth / Math.max(labels.length, 1);
+    var longest = labels.reduce(function(max, label) { return Math.max(max, label.length); }, 0);
+    var rotate = Boolean(forceRotate) || longest * categoryAxisDefaults.estimatedCharacterWidth + categoryAxisDefaults.minimumLabelGap > slotWidth;
+    var horizontalFit = Math.max(4, Math.floor((slotWidth - categoryAxisDefaults.minimumLabelGap) / categoryAxisDefaults.estimatedCharacterWidth));
+    return { rotate:rotate, bottomMargin:rotate ? categoryAxisDefaults.rotatedBottomMargin : categoryAxisDefaults.horizontalBottomMargin, maxLabelLength:rotate ? categoryAxisDefaults.rotatedMaxLength : Math.min(categoryAxisDefaults.horizontalMaxLength,horizontalFit), rotationDegrees:categoryAxisDefaults.rotationDegrees };
+  };
+
+  miaoData.renderBarAxisLabel = function(value, x, y, layout) {
+    var raw = String(value == null ? '' : value);
+    var label = raw.length > layout.maxLabelLength ? raw.slice(0, layout.maxLabelLength - 3) + '...' : raw;
+    var transform = layout.rotate ? ' transform="rotate(' + layout.rotationDegrees + ' ' + fixed(x) + ' ' + fixed(y) + ')"' : '';
+    return '<text x="' + fixed(x) + '" y="' + fixed(y) + '" text-anchor="' + (layout.rotate ? 'end' : 'middle') + '"' + transform + ' fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(label) + '</text>';
+  };
+
+  miaoData.renderXY = function(chart, chartRows, chartId) {
+    var xField = (chart.encoding && chart.encoding.x && chart.encoding.x.field) || '';
+    var yField = (chart.encoding && chart.encoding.y && chart.encoding.y.field) || '';
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : 720;
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : 420;
+    var margin = { top: 24, right: 24, bottom: 48, left: 64 };
+    var w = width - margin.left - margin.right, h = height - margin.top - margin.bottom;
+    var values = chartRows.map(function(row) { return Number(row[yField]); }).filter(Number.isFinite);
+    if (!values.length) return miaoData.renderNoData();
+    var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+    if (min === max) { min = Math.min(0, min); max = max || 1; }
+    var points = chartRows.map(function(row, index) {
+      var x = margin.left + (chartRows.length <= 1 ? w / 2 : index / (chartRows.length - 1) * w);
+      var value = Number(row[yField]);
+      var y = margin.top + h - ((value - min) / (max - min || 1) * h);
+      return { x:x, y:y, row:row, index:index, value:value };
+    }).filter(function(point) { return Number.isFinite(point.value); });
+    var line = points.map(function(point, index) { return (index ? 'L ' : 'M ') + fixed(point.x) + ' ' + fixed(point.y); }).join(' ');
+    var body = '';
+    if (chart.type === 'area' && points.length) body += '<path d="' + line + ' L ' + fixed(points[points.length-1].x) + ' ' + fixed(margin.top+h) + ' L ' + fixed(points[0].x) + ' ' + fixed(margin.top+h) + ' Z" fill="' + color(0) + '" opacity=".18" />';
+    if (chart.type !== 'scatter') body += '<path d="' + line + '" fill="none" stroke="' + color(0) + '" stroke-width="3" />';
+    body += points.map(function(point) { var label=String(point.row[xField] == null ? '' : point.row[xField]); return '<circle ' + markAttrs(chartId,xField,point.row[xField],point.index,label+': '+point.value) + ' cx="'+fixed(point.x)+'" cy="'+fixed(point.y)+'" r="5" fill="'+color(0)+'" />'; }).join('');
+    return svgFrame(width,height,body);
+  };
+
+  miaoData.renderBigValue = function(chart, chartRows) {
+    var field = (chart.encoding && chart.encoding.value && chart.encoding.value.field) || '';
+    var value = chartRows[0] && chartRows[0][field];
+    return '<div class="miao-bigvalue"><div style="font-size:42px;font-weight:700">' + escapeHtml(value == null ? '—' : String(value)) + '</div><div class="miao-view-derived">Current filter</div></div>';
+  };
+
+  miaoData.renderNoData = function() { return '<div class="miao-no-data">No data for the current view</div>'; };
+
+  miaoData.renderPie = function(chart, chartRows, chartId) {
+    var labelField = (chart.encoding && chart.encoding.label && chart.encoding.label.field) || '';
+    var valueField = (chart.encoding && chart.encoding.value && chart.encoding.value.field) || '';
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : 720;
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : 420;
+    var cx = width / 2 - 80;
+    var cy = height / 2;
+    var outerR = Math.min(width, height) * 0.34;
+    var innerR = (chart.style && typeof chart.style.innerRadius === 'number' ? chart.style.innerRadius : 0) * outerR;
+    var values = chartRows.map(function(row) { return Math.max(0, Number(row[valueField]) || 0); });
+    var total = values.reduce(sum, 0) || 1;
+    var angle = -Math.PI / 2;
+    var slices = chartRows.map(function(row, index) {
+      var value = values[index];
+      var nextAngle = angle + value / total * Math.PI * 2;
+      var path = innerR > 0
+        ? miaoData.describeDonutArc(cx, cy, innerR, outerR, angle, nextAngle)
+        : describeArc(cx, cy, outerR, angle, nextAngle);
+      var label = String(row[labelField] == null ? '' : row[labelField]);
+      angle = nextAngle;
+      return '<path ' + markAttrs(chartId, labelField, row[labelField], index, label + ': ' + value) +
+        ' d="' + path + '" fill="' + color(index) + '" stroke="' + escapeAttr(runtimeTheme.background) + '" stroke-width="2" />';
+    }).join('');
+    return svgFrame(width, height, slices);
+  };
+
+  miaoData.renderTable = function(chart, chartRows, chartId, sortState) {
+    var sortable = chart.sortable === true;
+
+    if (sortState && sortState.field && sortState.order) {
+      var order = sortState.order === 'asc' ? 1 : -1;
+      chartRows = chartRows.slice().sort(function(a, b) {
+        var an = Number(a[sortState.field]);
+        var bn = Number(b[sortState.field]);
+        if (Number.isFinite(an) && Number.isFinite(bn)) return (an - bn) * order;
+        return String(a[sortState.field] || '').localeCompare(String(b[sortState.field] || '')) * order;
+      });
+    }
+
+    var columns = Object.keys(chartRows[0] || {}).slice(0, 8);
+    var markField = (chart.encoding && chart.encoding.label && chart.encoding.label.field) ||
+      (chart.encoding && chart.encoding.x && chart.encoding.x.field) || columns[0] || '';
+    var thead = '<thead><tr>' +
+      columns.map(function(col) {
+        var attrs = '';
+        var indicator = '';
+        if (sortable) {
+          var active = sortState && sortState.field === col;
+          var order = active ? sortState.order : '';
+          attrs = ' data-sortable="true" data-sort-field="' + escapeAttr(col) + '" data-sort-order="' + order + '"';
+          indicator = active ? (order === 'asc' ? ' ▲' : ' ▼') : '';
+        }
+        return '<th' + attrs + '>' + escapeHtml(col) + indicator + '</th>';
+      }).join('') +
+      '</tr></thead>';
+    var tbody = '<tbody>' + chartRows.slice(0, 20).map(function(row, index) {
+      return '<tr ' + markAttrs(chartId, markField, row[markField], index, String(row[markField] || 'Row')) + '>' +
+        columns.map(function(col) { return '<td>' + escapeHtml(row[col] == null ? '' : String(row[col])) + '</td>'; }).join('') +
+        '</tr>';
+    }).join('') + '</tbody>';
+    return '<div class="miao-table-wrap"><table class="miao-table">' + thead + tbody + '</table></div>';
+  };
+
+  miaoData.renderDetailTable = function(selectedRows, chartId, allRows) {
+    var visible = selectedRows.slice(0, 100);
+    var columns = Object.keys(visible[0] || allRows[0] || {}).slice(0, 8);
+    if (!columns.length) return '<div class="miao-detail-title">No rows</div>';
+    return '<div class="miao-detail-title">' + escapeHtml(chartId || 'Detail') + ': ' + selectedRows.length + ' rows</div>' +
+      '<table><thead><tr>' + columns.map(function(col) { return '<th>' + escapeHtml(col) + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + visible.map(function(row) {
+        return '<tr>' + columns.map(function(col) { return '<td>' + escapeHtml(row[col] == null ? '' : String(row[col])) + '</td>'; }).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
+  };
+
+  window.miaoData = miaoData;
+})();
+</script>
+  <style>
+.miao-chart-svg [data-miao-mark] { cursor: pointer; transition: opacity 0.15s ease, stroke-width 0.15s ease; }
+.miao-chart-svg [data-miao-mark]:hover { opacity: 0.78; }
+.miao-chart-svg [data-miao-selected="true"] { stroke: currentColor; stroke-width: 2; }
+.miao-mark-hidden { opacity: 0.18; }
+.miao-table th[data-sortable] { cursor: pointer; user-select: none; }
+.miao-table th[data-sortable]:hover { opacity: 0.72; }
+.miao-filter-checks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.miao-filter-checks-scroll { max-height: 200px; overflow-y: auto; }
+.miao-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; font-size: 12px; cursor: pointer; }
+.miao-chip:hover { background: rgba(128,128,128,0.06); }
+.miao-chip input[type="checkbox"] { margin: 0; }
+.miao-filter-search { min-width: 180px; border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; padding: 6px 8px; background: transparent; color: inherit; font: inherit; }
+.miao-drilldown-bar { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; padding: 8px 12px; border-radius: 4px; background: rgba(128,128,128,0.06); border: 1px solid rgba(128,128,128,0.18); font-size: 12px; }
+.miao-drilldown-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; }
+.miao-drilldown-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; background: rgba(37,99,235,0.1); color: #2563eb; font-weight: 600; }
+.miao-drilldown-clear { background: none; border: none; cursor: pointer; font-size: 14px; color: inherit; padding: 0 2px; line-height: 1; }
+.miao-drilldown-clear:hover { opacity: 0.7; }
+.miao-detail { margin-top: 12px; overflow: auto; max-height: 320px; border: 1px solid rgba(128,128,128,0.18); border-radius: 4px; }
+.miao-detail-title { padding: 9px 10px; font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(128,128,128,0.18); }
+.miao-detail table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.miao-detail th, .miao-detail td { padding: 7px 9px; border-bottom: 1px solid rgba(128,128,128,0.12); text-align: left; white-space: nowrap; }
+.miao-detail th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.64; }
+.miao-tooltip { position: fixed; z-index: 9999; pointer-events: none; padding: 6px 8px; border-radius: 4px; background: rgba(20,20,19,0.92); color: #fff; font: 12px/1.35 system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,0.18); transform: translate(10px, 10px); }
+.miao-view-state { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 16px; padding:8px 12px; border:1px solid rgba(128,128,128,.18); border-radius:4px; font-size:11px; }
+.miao-view-state button { border:0; background:transparent; color:inherit; cursor:pointer; text-decoration:underline; }
+.miao-no-data { display:grid; place-items:center; min-height:180px; color:#64748b; font:13px system-ui,sans-serif; border:1px dashed rgba(128,128,128,.25); border-radius:4px; }
+.miao-view-derived { font-size:10px; text-transform:uppercase; letter-spacing:.06em; opacity:.55; }
+[data-view-scope="base-evidence"]::after { content:'Based on full dataset'; display:block; margin-top:6px; font-size:10px; text-transform:uppercase; letter-spacing:.06em; opacity:.5; }
+@media print { .miao-interactive-controls,.deck-filter-btn,.deck-filter-panel,.deck-overlay,.miao-view-state,.miao-drilldown-bar { display:none !important; } }
+
+.deck-filter-panel {
+  position: fixed; top: 0; right: 0; width: 300px; height: 100vh;
+  background: var(--mv-paper, #f5f4ed); box-shadow: -4px 0 24px rgba(0,0,0,0.18);
+  z-index: 200; transform: translateX(100%); transition: transform 0.25s ease;
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.deck-filter-panel.open { transform: translateX(0); }
+.deck-filter-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid rgba(128,128,128,0.18);
+  font-family: var(--mv-mono, monospace); font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1px; color: var(--mv-ink, #1a1a19);
+}
+.deck-filter-close {
+  background: none; border: none; cursor: pointer; font-size: 18px;
+  color: var(--mv-muted, #6b6a64); padding: 4px 8px; border-radius: 3px;
+}
+.deck-filter-close:hover { background: rgba(128,128,128,0.1); }
+.deck-filter-body { padding: 20px; flex: 1; }
+.deck-filter-footer { padding: 16px 20px; border-top: 1px solid rgba(128,128,128,0.18); }
+.deck-filter-btn {
+  position: fixed; bottom: 56px; right: 12px; z-index: 150;
+  background: rgba(20,20,19,0.72); backdrop-filter: blur(8px);
+  border: none; cursor: pointer; color: rgba(255,255,255,0.65);
+  font-size: 16px; padding: 8px 12px; border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+.deck-filter-btn:hover { color: #fff; background: rgba(20,20,19,0.9); }
+.deck-filter-btn.active { background: var(--mv-brand, #1b365d); color: #fff; }
+.deck-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.32); z-index: 180; opacity: 0;
+  pointer-events: none; transition: opacity 0.25s ease;
+}
+.deck-overlay.visible { opacity: 1; pointer-events: auto; }
+</style>
+  <script>
+(function() {
+  var md = window.miaoData;
+  if (!md) return;
+  var specEl = document.getElementById('miao-viz-deck');
+  var dataEl = document.getElementById('miao-viz-data');
+  if (!specEl || !dataEl) return;
+
+  var spec = JSON.parse(specEl.textContent || '{}');
+  var rows = JSON.parse(dataEl.textContent || '[]');
+  var filters = (spec.interactions && spec.interactions.globalFilters) || [];
+  var state = { filters: {}, selection: null, sort: {}, drilldown: null };
+
+  var tooltip = null;
+  var filterPanel = null;
+  var filterBtn = null;
+  var overlay = null;
+
+  function createTooltip() {
+    var el = document.createElement('div');
+    el.className = 'miao-tooltip';
+    el.hidden = true;
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function createOverlay() {
+    var el = document.createElement('div');
+    el.className = 'deck-overlay';
+    el.addEventListener('click', function() { closeFilterPanel(); });
+    document.body.appendChild(el);
+    return el;
+  }
+
+  function openFilterPanel() {
+    filterPanel.classList.add('open');
+    filterBtn.classList.add('active');
+    overlay.classList.add('visible');
+  }
+
+  function closeFilterPanel() {
+    filterPanel.classList.remove('open');
+    filterBtn.classList.remove('active');
+    overlay.classList.remove('visible');
+  }
+
+  function toggleFilterPanel() {
+    if (filterPanel.classList.contains('open')) {
+      closeFilterPanel();
+    } else {
+      openFilterPanel();
+    }
+  }
+
+  function renderFilterPanel() {
+    if (!filters.length) return;
+    tooltip = createTooltip();
+    overlay = createOverlay();
+
+    filterPanel = document.createElement('div');
+    filterPanel.className = 'deck-filter-panel';
+    filterPanel.innerHTML =
+      '<div class="deck-filter-header">' +
+      '  <span>Filters</span>' +
+      '  <button class="deck-filter-close" id="deck-filter-close">&times;</button>' +
+      '</div>' +
+      '<div class="deck-filter-body" id="deck-filter-body"></div>' +
+      '<div class="deck-filter-footer">' +
+      '  <button class="miao-reset" id="deck-filter-reset">Reset</button>' +
+      '</div>';
+    document.body.appendChild(filterPanel);
+
+    document.getElementById('deck-filter-close').addEventListener('click', closeFilterPanel);
+
+    var body = document.getElementById('deck-filter-body');
+    filters.forEach(function(filter) {
+      body.appendChild(filter.type === 'range' ? renderRangeFilter(filter) : renderSelectFilter(filter));
+    });
+
+    document.getElementById('deck-filter-reset').addEventListener('click', function() {
+      state.filters = {};
+      state.selection = null;
+      state.drilldown = null;
+      filterPanel.querySelectorAll('select,input').forEach(function(el) { el.value = ''; el.checked = false; });
+      updateActiveSlide();
+    });
+
+    filterBtn = document.getElementById('btn-filter');
+    if (filterBtn) {
+      filterBtn.addEventListener('click', toggleFilterPanel);
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && filterPanel.classList.contains('open')) {
+        closeFilterPanel();
+      }
+    });
+  }
+
+  function renderSelectFilter(filter) {
+    var wrap = document.createElement('div');
+    wrap.className = 'miao-filter';
+    var label = document.createElement('label');
+    label.textContent = filter.field;
+    wrap.appendChild(label);
+    if (filter.multiSelect) {
+      renderMultiSelect(wrap, filter);
+    } else {
+      renderSingleSelect(wrap, filter);
+    }
+    return wrap;
+  }
+
+  function renderSingleSelect(wrap, filter) {
+    var values = uniqueValues(filter.field);
+    if (values.length >= 20) {
+      var input = document.createElement('input');
+      input.className = 'miao-filter-search';
+      input.placeholder = 'Search ' + filter.field + '...';
+      input.setAttribute('list', 'miao-dk-' + md.escapeAttr(filter.field));
+      var datalist = document.createElement('datalist');
+      datalist.id = 'miao-dk-' + md.escapeAttr(filter.field);
+      values.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        datalist.appendChild(opt);
+      });
+      input.addEventListener('change', function() {
+        state.filters[filter.field] = input.value;
+        updateActiveSlide();
+      });
+      wrap.appendChild(input);
+      wrap.appendChild(datalist);
+    } else {
+      var select = document.createElement('select');
+      select.innerHTML = '<option value="">All</option>' + values.map(function(value) {
+        return '<option value="' + md.escapeAttr(value) + '">' + md.escapeHtml(value) + '</option>';
+      }).join('');
+      select.addEventListener('change', function() {
+        state.filters[filter.field] = select.value;
+        updateActiveSlide();
+      });
+      wrap.appendChild(select);
+    }
+  }
+
+  function renderMultiSelect(wrap, filter) {
+    var values = uniqueValues(filter.field);
+    state.filters[filter.field] = state.filters[filter.field] || [];
+    if (values.length >= 20) {
+      renderSearchableMulti(wrap, filter, values);
+    } else {
+      renderCheckboxes(wrap, filter, values);
+    }
+  }
+
+  function renderCheckboxes(wrap, filter, values) {
+    var container = document.createElement('div');
+    container.className = 'miao-filter-checks';
+    values.forEach(function(v) {
+      var labelEl = document.createElement('label');
+      labelEl.className = 'miao-chip';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = v;
+      cb.addEventListener('change', function() {
+        var arr = state.filters[filter.field] || [];
+        if (cb.checked) {
+          if (arr.indexOf(v) === -1) arr.push(v);
+        } else {
+          var idx = arr.indexOf(v);
+          if (idx !== -1) arr.splice(idx, 1);
+        }
+        updateActiveSlide();
+      });
+      labelEl.appendChild(cb);
+      labelEl.appendChild(document.createTextNode(' ' + v));
+      container.appendChild(labelEl);
+    });
+    wrap.appendChild(container);
+  }
+
+  function renderSearchableMulti(wrap, filter, values) {
+    var searchInput = document.createElement('input');
+    searchInput.className = 'miao-filter-search';
+    searchInput.placeholder = 'Filter ' + filter.field + '...';
+    var container = document.createElement('div');
+    container.className = 'miao-filter-checks miao-filter-checks-scroll';
+    function renderFiltered(term) {
+      container.innerHTML = '';
+      var filtered = term ? values.filter(function(v) { return v.toLowerCase().indexOf(term.toLowerCase()) !== -1; }) : values.slice(0, 100);
+      filtered.forEach(function(v) {
+        var labelEl = document.createElement('label');
+        labelEl.className = 'miao-chip';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = v;
+        var arr = state.filters[filter.field] || [];
+        cb.checked = arr.indexOf(v) !== -1;
+        cb.addEventListener('change', function() {
+          if (cb.checked) {
+            if (arr.indexOf(v) === -1) arr.push(v);
+          } else {
+            var idx = arr.indexOf(v);
+            if (idx !== -1) arr.splice(idx, 1);
+          }
+          updateActiveSlide();
+        });
+        labelEl.appendChild(cb);
+        labelEl.appendChild(document.createTextNode(' ' + v));
+        container.appendChild(labelEl);
+      });
+    }
+    searchInput.addEventListener('input', function() { renderFiltered(searchInput.value); });
+    renderFiltered('');
+    wrap.appendChild(searchInput);
+    wrap.appendChild(container);
+  }
+
+  function renderRangeFilter(filter) {
+    var wrap = document.createElement('div');
+    wrap.className = 'miao-filter';
+    var label = document.createElement('label');
+    label.textContent = filter.field;
+    var pair = document.createElement('div');
+    pair.className = 'miao-filter-range';
+    var useDate = md.guessFieldType(rows, filter.field) === 'date';
+    var min = document.createElement('input');
+    var max = document.createElement('input');
+    if (useDate) {
+      min.type = 'date';
+      max.type = 'date';
+    } else {
+      min.placeholder = 'Min';
+      max.placeholder = 'Max';
+    }
+    [min, max].forEach(function(input) {
+      input.addEventListener('input', function() {
+        state.filters[filter.field] = [min.value, max.value];
+        updateActiveSlide();
+      });
+    });
+    pair.appendChild(min);
+    pair.appendChild(max);
+    wrap.appendChild(label);
+    wrap.appendChild(pair);
+    return wrap;
+  }
+
+  function uniqueValues(field) {
+    return md.uniqueValues(rows, field, 200);
+  }
+
+  function getSlideCharts(slide) {
+    return slide.querySelectorAll('[data-miao-chart]');
+  }
+
+  function getChartSpec(slideIndex, chartIndex) {
+    var slide = spec.slides[slideIndex];
+    if (!slide || !slide.charts) return null;
+    return slide.charts[chartIndex] || null;
+  }
+
+  function getActiveSlide() {
+    return document.querySelector('.slide.active');
+  }
+
+  function renderChart(container, chart, sourceRows) {
+    if (!chart) return;
+    var slot = container.querySelector('.miao-render-slot');
+    if (!slot) return;
+    var chartId = container.getAttribute('data-miao-chart');
+    var data = sourceRows;
+    if (state.drilldown && state.drilldown.targetId === chartId) {
+      data = sourceRows.filter(function(row) {
+        return String(row[state.drilldown.field] == null ? '' : row[state.drilldown.field]) === String(state.drilldown.value);
+      });
+    }
+    var chartRows = md.prepareRows(data, chart);
+    if (!chartRows.length) slot.innerHTML = md.renderNoData();
+    else if (chart.type === 'bar' && chart.variant === 'diverging') slot.innerHTML = md.renderDivergingBar(chart, chartRows, chartId);
+    else if (chart.type === 'bar') slot.innerHTML = md.renderBar(chart, chartRows, chartId);
+    else if (['line','area','scatter'].indexOf(chart.type) !== -1) slot.innerHTML = md.renderXY(chart, chartRows, chartId);
+    else if (chart.type === 'pie') slot.innerHTML = md.renderPie(chart, chartRows, chartId);
+    else if (chart.type === 'bigvalue') slot.innerHTML = md.renderBigValue(chart, chartRows);
+    else if (chart.type === 'table') {
+      var sortState = state.sort[chartId] || null;
+      slot.innerHTML = md.renderTable(chart, chartRows, chartId, sortState);
+      if (chart.sortable) bindSortHeaders(container, chartId);
+    }
+  }
+
+  function bindSortHeaders(container, chartId) {
+    var handler = function(e) {
+      var th = e.target.closest('th[data-sortable]');
+      if (!th) return;
+      var field = th.getAttribute('data-sort-field');
+      if (!field) return;
+      var current = state.sort[chartId];
+      var newOrder;
+      if (!current || current.field !== field) newOrder = 'asc';
+      else if (current.order === 'asc') newOrder = 'desc';
+      else newOrder = null;
+      state.sort[chartId] = newOrder ? { field: field, order: newOrder } : null;
+      updateActiveSlide();
+    };
+    container.onclick = handler;
+  }
+
+  function canSelect(chart) {
+    return Boolean(chart && ((chart.interaction && chart.interaction.select) || chart.drilldownPreset));
+  }
+
+  function bindMarks() {
+    document.querySelectorAll('.slide.active [data-miao-mark]').forEach(function(mark) {
+      if (mark.getAttribute('data-miao-bound') === 'true') return;
+      mark.setAttribute('data-miao-bound', 'true');
+      var chart = getChartSpec(
+        Number(mark.getAttribute('data-slide-index')),
+        Number(mark.getAttribute('data-chart-index'))
+      );
+      mark.addEventListener('mouseenter', function(event) {
+        var text = mark.getAttribute('data-tooltip');
+        if (!text || !tooltip) return;
+        tooltip.textContent = text;
+        tooltip.hidden = false;
+        moveTooltip(event);
+      });
+      mark.addEventListener('mousemove', moveTooltip);
+      mark.addEventListener('mouseleave', function() { if (tooltip) tooltip.hidden = true; });
+      mark.addEventListener('click', function() {
+        var field = mark.getAttribute('data-field');
+        var value = mark.getAttribute('data-value');
+        if (!field) return;
+        var chartId = mark.getAttribute('data-chart-id');
+        if (chart && chart.drilldownChart) {
+          var same = state.drilldown && String(state.drilldown.value) === String(value) && state.drilldown.field === field;
+          state.drilldown = same ? null : { field: field, value: value, targetId: chart.drilldownChart, sourceId: chartId };
+          if (state.drilldown) {
+            var target = document.querySelector('[data-miao-chart="' + md.escapeAttr(chart.drilldownChart) + '"]');
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          updateActiveSlide();
+          return;
+        }
+        if (!canSelect(chart)) return;
+        state.selection = state.selection && state.selection.field === field && String(state.selection.value) === String(value)
+          ? null
+          : { field: field, value: value };
+        updateActiveSlide();
+      });
+    });
+  }
+
+  function renderDrilldownBreadcrumb() {
+    var activeSlide = getActiveSlide();
+    if (!activeSlide) return;
+    var existing = activeSlide.querySelector('.miao-drilldown-bar');
+    if (!state.drilldown) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) existing.remove();
+    var bar = document.createElement('div');
+    bar.className = 'miao-drilldown-bar';
+    bar.innerHTML = '<span class="miao-drilldown-label">Drilldown: </span>' +
+      '<span class="miao-drilldown-chip">' + md.escapeHtml(state.drilldown.field) + ': ' + md.escapeHtml(String(state.drilldown.value)) +
+      ' <button class="miao-drilldown-clear">&times;</button></span>';
+    bar.querySelector('.miao-drilldown-clear').addEventListener('click', function(e) { e.stopPropagation(); state.drilldown = null; updateActiveSlide(); });
+    activeSlide.insertBefore(bar, activeSlide.firstChild);
+  }
+
+  function updateActiveSlide() {
+    var filtered = md.applyFilters(rows, filters, state.filters);
+    var activeSlide = getActiveSlide();
+    if (!activeSlide) return;
+
+    getSlideCharts(activeSlide).forEach(function(container) {
+      var slideIndex = Number(container.getAttribute('data-slide-index') || -1);
+      var chartIndex = Number(container.getAttribute('data-chart-index') || 0);
+      var chart = getChartSpec(slideIndex, chartIndex);
+      renderChart(container, chart, filtered);
+    });
+
+    bindMarks();
+
+    document.querySelectorAll('.slide.active [data-miao-mark]').forEach(function(mark) {
+      var field = mark.getAttribute('data-field');
+      var value = mark.getAttribute('data-value');
+      var selected = state.selection && state.selection.field === field && String(state.selection.value) === String(value);
+      mark.setAttribute('data-miao-selected', selected ? 'true' : 'false');
+      mark.classList.toggle('miao-mark-hidden', Boolean((state.selection && !selected) || !markMatchesFilters(field, value)));
+    });
+
+    document.querySelectorAll('.slide.active [data-miao-chart]').forEach(function(container) {
+      renderDetail(container, filtered);
+    });
+
+    renderDrilldownBreadcrumb();
+    renderMetrics(filtered);
+    renderViewState(filtered);
+  }
+
+
+  function renderMetrics(filtered) {
+    document.querySelectorAll('.slide.active [data-miao-metric]').forEach(function(container) {
+      var slide=spec.slides[Number(container.getAttribute('data-slide-index'))];
+      var metric=slide && slide.metrics && slide.metrics[Number(container.getAttribute('data-metric-index'))];
+      if(!metric) return;
+      var chart={type:'bigvalue',encoding:{},data:metric.data||{}};
+      var prepared=md.prepareRows(filtered,chart);
+      var raw=metric.value;
+      if(raw===undefined && prepared[0]) { var keys=Object.keys(prepared[0]); raw=prepared[0][keys[0]]; }
+      var value=container.querySelector('.v'); if(value) value.textContent=raw==null?'—':String(raw);
+      var label=container.querySelector('.l'); if(label) label.innerHTML=md.escapeHtml(metric.label)+' <span class="miao-view-derived">Current filter</span>';
+    });
+  }
+
+  function renderViewState(filtered) {
+    var activeSlide=getActiveSlide(); if(!activeSlide) return;
+    var el=activeSlide.querySelector('.miao-view-state'); if(!el){el=document.createElement('div');el.className='miao-view-state';activeSlide.insertBefore(el,activeSlide.firstChild);}
+    var active=Object.keys(state.filters).filter(function(key){var value=state.filters[key];return value!==''&&value!=null&&(!Array.isArray(value)||value.some(Boolean));});
+    el.innerHTML='<span>View: '+filtered.length+' / '+rows.length+' rows</span>'+active.map(function(key){return '<span class="miao-chip">'+md.escapeHtml(key)+': '+md.escapeHtml(Array.isArray(state.filters[key])?state.filters[key].join(' – '):String(state.filters[key]))+'</span>';}).join('')+(active.length?'<button id="deck-view-copy">Copy view link</button><button id="deck-view-reset">Reset all</button>':'<span>Base evidence view</span>');
+    var reset=el.querySelector('#deck-view-reset');if(reset)reset.onclick=function(){state.filters={};state.selection=null;state.drilldown=null;filterPanel&&filterPanel.querySelectorAll('select,input').forEach(function(input){input.value='';input.checked=false;});updateActiveSlide();};
+    var copy=el.querySelector('#deck-view-copy');if(copy)copy.onclick=function(){if(navigator.clipboard)navigator.clipboard.writeText(location.href);};
+    activeSlide.querySelectorAll('.slide-claim,.sub').forEach(function(claim){claim.setAttribute('data-view-scope',active.length?'base-evidence':'current');claim.title=active.length?'Claim is based on the complete dataset.':'';});
+    try{location.hash=active.length?'miao='+encodeURIComponent(JSON.stringify({filters:state.filters})):'';}catch(_){}
+  }
+
+
+  function renderDetail(container, filtered) {
+    var chartId = container.getAttribute('data-miao-chart');
+    var detail = container.querySelector('.miao-detail');
+    if (!detail) {
+      detail = document.createElement('div');
+      detail.className = 'miao-detail';
+      container.appendChild(detail);
+    }
+    if (!state.selection) {
+      detail.innerHTML = '';
+      detail.hidden = true;
+      return;
+    }
+    var selectedRows = filtered.filter(function(row) {
+      return String(row[state.selection.field] == null ? '' : row[state.selection.field]) === String(state.selection.value);
+    });
+    detail.hidden = false;
+    detail.innerHTML = md.renderDetailTable(selectedRows, chartId, filtered);
+  }
+
+  function moveTooltip(event) {
+    if (tooltip) {
+      tooltip.style.left = event.clientX + 'px';
+      tooltip.style.top = event.clientY + 'px';
+    }
+  }
+
+  function markMatchesFilters(field, value) {
+    var activeFilters = filters.filter(function(filter) { return filter.field === field; });
+    if (!activeFilters.length) return true;
+    return activeFilters.every(function(filter) {
+      var active = state.filters[filter.field];
+      if (active == null || active === '' || (Array.isArray(active) && !active[0] && !active[1])) return true;
+      if (filter.type === 'select') {
+        if (Array.isArray(active)) {
+          if (active.length === 0) return true;
+          return active.indexOf(String(value == null ? '' : value)) !== -1;
+        }
+        return String(value == null ? '' : value) === String(active);
+      }
+      var current = md.comparableValue(value);
+      if (current == null) return false;
+      var min = md.comparableValue(active[0]);
+      var max = md.comparableValue(active[1]);
+      if (min != null && current < min) return false;
+      if (max != null && current > max) return false;
+      return true;
+    });
+  }
+
+  function watchSlideChanges() {
+    var canvas = document.querySelector('.slide-canvas');
+    if (!canvas) return;
+    var lastIndex = -1;
+    var observer = new MutationObserver(function() {
+      var active = getActiveSlide();
+      if (!active) return;
+      var idx = Array.prototype.indexOf.call(canvas.querySelectorAll('.slide'), active);
+      if (idx === lastIndex) return;
+      lastIndex = idx;
+      updateActiveSlide();
+    });
+    observer.observe(canvas, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      attributeFilter: ['class']
+    });
+  }
+
+  try { if(location.hash.indexOf('#miao=')===0) { var saved=JSON.parse(decodeURIComponent(location.hash.slice(6))); state.filters=saved.filters||{}; } } catch (_) {}
+  var printFilters=null;
+  window.addEventListener('beforeprint',function(){printFilters=JSON.parse(JSON.stringify(state.filters));state.filters={};updateActiveSlide();});
+  window.addEventListener('afterprint',function(){state.filters=printFilters||{};printFilters=null;updateActiveSlide();});
+  renderFilterPanel();
+  updateActiveSlide();
+  watchSlideChanges();
+})();
+</script>
+</body>
+</html>

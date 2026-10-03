@@ -1,0 +1,2116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Miao Vision Report</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --mv-paper: #f8fafc;
+      --mv-surface: #ffffff;
+      --mv-border: #e2e8f0;
+      --mv-ink: #0f172a;
+      --mv-muted: #64748b;
+      --mv-soft: #475569;
+      --mv-brand: #2563eb;
+      --mv-serif: Georgia, "Times New Roman", serif;
+      --mv-mono: "SF Mono", "JetBrains Mono", Consolas, monospace;
+    }
+    body { margin: 0; background: #f8fafc; color: #0f172a; }
+    .miao-viz-report { max-width: 1120px; margin: 0 auto; padding: 40px 24px 56px; }
+    header { margin-bottom: 28px; }
+    h1 { margin: 0; font-size: 32px; font-weight: 760; letter-spacing: 0; }
+    h2 { margin: 0 0 18px; font-size: 20px; font-weight: 700; letter-spacing: 0; }
+    .eyebrow { margin: 0 0 8px; color: #2563eb; font-size: 13px; font-weight: 700; text-transform: uppercase; }
+    .description { max-width: 760px; color: #475569; line-height: 1.6; }
+    .meta { color: #64748b; font-size: 13px; }
+    .chart-block { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 22px; margin: 18px 0; box-shadow: 0 1px 2px rgba(15,23,42,0.04); }
+    .miao-chart-svg { display: block; max-width: 100%; overflow: visible; }
+    svg text { font-size: 12px; fill: #475569; }
+    .miao-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .miao-table caption { text-align: left; font-weight: 700; margin-bottom: 12px; }
+    .miao-table th, .miao-table td { border-bottom: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; }
+    .miao-bigvalue { border: 1px solid #dbeafe; background: #eff6ff; border-radius: 8px; padding: 24px; }
+    .miao-bigvalue-label { color: #1d4ed8; font-weight: 700; }
+    .miao-bigvalue-number { margin-top: 8px; font-size: 42px; font-weight: 780; }
+    .miao-unsupported { padding: 18px; border-radius: 8px; background: #fff7ed; color: #9a3412; }
+    @media (max-width: 720px) { .miao-viz-report { padding: 24px 14px 36px; } h1 { font-size: 26px; } .chart-block { padding: 16px; } }
+  
+  .report-insights { margin: 0 0 32px; padding: 16px 20px 14px; border-radius: 4px; border: 1px solid rgba(128,128,128,0.18); background: rgba(128,128,128,0.04); }
+  .insights-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.45; margin: 0 0 8px; }
+  .insights-list { margin: 0; padding: 0 0 0 18px; }
+  .insights-list li { margin: 5px 0; font-size: 13px; line-height: 1.55; opacity: 0.75; }
+  .insight-warning { color: #8a4b00; }
+  .insight-caveat { display: block; margin-top: 2px; font-size: 11px; opacity: 0.58; }
+  .miao-render-slot > svg { max-width: 100%; height: auto; }
+  @media print {
+    @page { margin: 12mm; }
+    .chart-block, .chart-card, .miao-facet-svg, h1, h2 { break-inside: avoid; page-break-inside: avoid; }
+    .miao-render-slot { overflow: visible; }
+    .miao-viz-report button, .miao-view-state, [role="tooltip"], .evidence-drawer { display: none !important; }
+    table thead { display: table-header-group; }
+    a[href]::after { content: none !important; }
+    * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  }
+  .report-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; align-items: start; }
+  .report-grid > .chart-block { margin: 0; grid-column: span var(--mv-span, 12); }
+  .report-grid > .emphasis-primary { border-top: 3px solid var(--mv-brand, #2563eb); }
+  .data-quality-badge { display: inline-block; margin: 0 0 8px; padding: 3px 8px; border: 1px solid #c2410c; border-radius: 999px; color: #9a3412; background: #fff7ed; font-size: 10px; font-weight: 700; }
+  .evidence-trigger { margin: 6px 0 0; border: 0; background: transparent; color: var(--mv-brand, #2563eb); font: inherit; font-size: 11px; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .evidence-status { margin: 0 0 18px; padding: 9px 12px; border-left: 3px solid #b45309; background: #fffbeb; font-size: 12px; }
+  .evidence-drawer[hidden] { display: none; }
+  .evidence-drawer { position: fixed; inset: 0; z-index: 999; display: flex; justify-content: flex-end; background: rgba(15,23,42,.38); }
+  .evidence-panel { width: min(520px, 100%); height: 100%; overflow: auto; padding: 24px; background: var(--mv-surface, #fff); color: inherit; box-shadow: -12px 0 32px rgba(15,23,42,.18); }
+  .evidence-panel-header { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+  .evidence-close { border: 1px solid rgba(128,128,128,.3); border-radius: 4px; padding: 6px 10px; background: transparent; color: inherit; cursor: pointer; }
+  .evidence-meta { display: grid; grid-template-columns: 110px 1fr; gap: 8px 12px; margin-top: 18px; font-size: 13px; }
+  .evidence-meta dt { opacity: .55; }
+  .evidence-meta dd { margin: 0; overflow-wrap: anywhere; }
+  .evidence-summary { margin: 18px 0; padding: 14px 16px; border-left: 3px solid var(--mv-brand, #2563eb); background: rgba(37,99,235,.06); }
+  .evidence-summary p { margin: 5px 0; line-height: 1.45; }
+  .evidence-verified { font-weight: 650; color: #166534; }
+  .evidence-technical { margin-top: 18px; font-size: 12px; }
+  .evidence-technical summary { cursor: pointer; opacity: .72; }
+  .evidence-current { margin-top: 18px; padding: 10px 12px; background: rgba(128,128,128,.08); font-size: 12px; }
+  .evidence-appendix { margin-top: 32px; padding-top: 18px; border-top: 1px solid rgba(128,128,128,.25); }
+  .evidence-appendix li { margin: 8px 0; font-size: 11px; }
+  .layout-narrative { display: block; }
+  @media (max-width: 720px) { .report-grid { display: block; } .report-grid > .chart-block { margin-bottom: 18px; } .evidence-drawer { align-items: flex-end; } .evidence-panel { width: 100%; height: min(82vh, 760px); } }
+</style>
+</head>
+<body>
+  <main class="miao-viz-report">
+    
+    <header>
+    <p class="eyebrow">Miao Vision</p>
+    <h1>Miao Vision Report</h1>
+    
+    <p class="meta">/Users/guming/dev/gitcode/miao-vision/test_data/report_workflow_sales.csv · 45 rows · generated 2026-09-22T07:14:02.900Z</p>
+  </header>
+    <details class="miao-exposure" data-share-status="review">
+    <summary>Embedded data details: review</summary>
+    <dl><dt>Policy</dt><dd>legacy</dd><dt>Rows</dt><dd>45</dd><dt>Fields</dt><dd>order_date, region, product, sku, sales, orders</dd><dt>Data bytes</dt><dd>4780</dd></dl>
+    <ul><li>LEGACY_FULL_ROW_EMBEDDING: Legacy interactive report has no explicit data policy.</li><li>INTERACTION_EMBEDDED_FIELD_REVIEW: Embedded field &#39;sku&#39; requires review.</li></ul>
+  </details>
+    <section class="report-insights">
+    <p class="insights-label">Key Observations</p>
+    <ul class="insights-list">
+      <li>Total sales: 9085<button type="button" class="evidence-trigger" data-evidence-key="evidence-object-4" aria-haspopup="dialog">View evidence</button></li>
+      <li>sales trend (by order_date): from 120 to 259. Period-over-period increased 10.2%<button type="button" class="evidence-trigger" data-evidence-key="evidence-object-5" aria-haspopup="dialog">View evidence</button></li>
+      <li>Top 5 region by sales: East at 2002<button type="button" class="evidence-trigger" data-evidence-key="evidence-object-6" aria-haspopup="dialog">View evidence</button></li>
+    </ul>
+  </section>
+    <section class="chart-block" data-miao-chart="kpi_total_sales">
+    <h2>Total sales</h2>
+    <button type="button" class="evidence-trigger" data-evidence-key="evidence-object-1" aria-haspopup="dialog">View evidence</button><div class="miao-render-slot"><div class="miao-bigvalue"><div class="miao-bigvalue-label">Total sales</div><div class="miao-bigvalue-number">9085</div></div></div>
+  </section>
+<section class="chart-block" data-miao-chart="trend_by_order_date">
+    <h2>sales over order_date</h2>
+    <button type="button" class="evidence-trigger" data-evidence-key="evidence-object-2" aria-haspopup="dialog">View evidence</button><div class="miao-render-slot"><svg class="miao-chart-svg" viewBox="0 0 720 420" width="100%" height="420" role="img" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="420" fill="#ffffff" />
+    
+      
+    <line x1="72" y1="273.0" x2="696" y2="273.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="190.0" x2="696" y2="190.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="107.0" x2="696" y2="107.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="24.0" x2="696" y2="24.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" />
+    <line x1="72" y1="356" x2="696" y2="356" stroke="#94a3b8" />
+    <line x1="72" y1="24" x2="72" y2="356" stroke="#94a3b8" />
+    <text x="66" y="360.0" text-anchor="end" fill="#475569" font-size="11">0</text><text x="66" y="277.0" text-anchor="end" fill="#475569" font-size="11">71.5</text><text x="66" y="194.0" text-anchor="end" fill="#475569" font-size="11">143</text><text x="66" y="111.0" text-anchor="end" fill="#475569" font-size="11">214.5</text><text x="66" y="28.0" text-anchor="end" fill="#475569" font-size="11">286</text>
+    <text x="384.0" y="410" text-anchor="middle" fill="#475569" font-size="12">order_date</text>
+    <text x="14" y="190.0" text-anchor="middle" transform="rotate(-90 14 190.0)" fill="#475569" font-size="12">total_sales</text>
+  
+      
+      <path d="M 72.0 216.7 L 86.2 199.3 L 100.4 191.2 L 114.5 207.4 L 128.7 174.9 L 142.9 167.9 L 157.1 219.0 L 171.3 152.9 L 185.5 183.0 L 199.6 163.3 L 213.8 147.0 L 228.0 157.5 L 242.2 126.2 L 256.4 177.2 L 270.5 138.9 L 284.7 134.3 L 298.9 170.3 L 313.1 118.0 L 327.3 151.7 L 341.5 136.6 L 355.6 112.2 L 369.8 126.2 L 384.0 96.0 L 398.2 143.6 L 412.4 106.4 L 426.5 86.7 L 440.7 115.7 L 454.9 77.4 L 469.1 125.0 L 483.3 91.3 L 497.5 71.6 L 511.6 99.5 L 525.8 54.2 L 540.0 107.6 L 554.2 82.0 L 568.4 63.5 L 582.5 89.0 L 596.7 40.3 L 610.9 101.8 L 625.1 68.1 L 639.3 44.9 L 653.5 75.1 L 667.6 24.0 L 681.8 83.2 L 696.0 55.3" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+      <circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-01" data-row-key="0" data-tooltip="2026-01-01: 120" cx="72.0" cy="216.7" r="4" fill="#2563eb"><title>2026-01-01: 120</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-02" data-row-key="0" data-tooltip="2026-01-02: 135" cx="86.2" cy="199.3" r="4" fill="#2563eb"><title>2026-01-02: 135</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-03" data-row-key="0" data-tooltip="2026-01-03: 142" cx="100.4" cy="191.2" r="4" fill="#2563eb"><title>2026-01-03: 142</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-04" data-row-key="0" data-tooltip="2026-01-04: 128" cx="114.5" cy="207.4" r="4" fill="#2563eb"><title>2026-01-04: 128</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-05" data-row-key="0" data-tooltip="2026-01-05: 156" cx="128.7" cy="174.9" r="4" fill="#2563eb"><title>2026-01-05: 156</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-06" data-row-key="0" data-tooltip="2026-01-06: 162" cx="142.9" cy="167.9" r="4" fill="#2563eb"><title>2026-01-06: 162</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-07" data-row-key="0" data-tooltip="2026-01-07: 118" cx="157.1" cy="219.0" r="4" fill="#2563eb"><title>2026-01-07: 118</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-08" data-row-key="0" data-tooltip="2026-01-08: 175" cx="171.3" cy="152.9" r="4" fill="#2563eb"><title>2026-01-08: 175</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-09" data-row-key="0" data-tooltip="2026-01-09: 149" cx="185.5" cy="183.0" r="4" fill="#2563eb"><title>2026-01-09: 149</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-01-10" data-row-key="0" data-tooltip="2026-01-10: 166" cx="199.6" cy="163.3" r="4" fill="#2563eb"><title>2026-01-10: 166</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-01" data-row-key="0" data-tooltip="2026-02-01: 180" cx="213.8" cy="147.0" r="4" fill="#2563eb"><title>2026-02-01: 180</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-02" data-row-key="0" data-tooltip="2026-02-02: 171" cx="228.0" cy="157.5" r="4" fill="#2563eb"><title>2026-02-02: 171</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-03" data-row-key="0" data-tooltip="2026-02-03: 198" cx="242.2" cy="126.2" r="4" fill="#2563eb"><title>2026-02-03: 198</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-04" data-row-key="0" data-tooltip="2026-02-04: 154" cx="256.4" cy="177.2" r="4" fill="#2563eb"><title>2026-02-04: 154</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-05" data-row-key="0" data-tooltip="2026-02-05: 187" cx="270.5" cy="138.9" r="4" fill="#2563eb"><title>2026-02-05: 187</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-06" data-row-key="0" data-tooltip="2026-02-06: 191" cx="284.7" cy="134.3" r="4" fill="#2563eb"><title>2026-02-06: 191</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-07" data-row-key="0" data-tooltip="2026-02-07: 160" cx="298.9" cy="170.3" r="4" fill="#2563eb"><title>2026-02-07: 160</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-08" data-row-key="0" data-tooltip="2026-02-08: 205" cx="313.1" cy="118.0" r="4" fill="#2563eb"><title>2026-02-08: 205</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-09" data-row-key="0" data-tooltip="2026-02-09: 176" cx="327.3" cy="151.7" r="4" fill="#2563eb"><title>2026-02-09: 176</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-02-10" data-row-key="0" data-tooltip="2026-02-10: 189" cx="341.5" cy="136.6" r="4" fill="#2563eb"><title>2026-02-10: 189</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-01" data-row-key="0" data-tooltip="2026-03-01: 210" cx="355.6" cy="112.2" r="4" fill="#2563eb"><title>2026-03-01: 210</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-02" data-row-key="0" data-tooltip="2026-03-02: 198" cx="369.8" cy="126.2" r="4" fill="#2563eb"><title>2026-03-02: 198</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-03" data-row-key="0" data-tooltip="2026-03-03: 224" cx="384.0" cy="96.0" r="4" fill="#2563eb"><title>2026-03-03: 224</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-04" data-row-key="0" data-tooltip="2026-03-04: 183" cx="398.2" cy="143.6" r="4" fill="#2563eb"><title>2026-03-04: 183</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-05" data-row-key="0" data-tooltip="2026-03-05: 215" cx="412.4" cy="106.4" r="4" fill="#2563eb"><title>2026-03-05: 215</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-06" data-row-key="0" data-tooltip="2026-03-06: 232" cx="426.5" cy="86.7" r="4" fill="#2563eb"><title>2026-03-06: 232</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-07" data-row-key="0" data-tooltip="2026-03-07: 207" cx="440.7" cy="115.7" r="4" fill="#2563eb"><title>2026-03-07: 207</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-08" data-row-key="0" data-tooltip="2026-03-08: 240" cx="454.9" cy="77.4" r="4" fill="#2563eb"><title>2026-03-08: 240</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-09" data-row-key="0" data-tooltip="2026-03-09: 199" cx="469.1" cy="125.0" r="4" fill="#2563eb"><title>2026-03-09: 199</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-03-10" data-row-key="0" data-tooltip="2026-03-10: 228" cx="483.3" cy="91.3" r="4" fill="#2563eb"><title>2026-03-10: 228</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-01" data-row-key="0" data-tooltip="2026-04-01: 245" cx="497.5" cy="71.6" r="4" fill="#2563eb"><title>2026-04-01: 245</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-02" data-row-key="0" data-tooltip="2026-04-02: 221" cx="511.6" cy="99.5" r="4" fill="#2563eb"><title>2026-04-02: 221</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-03" data-row-key="0" data-tooltip="2026-04-03: 260" cx="525.8" cy="54.2" r="4" fill="#2563eb"><title>2026-04-03: 260</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-04" data-row-key="0" data-tooltip="2026-04-04: 214" cx="540.0" cy="107.6" r="4" fill="#2563eb"><title>2026-04-04: 214</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-05" data-row-key="0" data-tooltip="2026-04-05: 236" cx="554.2" cy="82.0" r="4" fill="#2563eb"><title>2026-04-05: 236</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-06" data-row-key="0" data-tooltip="2026-04-06: 252" cx="568.4" cy="63.5" r="4" fill="#2563eb"><title>2026-04-06: 252</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-07" data-row-key="0" data-tooltip="2026-04-07: 230" cx="582.5" cy="89.0" r="4" fill="#2563eb"><title>2026-04-07: 230</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-08" data-row-key="0" data-tooltip="2026-04-08: 272" cx="596.7" cy="40.3" r="4" fill="#2563eb"><title>2026-04-08: 272</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-09" data-row-key="0" data-tooltip="2026-04-09: 219" cx="610.9" cy="101.8" r="4" fill="#2563eb"><title>2026-04-09: 219</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-04-10" data-row-key="0" data-tooltip="2026-04-10: 248" cx="625.1" cy="68.1" r="4" fill="#2563eb"><title>2026-04-10: 248</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-05-01" data-row-key="0" data-tooltip="2026-05-01: 268" cx="639.3" cy="44.9" r="4" fill="#2563eb"><title>2026-05-01: 268</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-05-02" data-row-key="0" data-tooltip="2026-05-02: 242" cx="653.5" cy="75.1" r="4" fill="#2563eb"><title>2026-05-02: 242</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-05-03" data-row-key="0" data-tooltip="2026-05-03: 286" cx="667.6" cy="24.0" r="4" fill="#2563eb"><title>2026-05-03: 286</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-05-04" data-row-key="0" data-tooltip="2026-05-04: 235" cx="681.8" cy="83.2" r="4" fill="#2563eb"><title>2026-05-04: 235</title></circle><circle data-miao-mark="true" data-chart-id="trend_by_order_date" data-field="order_date" data-value="2026-05-05" data-row-key="0" data-tooltip="2026-05-05: 259" cx="696.0" cy="55.3" r="4" fill="#2563eb"><title>2026-05-05: 259</title></circle>
+      <text x="72.0" y="400" text-anchor="middle" fill="#475569">2026-01-01</text><text x="157.1" y="400" text-anchor="middle" fill="#475569">2026-01-07</text><text x="242.2" y="400" text-anchor="middle" fill="#475569">2026-02-03</text><text x="327.3" y="400" text-anchor="middle" fill="#475569">2026-02-09</text><text x="412.4" y="400" text-anchor="middle" fill="#475569">2026-03-05</text><text x="497.5" y="400" text-anchor="middle" fill="#475569">2026-04-01</text><text x="582.5" y="400" text-anchor="middle" fill="#475569">2026-04-07</text><text x="667.6" y="400" text-anchor="middle" fill="#475569">2026-05-03</text>
+    
+  </svg></div>
+  </section>
+<section class="chart-block" data-miao-chart="ranking_by_region">
+    <h2>sales by region</h2>
+    <button type="button" class="evidence-trigger" data-evidence-key="evidence-object-3" aria-haspopup="dialog">View evidence</button><div class="miao-render-slot"><svg class="miao-chart-svg" viewBox="0 0 720 420" width="100%" height="420" role="img" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="720" height="420" fill="#ffffff" />
+    
+      
+    <line x1="72" y1="285.0" x2="696" y2="285.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="198.0" x2="696" y2="198.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="111.0" x2="696" y2="111.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" /><line x1="72" y1="24.0" x2="696" y2="24.0" stroke="#94a3b8" stroke-opacity="0.4" stroke-dasharray="4 3" />
+    <line x1="72" y1="372" x2="696" y2="372" stroke="#94a3b8" />
+    <line x1="72" y1="24" x2="72" y2="372" stroke="#94a3b8" />
+    <text x="66" y="376.0" text-anchor="end" fill="#475569" font-size="11">0</text><text x="66" y="289.0" text-anchor="end" fill="#475569" font-size="11">500.5</text><text x="66" y="202.0" text-anchor="end" fill="#475569" font-size="11">1.0K</text><text x="66" y="115.0" text-anchor="end" fill="#475569" font-size="11">1.5K</text><text x="66" y="28.0" text-anchor="end" fill="#475569" font-size="11">2.0K</text>
+    <text x="384.0" y="426" text-anchor="middle" fill="#475569" font-size="12">region</text>
+    <text x="14" y="198.0" text-anchor="middle" transform="rotate(-90 14 198.0)" fill="#475569" font-size="12">total_sales</text>
+  
+      <g>
+        <rect data-miao-mark="true" data-chart-id="ranking_by_region" data-field="region" data-value="East" data-row-key="0" data-tooltip="East: 2002" x="72.0" y="24.0" width="118.4" height="348.0" rx="3" fill="#2563eb" />
+        <text x="131.2" y="390.0" text-anchor="middle" fill="#475569" font-size="11">East</text>
+      </g><g>
+        <rect data-miao-mark="true" data-chart-id="ranking_by_region" data-field="region" data-value="Central" data-row-key="1" data-tooltip="Central: 1884" x="198.4" y="44.5" width="118.4" height="327.5" rx="3" fill="#f97316" />
+        <text x="257.6" y="390.0" text-anchor="middle" fill="#475569" font-size="11">Central</text>
+      </g><g>
+        <rect data-miao-mark="true" data-chart-id="ranking_by_region" data-field="region" data-value="North" data-row-key="2" data-tooltip="North: 1860" x="324.8" y="48.7" width="118.4" height="323.3" rx="3" fill="#f97316" />
+        <text x="384.0" y="390.0" text-anchor="middle" fill="#475569" font-size="11">North</text>
+      </g><g>
+        <rect data-miao-mark="true" data-chart-id="ranking_by_region" data-field="region" data-value="South" data-row-key="3" data-tooltip="South: 1682" x="451.2" y="79.6" width="118.4" height="292.4" rx="3" fill="#f97316" />
+        <text x="510.4" y="390.0" text-anchor="middle" fill="#475569" font-size="11">South</text>
+      </g><g>
+        <rect data-miao-mark="true" data-chart-id="ranking_by_region" data-field="region" data-value="West" data-row-key="4" data-tooltip="West: 1657" x="577.6" y="84.0" width="118.4" height="288.0" rx="3" fill="#2563eb" />
+        <text x="636.8" y="390.0" text-anchor="middle" fill="#475569" font-size="11">West</text>
+      </g>
+    
+  </svg></div>
+  </section>
+    <section class="evidence-appendix"><h2>Evidence Appendix</h2><ol><li><b>E1 · total</b> — Total aggregates: sum(sales) as total_sales, sum(orders) as total_orders, count(*) as row_count · fields: sales, orders, * · sample: 45</li><li><b>E2 · by_time</b> — sales by order_date (ascending) · fields: order_date, sales · sample: 45</li><li><b>E3 · by_dimension</b> — sales by region, with share · fields: region, sales, * · sample: 5</li></ol></section>
+  </main>
+  <aside class="evidence-drawer" id="miao-evidence-drawer" role="dialog" aria-modal="true" aria-labelledby="miao-evidence-title" hidden>
+    <div class="evidence-panel">
+      <div class="evidence-panel-header">
+        <div><p class="insights-label">Why you can trust this</p><h2 id="miao-evidence-title">How this result was calculated</h2></div>
+        <button type="button" class="evidence-close" aria-label="Close evidence">Close</button>
+      </div>
+      <div id="miao-evidence-content"></div>
+    </div>
+  </aside>
+  <script type="application/json" id="miao-viz-spec">{
+  "insights": [
+    {
+      "text": "Total sales: 9085",
+      "type": "total",
+      "evidence": [
+        "total"
+      ],
+      "derivedFrom": [
+        "total"
+      ],
+      "check": "evidence_ref_exists",
+      "provenance": {
+        "evidence": [
+          "total"
+        ],
+        "derivedFrom": [
+          "\u0024evidence:total.values.total_sales"
+        ],
+        "check": "value_match",
+        "claimArgs": {
+          "expected": "\u0024evidence:total.values.total_sales",
+          "value": "\u0024evidence:total.values.total_sales"
+        }
+      }
+    },
+    {
+      "text": "sales trend (by order_date): from 120 to 259. Period-over-period increased 10.2%",
+      "type": "trend",
+      "evidence": [
+        "by_time"
+      ],
+      "derivedFrom": [
+        "by_time"
+      ],
+      "check": "evidence_ref_exists",
+      "provenance": {
+        "evidence": [
+          "by_time"
+        ],
+        "derivedFrom": [
+          "\u0024evidence:by_time.rows[0].total_sales",
+          "\u0024evidence:by_time.rows[last].total_sales"
+        ],
+        "check": "trend_periods",
+        "claimArgs": {
+          "series": "\u0024evidence:by_time.rows",
+          "valueField": "total_sales",
+          "minimumPeriods": 3
+        }
+      }
+    },
+    {
+      "text": "Top 5 region by sales: East at 2002",
+      "type": "rank",
+      "evidence": [
+        "by_dimension"
+      ],
+      "derivedFrom": [
+        "by_dimension"
+      ],
+      "check": "rank_position",
+      "provenance": {
+        "evidence": [
+          "by_dimension"
+        ],
+        "derivedFrom": [
+          "\u0024evidence:by_dimension.rows[0].region",
+          "\u0024evidence:by_dimension.rows[0].total_sales"
+        ],
+        "check": "rank_position",
+        "claimArgs": {
+          "rows": "\u0024evidence:by_dimension.rows",
+          "subjectField": "region",
+          "valueField": "total_sales",
+          "subject": "\u0024evidence:by_dimension.rows[0].region",
+          "expectedRank": 1,
+          "order": "desc"
+        }
+      }
+    }
+  ],
+  "charts": [
+    {
+      "id": "kpi_total_sales",
+      "type": "bigvalue",
+      "title": "Total sales",
+      "data": {
+        "transform": [
+          {
+            "type": "aggregate",
+            "measures": [
+              {
+                "field": "sales",
+                "op": "sum",
+                "as": "total_sales"
+              }
+            ]
+          }
+        ]
+      },
+      "encoding": {
+        "value": {
+          "field": "total_sales",
+          "type": "quantitative"
+        }
+      },
+      "provenance": {
+        "evidence": [
+          "total"
+        ],
+        "derivedFrom": [
+          "\u0024evidence:total.values.total_sales"
+        ],
+        "check": "value_match",
+        "claimArgs": {
+          "expected": "\u0024evidence:total.values.total_sales",
+          "value": "\u0024evidence:total.values.total_sales"
+        }
+      }
+    },
+    {
+      "id": "trend_by_order_date",
+      "type": "line",
+      "title": "sales over order_date",
+      "data": {
+        "transform": [
+          {
+            "type": "aggregate",
+            "groupBy": [
+              "order_date"
+            ],
+            "measures": [
+              {
+                "field": "sales",
+                "op": "sum",
+                "as": "total_sales"
+              }
+            ]
+          },
+          {
+            "type": "sort",
+            "field": "order_date",
+            "order": "asc"
+          }
+        ]
+      },
+      "encoding": {
+        "x": {
+          "field": "order_date",
+          "type": "temporal"
+        },
+        "y": {
+          "field": "total_sales",
+          "type": "quantitative"
+        }
+      },
+      "provenance": {
+        "evidence": [
+          "by_time"
+        ],
+        "derivedFrom": [
+          "\u0024evidence:by_time.rows"
+        ]
+      }
+    },
+    {
+      "id": "ranking_by_region",
+      "type": "bar",
+      "title": "sales by region",
+      "data": {
+        "transform": [
+          {
+            "type": "aggregate",
+            "groupBy": [
+              "region"
+            ],
+            "measures": [
+              {
+                "field": "sales",
+                "op": "sum",
+                "as": "total_sales"
+              }
+            ]
+          },
+          {
+            "type": "sort",
+            "field": "total_sales",
+            "order": "desc"
+          },
+          {
+            "type": "limit",
+            "value": 5
+          }
+        ]
+      },
+      "encoding": {
+        "x": {
+          "field": "region",
+          "type": "nominal"
+        },
+        "y": {
+          "field": "total_sales",
+          "type": "quantitative"
+        }
+      },
+      "provenance": {
+        "evidence": [
+          "by_dimension"
+        ],
+        "derivedFrom": [
+          "\u0024evidence:by_dimension.rows"
+        ]
+      }
+    }
+  ]
+}</script>
+  <script type="application/json" id="miao-viz-profile">{
+  "file": "/Users/guming/dev/gitcode/miao-vision/test_data/report_workflow_sales.csv",
+  "rows": 45,
+  "columns": [
+    {
+      "name": "order_date",
+      "type": "date",
+      "total": 45,
+      "nonNullCount": 45,
+      "nullCount": 0,
+      "nullRate": 0,
+      "fillRate": 1,
+      "uniqueRate": 1,
+      "samples": [
+        "2026-01-01",
+        "2026-01-02",
+        "2026-01-03",
+        "2026-01-04",
+        "2026-01-05"
+      ],
+      "distinctCount": 45,
+      "temporal": {
+        "span": "2026-01-01 ~ 2026-05-05",
+        "granularity": "day",
+        "isMonotonic": true,
+        "gapCount": 80
+      },
+      "role": "time",
+      "semanticTags": [],
+      "confidence": 0.95,
+      "rationale": [
+        "unique rate is very high",
+        "column type is date"
+      ],
+      "qualityFlags": [
+        "high_unique_rate"
+      ],
+      "chartUsage": {
+        "asMeasure": "forbidden",
+        "asDimension": "allowed",
+        "asDetailKey": "allowed"
+      }
+    },
+    {
+      "name": "region",
+      "type": "string",
+      "total": 45,
+      "nonNullCount": 45,
+      "nullCount": 0,
+      "nullRate": 0,
+      "fillRate": 1,
+      "uniqueRate": 0.1111,
+      "samples": [
+        "North",
+        "South",
+        "East",
+        "West",
+        "Central"
+      ],
+      "distinctCount": 5,
+      "topValue": "North",
+      "topSharePct": 0.2,
+      "distribution": [
+        {
+          "value": "North",
+          "count": 9,
+          "sharePct": 0.2
+        },
+        {
+          "value": "South",
+          "count": 9,
+          "sharePct": 0.2
+        },
+        {
+          "value": "East",
+          "count": 9,
+          "sharePct": 0.2
+        },
+        {
+          "value": "West",
+          "count": 9,
+          "sharePct": 0.2
+        },
+        {
+          "value": "Central",
+          "count": 9,
+          "sharePct": 0.2
+        }
+      ],
+      "role": "dimension",
+      "semanticTags": [],
+      "confidence": 0.82,
+      "rationale": [
+        "string column suitable for grouping"
+      ],
+      "qualityFlags": [],
+      "chartUsage": {
+        "asMeasure": "forbidden",
+        "asDimension": "recommended",
+        "asDetailKey": "allowed"
+      }
+    },
+    {
+      "name": "product",
+      "type": "string",
+      "total": 45,
+      "nonNullCount": 45,
+      "nullCount": 0,
+      "nullRate": 0,
+      "fillRate": 1,
+      "uniqueRate": 0.3333,
+      "samples": [
+        "Product 01",
+        "Product 02",
+        "Product 03",
+        "Product 04",
+        "Product 05"
+      ],
+      "distinctCount": 15,
+      "topValue": "Product 01",
+      "topSharePct": 0.0667,
+      "distribution": [
+        {
+          "value": "Product 01",
+          "count": 3,
+          "sharePct": 0.0667
+        },
+        {
+          "value": "Product 02",
+          "count": 3,
+          "sharePct": 0.0667
+        },
+        {
+          "value": "Product 03",
+          "count": 3,
+          "sharePct": 0.0667
+        },
+        {
+          "value": "Product 04",
+          "count": 3,
+          "sharePct": 0.0667
+        },
+        {
+          "value": "Product 05",
+          "count": 3,
+          "sharePct": 0.0667
+        },
+        {
+          "value": "Product 06",
+          "count": 3,
+          "sharePct": 0.0667
+        },
+        {
+          "value": "Product 07",
+          "count": 3,
+          "sharePct": 0.0667
+        },
+        {
+          "value": "Product 08",
+          "count": 3,
+          "sharePct": 0.0667
+        },
+        {
+          "value": "Product 09",
+          "count": 3,
+          "sharePct": 0.0667
+        },
+        {
+          "value": "Product 10",
+          "count": 3,
+          "sharePct": 0.0667
+        }
+      ],
+      "role": "dimension",
+      "semanticTags": [],
+      "confidence": 0.82,
+      "rationale": [
+        "string column suitable for grouping"
+      ],
+      "qualityFlags": [],
+      "chartUsage": {
+        "asMeasure": "forbidden",
+        "asDimension": "recommended",
+        "asDetailKey": "allowed"
+      }
+    },
+    {
+      "name": "sku",
+      "type": "string",
+      "total": 45,
+      "nonNullCount": 45,
+      "nullCount": 0,
+      "nullRate": 0,
+      "fillRate": 1,
+      "uniqueRate": 1,
+      "samples": [
+        "SKU001",
+        "SKU002",
+        "SKU003",
+        "SKU004",
+        "SKU005"
+      ],
+      "distinctCount": 45,
+      "topValue": "SKU001",
+      "topSharePct": 0.0222,
+      "distribution": [
+        {
+          "value": "SKU001",
+          "count": 1,
+          "sharePct": 0.0222
+        },
+        {
+          "value": "SKU002",
+          "count": 1,
+          "sharePct": 0.0222
+        },
+        {
+          "value": "SKU003",
+          "count": 1,
+          "sharePct": 0.0222
+        },
+        {
+          "value": "SKU004",
+          "count": 1,
+          "sharePct": 0.0222
+        },
+        {
+          "value": "SKU005",
+          "count": 1,
+          "sharePct": 0.0222
+        },
+        {
+          "value": "SKU006",
+          "count": 1,
+          "sharePct": 0.0222
+        },
+        {
+          "value": "SKU007",
+          "count": 1,
+          "sharePct": 0.0222
+        },
+        {
+          "value": "SKU008",
+          "count": 1,
+          "sharePct": 0.0222
+        },
+        {
+          "value": "SKU009",
+          "count": 1,
+          "sharePct": 0.0222
+        },
+        {
+          "value": "SKU010",
+          "count": 1,
+          "sharePct": 0.0222
+        }
+      ],
+      "role": "dimension",
+      "semanticTags": [],
+      "confidence": 0.68,
+      "rationale": [
+        "unique rate is very high",
+        "string column suitable for grouping"
+      ],
+      "qualityFlags": [
+        "high_unique_rate"
+      ],
+      "chartUsage": {
+        "asMeasure": "forbidden",
+        "asDimension": "recommended",
+        "asDetailKey": "allowed"
+      }
+    },
+    {
+      "name": "sales",
+      "type": "number",
+      "total": 45,
+      "nonNullCount": 45,
+      "nullCount": 0,
+      "nullRate": 0,
+      "fillRate": 1,
+      "uniqueRate": 0.9778,
+      "samples": [
+        120,
+        135,
+        142,
+        128,
+        156
+      ],
+      "distinctCount": 44,
+      "min": 118,
+      "max": 286,
+      "sum": 9085,
+      "mean": 201.8889,
+      "median": 205,
+      "p25": 171,
+      "p75": 235,
+      "stddev": 42.5792,
+      "coefficientOfVariation": 0.2109,
+      "skewness": -0.2192,
+      "skewnessReliable": true,
+      "outlierCount": 0,
+      "outlierReliable": true,
+      "histogram": [
+        {
+          "bucket": "118-139",
+          "count": 4
+        },
+        {
+          "bucket": "139-160",
+          "count": 4
+        },
+        {
+          "bucket": "160-181",
+          "count": 7
+        },
+        {
+          "bucket": "181-202",
+          "count": 7
+        },
+        {
+          "bucket": "202-223",
+          "count": 7
+        },
+        {
+          "bucket": "223-244",
+          "count": 8
+        },
+        {
+          "bucket": "244-265",
+          "count": 5
+        },
+        {
+          "bucket": "265-286",
+          "count": 3
+        }
+      ],
+      "histogramReliable": true,
+      "role": "measure",
+      "semanticTags": [
+        "currency"
+      ],
+      "confidence": 0.9,
+      "rationale": [
+        "numeric non-identifier column"
+      ],
+      "qualityFlags": [],
+      "chartUsage": {
+        "asMeasure": "recommended",
+        "asDimension": "discouraged",
+        "asDetailKey": "allowed"
+      }
+    },
+    {
+      "name": "orders",
+      "type": "number",
+      "total": 45,
+      "nonNullCount": 45,
+      "nullCount": 0,
+      "nullRate": 0,
+      "fillRate": 1,
+      "uniqueRate": 0.2667,
+      "samples": [
+        3,
+        4,
+        5,
+        6,
+        2
+      ],
+      "distinctCount": 12,
+      "min": 2,
+      "max": 13,
+      "sum": 331,
+      "mean": 7.3556,
+      "median": 8,
+      "p25": 5,
+      "p75": 9,
+      "stddev": 2.5136,
+      "coefficientOfVariation": 0.3417,
+      "skewness": -0.7692,
+      "skewnessReliable": true,
+      "outlierCount": 0,
+      "outlierReliable": true,
+      "histogram": [
+        {
+          "bucket": "2-3.375",
+          "count": 3
+        },
+        {
+          "bucket": "3.375-4.75",
+          "count": 3
+        },
+        {
+          "bucket": "4.75-6.125",
+          "count": 11
+        },
+        {
+          "bucket": "6.125-7.5",
+          "count": 5
+        },
+        {
+          "bucket": "7.5-8.875",
+          "count": 8
+        },
+        {
+          "bucket": "8.875-10.25",
+          "count": 10
+        },
+        {
+          "bucket": "10.25-11.625",
+          "count": 3
+        },
+        {
+          "bucket": "11.625-13",
+          "count": 2
+        }
+      ],
+      "histogramReliable": true,
+      "role": "measure",
+      "semanticTags": [],
+      "confidence": 0.78,
+      "rationale": [
+        "numeric non-identifier column"
+      ],
+      "qualityFlags": [],
+      "chartUsage": {
+        "asMeasure": "recommended",
+        "asDimension": "discouraged",
+        "asDetailKey": "allowed"
+      }
+    }
+  ],
+  "quality": {
+    "completeness": 1,
+    "nullRate": 0,
+    "avgUniqueRate": 0.6148,
+    "highNullColumns": [],
+    "likelyIdColumns": [],
+    "duplicateProneDimensions": [
+      "region",
+      "product"
+    ]
+  },
+  "correlations": [
+    {
+      "a": "sales",
+      "b": "orders",
+      "r": 0.9779,
+      "n": 45,
+      "reliable": true
+    }
+  ],
+  "hints": [
+    {
+      "type": "kpi",
+      "field": "sales",
+      "label": "sales"
+    },
+    {
+      "type": "kpi",
+      "field": "orders",
+      "label": "orders"
+    },
+    {
+      "type": "time-series",
+      "xField": "order_date",
+      "yFields": [
+        "sales",
+        "orders"
+      ]
+    },
+    {
+      "type": "ranking",
+      "groupField": "region",
+      "measureField": "sales"
+    },
+    {
+      "type": "ranking",
+      "groupField": "region",
+      "measureField": "orders"
+    },
+    {
+      "type": "ranking",
+      "groupField": "product",
+      "measureField": "sales"
+    },
+    {
+      "type": "ranking",
+      "groupField": "product",
+      "measureField": "orders"
+    },
+    {
+      "type": "share",
+      "labelField": "region",
+      "valueField": "sales"
+    },
+    {
+      "type": "correlation",
+      "a": "sales",
+      "b": "orders",
+      "r": 0.9779
+    }
+  ],
+  "insights": [
+    {
+      "type": "trend",
+      "title": "Strong relationship: sales and orders",
+      "description": "Pearson correlation is 0.9779; a scatter chart with an annotation can surface this relationship.",
+      "fields": [
+        "sales",
+        "orders"
+      ]
+    }
+  ]
+}</script>
+  
+  <script type="application/json" id="miao-viz-data">[{"order_date":"2026-01-01","region":"North","product":"Product 01","sku":"SKU001","sales":120,"orders":3},{"order_date":"2026-01-02","region":"South","product":"Product 02","sku":"SKU002","sales":135,"orders":4},{"order_date":"2026-01-03","region":"East","product":"Product 03","sku":"SKU003","sales":142,"orders":5},{"order_date":"2026-01-04","region":"West","product":"Product 04","sku":"SKU004","sales":128,"orders":3},{"order_date":"2026-01-05","region":"Central","product":"Product 05","sku":"SKU005","sales":156,"orders":6},{"order_date":"2026-01-06","region":"North","product":"Product 06","sku":"SKU006","sales":162,"orders":5},{"order_date":"2026-01-07","region":"South","product":"Product 07","sku":"SKU007","sales":118,"orders":2},{"order_date":"2026-01-08","region":"East","product":"Product 08","sku":"SKU008","sales":175,"orders":7},{"order_date":"2026-01-09","region":"West","product":"Product 09","sku":"SKU009","sales":149,"orders":4},{"order_date":"2026-01-10","region":"Central","product":"Product 10","sku":"SKU010","sales":166,"orders":5},{"order_date":"2026-02-01","region":"North","product":"Product 11","sku":"SKU011","sales":180,"orders":6},{"order_date":"2026-02-02","region":"South","product":"Product 12","sku":"SKU012","sales":171,"orders":5},{"order_date":"2026-02-03","region":"East","product":"Product 13","sku":"SKU013","sales":198,"orders":8},{"order_date":"2026-02-04","region":"West","product":"Product 14","sku":"SKU014","sales":154,"orders":4},{"order_date":"2026-02-05","region":"Central","product":"Product 15","sku":"SKU015","sales":187,"orders":6},{"order_date":"2026-02-06","region":"North","product":"Product 01","sku":"SKU016","sales":191,"orders":7},{"order_date":"2026-02-07","region":"South","product":"Product 02","sku":"SKU017","sales":160,"orders":5},{"order_date":"2026-02-08","region":"East","product":"Product 03","sku":"SKU018","sales":205,"orders":8},{"order_date":"2026-02-09","region":"West","product":"Product 04","sku":"SKU019","sales":176,"orders":5},{"order_date":"2026-02-10","region":"Central","product":"Product 05","sku":"SKU020","sales":189,"orders":6},{"order_date":"2026-03-01","region":"North","product":"Product 06","sku":"SKU021","sales":210,"orders":8},{"order_date":"2026-03-02","region":"South","product":"Product 07","sku":"SKU022","sales":198,"orders":7},{"order_date":"2026-03-03","region":"East","product":"Product 08","sku":"SKU023","sales":224,"orders":9},{"order_date":"2026-03-04","region":"West","product":"Product 09","sku":"SKU024","sales":183,"orders":6},{"order_date":"2026-03-05","region":"Central","product":"Product 10","sku":"SKU025","sales":215,"orders":8},{"order_date":"2026-03-06","region":"North","product":"Product 11","sku":"SKU026","sales":232,"orders":9},{"order_date":"2026-03-07","region":"South","product":"Product 12","sku":"SKU027","sales":207,"orders":7},{"order_date":"2026-03-08","region":"East","product":"Product 13","sku":"SKU028","sales":240,"orders":10},{"order_date":"2026-03-09","region":"West","product":"Product 14","sku":"SKU029","sales":199,"orders":7},{"order_date":"2026-03-10","region":"Central","product":"Product 15","sku":"SKU030","sales":228,"orders":9},{"order_date":"2026-04-01","region":"North","product":"Product 01","sku":"SKU031","sales":245,"orders":10},{"order_date":"2026-04-02","region":"South","product":"Product 02","sku":"SKU032","sales":221,"orders":8},{"order_date":"2026-04-03","region":"East","product":"Product 03","sku":"SKU033","sales":260,"orders":11},{"order_date":"2026-04-04","region":"West","product":"Product 04","sku":"SKU034","sales":214,"orders":8},{"order_date":"2026-04-05","region":"Central","product":"Product 05","sku":"SKU035","sales":236,"orders":9},{"order_date":"2026-04-06","region":"North","product":"Product 06","sku":"SKU036","sales":252,"orders":10},{"order_date":"2026-04-07","region":"South","product":"Product 07","sku":"SKU037","sales":230,"orders":8},{"order_date":"2026-04-08","region":"East","product":"Product 08","sku":"SKU038","sales":272,"orders":12},{"order_date":"2026-04-09","region":"West","product":"Product 09","sku":"SKU039","sales":219,"orders":8},{"order_date":"2026-04-10","region":"Central","product":"Product 10","sku":"SKU040","sales":248,"orders":10},{"order_date":"2026-05-01","region":"North","product":"Product 11","sku":"SKU041","sales":268,"orders":11},{"order_date":"2026-05-02","region":"South","product":"Product 12","sku":"SKU042","sales":242,"orders":9},{"order_date":"2026-05-03","region":"East","product":"Product 13","sku":"SKU043","sales":286,"orders":13},{"order_date":"2026-05-04","region":"West","product":"Product 14","sku":"SKU044","sales":235,"orders":9},{"order_date":"2026-05-05","region":"Central","product":"Product 15","sku":"SKU045","sales":259,"orders":11}]</script>
+  <script type="application/json" id="miao-viz-runtime-theme">{"palette":["#2563eb","#16a34a","#f97316","#dc2626","#7c3aed","#0891b2"],"background":"#ffffff","axisColor":"#94a3b8","labelColor":"#475569"}</script>
+  <script>
+(function() {
+  var miaoData = {};
+  var categoryAxisDefaults = {"estimatedCharacterWidth":7,"minimumLabelGap":12,"horizontalBottomMargin":48,"rotatedBottomMargin":88,"horizontalMaxLength":18,"rotatedMaxLength":18,"rotationDegrees":-35};
+  var runtimeTheme = { palette:['#2563eb','#16a34a','#f97316','#dc2626','#7c3aed','#0891b2'], background:'#fff', axisColor:'#94a3b8', labelColor:'#475569' };
+  if (typeof document !== 'undefined') {
+    var runtimeThemeEl = document.getElementById('miao-viz-runtime-theme');
+    if (runtimeThemeEl) {
+      try { runtimeTheme = Object.assign(runtimeTheme, JSON.parse(runtimeThemeEl.textContent || '{}')); } catch (_) {}
+    }
+  }
+  var palette = runtimeTheme.palette;
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function(char) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char];
+    });
+  }
+
+  function escapeAttr(value) {
+    return escapeHtml(value).replace(/\\n/g, ' ');
+  }
+
+  function sum(a, b) { return a + b; }
+  function fixed(value) { return Number(value).toFixed(1); }
+
+  function toMonth(value) {
+    var date = new Date(String(value));
+    if (!Number.isFinite(date.getTime())) return String(value == null ? '' : value);
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+  }
+
+  function color(index) { return palette[index % palette.length]; }
+
+  function comparableValue(value) {
+    if (value == null || value === '') return null;
+    var num = Number(value);
+    if (Number.isFinite(num)) return num;
+    var date = new Date(String(value)).getTime();
+    return Number.isFinite(date) ? date : null;
+  }
+
+  function svgFrame(width, height, body) {
+    return '<svg class="miao-chart-svg" viewBox="0 0 ' + width + ' ' + height + '" width="100%" height="' + height +
+      '" role="img" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="' + width + '" height="' + height +
+      '" fill="' + escapeAttr(runtimeTheme.background) + '" />' + body + '</svg>';
+  }
+
+  function markAttrs(chartId, markField, value, rowKey, tooltipText) {
+    return 'data-miao-mark="true" data-chart-id="' + escapeAttr(chartId || '') + '" data-field="' + escapeAttr(markField || '') +
+      '" data-value="' + escapeAttr(value == null ? '' : String(value)) + '" data-row-key="' + escapeAttr(String(rowKey)) +
+      '" data-tooltip="' + escapeAttr(tooltipText || '') + '"';
+  }
+
+  function polarToCartesian(cx, cy, radius, angle) {
+    return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
+  }
+
+  function describeArc(cx, cy, radius, startAngle, endAngle) {
+    var start = polarToCartesian(cx, cy, radius, endAngle);
+    var end = polarToCartesian(cx, cy, radius, startAngle);
+    var largeArc = endAngle - startAngle <= Math.PI ? '0' : '1';
+    return 'M ' + fixed(cx) + ' ' + fixed(cy) + ' L ' + fixed(start.x) + ' ' + fixed(start.y) +
+      ' A ' + fixed(radius) + ' ' + fixed(radius) + ' 0 ' + largeArc + ' 0 ' + fixed(end.x) + ' ' + fixed(end.y) + ' Z';
+  }
+
+  miaoData.escapeHtml = escapeHtml;
+  miaoData.escapeAttr = escapeAttr;
+  miaoData.fixed = fixed;
+  miaoData.sum = sum;
+  miaoData.toMonth = toMonth;
+  miaoData.color = color;
+  miaoData.comparableValue = comparableValue;
+  miaoData.svgFrame = svgFrame;
+  miaoData.markAttrs = markAttrs;
+  miaoData.describeArc = describeArc;
+  miaoData.polarToCartesian = polarToCartesian;
+
+  miaoData.uniqueValues = function(rows, field, limit) {
+    var seen = new Set();
+    rows.forEach(function(row) {
+      if (row[field] != null) seen.add(String(row[field]));
+    });
+    return Array.from(seen).slice(0, limit || 200).sort();
+  };
+
+  miaoData.aggregateMeasure = function(sourceRows, measure) {
+    if (measure.op === 'count') return sourceRows.length;
+    var values = sourceRows.map(function(row) { return Number(row[measure.field]); }).filter(Number.isFinite);
+    if (!values.length) return 0;
+    if (measure.op === 'avg') return values.reduce(sum, 0) / values.length;
+    if (measure.op === 'min') return Math.min.apply(null, values);
+    if (measure.op === 'max') return Math.max.apply(null, values);
+    return values.reduce(sum, 0);
+  };
+
+  miaoData.aggregateRows = function(sourceRows, transform) {
+    var groupBy = transform.groupBy || [];
+    var measures = transform.measures || [];
+    var groups = new Map();
+    sourceRows.forEach(function(row) {
+      var key = JSON.stringify(groupBy.map(function(field) { return row[field]; }));
+      var existing = groups.get(key) || [];
+      existing.push(row);
+      groups.set(key, existing);
+    });
+    return Array.from(groups.values()).map(function(groupRows) {
+      var first = groupRows[0] || {};
+      var out = {};
+      groupBy.forEach(function(field) { out[field] = first[field]; });
+      measures.forEach(function(measure) { out[measure.as] = miaoData.aggregateMeasure(groupRows, measure); });
+      return out;
+    });
+  };
+
+  miaoData.prepareRows = function(sourceRows, chart) {
+    return ((chart.data && chart.data.transform) || []).reduce(function(current, transform) {
+      if (transform.type === 'derive-month' && transform.field && transform.as) {
+        return current.map(function(row) {
+          var copy = Object.assign({}, row);
+          copy[transform.as] = miaoData.toMonth(row[transform.field]);
+          return copy;
+        });
+      }
+      if (transform.type === 'aggregate') return miaoData.aggregateRows(current, transform);
+      if (transform.type === 'sort' && transform.field) {
+        var order = transform.order === 'asc' ? 1 : -1;
+        return current.slice().sort(function(a, b) {
+          var an = Number(a[transform.field]);
+          var bn = Number(b[transform.field]);
+          if (Number.isFinite(an) && Number.isFinite(bn)) return (an - bn) * order;
+          return String(a[transform.field] || '').localeCompare(String(b[transform.field] || '')) * order;
+        });
+      }
+      if (transform.type === 'limit' && typeof transform.value === 'number') return current.slice(0, transform.value);
+      if (transform.type === 'filter' && transform.field && transform.value != null) {
+        var rawStr = String(transform.value);
+        var ops = ['>=', '<=', '>', '<', '='];
+        var op = '=';
+        var compVal = rawStr;
+        for (var oi = 0; oi < ops.length; oi++) {
+          if (rawStr.indexOf(ops[oi]) === 0) { op = ops[oi]; compVal = rawStr.slice(ops[oi].length).trim(); break; }
+        }
+        return current.filter(function(row) {
+          var cell = String(row[transform.field] == null ? '' : row[transform.field]);
+          if (op === '=') return cell === compVal;
+          var numCell = Number(row[transform.field]);
+          var numComp = Number(compVal);
+          if (Number.isFinite(numCell) && Number.isFinite(numComp)) {
+            if (op === '>=') return numCell >= numComp;
+            if (op === '<=') return numCell <= numComp;
+            if (op === '>') return numCell > numComp;
+            if (op === '<') return numCell < numComp;
+          }
+          if (op === '>=') return cell >= compVal;
+          if (op === '<=') return cell <= compVal;
+          if (op === '>') return cell > compVal;
+          if (op === '<') return cell < compVal;
+          return false;
+        });
+      }
+      return current;
+    }, sourceRows.slice());
+  };
+
+  miaoData.applyFilters = function(source, filterDefs, state) {
+    return source.filter(function(row) {
+      return filterDefs.every(function(filter) {
+        var active = state[filter.field];
+        if (active == null || active === '' || (Array.isArray(active) && !active[0] && !active[1])) return true;
+        if (filter.type === 'select') {
+          if (Array.isArray(active)) {
+            if (active.length === 0) return true;
+            return active.indexOf(String(row[filter.field] == null ? '' : row[filter.field])) !== -1;
+          }
+          return String(row[filter.field] == null ? '' : row[filter.field]) === String(active);
+        }
+        var current = miaoData.comparableValue(row[filter.field]);
+        if (current == null) return false;
+        var min = miaoData.comparableValue(active[0]);
+        var max = miaoData.comparableValue(active[1]);
+        if (min != null && current < min) return false;
+        if (max != null && current > max) return false;
+        return true;
+      });
+    });
+  };
+
+  miaoData.guessFieldType = function(rows, field) {
+    var count = 0, dateCount = 0, numCount = 0;
+    for (var i = 0; i < rows.length && count < 10; i++) {
+      var v = rows[i][field];
+      if (v == null || v === '') continue;
+      count++;
+      if (Number.isFinite(Number(v))) numCount++;
+      if (!isNaN(Date.parse(String(v)))) dateCount++;
+    }
+    if (count === 0) return 'string';
+    if (dateCount >= count * 0.8) return 'date';
+    if (numCount >= count * 0.8) return 'number';
+    return 'string';
+  };
+
+  miaoData.renderLegend = function(svgWidth, marginTop, colorValues) {
+    var legendX = svgWidth - 200;
+    return colorValues.map(function(val, i) {
+      var y = marginTop + i * 20;
+      return '<g><rect x="' + legendX + '" y="' + (y - 8) + '" width="10" height="10" rx="2" fill="' + color(i) +
+        '" /><text x="' + (legendX + 16) + '" y="' + y + '" fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(val.substring(0, 16)) + '</text></g>';
+    }).join('');
+  };
+
+  miaoData.describeDonutArc = function(cx, cy, innerR, outerR, startAngle, endAngle) {
+    var outerS = miaoData.polarToCartesian(cx, cy, outerR, startAngle);
+    var outerE = miaoData.polarToCartesian(cx, cy, outerR, endAngle);
+    var innerS = miaoData.polarToCartesian(cx, cy, innerR, endAngle);
+    var innerE = miaoData.polarToCartesian(cx, cy, innerR, startAngle);
+    var largeArc = endAngle - startAngle <= Math.PI ? '0' : '1';
+    return 'M ' + fixed(outerS.x) + ' ' + fixed(outerS.y) +
+      ' A ' + fixed(outerR) + ' ' + fixed(outerR) + ' 0 ' + largeArc + ' 0 ' + fixed(outerE.x) + ' ' + fixed(outerE.y) +
+      ' L ' + fixed(innerS.x) + ' ' + fixed(innerS.y) +
+      ' A ' + fixed(innerR) + ' ' + fixed(innerR) + ' 0 ' + largeArc + ' 1 ' + fixed(innerE.x) + ' ' + fixed(innerE.y) + ' Z';
+  };
+
+
+  miaoData.renderDivergingBar = function(chart, chartRows, chartId) {
+    var categoryField = chart.encoding && chart.encoding.x && chart.encoding.x.field || '';
+    var measureField = chart.encoding && chart.encoding.y && chart.encoding.y.field || '';
+    var style = chart.style || {};
+    var data = chartRows.map(function(row, index) {
+      return { row:row, index:index, label:String(row[categoryField] == null ? '—' : row[categoryField]), value:Number(row[measureField]) };
+    }).filter(function(item) { return Number.isFinite(item.value); });
+    if (!categoryField || !measureField || !data.length) return miaoData.renderNoData();
+
+    var sort = style.divergingSort == null ? 'asc' : style.divergingSort;
+    if (sort === 'asc' || sort === 'desc') {
+      data.sort(function(a, b) { return sort === 'asc' ? a.value - b.value : b.value - a.value; });
+    }
+    var width = Number.isFinite(Number(style.width)) ? Number(style.width) : 720;
+    var rowHeight = Number.isFinite(Number(style.rowHeight)) ? Number(style.rowHeight) : 25;
+    var margin = { top:54, right:44, bottom:24, left:44 };
+    var height = Number.isFinite(Number(style.height)) ? Number(style.height) : Math.max(420, margin.top + margin.bottom + data.length * rowHeight);
+    var plotWidth = width - margin.left - margin.right;
+    var plotHeight = height - margin.top - margin.bottom;
+    var rawMin = Math.min.apply(null, [0].concat(data.map(function(item) { return item.value; })));
+    var rawMax = Math.max.apply(null, [0].concat(data.map(function(item) { return item.value; })));
+    var rough = Math.max(rawMax - rawMin, 1) / 6;
+    var power = Math.pow(10, Math.floor(Math.log10(Math.max(rough, Number.EPSILON))));
+    var normalized = rough / power;
+    var tickStep = (normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10) * power;
+    var domainMin = Number.isFinite(Number(style.xDomainMin)) ? Number(style.xDomainMin) : Math.floor(rawMin / tickStep) * tickStep;
+    var domainMax = Number.isFinite(Number(style.xDomainMax)) ? Number(style.xDomainMax) : Math.ceil(rawMax / tickStep) * tickStep;
+    var domainSpan = Math.max(domainMax - domainMin, 1);
+    var scale = function(value) { return margin.left + (value - domainMin) / domainSpan * plotWidth; };
+    var zeroX = scale(0);
+    var step = plotHeight / data.length;
+    var positiveColor = String(style.positiveColor || '#9bd66d');
+    var negativeColor = String(style.negativeColor || '#e79ac8');
+    var decimals = Math.max(0, Math.min(6, Number(style.valueDecimals == null ? 1 : style.valueDecimals)));
+    var suffix = String(style.valueSuffix == null && chart.encoding && chart.encoding.y && chart.encoding.y.unit === 'percentage' ? '%' : (style.valueSuffix || ''));
+    var format = function(value) {
+      return (value > 0 ? '+' : value < 0 ? '−' : '') + Math.abs(value).toFixed(decimals) + suffix;
+    };
+    var ticks = [];
+    for (var tick = Math.ceil(domainMin / tickStep) * tickStep; tick <= domainMax + tickStep / 100; tick += tickStep) {
+      ticks.push(Number(tick.toFixed(10)));
+    }
+    var grid = style.showGrid === false ? '' : ticks.map(function(tick) {
+      var x = scale(tick);
+      return '<line x1="' + fixed(x) + '" y1="' + fixed(margin.top - 8) + '" x2="' + fixed(x) + '" y2="' +
+        fixed(margin.top + plotHeight) + '" stroke="#ffffff" stroke-width="1" />';
+    }).join('');
+    var axis = ticks.map(function(tick) {
+      var x = scale(tick);
+      return '<line x1="' + fixed(x) + '" y1="' + fixed(margin.top - 13) + '" x2="' + fixed(x) + '" y2="' +
+        fixed(margin.top - 5) + '" stroke="' + escapeAttr(runtimeTheme.axisColor) + '" />' +
+        '<text x="' + fixed(x) + '" y="' + fixed(margin.top - 20) + '" text-anchor="middle" fill="' +
+        escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(format(tick)) + '</text>';
+    }).join('');
+    var bars = data.map(function(item, index) {
+      var end = scale(item.value);
+      var x = Math.min(zeroX, end);
+      var y = margin.top + index * step + step * 0.12;
+      var barHeight = step * 0.76;
+      var negative = item.value < 0;
+      var stateX = zeroX + (negative ? 8 : -8);
+      var valueX = end + (negative ? -7 : 7);
+      var valueLabel = style.showValueLabels === false ? '' :
+        '<text x="' + fixed(valueX) + '" y="' + fixed(y + barHeight * 0.68) + '" text-anchor="' +
+        (negative ? 'end' : 'start') + '" fill="' + escapeAttr(runtimeTheme.labelColor) +
+        '" font-size="10">' + escapeHtml(format(item.value)) + '</text>';
+      return '<g ' + markAttrs(chartId, categoryField, item.row[categoryField], item.index, item.label + ': ' + format(item.value)) + '>' +
+        '<rect x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(Math.abs(end - zeroX)) +
+        '" height="' + fixed(barHeight) + '" fill="' + escapeAttr(negative ? negativeColor : positiveColor) + '" />' +
+        '<text x="' + fixed(stateX) + '" y="' + fixed(y + barHeight * 0.68) + '" text-anchor="' +
+        (negative ? 'start' : 'end') + '" fill="' + escapeAttr(runtimeTheme.labelColor) +
+        '" font-size="11">' + escapeHtml(item.label) + '</text>' + valueLabel + '</g>';
+    }).join('');
+    var title = String(style.axisTitle || chart.title || '← decrease · change · increase →');
+    return svgFrame(width, height, '<g class="miao-diverging-bar"><text x="' + fixed(zeroX) +
+      '" y="20" text-anchor="middle" fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="12">' +
+      escapeHtml(title) + '</text>' + grid + axis + '<line x1="' + fixed(zeroX) + '" y1="' +
+      fixed(margin.top - 8) + '" x2="' + fixed(zeroX) + '" y2="' + fixed(margin.top + plotHeight) +
+      '" stroke="' + escapeAttr(runtimeTheme.labelColor) + '" />' + bars + '</g>');
+  };
+
+
+  miaoData.renderBar = function(chart, chartRows, chartId) {
+    var xField = (chart.encoding && chart.encoding.x && chart.encoding.x.field) || '';
+    var yField = (chart.encoding && chart.encoding.y && chart.encoding.y.field) || '';
+    var colorField = (chart.encoding && chart.encoding.color && chart.encoding.color.field) || '';
+    var hasSeries = Boolean(colorField);
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : (hasSeries ? 900 : 720);
+    var rightMargin = hasSeries ? 140 : 24;
+    var axisLayout = miaoData.categoryAxisLayout(chartRows.map(function(row) { return String(row[xField] == null ? '' : row[xField]); }), width - 72 - rightMargin, hasSeries);
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : (axisLayout.rotate ? 460 : 420);
+    var margin = { top: 24, right: rightMargin, bottom: axisLayout.bottomMargin, left: 72 };
+    var chartWidth = width - margin.left - margin.right;
+    var chartHeight = height - margin.top - margin.bottom;
+    var values = chartRows.map(function(row) { return Number(row[yField]); }).filter(Number.isFinite);
+    var yMax = Math.max.apply(null, values.concat([1]));
+    var gap = 8;
+
+    if (!colorField) {
+      var barWidth = Math.max(8, (chartWidth - gap * Math.max(chartRows.length - 1, 0)) / Math.max(chartRows.length, 1));
+      var body = chartRows.map(function(row, index) {
+        var value = Number(row[yField]) || 0;
+        var barHeight = value / yMax * chartHeight;
+        var x = margin.left + index * (barWidth + gap);
+        var y = margin.top + chartHeight - barHeight;
+        var label = String(row[xField] == null ? '' : row[xField]);
+        return '<g><rect ' + markAttrs(chartId, xField, row[xField], index, label + ': ' + value) +
+          ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(barWidth) + '" height="' + fixed(barHeight) +
+          '" rx="3" fill="' + color(index) + '" />' +
+          miaoData.renderBarAxisLabel(label, x + barWidth / 2, margin.top + chartHeight + (axisLayout.rotate ? 34 : 18), axisLayout) + '</g>';
+      }).join('');
+      return svgFrame(width, height, body);
+    }
+
+    var colorValues = miaoData.uniqueValues(chartRows, colorField);
+    var xValues = miaoData.uniqueValues(chartRows, xField);
+    var rowMap = new Map();
+    chartRows.forEach(function(row) {
+      rowMap.set(String(row[xField]) + '|' + String(row[colorField]), Number(row[yField]) || 0);
+    });
+    var barMode = chart.style && chart.style.barMode;
+    var stackColors = colorValues.map(function(_, ci) { return color(ci); });
+
+    if (barMode === 'stacked') {
+      var xBarWidth = Math.max(8, (chartWidth - gap * Math.max(xValues.length - 1, 0)) / Math.max(xValues.length, 1));
+      var body = xValues.map(function(xVal, xi) {
+        var accumY = 0;
+        return colorValues.map(function(cVal, ci) {
+          var raw = rowMap.get(String(xVal) + '|' + String(cVal)) || 0;
+          var barHeight = raw / yMax * chartHeight;
+          var x = margin.left + xi * (xBarWidth + gap);
+          var y = margin.top + chartHeight - accumY - barHeight;
+          accumY += barHeight;
+          return '<rect ' + markAttrs(chartId, xField, xVal, xi * colorValues.length + ci, xVal + ', ' + cVal + ': ' + raw) +
+            ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(xBarWidth) + '" height="' + fixed(barHeight) +
+            '" rx="1" fill="' + stackColors[ci] + '" />';
+        }).join('');
+      }).join('');
+      var labels = xValues.map(function(value, index) { return miaoData.renderBarAxisLabel(value, margin.left + index * (xBarWidth + gap) + xBarWidth / 2, margin.top + chartHeight + 34, axisLayout); }).join('');
+      return svgFrame(width, height, body + labels + miaoData.renderLegend(width, margin.top, colorValues));
+    }
+
+    var groupWidth = (chartWidth - gap * Math.max(xValues.length - 1, 0)) / Math.max(xValues.length, 1);
+    var barWidth = Math.max(4, (groupWidth - gap * Math.max(colorValues.length - 1, 0)) / Math.max(colorValues.length, 1));
+    var groupStartX = (groupWidth - (barWidth * colorValues.length + gap * Math.max(colorValues.length - 1, 0))) / 2;
+    var xLabels = [];
+
+    var body = xValues.map(function(xVal, xi) {
+      var baseX = margin.left + xi * (groupWidth + gap) + groupStartX;
+      xLabels.push(miaoData.renderBarAxisLabel(xVal, baseX + groupWidth / 2 - gap / 2, margin.top + chartHeight + 34, axisLayout));
+      return colorValues.map(function(cVal, ci) {
+        var raw = rowMap.get(String(xVal) + '|' + String(cVal)) || 0;
+        var barHeight = raw / yMax * chartHeight;
+        var x = baseX + ci * (barWidth + gap);
+        var y = margin.top + chartHeight - barHeight;
+        return '<rect ' + markAttrs(chartId, xField, xVal, xi * colorValues.length + ci, xVal + ', ' + cVal + ': ' + raw) +
+          ' x="' + fixed(x) + '" y="' + fixed(y) + '" width="' + fixed(barWidth) + '" height="' + fixed(barHeight) +
+          '" rx="2" fill="' + stackColors[ci] + '" />';
+      }).join('');
+    }).join('');
+
+    return svgFrame(width, height, body + xLabels.join('') + miaoData.renderLegend(width, margin.top, colorValues));
+  };
+
+  miaoData.categoryAxisLayout = function(labels, plotWidth, forceRotate) {
+    var slotWidth = plotWidth / Math.max(labels.length, 1);
+    var longest = labels.reduce(function(max, label) { return Math.max(max, label.length); }, 0);
+    var rotate = Boolean(forceRotate) || longest * categoryAxisDefaults.estimatedCharacterWidth + categoryAxisDefaults.minimumLabelGap > slotWidth;
+    var horizontalFit = Math.max(4, Math.floor((slotWidth - categoryAxisDefaults.minimumLabelGap) / categoryAxisDefaults.estimatedCharacterWidth));
+    return { rotate:rotate, bottomMargin:rotate ? categoryAxisDefaults.rotatedBottomMargin : categoryAxisDefaults.horizontalBottomMargin, maxLabelLength:rotate ? categoryAxisDefaults.rotatedMaxLength : Math.min(categoryAxisDefaults.horizontalMaxLength,horizontalFit), rotationDegrees:categoryAxisDefaults.rotationDegrees };
+  };
+
+  miaoData.renderBarAxisLabel = function(value, x, y, layout) {
+    var raw = String(value == null ? '' : value);
+    var label = raw.length > layout.maxLabelLength ? raw.slice(0, layout.maxLabelLength - 3) + '...' : raw;
+    var transform = layout.rotate ? ' transform="rotate(' + layout.rotationDegrees + ' ' + fixed(x) + ' ' + fixed(y) + ')"' : '';
+    return '<text x="' + fixed(x) + '" y="' + fixed(y) + '" text-anchor="' + (layout.rotate ? 'end' : 'middle') + '"' + transform + ' fill="' + escapeAttr(runtimeTheme.labelColor) + '" font-size="11">' + escapeHtml(label) + '</text>';
+  };
+
+  miaoData.renderXY = function(chart, chartRows, chartId) {
+    var xField = (chart.encoding && chart.encoding.x && chart.encoding.x.field) || '';
+    var yField = (chart.encoding && chart.encoding.y && chart.encoding.y.field) || '';
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : 720;
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : 420;
+    var margin = { top: 24, right: 24, bottom: 48, left: 64 };
+    var w = width - margin.left - margin.right, h = height - margin.top - margin.bottom;
+    var values = chartRows.map(function(row) { return Number(row[yField]); }).filter(Number.isFinite);
+    if (!values.length) return miaoData.renderNoData();
+    var min = Math.min.apply(null, values), max = Math.max.apply(null, values);
+    if (min === max) { min = Math.min(0, min); max = max || 1; }
+    var points = chartRows.map(function(row, index) {
+      var x = margin.left + (chartRows.length <= 1 ? w / 2 : index / (chartRows.length - 1) * w);
+      var value = Number(row[yField]);
+      var y = margin.top + h - ((value - min) / (max - min || 1) * h);
+      return { x:x, y:y, row:row, index:index, value:value };
+    }).filter(function(point) { return Number.isFinite(point.value); });
+    var line = points.map(function(point, index) { return (index ? 'L ' : 'M ') + fixed(point.x) + ' ' + fixed(point.y); }).join(' ');
+    var body = '';
+    if (chart.type === 'area' && points.length) body += '<path d="' + line + ' L ' + fixed(points[points.length-1].x) + ' ' + fixed(margin.top+h) + ' L ' + fixed(points[0].x) + ' ' + fixed(margin.top+h) + ' Z" fill="' + color(0) + '" opacity=".18" />';
+    if (chart.type !== 'scatter') body += '<path d="' + line + '" fill="none" stroke="' + color(0) + '" stroke-width="3" />';
+    body += points.map(function(point) { var label=String(point.row[xField] == null ? '' : point.row[xField]); return '<circle ' + markAttrs(chartId,xField,point.row[xField],point.index,label+': '+point.value) + ' cx="'+fixed(point.x)+'" cy="'+fixed(point.y)+'" r="5" fill="'+color(0)+'" />'; }).join('');
+    return svgFrame(width,height,body);
+  };
+
+  miaoData.renderBigValue = function(chart, chartRows) {
+    var field = (chart.encoding && chart.encoding.value && chart.encoding.value.field) || '';
+    var value = chartRows[0] && chartRows[0][field];
+    return '<div class="miao-bigvalue"><div style="font-size:42px;font-weight:700">' + escapeHtml(value == null ? '—' : String(value)) + '</div><div class="miao-view-derived">Current filter</div></div>';
+  };
+
+  miaoData.renderNoData = function() { return '<div class="miao-no-data">No data for the current view</div>'; };
+
+  miaoData.renderPie = function(chart, chartRows, chartId) {
+    var labelField = (chart.encoding && chart.encoding.label && chart.encoding.label.field) || '';
+    var valueField = (chart.encoding && chart.encoding.value && chart.encoding.value.field) || '';
+    var width = (chart.style && typeof chart.style.width === 'number') ? chart.style.width : 720;
+    var height = (chart.style && typeof chart.style.height === 'number') ? chart.style.height : 420;
+    var cx = width / 2 - 80;
+    var cy = height / 2;
+    var outerR = Math.min(width, height) * 0.34;
+    var innerR = (chart.style && typeof chart.style.innerRadius === 'number' ? chart.style.innerRadius : 0) * outerR;
+    var values = chartRows.map(function(row) { return Math.max(0, Number(row[valueField]) || 0); });
+    var total = values.reduce(sum, 0) || 1;
+    var angle = -Math.PI / 2;
+    var slices = chartRows.map(function(row, index) {
+      var value = values[index];
+      var nextAngle = angle + value / total * Math.PI * 2;
+      var path = innerR > 0
+        ? miaoData.describeDonutArc(cx, cy, innerR, outerR, angle, nextAngle)
+        : describeArc(cx, cy, outerR, angle, nextAngle);
+      var label = String(row[labelField] == null ? '' : row[labelField]);
+      angle = nextAngle;
+      return '<path ' + markAttrs(chartId, labelField, row[labelField], index, label + ': ' + value) +
+        ' d="' + path + '" fill="' + color(index) + '" stroke="' + escapeAttr(runtimeTheme.background) + '" stroke-width="2" />';
+    }).join('');
+    return svgFrame(width, height, slices);
+  };
+
+  miaoData.renderTable = function(chart, chartRows, chartId, sortState) {
+    var sortable = chart.sortable === true;
+
+    if (sortState && sortState.field && sortState.order) {
+      var order = sortState.order === 'asc' ? 1 : -1;
+      chartRows = chartRows.slice().sort(function(a, b) {
+        var an = Number(a[sortState.field]);
+        var bn = Number(b[sortState.field]);
+        if (Number.isFinite(an) && Number.isFinite(bn)) return (an - bn) * order;
+        return String(a[sortState.field] || '').localeCompare(String(b[sortState.field] || '')) * order;
+      });
+    }
+
+    var columns = Object.keys(chartRows[0] || {}).slice(0, 8);
+    var markField = (chart.encoding && chart.encoding.label && chart.encoding.label.field) ||
+      (chart.encoding && chart.encoding.x && chart.encoding.x.field) || columns[0] || '';
+    var thead = '<thead><tr>' +
+      columns.map(function(col) {
+        var attrs = '';
+        var indicator = '';
+        if (sortable) {
+          var active = sortState && sortState.field === col;
+          var order = active ? sortState.order : '';
+          attrs = ' data-sortable="true" data-sort-field="' + escapeAttr(col) + '" data-sort-order="' + order + '"';
+          indicator = active ? (order === 'asc' ? ' ▲' : ' ▼') : '';
+        }
+        return '<th' + attrs + '>' + escapeHtml(col) + indicator + '</th>';
+      }).join('') +
+      '</tr></thead>';
+    var tbody = '<tbody>' + chartRows.slice(0, 20).map(function(row, index) {
+      return '<tr ' + markAttrs(chartId, markField, row[markField], index, String(row[markField] || 'Row')) + '>' +
+        columns.map(function(col) { return '<td>' + escapeHtml(row[col] == null ? '' : String(row[col])) + '</td>'; }).join('') +
+        '</tr>';
+    }).join('') + '</tbody>';
+    return '<div class="miao-table-wrap"><table class="miao-table">' + thead + tbody + '</table></div>';
+  };
+
+  miaoData.renderDetailTable = function(selectedRows, chartId, allRows) {
+    var visible = selectedRows.slice(0, 100);
+    var columns = Object.keys(visible[0] || allRows[0] || {}).slice(0, 8);
+    if (!columns.length) return '<div class="miao-detail-title">No rows</div>';
+    return '<div class="miao-detail-title">' + escapeHtml(chartId || 'Detail') + ': ' + selectedRows.length + ' rows</div>' +
+      '<table><thead><tr>' + columns.map(function(col) { return '<th>' + escapeHtml(col) + '</th>'; }).join('') +
+      '</tr></thead><tbody>' + visible.map(function(row) {
+        return '<tr>' + columns.map(function(col) { return '<td>' + escapeHtml(row[col] == null ? '' : String(row[col])) + '</td>'; }).join('') + '</tr>';
+      }).join('') + '</tbody></table>';
+  };
+
+  window.miaoData = miaoData;
+})();
+</script>
+  <style>
+.miao-chart-svg [data-miao-mark] { cursor: pointer; transition: opacity 0.15s ease, stroke-width 0.15s ease; }
+.miao-chart-svg [data-miao-mark]:hover { opacity: 0.78; }
+.miao-chart-svg [data-miao-selected="true"] { stroke: currentColor; stroke-width: 2; }
+.miao-mark-hidden { opacity: 0.18; }
+.miao-table th[data-sortable] { cursor: pointer; user-select: none; }
+.miao-table th[data-sortable]:hover { opacity: 0.72; }
+.miao-filter-checks { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.miao-filter-checks-scroll { max-height: 200px; overflow-y: auto; }
+.miao-chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; font-size: 12px; cursor: pointer; }
+.miao-chip:hover { background: rgba(128,128,128,0.06); }
+.miao-chip input[type="checkbox"] { margin: 0; }
+.miao-filter-search { min-width: 180px; border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; padding: 6px 8px; background: transparent; color: inherit; font: inherit; }
+.miao-drilldown-bar { display: flex; align-items: center; gap: 8px; margin: 0 0 16px; padding: 8px 12px; border-radius: 4px; background: rgba(128,128,128,0.06); border: 1px solid rgba(128,128,128,0.18); font-size: 12px; }
+.miao-drilldown-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.5; }
+.miao-drilldown-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 4px; background: rgba(37,99,235,0.1); color: #2563eb; font-weight: 600; }
+.miao-drilldown-clear { background: none; border: none; cursor: pointer; font-size: 14px; color: inherit; padding: 0 2px; line-height: 1; }
+.miao-drilldown-clear:hover { opacity: 0.7; }
+.miao-detail { margin-top: 12px; overflow: auto; max-height: 320px; border: 1px solid rgba(128,128,128,0.18); border-radius: 4px; }
+.miao-detail-title { padding: 9px 10px; font-size: 12px; font-weight: 700; border-bottom: 1px solid rgba(128,128,128,0.18); }
+.miao-detail table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.miao-detail th, .miao-detail td { padding: 7px 9px; border-bottom: 1px solid rgba(128,128,128,0.12); text-align: left; white-space: nowrap; }
+.miao-detail th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.64; }
+.miao-tooltip { position: fixed; z-index: 9999; pointer-events: none; padding: 6px 8px; border-radius: 4px; background: rgba(20,20,19,0.92); color: #fff; font: 12px/1.35 system-ui, sans-serif; box-shadow: 0 8px 24px rgba(0,0,0,0.18); transform: translate(10px, 10px); }
+.miao-view-state { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 16px; padding:8px 12px; border:1px solid rgba(128,128,128,.18); border-radius:4px; font-size:11px; }
+.miao-view-state button { border:0; background:transparent; color:inherit; cursor:pointer; text-decoration:underline; }
+.miao-no-data { display:grid; place-items:center; min-height:180px; color:#64748b; font:13px system-ui,sans-serif; border:1px dashed rgba(128,128,128,.25); border-radius:4px; }
+.miao-view-derived { font-size:10px; text-transform:uppercase; letter-spacing:.06em; opacity:.55; }
+[data-view-scope="base-evidence"]::after { content:'Based on full dataset'; display:block; margin-top:6px; font-size:10px; text-transform:uppercase; letter-spacing:.06em; opacity:.5; }
+@media print { .miao-interactive-controls,.deck-filter-btn,.deck-filter-panel,.deck-overlay,.miao-view-state,.miao-drilldown-bar { display:none !important; } }
+
+.miao-interactive-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; margin: 0 0 24px; padding: 12px 0; border-top: 1px solid rgba(128,128,128,0.18); border-bottom: 1px solid rgba(128,128,128,0.18); }
+.miao-filter { display: grid; gap: 5px; font-size: 12px; }
+.miao-filter label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.56; }
+.miao-filter select, .miao-filter input { min-width: 140px; border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; padding: 6px 8px; background: transparent; color: inherit; font: inherit; }
+.miao-filter-range { display: flex; gap: 6px; }
+.miao-reset { border: 1px solid rgba(128,128,128,0.28); border-radius: 4px; padding: 7px 10px; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.miao-reset:hover { background: rgba(128,128,128,0.08); }
+
+.miao-trust-scopes { margin:0 0 18px; padding:12px; border:1px solid rgba(128,128,128,.2); border-radius:4px; }
+.miao-current-view-grid { display:flex; flex-wrap:wrap; gap:12px; margin-top:8px; }
+.miao-current-summary { min-width:130px; padding:8px 10px; background:rgba(128,128,128,.06); border-radius:4px; }
+.miao-current-summary strong { display:block; font-size:18px; margin-top:3px; }
+.miao-scope-note { font-size:11px; opacity:.62; }
+.miao-print-actions { display:flex; gap:8px; margin:10px 0; }
+.miao-print-actions button { border:1px solid rgba(128,128,128,.28); border-radius:4px; padding:6px 9px; background:transparent; color:inherit; cursor:pointer; }
+.miao-print-scope-header { display:none; margin:0 0 12px; font-weight:700; }
+.miao-exposure { margin:0 0 18px; padding:10px 12px; border:1px solid rgba(128,128,128,.18); border-radius:4px; font-size:12px; }
+.miao-exposure dl { display:grid; grid-template-columns:90px 1fr; gap:6px 10px; }
+.miao-exposure dd { margin:0; overflow-wrap:anywhere; }
+@media print { .miao-print-actions,.miao-exposure { display:none !important; } .miao-print-scope-header { display:block; } }
+</style>
+  <script>
+(function(){
+  var specEl=document.getElementById('miao-viz-spec');
+  if(!specEl)return;
+  var spec=JSON.parse(specEl.textContent||'{}');
+  var trusted=Boolean(spec.interactions&&spec.interactions.dataPolicy);
+  var summaries=(spec.interactions&&spec.interactions.currentView&&spec.interactions.currentView.summaries)||[];
+  if(!trusted&&!summaries.length)return;
+  var zh=spec.locale==='zh-CN';
+  var copy=zh?{
+    current:'当前视图',published:'发布结论',local:'本地计算',full:'基于完整发布数据集',empty:'当前视图无数据',rows:'行',
+    printCurrent:'打印当前视图',printFull:'打印完整发布报告'
+  }:{current:'Current view',published:'Published findings',local:'Calculated locally',full:'Based on the full published dataset',empty:'No data for current view',rows:'rows',printCurrent:'Print current view',printFull:'Print full published report'};
+  var main=document.querySelector('.miao-viz-report');
+  if(!main)return;
+  var scopes=document.createElement('section');
+  scopes.className='miao-trust-scopes';
+  scopes.innerHTML='<div class="miao-print-scope-header"></div><strong>'+copy.current+'</strong><div class="miao-scope-note">'+copy.local+'</div><div class="miao-current-view-grid"></div><div class="miao-print-actions"><button type="button" data-print="current">'+copy.printCurrent+'</button><button type="button" data-print="full">'+copy.printFull+'</button></div>';
+  var header=main.querySelector('header');
+  main.insertBefore(scopes,header?header.nextSibling:main.firstChild);
+  document.querySelectorAll('.report-insights').forEach(function(el){var note=document.createElement('div');note.className='miao-scope-note';note.textContent=copy.published+' · '+copy.full;el.insertBefore(note,el.firstChild);});
+
+  function valueFor(rows,recipe){
+    var working=rows.slice();
+    (recipe.filters||[]).forEach(function(filter){working=working.filter(function(row){var a=row[filter.field],b=filter.value;if(filter.operator==='eq')return String(a)==String(b);a=window.miaoData.comparableValue(a);b=window.miaoData.comparableValue(b);if(a==null||b==null)return false;return filter.operator==='gte'?a>=b:filter.operator==='lte'?a<=b:filter.operator==='gt'?a>b:a<b;});});
+    if(recipe.groupBy&&recipe.groupBy.length){
+      var groups=new Map();working.forEach(function(row){var key=JSON.stringify(recipe.groupBy.map(function(field){return row[field];}));var group=groups.get(key)||[];group.push(row);groups.set(key,group);});
+      var output=Array.from(groups.values()).map(function(group){var out={};recipe.groupBy.forEach(function(field){out[field]=group[0][field];});(recipe.measures||[]).forEach(function(m){out[m.alias]=window.miaoData.aggregateMeasure(group,{field:m.field,op:m.operation});});return out;});
+      if(recipe.orderBy&&recipe.orderBy[0]){var order=recipe.orderBy[0];output.sort(function(a,b){var av=a[order.field],bv=b[order.field];return (Number(av)-Number(bv))*(order.direction==='desc'?-1:1);});}
+      return output.length?output[0][recipe.groupBy[0]]:null;
+    }
+    var measures=recipe.measures||[];
+    if(measures.length>1)return measures.map(function(measure){return window.miaoData.aggregateMeasure(working,{field:measure.field,op:measure.operation});}).join(' - ');
+    var measure=measures[0];return measure?window.miaoData.aggregateMeasure(working,{field:measure.field,op:measure.operation}):working.length;
+  }
+  function format(value,format){if(value==null||Number.isNaN(value))return copy.empty;if(format==='integer')return Math.round(Number(value)).toLocaleString();if(format==='percentage')return (Number(value)*100).toFixed(1)+'%';if(format==='currency')return Number(value).toLocaleString(undefined,{style:'currency',currency:'CNY'});return typeof value==='number'?value.toLocaleString():String(value);}
+  var lastDetail=null;
+  function render(event){var detail=event&&event.detail;if(!detail)return;lastDetail=detail;var grid=scopes.querySelector('.miao-current-view-grid');grid.innerHTML='';summaries.forEach(function(summary){var card=document.createElement('div');card.className='miao-current-summary';var value=detail.filtered.length?format(valueFor(detail.filtered,summary.recipe),summary.format):copy.empty;card.innerHTML='<span>'+window.miaoData.escapeHtml(summary.label)+'</span><strong>'+window.miaoData.escapeHtml(value)+'</strong>';grid.appendChild(card);});scopes.dataset.filtered=String(detail.filtered.length);renderEvidence(detail);}
+  function renderEvidence(detail){var drawer=document.querySelector('.evidence-panel');if(!drawer)return;var section=drawer.querySelector('.miao-current-evidence');if(!section){section=document.createElement('section');section.className='miao-current-evidence evidence-current';drawer.appendChild(section);}var active=Object.keys(detail.state.filters||{}).filter(function(key){var value=detail.state.filters[key];return value!==''&&value!=null&&(!Array.isArray(value)||value.some(Boolean));});section.textContent=copy.current+': '+detail.filtered.length+' / '+detail.total+' '+copy.rows+'. '+copy.local+'. '+active.map(function(key){return key+'='+String(detail.state.filters[key]);}).join(', ')+' Recipes: '+JSON.stringify(summaries.map(function(summary){return summary.recipe;}));}
+  window.addEventListener('miao:view-update',render);
+  scopes.querySelectorAll('[data-print]').forEach(function(button){button.addEventListener('click',function(){var scope=button.getAttribute('data-print');document.documentElement.dataset.miaoPrintScope=scope;var header=scopes.querySelector('.miao-print-scope-header');var filters=lastDetail&&lastDetail.state&&lastDetail.state.filters||{};header.textContent=scope==='current'?copy.printCurrent+' · '+Object.keys(filters).map(function(key){return key+': '+String(filters[key]);}).join(', '):copy.printFull;window.print();delete document.documentElement.dataset.miaoPrintScope;});});
+})();
+</script>
+  <script>
+(function() {
+  var md = window.miaoData;
+  if (!md) return;
+  var specEl = document.getElementById('miao-viz-spec');
+  var dataEl = document.getElementById('miao-viz-data');
+  if (!specEl || !dataEl) return;
+
+  var spec = JSON.parse(specEl.textContent || '{}');
+  var rows = JSON.parse(dataEl.textContent || '[]');
+  var filters = (spec.interactions && spec.interactions.globalFilters) || [];
+  var charts = spec.charts || [];
+  var state = { filters: {}, selection: null, sort: {}, drilldown: null };
+  var zh = spec.locale === 'zh-CN';
+  var copy = zh ? { filters:'交互筛选',reset:'重置',all:'全部',search:'搜索 ',filter:'筛选 ',min:'最小值',max:'最大值',drilldown:'下钻',view:'当前视图',rows:'行',copy:'复制视图链接',resetAll:'全部重置',base:'完整数据视图',published:'结论基于完整发布数据集。' } : { filters:'Interactive filters',reset:'Reset',all:'All',search:'Search ',filter:'Filter ',min:'Min',max:'Max',drilldown:'Drilldown',view:'View',rows:'rows',copy:'Copy view link',resetAll:'Reset all',base:'Base evidence view',published:'Claims are based on the complete dataset.' };
+
+  function createTooltip() {
+    var el = document.createElement('div');
+    el.className = 'miao-tooltip';
+    el.hidden = true;
+    document.body.appendChild(el);
+    return el;
+  }
+
+  var tooltip = createTooltip();
+
+  function uniqueValues(field) {
+    return md.uniqueValues(rows, field, 200);
+  }
+
+  function renderControls() {
+    if (!filters.length) return;
+    var main = document.querySelector('.miao-viz-report');
+    if (!main) return;
+    var controls = document.createElement('section');
+    controls.className = 'miao-interactive-controls';
+    controls.setAttribute('aria-label', copy.filters);
+    filters.forEach(function(filter) {
+      controls.appendChild(filter.type === 'range' ? renderRangeFilter(filter) : renderSelectFilter(filter));
+    });
+    var reset = document.createElement('button');
+    reset.type = 'button';
+    reset.className = 'miao-reset';
+    reset.textContent = copy.reset;
+    reset.addEventListener('click', function() {
+      state.filters = {};
+      state.selection = null;
+      state.drilldown = null;
+      controls.querySelectorAll('select,input').forEach(function(input) { input.value = ''; input.checked = false; });
+      update();
+    });
+    controls.appendChild(reset);
+    var header = main.querySelector('header');
+    main.insertBefore(controls, header ? header.nextSibling : main.firstChild);
+  }
+
+  function renderSelectFilter(filter) {
+    var wrap = document.createElement('div');
+    wrap.className = 'miao-filter';
+    var label = document.createElement('label');
+    label.textContent = filter.field;
+    wrap.appendChild(label);
+    if (filter.multiSelect) {
+      renderMultiSelect(wrap, filter);
+    } else {
+      renderSingleSelect(wrap, filter);
+    }
+    return wrap;
+  }
+
+  function renderSingleSelect(wrap, filter) {
+    var values = uniqueValues(filter.field);
+    if (values.length >= 20) {
+      var input = document.createElement('input');
+      input.className = 'miao-filter-search';
+      input.placeholder = copy.search + filter.field + '...';
+      input.setAttribute('list', 'miao-sg-' + md.escapeAttr(filter.field));
+      var datalist = document.createElement('datalist');
+      datalist.id = 'miao-sg-' + md.escapeAttr(filter.field);
+      values.forEach(function(v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        datalist.appendChild(opt);
+      });
+      input.addEventListener('change', function() {
+        state.filters[filter.field] = input.value;
+        update();
+      });
+      wrap.appendChild(input);
+      wrap.appendChild(datalist);
+      input.value = state.filters[filter.field] || '';
+    } else {
+      var select = document.createElement('select');
+      select.innerHTML = '<option value="">'+copy.all+'</option>' + values.map(function(value) {
+        return '<option value="' + md.escapeAttr(value) + '">' + md.escapeHtml(value) + '</option>';
+      }).join('');
+      select.addEventListener('change', function() {
+        state.filters[filter.field] = select.value;
+        update();
+      });
+      wrap.appendChild(select);
+      select.value = state.filters[filter.field] || '';
+    }
+  }
+
+  function renderMultiSelect(wrap, filter) {
+    var values = uniqueValues(filter.field);
+    state.filters[filter.field] = state.filters[filter.field] || [];
+    if (values.length >= 20) {
+      renderSearchableMulti(wrap, filter, values);
+    } else {
+      renderCheckboxes(wrap, filter, values);
+    }
+  }
+
+  function renderCheckboxes(wrap, filter, values) {
+    var container = document.createElement('div');
+    container.className = 'miao-filter-checks';
+    values.forEach(function(v) {
+      var labelEl = document.createElement('label');
+      labelEl.className = 'miao-chip';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = v;
+      cb.addEventListener('change', function() {
+        var arr = state.filters[filter.field] || [];
+        if (cb.checked) {
+          if (arr.indexOf(v) === -1) arr.push(v);
+        } else {
+          var idx = arr.indexOf(v);
+          if (idx !== -1) arr.splice(idx, 1);
+        }
+        update();
+      });
+      labelEl.appendChild(cb);
+      labelEl.appendChild(document.createTextNode(' ' + v));
+      container.appendChild(labelEl);
+    });
+    wrap.appendChild(container);
+  }
+
+  function renderSearchableMulti(wrap, filter, values) {
+    var searchInput = document.createElement('input');
+    searchInput.className = 'miao-filter-search';
+    searchInput.placeholder = copy.filter + filter.field + '...';
+    var container = document.createElement('div');
+    container.className = 'miao-filter-checks miao-filter-checks-scroll';
+    function renderFiltered(term) {
+      container.innerHTML = '';
+      var filtered = term ? values.filter(function(v) { return v.toLowerCase().indexOf(term.toLowerCase()) !== -1; }) : values.slice(0, 100);
+      filtered.forEach(function(v) {
+        var labelEl = document.createElement('label');
+        labelEl.className = 'miao-chip';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.value = v;
+        var arr = state.filters[filter.field] || [];
+        cb.checked = arr.indexOf(v) !== -1;
+        cb.addEventListener('change', function() {
+          if (cb.checked) {
+            if (arr.indexOf(v) === -1) arr.push(v);
+          } else {
+            var idx = arr.indexOf(v);
+            if (idx !== -1) arr.splice(idx, 1);
+          }
+          update();
+        });
+        labelEl.appendChild(cb);
+        labelEl.appendChild(document.createTextNode(' ' + v));
+        container.appendChild(labelEl);
+      });
+    }
+    searchInput.addEventListener('input', function() { renderFiltered(searchInput.value); });
+    renderFiltered('');
+    wrap.appendChild(searchInput);
+    wrap.appendChild(container);
+  }
+
+  function renderRangeFilter(filter) {
+    var wrap = document.createElement('div');
+    wrap.className = 'miao-filter';
+    var label = document.createElement('label');
+    label.textContent = filter.field;
+    var pair = document.createElement('div');
+    pair.className = 'miao-filter-range';
+    var useDate = md.guessFieldType(rows, filter.field) === 'date';
+    var min = document.createElement('input');
+    var max = document.createElement('input');
+    if (useDate) {
+      min.type = 'date';
+      max.type = 'date';
+    } else {
+      min.placeholder = copy.min;
+      max.placeholder = copy.max;
+    }
+    [min, max].forEach(function(input) {
+      input.addEventListener('input', function() {
+        state.filters[filter.field] = [min.value, max.value];
+        update();
+      });
+    });
+    pair.appendChild(min);
+    pair.appendChild(max);
+    var savedRange=state.filters[filter.field]||[];min.value=savedRange[0]||'';max.value=savedRange[1]||'';
+    wrap.appendChild(label);
+    wrap.appendChild(pair);
+    return wrap;
+  }
+
+  function chartSpec(chartId) {
+    return charts.find(function(chart, index) { return (chart.id || ('chart-' + (index + 1))) === chartId; }) || null;
+  }
+
+  function canSelect(chart) {
+    return Boolean(chart && ((chart.interaction && chart.interaction.select) || chart.drilldownPreset));
+  }
+
+  function renderChart(container, chart, sourceRows) {
+    if (!chart) return;
+    var slot = container.querySelector('.miao-render-slot');
+    if (!slot) return;
+    var chartId = container.getAttribute('data-miao-chart');
+    var data = sourceRows;
+    if (state.drilldown && state.drilldown.targetId === chartId) {
+      data = sourceRows.filter(function(row) {
+        return String(row[state.drilldown.field] == null ? '' : row[state.drilldown.field]) === String(state.drilldown.value);
+      });
+    }
+    var chartRows = md.prepareRows(data, chart);
+    if (!chartRows.length) slot.innerHTML = md.renderNoData();
+    else if (chart.type === 'bar' && chart.variant === 'diverging') slot.innerHTML = md.renderDivergingBar(chart, chartRows, chartId);
+    else if (chart.type === 'bar') slot.innerHTML = md.renderBar(chart, chartRows, chartId);
+    else if (['line','area','scatter'].indexOf(chart.type) !== -1) slot.innerHTML = md.renderXY(chart, chartRows, chartId);
+    else if (chart.type === 'pie') slot.innerHTML = md.renderPie(chart, chartRows, chartId);
+    else if (chart.type === 'bigvalue') slot.innerHTML = md.renderBigValue(chart, chartRows);
+    else if (chart.type === 'table') {
+      var sortState = state.sort[chartId] || null;
+      slot.innerHTML = md.renderTable(chart, chartRows, chartId, sortState);
+      if (chart.sortable) bindSortHeaders(container, chartId);
+    }
+  }
+
+  function bindSortHeaders(container, chartId) {
+    var handler = function(e) {
+      var th = e.target.closest('th[data-sortable]');
+      if (!th) return;
+      var field = th.getAttribute('data-sort-field');
+      if (!field) return;
+      var current = state.sort[chartId];
+      var newOrder;
+      if (!current || current.field !== field) newOrder = 'asc';
+      else if (current.order === 'asc') newOrder = 'desc';
+      else newOrder = null;
+      state.sort[chartId] = newOrder ? { field: field, order: newOrder } : null;
+      update();
+    };
+    container.onclick = handler;
+  }
+
+  function bindMarks() {
+    document.querySelectorAll('[data-miao-mark]').forEach(function(mark) {
+      if (mark.getAttribute('data-miao-bound') === 'true') return;
+      mark.setAttribute('data-miao-bound', 'true');
+      var chart = chartSpec(mark.getAttribute('data-chart-id'));
+      mark.addEventListener('mouseenter', function(event) {
+        var text = mark.getAttribute('data-tooltip');
+        if (!text) return;
+        tooltip.textContent = text;
+        tooltip.hidden = false;
+        moveTooltip(event);
+      });
+      mark.addEventListener('mousemove', moveTooltip);
+      mark.addEventListener('mouseleave', function() { tooltip.hidden = true; });
+      mark.addEventListener('click', function() {
+        var field = mark.getAttribute('data-field');
+        var value = mark.getAttribute('data-value');
+        if (!field) return;
+        var chartId = mark.getAttribute('data-chart-id');
+        if (chart && chart.drilldownChart) {
+          var same = state.drilldown && String(state.drilldown.value) === String(value) && state.drilldown.field === field;
+          state.drilldown = same ? null : { field: field, value: value, targetId: chart.drilldownChart, sourceId: chartId };
+          if (state.drilldown) {
+            var target = document.querySelector('[data-miao-chart="' + md.escapeAttr(chart.drilldownChart) + '"]');
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          update();
+          return;
+        }
+        if (!canSelect(chart)) return;
+        state.selection = state.selection && state.selection.field === field && String(state.selection.value) === String(value)
+          ? null
+          : { field: field, value: value };
+        update();
+      });
+    });
+  }
+
+  function renderDrilldownBreadcrumb() {
+    var main = document.querySelector('.miao-viz-report');
+    if (!main) return;
+    var existing = document.getElementById('miao-drilldown-bar');
+    if (!state.drilldown) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) existing.remove();
+    var bar = document.createElement('div');
+    bar.id = 'miao-drilldown-bar';
+    bar.className = 'miao-drilldown-bar';
+    bar.innerHTML = '<span class="miao-drilldown-label">'+copy.drilldown+': </span>' +
+      '<span class="miao-drilldown-chip">' + md.escapeHtml(state.drilldown.field) + ': ' + md.escapeHtml(String(state.drilldown.value)) +
+      ' <button class="miao-drilldown-clear">&times;</button></span>';
+    bar.querySelector('.miao-drilldown-clear').addEventListener('click', function() {
+      state.drilldown = null;
+      update();
+    });
+    var controls = main.querySelector('.miao-interactive-controls');
+    var header = main.querySelector('header');
+    main.insertBefore(bar, controls || (header ? header.nextSibling : main.firstChild));
+  }
+
+  function update() {
+    var filtered = md.applyFilters(rows, filters, state.filters);
+    document.querySelectorAll('[data-miao-chart]').forEach(function(container) {
+      var chart = chartSpec(container.getAttribute('data-miao-chart'));
+      renderChart(container, chart, filtered);
+    });
+    bindMarks();
+    document.querySelectorAll('[data-miao-mark]').forEach(function(mark) {
+      var field = mark.getAttribute('data-field');
+      var value = mark.getAttribute('data-value');
+      var selected = state.selection && state.selection.field === field && String(state.selection.value) === String(value);
+      mark.setAttribute('data-miao-selected', selected ? 'true' : 'false');
+      mark.classList.toggle('miao-mark-hidden', Boolean((state.selection && !selected) || !markMatchesFilters(field, value)));
+    });
+    document.querySelectorAll('[data-miao-chart]').forEach(function(container) {
+      renderDetail(container, filtered);
+    });
+    renderDrilldownBreadcrumb();
+    renderViewState(filtered);
+    window.dispatchEvent(new CustomEvent('miao:view-update',{detail:{filtered:filtered,state:JSON.parse(JSON.stringify(state)),total:rows.length}}));
+  }
+
+  function renderViewState(filtered) {
+    var main = document.querySelector('.miao-viz-report');
+    if (!main) return;
+    var el = document.getElementById('miao-view-state');
+    if (!el) { el=document.createElement('div'); el.id='miao-view-state'; el.className='miao-view-state'; var controls=main.querySelector('.miao-interactive-controls'); main.insertBefore(el, controls ? controls.nextSibling : main.firstChild); }
+    var active=Object.keys(state.filters).filter(function(key){ var value=state.filters[key]; return value !== '' && value != null && (!Array.isArray(value) || value.some(Boolean)); });
+    var hasState=Boolean(active.length||state.selection||state.drilldown);
+    el.innerHTML='<span>'+copy.view+': '+filtered.length+' / '+rows.length+' '+copy.rows+'</span>'+active.map(function(key){return '<span class="miao-chip">'+md.escapeHtml(key)+': '+md.escapeHtml(Array.isArray(state.filters[key])?state.filters[key].join(' - '):String(state.filters[key]))+'</span>';}).join('')+(hasState?'<button id="miao-view-copy">'+copy.copy+'</button><button id="miao-view-reset">'+copy.resetAll+'</button>':'<span>'+copy.base+'</span>');
+    var reset=document.getElementById('miao-view-reset'); if(reset) reset.onclick=function(){state.filters={};state.selection=null;state.drilldown=null;state.sort={};document.querySelectorAll('.miao-interactive-controls select,.miao-interactive-controls input').forEach(function(input){input.value='';input.checked=false;});update();};
+    var copyButton=document.getElementById('miao-view-copy'); if(copyButton) copyButton.onclick=function(){if(navigator.clipboard)navigator.clipboard.writeText(location.href);};
+    document.querySelectorAll('.report-insights').forEach(function(insights){insights.setAttribute('data-view-scope',hasState?'base-evidence':'current');insights.title=hasState?copy.published:'';});
+    try { location.hash = active.length||state.selection||state.drilldown ? 'miao=' + encodeURIComponent(JSON.stringify({filters:state.filters,selection:state.selection,drilldown:state.drilldown})) : ''; } catch (_) {}
+  }
+
+  function renderDetail(container, filtered) {
+    var chartId = container.getAttribute('data-miao-chart');
+    var detail = container.querySelector('.miao-detail');
+    if (!detail) {
+      detail = document.createElement('div');
+      detail.className = 'miao-detail';
+      container.appendChild(detail);
+    }
+    if (!state.selection) {
+      detail.innerHTML = '';
+      detail.hidden = true;
+      return;
+    }
+    var selectedRows = filtered.filter(function(row) {
+      return String(row[state.selection.field] == null ? '' : row[state.selection.field]) === String(state.selection.value);
+    });
+    detail.hidden = false;
+    detail.innerHTML = md.renderDetailTable(selectedRows, chartId, filtered);
+  }
+
+  function moveTooltip(event) {
+    tooltip.style.left = event.clientX + 'px';
+    tooltip.style.top = event.clientY + 'px';
+  }
+
+  function markMatchesFilters(field, value) {
+    var activeFilters = filters.filter(function(filter) { return filter.field === field; });
+    if (!activeFilters.length) return true;
+    return activeFilters.every(function(filter) {
+      var active = state.filters[filter.field];
+      if (active == null || active === '' || (Array.isArray(active) && !active[0] && !active[1])) return true;
+      if (filter.type === 'select') {
+        if (Array.isArray(active)) {
+          if (active.length === 0) return true;
+          return active.indexOf(String(value == null ? '' : value)) !== -1;
+        }
+        return String(value == null ? '' : value) === String(active);
+      }
+      var current = md.comparableValue(value);
+      if (current == null) return false;
+      var min = md.comparableValue(active[0]);
+      var max = md.comparableValue(active[1]);
+      if (min != null && current < min) return false;
+      if (max != null && current > max) return false;
+      return true;
+    });
+  }
+
+  try { if(location.hash.indexOf('#miao=')===0) { var saved=JSON.parse(decodeURIComponent(location.hash.slice(6))); state.filters=saved.filters||{};state.selection=saved.selection||null;state.drilldown=saved.drilldown||null; } } catch (_) {}
+  var printState=null;
+  window.addEventListener('beforeprint',function(){if(document.documentElement.dataset.miaoPrintScope==='current')return;printState=JSON.parse(JSON.stringify({filters:state.filters,selection:state.selection,drilldown:state.drilldown}));state.filters={};state.selection=null;state.drilldown=null;update();});
+  window.addEventListener('afterprint',function(){if(printState){state.filters=printState.filters||{};state.selection=printState.selection||null;state.drilldown=printState.drilldown||null;}printState=null;update();});
+  renderControls();
+  update();
+})();
+</script>
+  <script>(function(){
+    var items={
+  "evidence-object-1": {
+    "key": "evidence-object-1",
+    "objectPath": "charts[0]",
+    "label": "Total sales",
+    "kind": "kpi",
+    "evidenceIds": [
+      "total"
+    ],
+    "derivedFrom": [
+      "\u0024evidence:total.values.total_sales"
+    ],
+    "check": "value_match",
+    "query": [
+      "Total aggregates: sum(sales) as total_sales, sum(orders) as total_orders, count(*) as row_count"
+    ],
+    "fields": [
+      "sales",
+      "orders",
+      "*"
+    ],
+    "filters": [],
+    "sampleSize": 45,
+    "verified": true,
+    "explanation": "Calculated as the sum of sales.",
+    "scope": "45 source results, with no additional evidence filters.",
+    "verification": "Verified: the displayed value matches the source calculation."
+  },
+  "evidence-object-2": {
+    "key": "evidence-object-2",
+    "objectPath": "charts[1]",
+    "label": "sales over order_date",
+    "kind": "chart",
+    "evidenceIds": [
+      "by_time"
+    ],
+    "derivedFrom": [
+      "\u0024evidence:by_time.rows"
+    ],
+    "query": [
+      "sales by order_date (ascending)"
+    ],
+    "fields": [
+      "order_date",
+      "sales"
+    ],
+    "filters": [],
+    "sampleSize": 45,
+    "verified": true,
+    "explanation": "Shows the sum of sales, grouped by order_date.",
+    "scope": "45 source results, with no additional evidence filters.",
+    "verification": "Verified: the visualization uses the declared source data and calculation."
+  },
+  "evidence-object-3": {
+    "key": "evidence-object-3",
+    "objectPath": "charts[2]",
+    "label": "sales by region",
+    "kind": "chart",
+    "evidenceIds": [
+      "by_dimension"
+    ],
+    "derivedFrom": [
+      "\u0024evidence:by_dimension.rows"
+    ],
+    "query": [
+      "sales by region, with share"
+    ],
+    "fields": [
+      "region",
+      "sales",
+      "*"
+    ],
+    "filters": [],
+    "sampleSize": 5,
+    "verified": true,
+    "explanation": "Shows the sum of sales, grouped by region.",
+    "scope": "5 source results, with no additional evidence filters.",
+    "verification": "Verified: the visualization uses the declared source data and calculation."
+  },
+  "evidence-object-4": {
+    "key": "evidence-object-4",
+    "objectPath": "insights[0]",
+    "label": "Total sales: 9085",
+    "kind": "insight",
+    "evidenceIds": [
+      "total"
+    ],
+    "derivedFrom": [
+      "\u0024evidence:total.values.total_sales"
+    ],
+    "check": "value_match",
+    "query": [
+      "Total aggregates: sum(sales) as total_sales, sum(orders) as total_orders, count(*) as row_count"
+    ],
+    "fields": [
+      "sales",
+      "orders",
+      "*"
+    ],
+    "filters": [],
+    "sampleSize": 45,
+    "verified": true,
+    "explanation": "Calculated as the sum of sales.",
+    "scope": "45 source results, with no additional evidence filters.",
+    "verification": "Verified: the displayed value matches the source calculation."
+  },
+  "evidence-object-5": {
+    "key": "evidence-object-5",
+    "objectPath": "insights[1]",
+    "label": "sales trend (by order_date): from 120 to 259. Period-over-period increased 10.2%",
+    "kind": "insight",
+    "evidenceIds": [
+      "by_time"
+    ],
+    "derivedFrom": [
+      "\u0024evidence:by_time.rows[0].total_sales",
+      "\u0024evidence:by_time.rows[last].total_sales"
+    ],
+    "check": "trend_periods",
+    "query": [
+      "sales by order_date (ascending)"
+    ],
+    "fields": [
+      "order_date",
+      "sales"
+    ],
+    "filters": [],
+    "sampleSize": 45,
+    "verified": true,
+    "explanation": "Shows the sum of sales, grouped by order_date.",
+    "scope": "45 source results, with no additional evidence filters.",
+    "verification": "Verified: the trend uses enough periods and matches the source direction."
+  },
+  "evidence-object-6": {
+    "key": "evidence-object-6",
+    "objectPath": "insights[2]",
+    "label": "Top 5 region by sales: East at 2002",
+    "kind": "insight",
+    "evidenceIds": [
+      "by_dimension"
+    ],
+    "derivedFrom": [
+      "\u0024evidence:by_dimension.rows[0].region",
+      "\u0024evidence:by_dimension.rows[0].total_sales"
+    ],
+    "check": "rank_position",
+    "query": [
+      "sales by region, with share"
+    ],
+    "fields": [
+      "region",
+      "sales",
+      "*"
+    ],
+    "filters": [],
+    "sampleSize": 5,
+    "verified": true,
+    "explanation": "Shows the sum of sales, grouped by region.",
+    "scope": "5 source results, with no additional evidence filters.",
+    "verification": "Verified: the stated ranking matches the source ordering."
+  }
+};
+    var drawer=document.getElementById('miao-evidence-drawer');
+    var content=document.getElementById('miao-evidence-content');
+    var previous=null;
+    function esc(value){return String(value==null?'':value).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+    function row(label,value){if(!value||Array.isArray(value)&&!value.length)return '';return '<dt>'+esc(label)+'</dt><dd>'+esc(Array.isArray(value)?value.join(', '):value)+'</dd>';}
+    function openEvidence(key,trigger){
+      var item=items[key]; if(!item)return; previous=trigger;
+      var view=document.getElementById('miao-view-state');
+      var container=trigger.closest('[data-miao-chart]');
+      var currentValue=container&&container.querySelector('.miao-bigvalue-number');
+      var viewText=view?Array.from(view.children).map(function(node){return node.textContent.trim();}).filter(Boolean).join(' · '):'';
+      var current=(currentValue?'Displayed value: '+currentValue.textContent+'. ':'')+
+        (view ? viewText+(container?'':' — filter not applied to this published claim.') : 'Published evidence; no active runtime filters.');
+      content.innerHTML='<h3>'+esc(item.label)+'</h3><div class="evidence-summary"><p>'+esc(item.explanation)+'</p><p>'+esc(item.scope)+'</p><p class="evidence-verified">'+esc(item.verification)+'</p></div><div class="evidence-current"><b>Current view</b><br>'+esc(current)+'</div><details class="evidence-technical"><summary>Technical details</summary><dl class="evidence-meta">'+row('Evidence ID',item.evidenceIds)+row('Original query',item.query)+row('Source fields',item.fields)+row('Applied filters',item.filters)+row('Result count',item.sampleSize)+row('Validation rule',item.check)+row('Data path',item.derivedFrom)+'</dl></details>';
+      drawer.hidden=false; drawer.querySelector('.evidence-close').focus();
+    }
+    document.addEventListener('click',function(event){var trigger=event.target.closest('[data-evidence-key]');if(trigger)openEvidence(trigger.dataset.evidenceKey,trigger);});
+    function close(){drawer.hidden=true;if(previous)previous.focus();}
+    drawer.querySelector('.evidence-close').onclick=close;
+    drawer.addEventListener('click',function(event){if(event.target===drawer)close();});
+    document.addEventListener('keydown',function(event){if(event.key==='Escape'&&!drawer.hidden)close();});
+  }());</script>
+  <script>Promise.resolve(document.fonts && document.fonts.ready).then(function(){document.documentElement.dataset.miaoRenderReady='true';});</script>
+</body>
+</html>

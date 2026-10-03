@@ -1,4 +1,5 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
@@ -25,6 +26,32 @@ describe('review server', () => {
     expect(script).toContain("mainFeatures:'Main features'")
     expect(script).toContain("guideTitle:'From review to revision'")
     expect(script).toContain("guideExportTitle:'Export a version'")
+  })
+  it('saves a report title directly to Spec and HTML and rejects stale writes', async () => {
+    const root = mkdtempSync(join(tmpdir(), 'miao-title-'))
+    const spec = join(root, 'spec.yaml'), html = join(root, 'report.html')
+    writeFileSync(spec, '# keep comment\ntitle: Sales\ncharts: []\n')
+    writeFileSync(html, '<title>Sales</title><h1>Sales</h1><p>Sales</p>')
+    const server = await startReviewServer({ artifactRoot: root })
+    try {
+      server.store.create({ runId: 'title-test', kind: 'report', title: 'Sales' })
+      server.store.publish({ type: 'artifact.updated', runId: 'title-test', sequence: 0, timestamp: new Date().toISOString(), kind: 'report', primaryPath: html, verified: true, deliveryStatus: 'ready', composition: { sourceSpecPath: spec, title: { id: 'title', path: 'title', title: 'Sales' }, charts: [], insights: [], evidence: [] } })
+      let specHash = createHash('sha256').update(readFileSync(spec)).digest('hex')
+      const save = (title: string, expectedTitle: string) => fetch(server.url + 'api/runs/title-test/title', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ title, expectedTitle, expectedSpecHash: specHash }) })
+      expect((await save('销售 <新版>', 'Sales')).status).toBe(200)
+      expect(readFileSync(spec, 'utf8')).toContain('title: 销售 <新版>')
+      expect(readFileSync(spec, 'utf8')).toContain('# keep comment')
+      expect(readFileSync(html, 'utf8')).toContain('<h1>销售 &lt;新版&gt;</h1><p>Sales</p>')
+      expect(server.store.get('title-test')?.artifact?.composition?.title?.title).toBe('销售 <新版>')
+      specHash = createHash('sha256').update(readFileSync(spec)).digest('hex')
+      expect((await save('stale', 'Sales')).status).toBe(409)
+      writeFileSync(spec, 'title: 销售 <新版>\ncharts: []\ntheme: magazine\n')
+      expect((await save('overwrite other changes', '销售 <新版>')).status).toBe(409)
+      expect(readFileSync(spec, 'utf8')).toContain('theme: magazine')
+      writeFileSync(spec, 'title: External edit\ncharts: []\n')
+      expect((await save('overwrite', '销售 <新版>')).status).toBe(409)
+      expect(readFileSync(spec, 'utf8')).toContain('External edit')
+    } finally { await server.close() }
   })
   it('serves health, run snapshots, and protects artifact paths', async () => {
     const root = mkdtempSync(join(tmpdir(), 'miao-review-'))

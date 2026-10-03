@@ -1,6 +1,7 @@
-import { spawn } from 'node:child_process'
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import { DEFAULT_REVIEW_PORT, startReviewServer, type ReviewServer } from './review-server'
+import packageJson from '../../package.json'
 import { revisionOutputPath, writeRevisionSpec } from './review-revision-apply'
 import type { StoredRevision } from './review-store'
 
@@ -11,17 +12,24 @@ interface JsonRpcRequest {
   params?: Record<string, unknown>
 }
 
-export async function runReviewMcp(): Promise<void> {
+export interface ReviewMcpOptions {
+  port?: number
+  artifactRoot?: string
+}
+
+export async function runReviewMcp(options: ReviewMcpOptions = {}): Promise<void> {
   const workflowArgs = new Map<string, Record<string, unknown>>()
+  const activeChildren = new Set<ChildProcessWithoutNullStreams>()
   let server: ReviewServer
   server = await startReviewServer({
-    port: DEFAULT_REVIEW_PORT,
+    port: options.port ?? DEFAULT_REVIEW_PORT,
+    artifactRoot: options.artifactRoot,
     retryRun: async runId => {
       const previous = workflowArgs.get(runId)
       if (!previous) throw new Error('Retry metadata is unavailable for this run.')
-      return runWorkflow({ ...previous, parentRunId: runId }, server, workflowArgs)
+      return runWorkflow({ ...previous, parentRunId: runId }, server, workflowArgs, activeChildren)
     },
-    applyRevision: async revision => applyRevision(revision, server, workflowArgs)
+    applyRevision: async revision => applyRevision(revision, server, workflowArgs, activeChildren)
   })
   const input = createInterface({ input: process.stdin, crlfDelay: Infinity })
   const output = (value: unknown) => process.stdout.write(`${JSON.stringify(value)}\n`)
@@ -30,6 +38,7 @@ export async function runReviewMcp(): Promise<void> {
     if (closed) return
     closed = true
     input.close()
+    for (const child of activeChildren) child.kill('SIGTERM')
     await server.close()
   }
   process.once('SIGINT', () => { void close() })
@@ -44,7 +53,7 @@ export async function runReviewMcp(): Promise<void> {
     }
     if (request.id === undefined) continue
     try {
-      output({ jsonrpc: '2.0', id: request.id, result: await handleRequest(request, server, workflowArgs) })
+      output({ jsonrpc: '2.0', id: request.id, result: await handleRequest(request, server, workflowArgs, activeChildren) })
     } catch (error) {
       output({ jsonrpc: '2.0', id: request.id, error: { code: -32000, message: error instanceof Error ? error.message : 'MCP request failed' } })
     }
@@ -52,9 +61,9 @@ export async function runReviewMcp(): Promise<void> {
   await close()
 }
 
-async function handleRequest(request: JsonRpcRequest, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>): Promise<unknown> {
+async function handleRequest(request: JsonRpcRequest, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>, activeChildren: Set<ChildProcessWithoutNullStreams>): Promise<unknown> {
   if (request.method === 'initialize') {
-    return { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'miao-viz', version: '0.8.2' } }
+    return { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'miao-viz', version: packageJson.version } }
   }
   if (request.method === 'ping') return {}
   if (request.method === 'tools/list') {
@@ -76,7 +85,7 @@ async function handleRequest(request: JsonRpcRequest, server: ReviewServer, work
   if (name === 'open_miao_vision_viewer') {
     return { content: [{ type: 'text', text: `Miao Vision Review Viewer is available at ${server.url}. Open this URL in the embedded browser.` }] }
   }
-  if (name === 'run_miao_viz') return { content: [{ type: 'text', text: JSON.stringify(await runWorkflow(args, server, workflowArgs)) }] }
+  if (name === 'run_miao_viz') return { content: [{ type: 'text', text: JSON.stringify(await runWorkflow(args, server, workflowArgs, activeChildren)) }] }
   if (name === 'get_miao_vision_revision') return { content: [{ type: 'text', text: JSON.stringify(await revisionRequest(server, stringArg(args, 'revisionId'))) }] }
   if (name === 'apply_miao_vision_revision') return { content: [{ type: 'text', text: JSON.stringify(await applyRevisionRequest(server, stringArg(args, 'revisionId'), args.patchSet)) }] }
   throw new Error(`Unknown MCP tool: ${name}`)
@@ -98,20 +107,20 @@ async function applyRevisionRequest(server: ReviewServer, revisionId: string | u
   return body.value
 }
 
-async function applyRevision(revision: StoredRevision, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>): Promise<{ childRunId: string }> {
+async function applyRevision(revision: StoredRevision, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>, activeChildren: Set<ChildProcessWithoutNullStreams>): Promise<{ childRunId: string }> {
   const previous = workflowArgs.get(revision.request.parentRunId)
   if (!previous) throw new Error('The parent run was not started by this MCP session, so it cannot be applied automatically.')
   if (!revision.plan.patchSet) throw new Error('A PatchSet is required to apply a revision.')
   const spec = writeRevisionSpec(revision.request, revision.plan.patchSet)
   const output = typeof previous.output === 'string' ? revisionOutputPath(revision.request, previous.output) : undefined
   if (!output) throw new Error('The parent workflow has no output path.')
-  const result = await runWorkflow({ ...previous, spec, output, parentRunId: revision.request.parentRunId }, server, workflowArgs)
+  const result = await runWorkflow({ ...previous, spec, output, parentRunId: revision.request.parentRunId }, server, workflowArgs, activeChildren)
   const childRunId = result && typeof result === 'object' && typeof (result as { runId?: unknown }).runId === 'string' ? (result as { runId: string }).runId : undefined
   if (!childRunId) throw new Error('The revision workflow did not create a child run.')
   return { childRunId }
 }
 
-async function runWorkflow(args: Record<string, unknown>, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>): Promise<unknown> {
+async function runWorkflow(args: Record<string, unknown>, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>, activeChildren: Set<ChildProcessWithoutNullStreams>): Promise<unknown> {
   const kind = args.kind
   if (kind !== 'report' && kind !== 'deck' && kind !== 'article') throw new Error('kind must be report, deck, or article')
   const output = stringArg(args, 'output')
@@ -135,27 +144,29 @@ async function runWorkflow(args: Record<string, unknown>, server: ReviewServer, 
   if (stringArg(args, 'theme')) childArgs.push('--theme', stringArg(args, 'theme')!)
   if (stringArg(args, 'parentRunId')) childArgs.push('--review-parent-run-id', stringArg(args, 'parentRunId')!)
   childArgs.push('--output', output, '--review-url', server.url, '--review-run-id', runId)
-  const result = await spawnCli(cliPath, childArgs)
+  const result = await spawnCli(cliPath, childArgs, activeChildren)
   workflowArgs.set(runId, { ...args })
   return { runId, viewerUrl: server.url, result }
 }
 
-function spawnCli(cliPath: string, args: string[]): Promise<unknown> {
+function spawnCli(cliPath: string, args: string[], activeChildren: Set<ChildProcessWithoutNullStreams>): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [cliPath, ...args], { stdio: ['ignore', 'pipe', 'pipe'] })
+    activeChildren.add(child)
     let stdout = ''
     let stderr = ''
     child.stdout.on('data', chunk => { stdout += String(chunk) })
     child.stderr.on('data', chunk => { stderr += String(chunk) })
-    child.on('error', reject)
+    child.on('error', error => { activeChildren.delete(child); reject(error) })
     child.on('close', code => {
+      activeChildren.delete(child)
       try {
         const parsed = JSON.parse(stdout.trim())
-        resolve(parsed)
+        if (code !== 0) reject(new Error(stderr.trim() || `Miao Viz exited with code ${code}`))
+        else resolve(parsed)
       } catch {
         reject(new Error(`Miao Viz workflow returned invalid JSON${stderr ? `: ${stderr.trim()}` : ''}`))
       }
-      if (code !== 0 && !stdout.trim()) reject(new Error(stderr || `Miao Viz exited with code ${code}`))
     })
   })
 }
