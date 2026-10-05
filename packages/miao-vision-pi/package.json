@@ -1,6 +1,6 @@
 {
   "name": "@miao-vision/pi",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "description": "Miao Vision extension and skill for the Pi coding agent",
   "license": "MIT",
   "type": "module",
@@ -11,19 +11,34 @@
     "local-first"
   ],
   "pi": {
-    "extensions": ["./extensions/index.ts"],
-    "skills": ["./skills"]
+    "extensions": [
+      "./extensions/index.ts"
+    ],
+    "skills": [
+      "./skills"
+    ]
   },
-  "files": ["extensions", "skills", "README.md", "LICENSE"],
+  "files": [
+    "extensions",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-ai": "*",
     "typebox": "*"
   },
   "peerDependenciesMeta": {
-    "@earendil-works/pi-coding-agent": { "optional": true },
-    "@earendil-works/pi-ai": { "optional": true },
-    "typebox": { "optional": true }
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

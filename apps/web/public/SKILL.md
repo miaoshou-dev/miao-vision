@@ -80,19 +80,33 @@ Never invoke `ai text`, audio generation, or multi-model comparison.
 
 ## CLI and Files
 
-After choosing the workflow, run
-`scripts/check-miao-viz.mjs --require-recommended --print-path`. The required
-version is pinned by `cli-compatibility.json` for this plugin release; never
-download an unpinned `latest` CLI. If the check passes, keep its executable path
-for the task. If it fails, run `scripts/check-miao-viz.mjs --print-path` to see
-whether an older compatible CLI exists. Tell the user which version is installed
-and which version this plugin recommends, then request approval to run the
-platform `scripts/install-miao-viz.sh` or `scripts/install-miao-viz.ps1`.
-Installation downloads only the CLI binary and checksum file from this plugin's
-pinned release and replaces only the shared Miao Vision CLI. It does not update
-a global npm installation. If the user declines, use a compatible CLI when one
-exists and mention the version difference; if none exists, stop the CLI workflow.
-After installation, rerun the recommended-version check and verify `spec catalog`.
+After choosing the workflow, run `node scripts/check-miao-viz.mjs --print-path`.
+This selects the global CLI on PATH and checks compatibility and required capabilities.
+Keep that absolute executable path for the entire task, including validation and Viewer.
+A compatible version may differ from the recommended version; disclose the difference
+without forcing an upgrade. For Viewer work, add `--viewer` to the check.
+If missing or incompatible, request approval to run `scripts/install-miao-viz.sh`
+or `scripts/install-miao-viz.ps1`. These install the fixed recommended
+`@miao-vision/cli` version globally through npm, never unpinned latest or sudo.
+Recheck PATH, version, and `spec catalog` after installation. Legacy shared and
+skill-local binaries are retained but no longer selected automatically.
+
+For PNG/PDF and existing Viewer PPTX export, run
+`node scripts/setup-export.mjs --host <host>` as a read-only check. In Pi use
+`/miao-viewer setup` to check and prepare exports. Claude Code checks project and
+user `.claude` dependencies first. Other identified hosts may supply their
+actual dependency root through `--host-root`; never guess unknown agent paths.
+Playwright resolves host first, then `~/.miao-vision/playwright`, then workspace.
+If the check fails because dependencies or Chromium are missing, explain the
+installation and obtain approval before adding `--install`. The setup installs
+fixed Playwright in the shared directory only when no usable module exists,
+and uses the selected module's own installer for matching Chromium. It never
+modifies business-project dependencies or automatically installs OS libraries.
+A broken installed module must be reported, not silently replaced.
+For subsequent CLI calls pass the checked dependency root as
+`MIAO_VIZ_PLAYWRIGHT_ROOT`; keep the original working directory. No export HTTP
+request installs dependencies. Missing browser support does not block HTML.
+
 In references, `miao-viz` means the resolved executable path. If installation or
 the first report workflow fails, run
 `miao-viz diagnose --host <host> --input <input> --output <output>` before guessing,

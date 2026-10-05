@@ -1,6 +1,6 @@
 {
   "name": "miao-vision",
-  "version": "0.10.3",
+  "version": "0.10.4",
   "description": "AI-first local data visualization with verified artifacts, an optional local Review Viewer, and optional data-story media.",
   "author": {
     "name": "Miao Vision Team",
@@ -24,7 +24,10 @@
     "longDescription": "Turn local data into evidence-backed reports, posters, decks, and infographics without uploading source data. Optionally inspect workflow progress, evidence coverage, issues, revisions, and artifact previews in a local Review Viewer. Explicit media requests can optionally send a minimized prompt and approved reference images to ai-cli through Vercel AI Gateway to create explanatory images or single-shot videos.",
     "developerName": "Miao Vision Team",
     "category": "Data & Analytics",
-    "capabilities": ["Read", "Write"],
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
     "websiteURL": "https://github.com/miaoshou-dev/miao-vision",
     "brandColor": "#2563eb"
   }

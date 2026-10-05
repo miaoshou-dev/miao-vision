@@ -1,4 +1,4 @@
-import { startManagedMcp } from './runtime.mjs'
+import { startManagedMcp, setupExport, exportStatus } from './runtime.mjs'
 
 const objectSchema = (properties, required = []) => ({ type: 'object', properties, ...(required.length ? { required } : {}) })
 const toolResult = value => {
@@ -6,7 +6,7 @@ const toolResult = value => {
   return { content: [{ type: 'text', text: typeof value === 'string' ? value : JSON.stringify(value) }], details: {} }
 }
 
-export function createMiaoVisionExtension(start = startManagedMcp) {
+export function createMiaoVisionExtension(start = startManagedMcp, setup = setupExport, status = exportStatus) {
   return function miaoVisionPiExtension(pi) {
     let managed
     let starting
@@ -68,14 +68,23 @@ export function createMiaoVisionExtension(start = startManagedMcp) {
           ctx.ui?.notify('Miao Vision Review Viewer stopped.', 'info')
           return
         }
+        if (action === 'setup') {
+          const approved = await ctx.ui?.confirm?.('Set up Miao Vision exports',
+            'Install missing Playwright in ~/.miao-vision/playwright and matching Chromium in the browser cache? Existing host dependencies will be reused.')
+          if (!approved) { ctx.ui?.notify('Export setup cancelled; no installation started.', 'info'); return }
+          const result = await setup(ctx.cwd)
+          ctx.ui?.notify(`Export environment ready · Playwright ${result.version} · ${result.root}`, 'info')
+          return
+        }
         if (action === 'status') {
           ctx.ui?.notify(managed?.client.running
             ? `Miao Vision Viewer running · PID ${managed.client.pid ?? 'unknown'} · CLI ${managed.cliVersion} · ${managed.url}`
             : 'Miao Vision Review Viewer is stopped.', 'info')
+          if (managed?.cliPath) ctx.ui?.notify(`CLI path: ${managed.cliPath} · Export runtime: ${JSON.stringify(await status(ctx.cwd))}`, 'info')
           return
         }
         if (action) {
-          ctx.ui?.notify('Usage: /miao-viewer [status|stop]', 'warning')
+          ctx.ui?.notify('Usage: /miao-viewer [status|stop|setup]', 'warning')
           return
         }
         const current = await ensureStarted(ctx.cwd)

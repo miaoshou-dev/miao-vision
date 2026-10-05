@@ -1,34 +1,25 @@
 import { existsSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { agentError } from './errors'
 import { PRINT_DIAGNOSTIC_SCRIPT, hardLayoutIssues } from './print-readiness'
 import type { AgentResult } from './types'
 import type { PdfExportOptions, PdfLayoutIssue } from './pdf-export-types'
 
-type PlaywrightModule = { chromium: import('playwright-core').BrowserType<import('playwright-core').Browser> }
+import { launchExportBrowser, ExportRuntimeError } from '../../../skills/miao-vision/scripts/export-runtime.mjs'
 
 export async function exportHtmlToPdf(
   html: string,
   outputPath: string,
   options: PdfExportOptions
 ): Promise<AgentResult<{ output: string; warnings: PdfLayoutIssue[]; tempDir?: string }>> {
-  const playwright = await loadPlaywright()
-  if (!playwright.ok) return playwright
   const tempDir = mkdtempSync(join(tmpdir(), 'miao-viz-pdf-'))
   const htmlPath = join(tempDir, 'source.html')
   writeFileSync(htmlPath, html, 'utf8')
   let browser: import('playwright-core').Browser | undefined
   try {
-    try {
-      browser = await playwright.value.chromium.launch()
-    } catch (error) {
-      return agentError('PDF_BROWSER_MISSING', 'Playwright Chromium could not be launched.', {
-        detail: error instanceof Error ? error.message : String(error)
-      })
-    }
+    browser = await launchExportBrowser()
     const page = await browser.newPage({ viewport: options.mode === 'deck' ? { width: 1280, height: 720 } : options.mode === 'poster' ? { width: 1080, height: 1350 } : { width: 1120, height: 900 } })
     const timeout = options.timeout ?? 30_000
     await page.goto(pathToFileURL(htmlPath).href, { waitUntil: 'networkidle', timeout })
@@ -58,20 +49,11 @@ export async function exportHtmlToPdf(
     }
     return { ok: true, value: { output: outputPath, warnings: issues.filter(issue => issue.code === 'PDF_CONTENT_DENSE'), ...(options.keepTemp ? { tempDir } : {}) } }
   } catch (error) {
+    if (error instanceof ExportRuntimeError) return error.result
     const timeout = error instanceof Error && /timeout/i.test(error.message)
     return agentError(timeout ? 'PDF_RENDER_TIMEOUT' : 'PDF_OUTPUT_FAILED', error instanceof Error ? error.message : 'PDF export failed.', { outputPath })
   } finally {
     await browser?.close().catch(() => {})
     if (!options.keepTemp) rmSync(tempDir, { recursive: true, force: true })
   }
-}
-
-async function loadPlaywright(): Promise<AgentResult<PlaywrightModule>> {
-  const workspaceRequire = createRequire(join(process.cwd(), 'package.json'))
-  for (const name of ['playwright', 'playwright-core', '@playwright/test']) {
-    try { return { ok: true, value: workspaceRequire(name) as PlaywrightModule } } catch {}
-  }
-  return agentError('PDF_PLAYWRIGHT_MISSING', 'Playwright is required for PDF export.', {
-    installHint: 'npm install --save-dev @playwright/test && npx playwright install chromium'
-  })
 }

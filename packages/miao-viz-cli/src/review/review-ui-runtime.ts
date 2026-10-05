@@ -299,7 +299,8 @@ async function renderExports() {
     if (!formats.length) { $('exportToggle').disabled = true; return; }
     for (const format of formats) {
       const button = document.createElement('button'); button.type = 'button';
-      button.textContent = format === 'pptx' ? t('exportPptx') : format.toUpperCase();
+      button.textContent = (format === 'pptx' ? t('exportPptx') : format.toUpperCase()) + (body.value?.runtime?.ok === false ? ' · ' + (ui.language === 'en' ? 'Setup required' : '需要设置') : '');
+      button.title = body.value?.runtime?.message || '';
       button.onclick = async () => {
         menu.hidden = true; $('exportToggle').setAttribute('aria-expanded', 'false'); toast(t('exportPreparing'));
         try {

@@ -1,26 +1,18 @@
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
-import { createRequire } from 'node:module'
+import { launchExportBrowser } from '../../../../skills/miao-vision/scripts/export-runtime.mjs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { deflateRawSync } from 'node:zlib'
 
 type Browser = import('playwright-core').Browser
-type Playwright = { chromium: import('playwright-core').BrowserType<Browser> }
-
 export async function exportDeckToPptx(html: string, outputPath: string): Promise<void> {
-  const require = createRequire(join(process.cwd(), 'package.json'))
-  let playwright: Playwright | undefined
-  for (const name of ['playwright', 'playwright-core', '@playwright/test']) {
-    try { playwright = require(name) as Playwright; break } catch { /* Try the next installed package. */ }
-  }
-  if (!playwright) throw new Error('Playwright is required for PPTX export.')
   const dir = mkdtempSync(join(tmpdir(), 'miao-viz-pptx-'))
   let browser: Browser | undefined
   try {
     const source = join(dir, 'source.html')
     writeFileSync(source, html)
-    browser = await playwright.chromium.launch()
+    browser = await launchExportBrowser()
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1.5 })
     await page.goto(pathToFileURL(source).href, { waitUntil: 'networkidle' })
     await page.waitForFunction(() => document.documentElement.dataset.miaoRenderReady === 'true')

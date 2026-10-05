@@ -57,8 +57,8 @@ jobs:
             ## Install
 
             Install `miao-vision-plugin.zip` in Codex, Claude Code, or OpenClaw.
-            On first use, approve the matching CLI download into `~/.miao-vision/bin`.
-            Plugin upgrades and uninstalls leave the shared CLI intact.
+            On first use, approve installation of the fixed recommended global npm CLI.
+            Plugin upgrades and uninstalls leave the global CLI intact.
 
             `miao-vision-skill.zip` is retained as a lightweight compatibility
             channel for this release. See the install documents inside the bundle.

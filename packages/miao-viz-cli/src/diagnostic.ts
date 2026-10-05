@@ -1,3 +1,4 @@
+import { exportRuntimeStatus } from '../../../skills/miao-vision/scripts/export-runtime.mjs'
 import { accessSync, constants, existsSync } from 'node:fs'
 import { dirname, extname, resolve } from 'node:path'
 import { agentError } from './errors'
@@ -7,7 +8,7 @@ import type { AgentResult } from './types'
 export const diagnosticCodes = [
   'CLI_NOT_FOUND', 'CLI_VERSION_INCOMPATIBLE', 'NODE_VERSION_UNSUPPORTED',
   'HOST_PLUGIN_UNAVAILABLE', 'FILE_NOT_FOUND', 'FILE_PERMISSION_DENIED',
-  'OUTPUT_NOT_WRITABLE', 'PDF_DEPENDENCY_MISSING'
+  'OUTPUT_NOT_WRITABLE', 'PDF_DEPENDENCY_MISSING', 'EXPORT_PLAYWRIGHT_MISSING', 'EXPORT_MODULE_LOAD_FAILED', 'EXPORT_BROWSER_MISSING', 'EXPORT_BROWSER_LAUNCH_FAILED'
 ] as const
 export type DiagnosticCode = typeof diagnosticCodes[number]
 export type DiagnosticHost = 'codex' | 'claude-code' | 'openclaw' | 'pi' | 'cli' | 'unknown'
@@ -22,6 +23,7 @@ export interface DiagnosticResult {
   host: DiagnosticHost
   input?: { path: string; format?: string; readable: boolean }
   output?: { path: string; writable: boolean }
+  exportRuntime?: ReturnType<typeof exportRuntimeStatus>
   checks: Array<{ name: string; ok: boolean; code?: DiagnosticCode }>
   nextActions: Array<{ label: string; command?: string; safeToRetry: boolean }>
 }
@@ -45,8 +47,8 @@ export function diagnoseEnvironment(options: DiagnosticOptions = {}): AgentResul
   if (!nodeOk) fail('NODE_VERSION_UNSUPPORTED', `Node.js ${nodeVersion} is unsupported; Node.js 20+ is required.`, { label: '升级到 Node.js 20 或更高版本', command: 'node --version', safeToRetry: true })
   else checks.push({ name: 'node', ok: true })
 
-  const executable = resolve(process.argv[1] ?? 'miao-viz')
-  if (!cliVersion) fail('CLI_NOT_FOUND', 'The current miao-viz executable could not report a version.', { label: '安装匹配版本的 @miao-vision/cli', command: 'npm install -g @miao-vision/cli@latest', safeToRetry: true })
+  const executable = resolve(process.argv[1]?.includes('$bunfs') || process.argv[1]?.includes('~BUN') ? process.execPath : process.argv[1] ?? 'miao-viz')
+  if (!cliVersion) fail('CLI_NOT_FOUND', 'The current miao-viz executable could not report a version.', { label: '安装匹配版本的 @miao-vision/cli', command: `npm install -g @miao-vision/cli@${minimumCliVersion}`, safeToRetry: true })
   else if (compareVersions(cliVersion, minimumCliVersion) < 0) fail('CLI_VERSION_INCOMPATIBLE', `miao-viz ${cliVersion} is older than required ${minimumCliVersion}.`, { label: '升级 miao-viz CLI', command: `npm install -g @miao-vision/cli@${minimumCliVersion}`, safeToRetry: true })
   else checks.push({ name: 'cli', ok: true })
 
@@ -73,13 +75,15 @@ export function diagnoseEnvironment(options: DiagnosticOptions = {}): AgentResul
   catch { fail('OUTPUT_NOT_WRITABLE', `Output location is not writable: ${outputPath}`, { label: '选择可写的输出目录', command: `mkdir -p "${dirname(outputPath)}"`, safeToRetry: true }) }
   const output = { path: outputPath, writable: checks.some(check => check.name === 'output' && check.ok) }
 
-  if (options.requirePdf && !existsSync(resolve(process.cwd(), 'node_modules/playwright'))) {
-    fail('PDF_DEPENDENCY_MISSING', 'PDF export requires the Playwright browser dependency.', { label: '安装 Playwright Chromium 后重试', command: 'npx playwright install chromium', safeToRetry: true })
-  }
+  const exportRuntime = options.requirePdf ? exportRuntimeStatus({ host }) : undefined
+  if (exportRuntime && !exportRuntime.ok) {
+    fail(exportRuntime.code as DiagnosticCode, exportRuntime.message ?? 'Export environment is unavailable',
+      { label: 'Run /miao-viewer setup in Pi, or the bundled setup-export.mjs after approval.', safeToRetry: true })
+  } else if (exportRuntime) checks.push({ name: 'export-runtime', ok: true })
   if (!failure) nextActions.push({ label: '运行首次 Report 工作流', command: 'miao-viz data analyze <file> --intent "business report"', safeToRetry: true })
   const result: DiagnosticResult = {
     ok: !failure, ...(failure ? { code: failure.code } : {}), executable, cliVersion, requiredCliVersion: minimumCliVersion,
-    nodeVersion, host, ...(input ? { input } : {}), output, checks, nextActions
+    nodeVersion, host, ...(input ? { input } : {}), output, checks, nextActions, ...(exportRuntime ? { exportRuntime } : {})
   }
   return failure ? agentError(failure.code, failure.message, { ...result }) : { ok: true, value: result }
 }

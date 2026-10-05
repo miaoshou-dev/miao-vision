@@ -1,4 +1,4 @@
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
+import { spawn, type ChildProcess } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import { DEFAULT_REVIEW_PORT, startReviewServer, type ReviewServer } from './review-server'
 import packageJson from '../../package.json'
@@ -19,7 +19,7 @@ export interface ReviewMcpOptions {
 
 export async function runReviewMcp(options: ReviewMcpOptions = {}): Promise<void> {
   const workflowArgs = new Map<string, Record<string, unknown>>()
-  const activeChildren = new Set<ChildProcessWithoutNullStreams>()
+  const activeChildren = new Set<ChildProcess>()
   let server: ReviewServer
   server = await startReviewServer({
     port: options.port ?? DEFAULT_REVIEW_PORT,
@@ -61,7 +61,7 @@ export async function runReviewMcp(options: ReviewMcpOptions = {}): Promise<void
   await close()
 }
 
-async function handleRequest(request: JsonRpcRequest, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>, activeChildren: Set<ChildProcessWithoutNullStreams>): Promise<unknown> {
+async function handleRequest(request: JsonRpcRequest, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>, activeChildren: Set<ChildProcess>): Promise<unknown> {
   if (request.method === 'initialize') {
     return { protocolVersion: '2024-11-05', capabilities: { tools: {} }, serverInfo: { name: 'miao-viz', version: packageJson.version } }
   }
@@ -107,7 +107,7 @@ async function applyRevisionRequest(server: ReviewServer, revisionId: string | u
   return body.value
 }
 
-async function applyRevision(revision: StoredRevision, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>, activeChildren: Set<ChildProcessWithoutNullStreams>): Promise<{ childRunId: string }> {
+async function applyRevision(revision: StoredRevision, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>, activeChildren: Set<ChildProcess>): Promise<{ childRunId: string }> {
   const previous = workflowArgs.get(revision.request.parentRunId)
   if (!previous) throw new Error('The parent run was not started by this MCP session, so it cannot be applied automatically.')
   if (!revision.plan.patchSet) throw new Error('A PatchSet is required to apply a revision.')
@@ -120,7 +120,7 @@ async function applyRevision(revision: StoredRevision, server: ReviewServer, wor
   return { childRunId }
 }
 
-async function runWorkflow(args: Record<string, unknown>, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>, activeChildren: Set<ChildProcessWithoutNullStreams>): Promise<unknown> {
+async function runWorkflow(args: Record<string, unknown>, server: ReviewServer, workflowArgs: Map<string, Record<string, unknown>>, activeChildren: Set<ChildProcess>): Promise<unknown> {
   const kind = args.kind
   if (kind !== 'report' && kind !== 'deck' && kind !== 'article') throw new Error('kind must be report, deck, or article')
   const output = stringArg(args, 'output')
@@ -149,9 +149,9 @@ async function runWorkflow(args: Record<string, unknown>, server: ReviewServer, 
   return { runId, viewerUrl: server.url, result }
 }
 
-function spawnCli(cliPath: string, args: string[], activeChildren: Set<ChildProcessWithoutNullStreams>): Promise<unknown> {
+function spawnCli(cliPath: string, args: string[], activeChildren: Set<ChildProcess>): Promise<unknown> {
   return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, [cliPath, ...args], { stdio: ['ignore', 'pipe', 'pipe'] })
+    const child = spawn(process.execPath, /(?:\/\$bunfs\/|^B:\\~BUN\\)/.test(cliPath) ? args : [cliPath, ...args], { stdio: ['ignore', 'pipe', 'pipe'] })
     activeChildren.add(child)
     let stdout = ''
     let stderr = ''

@@ -1,3 +1,4 @@
+import { ExportRuntimeError } from '../../../../skills/miao-vision/scripts/export-runtime.mjs'
 import { createHash } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -47,12 +48,12 @@ export async function createReviewExport(run: ReviewRunSnapshot, format: ReviewE
   if (format === 'pptx') await exportDeckToPptx(html, path)
   else if (format === 'pdf') {
     const result = await exportHtmlToPdf(html, path, { mode: source.kind })
-    if (!result.ok) throw new Error(result.message)
+    if (!result.ok) throw new ExportRuntimeError(result.code, result.message, result)
   } else {
     const result = await exportHtmlToPng(html, path, source.kind === 'poster'
       ? { width: posterDimension(html, 'width', 1080), height: posterDimension(html, 'height', 1350), selector: '.mv-poster' }
       : {})
-    if (!result.ok) throw new Error(result.message)
+    if (!result.ok) throw new ExportRuntimeError(result.code, result.message, result)
   }
   if (!existsSync(path) || !statSync(path).size) throw new Error('Export did not create a file.')
   return { path, filename }

@@ -3,6 +3,7 @@
 import { spawnSync } from 'node:child_process'
 import {
   existingCandidates,
+  cliInvocation,
   isCompatibleVersion,
   isRecommendedVersion,
   readCompatibility,
@@ -11,17 +12,21 @@ import {
 } from './cli-runtime.mjs'
 
 const compatibility = readCompatibility()
+const run = (executable, args) => {
+  const call = cliInvocation(executable, args)
+  return spawnSync(call.command, call.args, { encoding: 'utf8' })
+}
 
 function readVersion(executable) {
-  const result = spawnSync(executable, ['--version'], { encoding: 'utf8' })
+  const result = run(executable, ['--version'])
   if (result.error?.code === 'ENOENT') return null
   if (result.status !== 0) return { executable, version: null, error: result.stderr || result.stdout }
   return { executable, version: result.stdout.trim() }
 }
 
 function supportsRequiredCapabilities(candidate) {
-  return compatibility.capabilityProbes.every((probe) => {
-    const result = spawnSync(candidate.executable, probe.args, { encoding: 'utf8' })
+  return [...compatibility.capabilityProbes, ...(process.argv.includes('--viewer') ? [{ args: ['review', 'mcp', '--help'], stdoutIncludes: 'mcp' }] : [])].every((probe) => {
+    const result = run(candidate.executable, probe.args)
     return result.status === 0 && (!probe.stdoutIncludes || result.stdout.includes(probe.stdoutIncludes))
   })
 }
@@ -49,22 +54,19 @@ if (!selected || (requireRecommended && !isRecommendedVersion(selected.version, 
   console.error(found ? `Found: ${found}.` : 'No miao-viz CLI was found.')
   console.error(`Required CLI range: >=${compatibility.minimumCliVersion} <${compatibility.maximumCliVersionExclusive}.`)
   console.error(`Recommended CLI version: ${compatibility.recommendedCliVersion}.`)
-  console.error('Run scripts/install-miao-viz.sh (macOS/Linux) or scripts/install-miao-viz.ps1 (Windows).')
+  console.error(`Install globally after approval: npm install -g @miao-vision/cli@${compatibility.recommendedCliVersion}`)
+  console.error('Legacy ~/.miao-vision/bin and skill-local CLIs are not selected.')
   process.exit(1)
 }
 
-if (candidateIndex === -1 && selected.executable === candidates.at(-1)) {
-  console.error(`Using legacy skill-local CLI at ${selected.executable}. Reinstall to migrate it to the shared Miao Vision home.`)
-}
+if (!isRecommendedVersion(selected.version, compatibility)) console.error(`Using compatible global CLI ${selected.version}; recommended ${compatibility.recommendedCliVersion}.`)
 
 if (process.argv.includes('--print-path')) {
   process.stdout.write(`${selected.executable}\n`)
   process.exit(0)
 }
 
-const result = spawnSync(selected.executable, ['spec', 'catalog'], {
-  encoding: 'utf8'
-})
+const result = run(selected.executable, ['spec', 'catalog'])
 
 if (result.status !== 0) {
   console.error(result.stderr || result.stdout || 'miao-viz spec catalog failed.')

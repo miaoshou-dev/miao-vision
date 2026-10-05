@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { accessSync, constants, existsSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -19,22 +19,30 @@ export function defaultMiaoVisionHome(env = process.env, home = homedir()) {
   return env.MIAO_VISION_HOME ? resolve(env.MIAO_VISION_HOME) : resolve(home, '.miao-vision')
 }
 
-export function cliCandidates({
-  env = process.env,
-  home = homedir(),
-  platform = process.platform,
-  root = skillRoot
-} = {}) {
-  const name = executableName(platform)
-  const configuredHome = env.MIAO_VISION_HOME ? resolve(env.MIAO_VISION_HOME) : null
-  const defaultHome = resolve(home, '.miao-vision')
-  const candidates = [
-    ...(configuredHome ? [resolve(configuredHome, 'bin', name)] : []),
-    ...(!configuredHome || configuredHome !== defaultHome ? [resolve(defaultHome, 'bin', name)] : []),
-    name,
-    resolve(root, 'bin', name)
-  ]
-  return [...new Set(candidates)]
+export function cliCandidates({ env = process.env, platform = process.platform } = {}) {
+  const key = Object.keys(env).find(key => key.toLowerCase() === 'path')
+  const paths = (env[key] ?? '').split(platform === 'win32' ? ';' : ':').filter(Boolean)
+  const names = platform === 'win32' ? ['miao-viz.exe', 'miao-viz.cmd', 'miao-viz.bat'] : ['miao-viz']
+  for (const directory of paths) {
+    for (const name of names) {
+      const candidate = resolve(directory, name)
+      try {
+        accessSync(candidate, platform === 'win32' ? constants.F_OK : constants.X_OK)
+        return [candidate]
+      } catch {}
+    }
+  }
+  return []
+}
+
+// Resolve npm's Windows shim to its JS entry without spawning a shell.
+export function cliInvocation(executable, args = [], platform = process.platform) {
+  if (platform === 'win32' && /\.(cmd|bat)$/i.test(executable)) {
+    const entry = resolve(dirname(executable), 'node_modules/@miao-vision/cli/dist/cli.cjs')
+    if (!existsSync(entry)) throw new Error('Global npm miao-viz entry was not found. Reinstall @miao-vision/cli.')
+    return { command: process.execPath, args: [entry, ...args] }
+  }
+  return { command: executable, args }
 }
 
 export function parseVersion(value) {
@@ -67,5 +75,5 @@ export function selectPreferredCandidate(candidates, compatibility) {
 }
 
 export function existingCandidates(options) {
-  return cliCandidates(options).filter((candidate) => candidate === executableName(options?.platform) || existsSync(candidate))
+  return cliCandidates(options)
 }

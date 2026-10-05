@@ -20,10 +20,22 @@ For local development, replace the ZIP with the repository path and add
 openclaw plugins inspect miao-vision --runtime --json
 ```
 
-Confirm that `skills/miao-vision` is visible. On first use, approve the
-versioned CLI download when the plugin's recommended version is absent. An
-older compatible CLI can still be used if you decline the update. The CLI is
-installed under `~/.miao-vision/bin`, not inside the plugin.
+Confirm that `skills/miao-vision` is visible.
 
-Data remains local. Plugin uninstall does not remove the shared CLI or user
-artifacts. PDF browser dependencies remain optional.
+Miao Vision uses the global `miao-viz` on PATH. The bundled
+`node scripts/check-miao-viz.mjs --print-path` checks compatibility and returns
+its absolute path. A compatible CLI is accepted even when its version differs
+from the recommendation. If missing or incompatible, approve the bundled
+installer, which runs `npm install -g @miao-vision/cli` at the fixed recommended
+version. It does not use sudo or change shell configuration. Old binaries in
+`~/.miao-vision/bin` remain untouched and are no longer selected automatically.
+
+PNG/PDF export requires Playwright and matching Chromium. Run
+`node scripts/setup-export.mjs --host openclaw` to check without installing;
+after approval add `--install`. It reuses host dependencies first, then
+`~/.miao-vision/playwright`, then workspace dependencies. Claude Code checks
+project and user `.claude` directories; other hosts may specify their actual
+root with `--host-root`. Downloads use the selected Playwright's own installer.
+Business-project dependencies are never modified. No API key is required.
+
+Plugin uninstall leaves user artifacts, the global CLI, and browser cache intact.

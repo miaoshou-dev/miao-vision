@@ -1,7 +1,7 @@
 # Miao Vision Plugin Installation
 
-Current compatible plugin release: `v0.10.3` (`skill-v0.10.3`), with
-`@miao-vision/cli@0.9.3`. Download the cross-host bundle from:
+Current compatible plugin release: `v0.10.4` (`skill-v0.10.4`), with
+`@miao-vision/cli@0.9.4`. Download the cross-host bundle from:
 
 ```text
 https://github.com/miaoshou-dev/miao-vision/releases/latest/download/miao-vision-plugin.zip
@@ -18,23 +18,28 @@ same source skill for Codex, Claude Code, and OpenClaw:
 The standalone Skill ZIP remains a lightweight compatibility channel for one
 release cycle.
 
-On first use, the plugin checks for its pinned recommended CLI version. When
-only an older compatible CLI exists, it asks permission before downloading the
-versioned, checksum-verified binary. The installer checks the shared CLI path,
-verifies the downloaded version and capabilities, then replaces that path. A
-failed download or verification leaves the old CLI in place. Plugin upgrades
-and uninstalls do not remove the shared CLI. A plain
-`miao-viz --version` may still report a different global copy on `PATH`; use
-`node scripts/check-miao-viz.mjs --print-path` to see the CLI selected by the
-skill.
+Miao Vision uses the global `miao-viz` on PATH. The bundled
+`node scripts/check-miao-viz.mjs --print-path` checks compatibility and returns
+its absolute path. A compatible CLI is accepted even when its version differs
+from the recommendation. If missing or incompatible, approve the bundled
+installer, which runs `npm install -g @miao-vision/cli` at the fixed recommended
+version. It does not use sudo or change shell configuration. Old binaries in
+`~/.miao-vision/bin` remain untouched and are no longer selected automatically.
+
+PNG/PDF export requires Playwright and matching Chromium. Run
+`node scripts/setup-export.mjs --host cli` to check without installing;
+after approval add `--install`. It reuses host dependencies first, then
+`~/.miao-vision/playwright`, then workspace dependencies. Claude Code checks
+project and user `.claude` directories; other hosts may specify their actual
+root with `--host-root`. Downloads use the selected Playwright's own installer.
+Business-project dependencies are never modified. No API key is required.
 
 All ordinary source-data workflows stay local. Optional data-story image/video
 generation requires Node.js 22+, `ai-cli`, `AI_GATEWAY_API_KEY`, remote upload
 confirmation, and separate Gateway fees. It sends only the displayed prompt
 and approved references; the original Node.js 20 workflows do not require it.
 PDF browser dependencies are optional and are not downloaded with the plugin.
-To remove the shared CLI explicitly, delete
-`~/.miao-vision`; plugin uninstall intentionally leaves it intact.
+Remove the global CLI with `npm uninstall -g @miao-vision/cli`; plugin uninstall leaves it intact.
 
 ## Try It
 

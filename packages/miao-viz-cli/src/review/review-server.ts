@@ -1,3 +1,4 @@
+import { exportRuntimeStatus, ExportRuntimeError } from '../../../../skills/miao-vision/scripts/export-runtime.mjs'
 import { saveReviewTitle } from './review-title-edit'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http'
 import { createHash } from 'node:crypto'
@@ -170,7 +171,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
     const run = store.get(decodeURIComponent(exportMatch[1]))
     if (!run) return respondJson(response, 404, { ok: false, code: 'RUN_NOT_FOUND', message: 'Review run not found.' })
     const source = reviewExportSource(run)
-    if (!exportMatch[2]) return respondJson(response, 200, { ok: true, value: { kind: source?.kind ?? run.kind, formats: source?.formats ?? [] } })
+    if (!exportMatch[2]) return respondJson(response, 200, { ok: true, value: { kind: source?.kind ?? run.kind, formats: source?.formats ?? [], runtime: exportRuntimeStatus() } })
     const format = exportMatch[2] as ReviewExportFormat
     if (!source?.formats.includes(format)) return respondJson(response, 409, { ok: false, code: 'EXPORT_UNAVAILABLE', message: 'This format is unavailable for the selected artifact.' })
     try {
@@ -185,7 +186,7 @@ async function handleRequest(request: IncomingMessage, response: ServerResponse,
       response.end(readFileSync(output.path))
       return
     } catch (error) {
-      return respondJson(response, 500, { ok: false, code: 'EXPORT_FAILED', message: error instanceof Error ? error.message : 'Export failed.' })
+      return respondJson(response, 500, error instanceof ExportRuntimeError ? error.result : { ok: false, code: 'EXPORT_FAILED', message: error instanceof Error ? error.message : 'Export failed.' })
     }
   }
   if (url.pathname === '/api/compare') {

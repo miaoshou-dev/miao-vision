@@ -59,7 +59,8 @@ test('status, stop, and restart only manage extension-owned processes', async ()
   assert.equal(starts, 2)
   assert.equal(processes[0].client.closeCount, 1)
   assert.equal(processes[1].client.closeCount, 0)
-  assert.match(app.notices[1].message, /PID 1001 · CLI 0\.9\.1/)
+  assert.equal(app.notices[1].message,
+    `Miao Vision Viewer running · PID ${processes[0].client.pid} · CLI ${processes[0].cliVersion} · ${processes[0].url}`)
 })
 
 test('session shutdown closes the managed MCP and is idempotent', async () => {
@@ -72,8 +73,24 @@ test('session shutdown closes the managed MCP and is idempotent', async () => {
 })
 
 test('startup errors remain actionable and do not disable registered tools', async () => {
-  const app = harness(async () => { throw new Error('Recommended CLI 0.9.3 is required.') })
-  await assert.rejects(app.command.handler('', app.ctx), /Recommended CLI 0\.9\.1/)
+  const startupError = new Error('Recommended CLI 0.9.3 is required.')
+  const app = harness(async () => { throw startupError })
+  await assert.rejects(app.command.handler('', app.ctx), error => error === startupError)
   assert.equal(app.tools.size, 4)
   assert.equal(app.notices.length, 0)
+})
+
+test('export setup requires confirmation and does not start the Viewer', async () => {
+  let setups = 0, starts = 0
+  const commands = new Map()
+  createMiaoVisionExtension(async () => { starts++; return managed() }, async () => { setups++; return { version: '1.57.0', root: '/shared' } })({
+    registerTool() {}, registerCommand(name, command) { commands.set(name, command) }, on() {}
+  })
+  const ctx = { cwd: '/tmp', ui: { confirm: async () => false, notify() {} } }
+  await commands.get('miao-viewer').handler('setup', ctx)
+  assert.equal(setups, 0)
+  ctx.ui.confirm = async () => true
+  await commands.get('miao-viewer').handler('setup', ctx)
+  assert.equal(setups, 1)
+  assert.equal(starts, 0)
 })

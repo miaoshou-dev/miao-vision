@@ -60,3 +60,14 @@ support PNG. Each PPTX slide is a full-slide image, so its individual text and
 charts are not editable in PowerPoint. Export reuses the selected version's
 HTML and does not rerun data analysis or queries. A report with the poster
 layout is recognized as a poster even though its run kind is `report`.
+
+## Export environment
+
+Use the same global CLI path as ordinary generation; check with
+`node scripts/check-miao-viz.mjs --viewer --print-path`. Pi users run
+`/miao-viewer setup` and confirm installation when prompted. Other hosts run
+`node scripts/setup-export.mjs --host <host>` to check, then add `--install`
+only after approval. Pass its returned `root` as `MIAO_VIZ_PLAYWRIGHT_ROOT`
+when launching the Viewer. Missing dependencies do not prevent HTML preview.
+The export menu reports setup requirements. Export errors retain their specific
+code and repair action; export requests never install dependencies.

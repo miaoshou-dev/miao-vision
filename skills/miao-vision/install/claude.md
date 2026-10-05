@@ -15,13 +15,23 @@ The standalone Skill remains available as a temporary compatibility channel:
 npx skills add miaoshou-dev/miao-vision --global --agent claude-code --yes
 ```
 
-## 2. Shared CLI
+## 2. Global CLI and optional exports
 
-On first use, Miao Vision checks for the CLI version pinned to this plugin
-release. If it is absent, approve the request to download and verify the
-matching release binary in the shared user directory. An older compatible CLI
-can still be used if you decline the update. Plugin cache replacement and
-uninstall do not remove this CLI.
+Miao Vision uses the global `miao-viz` on PATH. The bundled
+`node scripts/check-miao-viz.mjs --print-path` checks compatibility and returns
+its absolute path. A compatible CLI is accepted even when its version differs
+from the recommendation. If missing or incompatible, approve the bundled
+installer, which runs `npm install -g @miao-vision/cli` at the fixed recommended
+version. It does not use sudo or change shell configuration. Old binaries in
+`~/.miao-vision/bin` remain untouched and are no longer selected automatically.
+
+PNG/PDF export requires Playwright and matching Chromium. Run
+`node scripts/setup-export.mjs --host claude-code` to check without installing;
+after approval add `--install`. It reuses host dependencies first, then
+`~/.miao-vision/playwright`, then workspace dependencies. Claude Code checks
+project and user `.claude` directories; other hosts may specify their actual
+root with `--host-root`. Downloads use the selected Playwright's own installer.
+Business-project dependencies are never modified. No API key is required.
 
 ## 3. Claude App / Web ZIP Install
 
@@ -42,5 +52,4 @@ Important: browser/app-hosted Claude environments may not be able to execute loc
 Use miao-vision to analyze ~/data/sales.csv and generate an HTML visualization report, a single-page ranking poster, an article infographic, or a browser deck.
 ```
 
-Data remains local. PDF browser dependencies are optional and separate. Fully
-removing the shared CLI requires deleting `~/.miao-vision`.
+Data remains local. PDF browser dependencies are optional and separate. Remove the global CLI explicitly with `npm uninstall -g @miao-vision/cli`.

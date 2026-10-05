@@ -14,7 +14,7 @@ const run: ReviewRunSnapshot = {
 describe('controlled review revisions', () => {
   it('binds one instruction to multiple declared targets and produces an auditable plan', () => {
     const request = createRevisionRequest(run, { instruction: 'Make both clearer', targets: [
-      { id: 'sales', kind: 'chart', path: 'charts[0]' }, { id: 'insight-1', kind: 'insight', path: 'insights[0]' }
+      { id: 'sales', kind: 'chart', path: 'charts[0]', evidenceIds: [] }, { id: 'insight-1', kind: 'insight', path: 'insights[0]', evidenceIds: [] }
     ] })
     expect(request.targets).toHaveLength(2)
     expect(request.evidenceIds).toEqual(['sales_total'])
@@ -22,7 +22,7 @@ describe('controlled review revisions', () => {
   })
 
   it('rejects undeclared and protected patch paths, while accepting a registered theme', () => {
-    const request = createRevisionRequest(run, { instruction: 'Switch theme', targets: [{ id: 'sales', kind: 'chart', path: 'charts[0]' }], theme: { id: 'magazine', path: 'theme' } })
+    const request = createRevisionRequest(run, { instruction: 'Switch theme', targets: [{ id: 'sales', kind: 'chart', path: 'charts[0]', evidenceIds: [] }], theme: { id: 'magazine', path: 'theme' } })
     expect(validatePatchSet(request, { operations: [{ op: 'replace', path: 'theme', value: 'magazine' }] }, ['magazine'])).toBeTruthy()
     expect(() => validatePatchSet(request, { operations: [{ op: 'replace', path: 'charts[1].title', value: 'No' }] }, ['magazine'])).toThrow('not allowed')
     expect(() => validatePatchSet(request, { operations: [{ op: 'replace', path: 'charts[0].provenance', value: 'No' }] }, ['magazine'])).toThrow('protected')

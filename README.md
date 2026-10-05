@@ -45,13 +45,15 @@ Download [`miao-vision-plugin.zip`](https://github.com/miaoshou-dev/miao-vision/
 | OpenClaw | Run `openclaw plugins install ./miao-vision-plugin.zip`, then enable `miao-vision` |
 | Pi | Run `pi install npm:@miao-vision/pi` |
 
-The plugin looks for a compatible CLI in this order:
+All hosts use the compatible global `miao-viz` on `PATH`. If it is missing
+or incompatible, the agent asks before installing the fixed recommended npm
+version. Legacy shared or skill-local binaries are retained but not selected.
 
-1. `$MIAO_VISION_HOME/bin/miao-viz`
-2. `~/.miao-vision/bin/miao-viz`
-3. `miao-viz` on `PATH`
-
-If none is compatible, the plugin asks before downloading the matching checksum-verified CLI release. Browser dependencies for PNG/PDF export are optional and are not bundled with the plugin.
+PNG/PDF export reuses host Playwright dependencies first, then
+`~/.miao-vision/playwright`, then the working directory. In Pi run
+`/miao-viewer setup`; other hosts use the bundled `setup-export.mjs` script.
+Installation requires confirmation and prepares matching Chromium without
+adding dependencies to your business project. HTML generation needs no browser.
 
 Once installed, describe the outcome you want:
 

@@ -7,7 +7,7 @@ Miao Vision ships as a cross-host plugin backed by one local CLI:
 
 Current plugin release: [`v0.10.1`](https://github.com/miaoshou-dev/miao-vision/releases/tag/skill-v0.10.1).
 The release contains the plugin ZIP, compatibility Skill ZIP, checksums, and
-native CLI binaries. The recommended npm CLI is `@miao-vision/cli@0.9.1`.
+native CLI binaries. The recommended npm CLI is `@miao-vision/cli@0.9.4`.
 
 ## Requirements
 
@@ -37,12 +37,12 @@ every remote generation. It does not enable or modify automatic recharge.
 
 ## Shared CLI
 
-On first use, the plugin checks for its pinned recommended CLI version across
-`$MIAO_VISION_HOME/bin/miao-viz`, `~/.miao-vision/bin/miao-viz`, and `PATH`.
-If that version is absent, it requests approval to download the matching
-release binary. The installer verifies the checksum, version, and required
-capabilities before replacing the shared CLI. A failed update preserves the
-existing CLI. Global npm installation remains optional and is not modified.
+The skill resolves the global `miao-viz` on PATH and keeps its absolute path
+for the entire task. If it is missing or incompatible, approve installation
+of the fixed recommended npm version. Legacy shared binaries are retained but
+not selected. Export setup reuses host Playwright or installs it in
+`~/.miao-vision/playwright` after approval; Pi exposes `/miao-viewer setup`.
+
 
 ## Lightweight Skill Compatibility Install
 
