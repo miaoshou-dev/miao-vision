@@ -72,13 +72,15 @@ describe('trusted interactive report', () => {
     expect(Buffer.byteLength(JSON.stringify(toCompactAnalyzeContext(context).catalog.interactions), 'utf8')).toBeLessThanOrEqual(2048)
   })
 
-  it('renders localized scope runtime, exposure details, and both print actions', () => {
+  it('renders localized summaries and exposure details without print actions', () => {
     const trust = packageTrustedArtifact(trustedSpec, profile, rows, { evidenceVerified: true })
     const html = renderStaticHtml(trustedSpec, profile, trust.rows, undefined, { enabled: true, exposureManifest: trust.manifest, shareSafetyChecks: trust.shareSafety.checks })
     expect(html).toContain('<html lang="zh-CN">')
     expect(html).toContain('嵌入数据详情')
-    expect(html).toContain('打印当前视图')
-    expect(html).toContain('打印完整发布报告')
+    expect(html).not.toContain('打印当前视图')
+    expect(html).not.toContain('打印完整发布报告')
+    expect(html).not.toContain('data-print=')
+    expect(html).toContain('miao-current-view-grid')
   })
 
   it('evaluates a 30-case deterministic golden corpus with no restricted recommendation', () => {

@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-function renderTrustedReport(): { html: string; result: Record<string, unknown> } {
+function renderTrustedReport(withSummaries = true): { html: string; result: Record<string, unknown> } {
   const dir = mkdtempSync(join(tmpdir(), 'miao-trusted-e2e-'))
   const csv = join(dir, 'sales.csv')
   const spec = join(dir, 'report.yaml')
@@ -37,6 +37,10 @@ charts:
       x: { field: region }
       y: { field: sales, aggregate: sum }
 `)
+  if (!withSummaries) {
+    const yaml = readFileSync(spec, 'utf8')
+    writeFileSync(spec, yaml.replace(/  currentView:[\s\S]*?(?=charts:)/, ''))
+  }
   const output = execFileSync(process.execPath, ['scripts/miao-viz.mjs', 'render', 'report', '--input', csv, '--spec', spec, '--output', html], { encoding: 'utf8' })
   return { html, result: JSON.parse(output) }
 }
@@ -57,8 +61,7 @@ test('trusted report minimizes data and preserves current-view state', async ({ 
   await page.locator('.miao-filter select').selectOption('East')
   await expect(page.locator('.miao-current-summary strong')).toHaveText('25')
   await expect(page.locator('#miao-view-state')).toContainText('2 / 3 rows')
-  await expect(page.locator('[data-print="current"]')).toBeVisible()
-  await expect(page.locator('[data-print="full"]')).toBeVisible()
+  await expect(page.locator('[data-print], .miao-print-actions')).toHaveCount(0)
 
   const sharedUrl = page.url()
   await page.goto(sharedUrl)
@@ -67,4 +70,14 @@ test('trusted report minimizes data and preserves current-view state', async ({ 
   await expect(page.locator('.miao-current-summary strong')).toHaveText('45')
   await expect(page).not.toHaveURL(/#miao=/)
   expect(errors).toEqual([])
+})
+
+test('trusted report without summaries has no empty current-view panel or print actions', async ({ page }) => {
+  const artifact = renderTrustedReport(false)
+  await page.goto(pathToFileURL(artifact.html).href)
+  await expect(page.locator('.miao-exposure')).toBeVisible()
+  await expect(page.locator('.miao-trust-scopes')).toHaveCount(0)
+  await expect(page.locator('[data-print], .miao-print-actions')).toHaveCount(0)
+  await page.locator('.miao-filter select').selectOption('East')
+  await expect(page.locator('#miao-view-state')).toContainText('2 / 3 rows')
 })

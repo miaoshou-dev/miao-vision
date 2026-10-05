@@ -4,13 +4,10 @@ export const TRUSTED_RUNTIME_CSS = `
 .miao-current-summary { min-width:130px; padding:8px 10px; background:rgba(128,128,128,.06); border-radius:4px; }
 .miao-current-summary strong { display:block; font-size:18px; margin-top:3px; }
 .miao-scope-note { font-size:11px; opacity:.62; }
-.miao-print-actions { display:flex; gap:8px; margin:10px 0; }
-.miao-print-actions button { border:1px solid rgba(128,128,128,.28); border-radius:4px; padding:6px 9px; background:transparent; color:inherit; cursor:pointer; }
-.miao-print-scope-header { display:none; margin:0 0 12px; font-weight:700; }
 .miao-exposure { margin:0 0 18px; padding:10px 12px; border:1px solid rgba(128,128,128,.18); border-radius:4px; font-size:12px; }
 .miao-exposure dl { display:grid; grid-template-columns:90px 1fr; gap:6px 10px; }
 .miao-exposure dd { margin:0; overflow-wrap:anywhere; }
-@media print { .miao-print-actions,.miao-exposure { display:none !important; } .miao-print-scope-header { display:block; } }
+@media print { .miao-exposure { display:none !important; } }
 `
 
 export const TRUSTED_RUNTIME_JS = `
@@ -23,16 +20,17 @@ export const TRUSTED_RUNTIME_JS = `
   if(!trusted&&!summaries.length)return;
   var zh=spec.locale==='zh-CN';
   var copy=zh?{
-    current:'当前视图',published:'发布结论',local:'本地计算',full:'基于完整发布数据集',empty:'当前视图无数据',rows:'行',
-    printCurrent:'打印当前视图',printFull:'打印完整发布报告'
-  }:{current:'Current view',published:'Published findings',local:'Calculated locally',full:'Based on the full published dataset',empty:'No data for current view',rows:'rows',printCurrent:'Print current view',printFull:'Print full published report'};
+    current:'当前视图',published:'发布结论',local:'本地计算',full:'基于完整发布数据集',empty:'当前视图无数据',rows:'行'
+  }:{current:'Current view',published:'Published findings',local:'Calculated locally',full:'Based on the full published dataset',empty:'No data for current view',rows:'rows'};
   var main=document.querySelector('.miao-viz-report');
   if(!main)return;
   var scopes=document.createElement('section');
   scopes.className='miao-trust-scopes';
-  scopes.innerHTML='<div class="miao-print-scope-header"></div><strong>'+copy.current+'</strong><div class="miao-scope-note">'+copy.local+'</div><div class="miao-current-view-grid"></div><div class="miao-print-actions"><button type="button" data-print="current">'+copy.printCurrent+'</button><button type="button" data-print="full">'+copy.printFull+'</button></div>';
-  var header=main.querySelector('header');
-  main.insertBefore(scopes,header?header.nextSibling:main.firstChild);
+  scopes.innerHTML='<strong>'+copy.current+'</strong><div class="miao-scope-note">'+copy.local+'</div><div class="miao-current-view-grid"></div>';
+  if(summaries.length){
+    var header=main.querySelector('header');
+    main.insertBefore(scopes,header?header.nextSibling:main.firstChild);
+  }
   document.querySelectorAll('.report-insights').forEach(function(el){var note=document.createElement('div');note.className='miao-scope-note';note.textContent=copy.published+' · '+copy.full;el.insertBefore(note,el.firstChild);});
 
   function valueFor(rows,recipe){
@@ -49,10 +47,8 @@ export const TRUSTED_RUNTIME_JS = `
     var measure=measures[0];return measure?window.miaoData.aggregateMeasure(working,{field:measure.field,op:measure.operation}):working.length;
   }
   function format(value,format){if(value==null||Number.isNaN(value))return copy.empty;if(format==='integer')return Math.round(Number(value)).toLocaleString();if(format==='percentage')return (Number(value)*100).toFixed(1)+'%';if(format==='currency')return Number(value).toLocaleString(undefined,{style:'currency',currency:'CNY'});return typeof value==='number'?value.toLocaleString():String(value);}
-  var lastDetail=null;
-  function render(event){var detail=event&&event.detail;if(!detail)return;lastDetail=detail;var grid=scopes.querySelector('.miao-current-view-grid');grid.innerHTML='';summaries.forEach(function(summary){var card=document.createElement('div');card.className='miao-current-summary';var value=detail.filtered.length?format(valueFor(detail.filtered,summary.recipe),summary.format):copy.empty;card.innerHTML='<span>'+window.miaoData.escapeHtml(summary.label)+'</span><strong>'+window.miaoData.escapeHtml(value)+'</strong>';grid.appendChild(card);});scopes.dataset.filtered=String(detail.filtered.length);renderEvidence(detail);}
+  function render(event){var detail=event&&event.detail;if(!detail)return;var grid=scopes.querySelector('.miao-current-view-grid');grid.innerHTML='';summaries.forEach(function(summary){var card=document.createElement('div');card.className='miao-current-summary';var value=detail.filtered.length?format(valueFor(detail.filtered,summary.recipe),summary.format):copy.empty;card.innerHTML='<span>'+window.miaoData.escapeHtml(summary.label)+'</span><strong>'+window.miaoData.escapeHtml(value)+'</strong>';grid.appendChild(card);});scopes.dataset.filtered=String(detail.filtered.length);renderEvidence(detail);}
   function renderEvidence(detail){var drawer=document.querySelector('.evidence-panel');if(!drawer)return;var section=drawer.querySelector('.miao-current-evidence');if(!section){section=document.createElement('section');section.className='miao-current-evidence evidence-current';drawer.appendChild(section);}var active=Object.keys(detail.state.filters||{}).filter(function(key){var value=detail.state.filters[key];return value!==''&&value!=null&&(!Array.isArray(value)||value.some(Boolean));});section.textContent=copy.current+': '+detail.filtered.length+' / '+detail.total+' '+copy.rows+'. '+copy.local+'. '+active.map(function(key){return key+'='+String(detail.state.filters[key]);}).join(', ')+' Recipes: '+JSON.stringify(summaries.map(function(summary){return summary.recipe;}));}
   window.addEventListener('miao:view-update',render);
-  scopes.querySelectorAll('[data-print]').forEach(function(button){button.addEventListener('click',function(){var scope=button.getAttribute('data-print');document.documentElement.dataset.miaoPrintScope=scope;var header=scopes.querySelector('.miao-print-scope-header');var filters=lastDetail&&lastDetail.state&&lastDetail.state.filters||{};header.textContent=scope==='current'?copy.printCurrent+' · '+Object.keys(filters).map(function(key){return key+': '+String(filters[key]);}).join(', '):copy.printFull;window.print();delete document.documentElement.dataset.miaoPrintScope;});});
 })();
 `
