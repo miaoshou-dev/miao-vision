@@ -20,7 +20,8 @@ cpSync(skillSource, resolve(outputRoot, 'skills/miao-vision'), {
   recursive: true,
   filter: path => {
     const child = relative(skillSource, path)
-    return child !== 'bin' && !child.startsWith('bin/') && !child.endsWith('.test.mjs')
+    return child !== 'bin' && !child.startsWith('bin/') &&
+      !child.endsWith('.test.mjs') && !child.endsWith('.d.mts')
   }
 })
 

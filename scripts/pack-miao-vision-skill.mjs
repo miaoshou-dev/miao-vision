@@ -19,7 +19,8 @@ cpSync(source, distSkill, {
     const child = relative(source, path)
     return child !== 'bin' &&
       !child.startsWith(`bin${process.platform === 'win32' ? '\\' : '/'}`) &&
-      !child.endsWith('.test.mjs')
+      !child.endsWith('.test.mjs') &&
+      !child.endsWith('.d.mts')
   }
 })
 

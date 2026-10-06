@@ -24,7 +24,8 @@ cpSync(skillSource, resolve(bundleRoot, 'skills/miao-vision'), {
     const child = relative(skillSource, path)
     return child !== 'bin' &&
       !child.startsWith(`bin${process.platform === 'win32' ? '\\' : '/'}`) &&
-      !child.endsWith('.test.mjs')
+      !child.endsWith('.test.mjs') &&
+      !child.endsWith('.d.mts')
   }
 })
 
