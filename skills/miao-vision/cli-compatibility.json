@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.10.4",
-  "recommendedCliVersion": "0.9.4",
+  "pluginVersion": "0.10.5",
+  "recommendedCliVersion": "0.9.5",
   "minimumCliVersion": "0.9.4",
   "maximumCliVersionExclusive": "0.10.0",
-  "releaseTag": "skill-v0.10.4",
+  "releaseTag": "skill-v0.10.5",
   "capabilityProbes": [
     {
       "args": [
