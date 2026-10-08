@@ -1,6 +1,6 @@
 {
   "name": "@miao-vision/pi",
-  "version": "0.10.5",
+  "version": "0.10.6",
   "description": "Miao Vision extension and skill for the Pi coding agent",
   "license": "MIT",
   "type": "module",
