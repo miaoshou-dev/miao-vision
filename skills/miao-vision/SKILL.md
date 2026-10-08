@@ -153,3 +153,8 @@ The current plugin does not register the Viewer MCP server or open its URL in
 Codex automatically. Read [review-viewer.md](references/review-viewer.md) for
 the available local commands and connection steps. Viewer failure must not
 block artifact delivery.
+Before a Viewer-backed render, check the Viewer's `/api/health` from the
+render execution environment. If the host sandbox blocks loopback access,
+use the host's permission mechanism for the probe and render; see the
+reference for Codex execution parameters. Confirm the run was registered
+before reporting it as visible in the Viewer.

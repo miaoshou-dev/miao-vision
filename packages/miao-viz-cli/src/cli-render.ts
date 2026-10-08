@@ -319,5 +319,12 @@ function posterReviewModules(spec: AgentReportSpec): Array<{ id: string, kind: '
   if (poster.hero?.subtitle) modules.push({ id: 'poster-hero-subtitle', kind: 'posterSubtitle', path: 'poster.hero.subtitle', title: poster.hero.subtitle })
   if (poster.chartId) modules.push({ id: 'poster-chart', kind: 'posterChart', path: `charts[${Math.max(0, spec.charts.findIndex(chart => chart.id === poster.chartId))}]`, title: poster.chartId })
   if (poster.footer?.source) modules.push({ id: 'poster-footer', kind: 'posterFooter', path: 'poster.footer.source', title: poster.footer.source })
+  for (const [index, callout] of (poster.callouts ?? []).entries()) {
+    if (callout.type === 'note') modules.push({ id: `poster-note-${index}`, kind: 'posterCopy', path: `poster.callouts[${index}].text`, title: callout.text })
+    else {
+      modules.push({ id: `poster-callout-${index}-title`, kind: 'posterCopy', path: `poster.callouts[${index}].title`, title: callout.title })
+      modules.push({ id: `poster-callout-${index}-body`, kind: 'posterCopy', path: `poster.callouts[${index}].body`, title: callout.body })
+    }
+  }
   return modules
 }
