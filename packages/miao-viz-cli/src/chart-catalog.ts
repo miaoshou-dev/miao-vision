@@ -1,3 +1,4 @@
+import { GANTT_CATALOG } from './gantt-chart'
 import type { ChartCatalogItem } from './chart-catalog-types'
 import { CHART_CATALOG as CORE_CATALOG } from './chart-catalog-core'
 import { EXTENDED_CATALOG } from './chart-catalog-ext'
@@ -47,7 +48,7 @@ function withBaselineRule(item: ChartCatalogItem): ChartCatalogItem {
   }
 }
 
-export const CHART_CATALOG: ChartCatalogItem[] = [...CORE_CATALOG, ...EXTENDED_CATALOG, ...P0_CHART_CATALOG, ...P1_CHART_CATALOG].map(withBaselineRule)
+export const CHART_CATALOG: ChartCatalogItem[] = [...CORE_CATALOG, ...EXTENDED_CATALOG, ...P0_CHART_CATALOG, ...P1_CHART_CATALOG, GANTT_CATALOG].map(withBaselineRule)
 
 export function getCatalogItem(chartType: string): ChartCatalogItem | undefined {
   return CHART_CATALOG.find(c => c.id === chartType)

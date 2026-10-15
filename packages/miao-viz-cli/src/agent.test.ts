@@ -2604,6 +2604,7 @@ describe('renderChartSvg — all MVP_CHART_TYPES have a renderer (no renderUnsup
     bullet: { type: 'bullet', encoding: { value: { field: 'num_x' }, target: { field: 'num_y' } } },
     range: { type: 'range', encoding: { x: { field: 'dim_x' }, lower: { field: 'num_x' }, upper: { field: 'num_y' } } },
     pareto: { type: 'pareto', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' } } },
+    gantt: { type: 'gantt', encoding: { label: { field: 'label' }, end: { field: 'dim_x', type: 'temporal' } } },
     'combo-bar-line': { type: 'combo-bar-line', encoding: { x: { field: 'dim_x' }, y: { field: 'num_x' }, lineY: { field: 'num_y' } } }
   }
 

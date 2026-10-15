@@ -1,3 +1,4 @@
+import { PROJECT_REPORT_BLOCK } from './project-report-catalog'
 import type { AnalyzeContext, AnalyzeField, CatalogBlockEntry, MetricCandidate } from './context-schema'
 import type { AgentChartSpec, AgentInsight } from './types'
 import { insightTotal, insightTrend, insightTopN, insightPeriodChange } from './block-insight-generator'
@@ -434,6 +435,7 @@ const fullDetailReport: ReportBlockResolver = {
 }
 
 export const BLOCK_REGISTRY: ReportBlockResolver[] = [
+  PROJECT_REPORT_BLOCK,
   kpiSummary,
   snapshotRanking,
   trendOverview,

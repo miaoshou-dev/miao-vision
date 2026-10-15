@@ -1,3 +1,4 @@
+import { renderGanttChart } from './gantt-chart'
 import { prepareChartData } from './data-transform'
 import {
   renderProgressChart, renderSparklineChart, renderDeltaChart,
@@ -50,6 +51,7 @@ function renderPreparedChart(
   theme: SvgTheme,
   options: RenderOptions
 ): string {
+  if (chart.type === 'gantt') return renderGanttChart(chart, data)
   if (chart.type === 'line' || chart.type === 'area') return renderLineChart(chart, data, theme, options)
   if (chart.type === 'bar' && chart.variant === 'diverging') return renderDivergingBarChart(chart, data, theme, options)
   if (chart.type === 'bar' && chart.variant === 'horizontal') return renderHorizontalBarChart(chart, data, theme, options)

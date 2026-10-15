@@ -17,6 +17,7 @@ export function loadCliDataset(args: CliArgs, fallback: string, applyInputLimit 
   }
   const options = {
     sheet: stringFlag(args, 'sheet'),
+    projectDates: usesProjectDates(args),
     limit: applyInputLimit ? numberFlag(args, 'limit') : undefined,
     fieldMap
   }
@@ -26,4 +27,14 @@ export function loadCliDataset(args: CliArgs, fallback: string, applyInputLimit 
 
 export function firstInput(args: CliArgs): string | undefined {
   return stringFlag(args, 'inputs')?.split(',').map(value => value.trim()).find(Boolean)
+}
+
+function usesProjectDates(args: CliArgs): boolean {
+  if (stringFlag(args, 'project-config')) return true
+  const path = stringFlag(args, 'context')
+  if (!path) return false
+  try {
+    const raw = readJson<{ ok?: boolean; value?: { evidence?: Array<{ recipe?: { project?: unknown } }> }; evidence?: Array<{ recipe?: { project?: unknown } }> }>(path)
+    return (raw.ok ? raw.value?.evidence : raw.evidence)?.some(item => Boolean(item.recipe?.project)) ?? false
+  } catch { return false }
 }

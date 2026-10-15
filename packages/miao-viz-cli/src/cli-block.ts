@@ -1,3 +1,4 @@
+import { projectReportSpec } from './project-report-catalog'
 import * as YAML from 'yaml'
 import { agentError, isAgentError } from './errors'
 import { getCatalogEntries } from './spec-validator'
@@ -86,7 +87,7 @@ export function runBlock(args: CliArgs): unknown {
 
   const variables = resolver.defaultVariables(matchCtx)
   const compiled = resolver.compile(variables, matchCtx)
-  const draft = buildBlockDraft(resolver, variables, decision.score, compiled)
+  const draft = resolver.id === 'project-status' ? YAML.stringify(projectReportSpec(matchCtx)) : buildBlockDraft(resolver, variables, decision.score, compiled)
 
   const outputPath = stringFlag(args, 'output')
   if (outputPath) {

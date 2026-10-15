@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { projectPeriodSchema } from './project-config'
 import { queryRecipeSchema, type QueryRecipe } from './query-recipe'
 
 export const REPORT_PROJECT_VERSION = 2 as const
@@ -31,7 +32,8 @@ const projectV2Schema = projectBaseSchema.extend({
   schemaVersion: z.literal(REPORT_PROJECT_VERSION),
   reportProfileHash: z.string().min(1)
 })
-export const projectSchema = z.union([projectV1Schema, projectV2Schema])
+const projectV3Schema = projectBaseSchema.extend({ schemaVersion: z.literal(3), projectConfigHash: z.string().min(1), baselineSnapshotHash: z.string().min(1) })
+export const projectSchema = z.union([projectV1Schema, projectV2Schema, projectV3Schema])
 export type ReportProject = z.infer<typeof projectSchema>
 
 const runManifestBaseSchema = z.object({
@@ -87,7 +89,12 @@ const runManifestV3Schema = runManifestBaseSchema.extend({
     blockingIssues: z.number().int().nonnegative()
   })
 })
-export const runManifestSchema = z.union([runManifestV1Schema, runManifestV2Schema, runManifestV3Schema])
+const runManifestV4Schema = runManifestBaseSchema.extend({
+  schemaVersion: z.literal(4), projectConfigHash: z.string().min(1), snapshotHash: z.string().min(1),
+  period: projectPeriodSchema, timezone: z.string(), baselineRunId: z.string().nullable(), replacesRunId: z.string().optional(),
+  review: z.object({ status: z.enum(['ready', 'needs_review', 'blocked']), warnings: z.number().int().nonnegative() })
+})
+export const runManifestSchema = z.union([runManifestV1Schema, runManifestV2Schema, runManifestV3Schema, runManifestV4Schema])
 export type RunManifest = z.infer<typeof runManifestSchema>
 
 export interface EvidencePlanEntry { id: string; recipe: QueryRecipe }

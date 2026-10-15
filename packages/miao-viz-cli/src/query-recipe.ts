@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import { projectRecipeSchema } from './project-config'
+import { executeProjectRecipe } from './project-snapshot'
 import { agentError, isAgentError } from './errors'
 import { queryDataset, type QueryOptions, type QueryResult } from './data-query'
 import type { AgentError } from './types'
@@ -6,6 +8,7 @@ import type { AgentError } from './types'
 export const QUERY_RECIPE_VERSION = 1 as const
 export const queryRecipeSchema = z.object({
   schemaVersion: z.literal(QUERY_RECIPE_VERSION),
+  project: projectRecipeSchema.optional(),
   groupBy: z.array(z.string().min(1)).optional(),
   measures: z.array(z.object({
     operation: z.enum(['sum', 'count', 'avg', 'min', 'max']),
@@ -26,6 +29,8 @@ export const queryRecipeSchema = z.object({
     alias: z.string().min(1).default('share')
   }).optional(),
   limit: z.number().int().positive().optional()
+}).superRefine((recipe, context) => {
+  if (recipe.project && ['groupBy', 'measures', 'filters', 'orderBy', 'share', 'limit'].some(key => recipe[key as keyof typeof recipe] !== undefined)) context.addIssue({ code: 'custom', path: ['project'], message: 'Project recipes cannot mix generic query operations.' })
 })
 
 export type QueryRecipe = z.infer<typeof queryRecipeSchema>
@@ -71,6 +76,7 @@ export function executeQueryRecipe(
 ): QueryResult | AgentError {
   const recipe = parseQueryRecipe(value)
   if (isAgentError(recipe)) return recipe
+  if (recipe.project) return executeProjectRecipe(rows, recipe.project)
   const missing = queryRecipeFields(recipe).filter(field => field !== '*' && !rows.some(row => field in row))
   if (missing.length) {
     return agentError('EVIDENCE_PLAN_EXECUTION_FAILED', 'Evidence recipe references unavailable fields.', {
@@ -98,6 +104,7 @@ export function executeQueryRecipe(
 }
 
 export function queryRecipeFields(recipe: QueryRecipe): string[] {
+  if (recipe.project) return Object.values(recipe.project.config.fields)
   return Array.from(new Set([
     ...(recipe.groupBy ?? []),
     ...(recipe.measures ?? []).map(item => item.field),

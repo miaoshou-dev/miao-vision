@@ -1,3 +1,4 @@
+import { addProjectEvidence } from './project-analysis'
 import { join } from 'node:path'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
@@ -181,6 +182,12 @@ async function runRender(args: CliArgs, publisher?: ReviewPublisher): Promise<un
     await publishStageOnce(publisher, stage('analyzed', 'completed', 'Analyze context loaded.'))
   } else {
     await publishStageOnce(publisher, stage('analyzed', 'skipped', 'No analyze context supplied.'))
+  }
+  const projectRecipe = renderContext?.evidence.find(item => item.recipe?.project)?.recipe?.project
+  if (projectRecipe && renderContext) {
+    const refreshed = addProjectEvidence(renderContext, dataset.value, projectRecipe.config, projectRecipe.period)
+    if (isAgentError(refreshed)) return fail(refreshed)
+    renderContext = refreshed
   }
   await publishStageOnce(publisher, stage('spec_instantiated', 'completed', 'Report spec resolved.'))
 

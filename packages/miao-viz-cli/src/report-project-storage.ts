@@ -8,6 +8,8 @@ import {
   dataContractSchema, evidencePlanSchema, projectSchema, runManifestSchema,
   type DataContract, type EvidencePlan, type ReportProject, type RunManifest
 } from './report-project-types'
+import { projectConfigSchema, type ProjectConfig } from './project-config'
+import { projectSnapshotSchema } from './project-snapshot'
 import { reportProfileSchema, type ReportProfileV1 } from './report-profile'
 import type { AgentError } from './types'
 
@@ -19,6 +21,7 @@ export interface LoadedReportProject {
   spec: unknown
   preferences: Record<string, unknown>
   profile: ReportProfileV1 | null
+  projectConfig: ProjectConfig | null
 }
 
 export function stableJson(value: unknown): string {
@@ -59,7 +62,13 @@ export function loadReportProject(path: string): LoadedReportProject | AgentErro
     if (project.schemaVersion === 2 && (!profile || hashValue(profile) !== project.reportProfileHash)) {
       throw new Error('report profile is missing or its lineage hash changed')
     }
-    return { root, project, contract, plan, spec, preferences, profile }
+    const projectConfig = project.schemaVersion === 3 ? projectConfigSchema.parse(readJson(join(root, 'project-config.json'))) : null
+    if (project.schemaVersion === 3) {
+      if (hashValue(projectConfig) !== project.projectConfigHash) throw new Error('project configuration lineage changed')
+      const baseline = projectSnapshotSchema.parse(readJson(join(root, 'baseline-snapshot.json')))
+      if (hashValue(baseline) !== project.baselineSnapshotHash) throw new Error('baseline schedule lineage changed')
+    }
+    return { root, project, contract, plan, spec, preferences, profile, projectConfig }
   } catch (error) {
     return agentError('REPORT_PROJECT_INVALID', 'Report project is missing, invalid, or uses an unsupported version.', {
       project: root, detail: error instanceof Error ? error.message : String(error)

@@ -35,6 +35,7 @@ export const MVP_CHART_TYPES = [
   'range'
   ,'pareto'
   ,'combo-bar-line'
+  ,'gantt'
 ] as const
 
 export const OUTPUT_FORMATS = ['html', 'svg', 'png', 'pdf'] as const

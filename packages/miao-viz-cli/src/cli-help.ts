@@ -60,6 +60,7 @@ Options:
   --output <file>               Write context.json to this path (default: stdout)
   --compact                     Output compact context for agent consumption
   --verbose                     Keep full context output explicitly for debugging
+  --project-config <file>  Task snapshot configuration (requires --period-start/--period-end)
   --extra-query <expr>          Custom query: "groupby=col;measure=sum(x) as y;filter=col>=val"
   --correct-assumption <expr>   Override an assumption: "primary_measure=orders", "primary_dimension=region", or "time_field=date"
   --sheet <name>                Sheet name (Excel only)
@@ -270,10 +271,15 @@ Options:
   --profile <file>  Validate and save a YAML or JSON client outcome profile
   --copy-input    Copy the source file into the first run
   --sheet <name>  Excel sheet name
+  --project-config <file>  Explicit task field/status mapping and project identity
+  --period-start <YYYY-MM-DD>  Project reporting start date
+  --period-end <YYYY-MM-DD>    Project reporting cutoff
 `,
   'report.update': `Usage: miao-viz report update <project> --input <file> --period <id>
 
 Replay the saved evidence plan and report spec with new compatible data.
+Project reports require --period-start and --period-end.
+Use a new --period ID with --replaces-run <id> to revise the same date period.
 `,
   'report.info': `Usage: miao-viz report info <project>
 

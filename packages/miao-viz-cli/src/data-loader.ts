@@ -8,6 +8,7 @@ interface LoadOptions {
   sheet?: string
   limit?: number
   fieldMap?: Record<string, string>
+  projectDates?: boolean
 }
 
 export function loadDataset(filePath: string, options: LoadOptions = {}): AgentResult<LoadedDataset> {
@@ -34,13 +35,20 @@ export function loadDataset(filePath: string, options: LoadOptions = {}): AgentR
     }
 
     if (ext === '.xlsx' || ext === '.xls') {
-      const workbook = XLSX.readFile(absolutePath)
+      const workbook = XLSX.readFile(absolutePath, { cellNF: options.projectDates === true })
       const sheetName = options.sheet ?? workbook.SheetNames[0]
       if (!sheetName || !workbook.Sheets[sheetName]) {
         return agentError('SHEET_NOT_FOUND', `Sheet not found: ${options.sheet ?? '(first sheet)'}`, {
           file: filePath,
           availableSheets: workbook.SheetNames
         })
+      }
+      if (options.projectDates) {
+        for (const [address, cell] of Object.entries(workbook.Sheets[sheetName])) {
+          if (address.startsWith('!') || cell.t !== 'n' || !cell.z || !XLSX.SSF.is_date(cell.z)) continue
+          const parsed = XLSX.SSF.parse_date_code(cell.v, { date1904: workbook.Workbook?.WBProps?.date1904 })
+          if (parsed) { cell.t = 's'; cell.v = `${String(parsed.y).padStart(4, '0')}-${String(parsed.m).padStart(2, '0')}-${String(parsed.d).padStart(2, '0')}`; delete cell.w }
+        }
       }
       const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheetName], {
         defval: null

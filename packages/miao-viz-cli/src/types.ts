@@ -36,6 +36,7 @@ export type VizType =
   | 'range'
   | 'pareto'
   | 'combo-bar-line'
+  | 'gantt'
 
 export type VisualIntentFamily =
   | 'summary'

@@ -1,0 +1,5 @@
+task_id,title,status,due_date,start_date,owner,completed_at,stage,is_milestone,next_action,action_due_date,blocker
+T1,需求确认,in_progress,2026-10-02,2026-09-28,林,,设计,true,,,
+T2,视觉设计,done,2026-10-10,2026-10-03,陈,2026-10-09,设计,false,确认设计稿,2026-10-10,
+T3,网站实现,in_progress,2026-10-20,2026-10-08,王,,开发,true,完成首页,2026-10-12,
+T5,新增支付功能,todo,2026-10-24,2026-10-15,赵,,开发,false,确认接口,2026-10-18,

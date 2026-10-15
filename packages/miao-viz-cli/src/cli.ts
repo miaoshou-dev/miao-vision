@@ -6,6 +6,7 @@ import { queryDataset } from './data-query'
 import { validateReportSpec, collectValidationWarnings, validateEvidencePaths, collectVerifyIssues, strictVerifyError } from './spec-validator'
 import { parseAnalyzeContext, toCompactAnalyzeContext } from './context-schema'
 import { collectVisualDiversityIssues } from './report-diversity-audit'
+import { analyzeProjectFlags } from './project-analysis'
 import { analyzeDataset } from './analyzer'
 import { generatePatchHints, collectWarningPatches } from './patch-hints'
 import { printHelp } from './cli-help'
@@ -313,12 +314,14 @@ async function runAnalyze(args: CliArgs): Promise<void> {
     return
   }
 
-  const context = analyzeDataset(dataset.value, {
+  const analyzed = analyzeDataset(dataset.value, {
     intent: stringFlag(args, 'intent'),
     extraQuery: stringFlag(args, 'extra-query'),
     correctAssumption: stringFlag(args, 'correct-assumption')
   })
 
+  const context = analyzeProjectFlags(analyzed, dataset.value, args)
+  if (isAgentError(context)) { printJson(fail(context)); return }
   const value = args.flags['compact'] === true ? toCompactAnalyzeContext(context) : context
   const result = { ok: true, value }
   await publishStandaloneResult(args, 'analyzed', result, 'Analyze context created.')

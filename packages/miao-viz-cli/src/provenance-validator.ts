@@ -91,6 +91,11 @@ export function validateProvenance(spec: AgentReportSpec, context: AnalyzeContex
         ))
       }
     }
+    const stateRecipe = context.evidence.find(item => provenance.evidence.includes(item.id) && item.recipe?.project?.view === 'states')?.recipe?.project
+    const chart = object.kind === 'chart' ? spec.charts.find((_, index) => `charts[${index}]` === object.path) : undefined
+    if (stateRecipe && chart && (chart.type !== 'bar' || chart.encoding?.x?.field !== stateRecipe.config.fields.status || chart.encoding?.y?.field !== stateRecipe.config.fields.task_id || chart.encoding?.y?.aggregate !== 'count')) {
+      objectIssues.push(provenanceIssue(VERIFY_ISSUE_CODES.PROVENANCE_PATH_INCOMPATIBLE, object, 'Project state counts require status grouping and a task-ID count.', 'Use the project-status block.'))
+    }
     const compatibility = compatibleWithEvidence(object, context.evidence)
     if (!compatibility.ok) {
       objectIssues.push(provenanceIssue(
@@ -188,6 +193,7 @@ function compatibleWithEvidence(object: ProvenanceObject, evidence: AnalyzeEvide
   const resultFields = new Set<string>()
   for (const id of object.provenance.evidence) {
     const item = evidence.find(candidate => candidate.id === id)
+    if (item?.recipe?.project) Object.values(item.recipe.project.config.fields).forEach(field => recipeFields.add(field))
     for (const field of item?.recipe?.groupBy ?? []) recipeFields.add(field)
     for (const measure of item?.recipe?.measures ?? []) {
       recipeFields.add(measure.field)

@@ -4,6 +4,7 @@ import { getTemplateById } from './report-template-registry'
 import type { AgentReportSpec } from './types'
 
 export type ReportSceneId =
+  | 'project-periodic'
   | 'business-overview'
   | 'sales-analysis'
   | 'marketing-performance'
@@ -66,6 +67,7 @@ function decision(
 }
 
 export const REPORT_SCENES: ReportScene[] = [
+  { id: 'project-periodic', name: '项目周期报告', keywords: ['项目周报', '项目月报', 'project report'], requiredRoles: [], metricSemantics: [], templates: ['project-periodic'], blocks: ['project-status'], description: 'Task snapshots, schedule, milestones and period changes.', canUse: ctx => ({ ok: ctx.evidence.some(item => Boolean(item.recipe?.project)), score: 0.98, reason: 'Requires explicit project configuration and period dates.' }) },
   {
     id: 'business-overview', name: 'Business Overview',
     keywords: ['business overview', 'operating review', '经营', '经营概览'],

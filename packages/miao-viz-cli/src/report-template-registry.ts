@@ -1,3 +1,4 @@
+import { PROJECT_REPORT_TEMPLATE } from './project-report-catalog'
 import * as YAML from 'yaml'
 import { getBlockById } from './report-block-registry'
 import type { BlockMatchContext } from './report-block-registry'
@@ -141,6 +142,7 @@ const POSTER_REPORT_TEMPLATES: ReportTemplateResolver[] = POSTER_TEMPLATE_REGIST
 }))
 
 export const TEMPLATE_REGISTRY: ReportTemplateResolver[] = [
+  PROJECT_REPORT_TEMPLATE,
   ...POSTER_REPORT_TEMPLATES,
   {
     id: 'snapshot-overview',

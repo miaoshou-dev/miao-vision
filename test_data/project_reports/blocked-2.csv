@@ -1,0 +1,5 @@
+task_id,title,status,due_date,start_date,owner,completed_at,stage,is_milestone,next_action,action_due_date,blocker
+T1,需求确认,done,2026-10-02,2026-09-28,林,2026-10-02,设计,true,,,
+T2,视觉设计,blocked,2026-10-10,2026-10-03,陈,,设计,false,确认设计稿,2026-10-10,等待客户确认
+T3,网站实现,todo,2026-10-23,2026-10-08,张,,开发,true,完成首页,2026-10-12,
+T4,内容交接,todo,,,李,,交付,false,提供品牌图片,,

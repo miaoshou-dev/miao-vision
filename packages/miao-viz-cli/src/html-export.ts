@@ -8,6 +8,9 @@ import type { ProvenanceCoverage } from './provenance-validator'
 import type { ThemeName, ReportTheme } from './themes/types'
 import type { AgentChartSpec, AgentInsight, AgentReportSpec, DataProfile } from './types'
 import type { ExposureManifest, ShareSafetyCheck } from './trusted-artifact'
+import { renderProjectReportHtml } from './project-report-html'
+import { normalizeProjectSnapshot } from './project-snapshot'
+import { isAgentError } from './errors'
 import { renderPosterHtml } from './poster/poster-renderer'
 
 export interface ReportHtmlOptions extends InteractiveHtmlOptions {
@@ -67,6 +70,12 @@ export function renderStaticHtml(
   themeOverride?: ThemeName,
   interactiveOptions: ReportHtmlOptions = {}
 ): string {
+  const project = interactiveOptions.context?.evidence.find(item => item.recipe?.project)?.recipe?.project
+  if (project && spec.charts.some(chart => chart.id === 'project-schedule')) {
+    const snapshot = normalizeProjectSnapshot(rows, project.config, project.period, profile.columns.map(column => column.name))
+    if (isAgentError(snapshot)) throw new Error(`${snapshot.code}: ${snapshot.message}`)
+    return renderProjectReportHtml(snapshot, undefined, [], interactiveOptions.context?.evidence)
+  }
   if (spec.layout?.preset === 'poster') {
     return renderPosterHtml(spec, profile, rows, themeOverride)
   }

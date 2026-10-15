@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "projectId": "delivery-demo",
+  "name": "客户网站交付项目",
+  "timezone": "Asia/Shanghai",
+  "fields": {
+    "task_id": "task_id",
+    "title": "title",
+    "status": "status",
+    "due_date": "due_date",
+    "start_date": "start_date",
+    "owner": "owner",
+    "completed_at": "completed_at",
+    "stage": "stage",
+    "is_milestone": "is_milestone",
+    "next_action": "next_action",
+    "action_due_date": "action_due_date",
+    "blocker": "blocker"
+  },
+  "statusMapping": {
+    "todo": "todo",
+    "in_progress": "in_progress",
+    "done": "done",
+    "blocked": "blocked",
+    "cancelled": "cancelled"
+  }
+}

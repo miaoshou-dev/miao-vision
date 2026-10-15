@@ -50,6 +50,7 @@ Read only the reference needed for the selected workflow:
 
 | Request | Reference |
 |---|---|
+| Project weekly/monthly task snapshot report | [project-report.md](references/project-report.md) |
 | Article URL or local Markdown/text to infographic | [article.md](references/article.md) |
 | Local CSV/TSV/XLSX/JSON to report, static dashboard, findings artifact, recurring report, data poster, or PNG/PDF export; report edits and spec validation | [report.md](references/report.md) |
 | Browser deck or deck spec validation from local text, data, or both | [deck.md](references/deck.md) |
