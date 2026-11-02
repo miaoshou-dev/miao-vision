@@ -88,6 +88,12 @@ describe('project snapshot contracts and facts', () => {
     expect(report).toContain('未排期')
     expect(report).toContain('project-schedule-page')
     expect(report).toContain('不代表整个项目交付进度')
+    expect(report).toContain('敏捷看板')
+    expect(report).toContain('kanban-todo')
+    expect(report).toContain('kanban-in_progress')
+    expect(report).toContain('kanban-blocked')
+    expect(report).toContain('kanban-done')
+    expect(report).toContain('T')
   })
   it('keeps project evidence and instantiated blocks verifiable', () => {
     const data = loadDataset('test_data/project_reports/normal-1.csv')

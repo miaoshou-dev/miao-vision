@@ -27,6 +27,7 @@ Source data stays on your machine during the standard report, poster, deck, arti
 | **Data report** | KPI summaries, trends, comparisons, detail tables, and evidence-backed findings | HTML, SVG, PNG, PDF |
 | **Data poster** | One-page rankings, comparisons, composition, flows, timelines, and geographic summaries | HTML, PNG, single-page PDF |
 | **Recurring report** | Replaying verified metrics, evidence recipes, layout, and theme on a new period | Versioned HTML/PDF runs with review state |
+| **Project status report** | Reviewing task status, blockers, milestones, and schedule from a project snapshot | Self-contained HTML with a read-only kanban and Gantt, plus optional PDF |
 | **Presentation deck** | Executive reviews, proposals, explainers, project updates, and hybrid data narratives | Browser deck or 16:9 PDF |
 | **Article infographic** | Visual summaries of normalized local Markdown or text | HTML, PNG, PDF, JSON, Markdown |
 
@@ -258,6 +259,8 @@ miao-viz report update ./sales-weekly \
 ```
 
 Projects retain immutable run history, stable evidence IDs and spec hashes, data-contract checks, period outcome briefs, review state, previews, and delivery manifests. Use `report info` and `report history` to inspect them. `report clean` previews removals and requires explicit confirmation.
+
+For project status reports, provide a complete task snapshot with stable task IDs, explicit status mappings, and reporting dates. The report groups tasks into a read-only kanban for todo, in progress, blocked, and done, alongside a Gantt schedule, milestones, overdue tasks, and changes from the previous period. The task completion ratio counts tasks and does not represent overall project delivery progress. See the [project report workflow](./skills/miao-vision/references/project-report.md) for configuration and commands.
 
 ## Review Viewer and delivery
 
