@@ -36,6 +36,40 @@ server. Keep source data local and continue the CLI workflow if the Viewer
 stops or is unavailable. Deliver the primary artifact even if review events
 could not be published.
 
+## Sandbox and local network access
+
+A running Viewer in a browser does not prove that a sandboxed CLI process
+can reach it. Before a Viewer-backed render, request `<viewer-url>/api/health`
+from the same execution environment as the render, with a short timeout
+(for example, `curl --fail --silent --show-error --max-time 3
+http://127.0.0.1:43179/api/health`). Use the actual returned Viewer URL;
+the response must contain `ok: true`.
+
+If sandbox policy blocks loopback access, use the host's supported permission
+mechanism before rendering. In Codex, retry the probe with `exec_command`
+using `sandbox_permissions: "require_escalated"` and a justification such as
+"Access the local Review Viewer to register the generated artifact."
+Once access is confirmed, execute the render with the same permission setting
+and include `--review-url <viewer-url>` and `--review-run-id <stable-id>`.
+Permission for a probe does not make later sandboxed commands unrestricted.
+Do not change the port or bind the Viewer to `0.0.0.0` to work around policy.
+
+A connection refusal can mean the Viewer is stopped or the URL is wrong;
+check the Viewer process and returned URL rather than assuming a sandbox
+denial. An HTTP error means a server responded and requires endpoint/service
+diagnosis. A generic connection failure alone does not establish the cause.
+If an already configured local MCP connection is available, `run_miao_viz`
+can launch the render from that service; its process must also be able to
+reach the Viewer.
+
+After rendering, GET `<viewer-url>/api/runs/<encoded-run-id>` from the permitted
+environment and confirm that the run's artifact points to the generated output.
+CLI render success alone does not confirm publication: review network failures
+currently do not fail rendering. If host permission is denied or unavailable,
+deliver the HTML and explicitly report that Viewer registration was not
+completed. Do not repeatedly rerender in the same blocked environment or claim
+that the artifact is visible in the Viewer.
+
 The version view compares any two runs in the same revision family. Review
 history survives a Viewer process restart in a local cache. For reports, the
 edit view maps titles, charts, and insights to Spec paths. Decks map each slide,

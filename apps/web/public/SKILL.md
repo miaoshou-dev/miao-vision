@@ -50,6 +50,7 @@ Read only the reference needed for the selected workflow:
 
 | Request | Reference |
 |---|---|
+| Project weekly/monthly task snapshot report | [project-report.md](references/project-report.md) |
 | Article URL or local Markdown/text to infographic | [article.md](references/article.md) |
 | Local CSV/TSV/XLSX/JSON to report, static dashboard, findings artifact, recurring report, data poster, or PNG/PDF export; report edits and spec validation | [report.md](references/report.md) |
 | Browser deck or deck spec validation from local text, data, or both | [deck.md](references/deck.md) |
@@ -153,3 +154,8 @@ The current plugin does not register the Viewer MCP server or open its URL in
 Codex automatically. Read [review-viewer.md](references/review-viewer.md) for
 the available local commands and connection steps. Viewer failure must not
 block artifact delivery.
+Before a Viewer-backed render, check the Viewer's `/api/health` from the
+render execution environment. If the host sandbox blocks loopback access,
+use the host's permission mechanism for the probe and render; see the
+reference for Codex execution parameters. Confirm the run was registered
+before reporting it as visible in the Viewer.
